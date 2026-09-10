@@ -25,36 +25,36 @@ const ProfileDetails = ({
 }) => {
   const theme = useTheme();
   const [documentsModalOpen, setDocumentsModalOpen] =
-  React.useState(false);
+    React.useState(false);
   const isTablet = useMediaQuery(theme.breakpoints.down("lg"));
   const [workingHoursModalOpen, setWorkingHoursModalOpen] =
     React.useState(false);
-// Component ke andar, return se pehle add karo
-const formatDisplayTime = (timeStr) => {
-  if (!timeStr) return "";
-  const [hours, minutes] = timeStr.split(":").map(Number);
-  const ampm = hours >= 12 ? "PM" : "AM";
-  const displayHours = hours % 12 || 12;
-  return `${displayHours}:${String(minutes).padStart(2, "0")} ${ampm}`;
-};
-const documents = [
-  {
-    name: "Medical Registration Certificate",
-    path: profileData?.medical_registration_certificate,
-  },
-  {
-    name: "Medical Degree Certificate",
-    path: profileData?.medical_degree_certificate,
-  },
-  {
-    name: "Government ID Proof",
-    path: profileData?.government_id_proof,
-  },
-  {
-    name: "Selfie",
-    path: profileData?.selfie,
-  },
-];
+  // Component ke andar, return se pehle add karo
+  const formatDisplayTime = (timeStr) => {
+    if (!timeStr) return "";
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${String(minutes).padStart(2, "0")} ${ampm}`;
+  };
+  const documents = [
+    {
+      name: "Medical Registration Certificate",
+      path: profileData?.medical_registration_certificate,
+    },
+    {
+      name: "Medical Degree Certificate",
+      path: profileData?.medical_degree_certificate,
+    },
+    {
+      name: "Government ID Proof",
+      path: profileData?.government_id_proof,
+    },
+    {
+      name: "Selfie",
+      path: profileData?.selfie,
+    },
+  ];
   return (
     <Box
       sx={{
@@ -99,21 +99,21 @@ const documents = [
               value={profileData.language?.join(", ") || ""}
               placeholder={!profileData.language ? "Enter language" : ""}
               sx={{
-        
-            "& .MuiOutlinedInput-root": {
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#153933",
-              },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#1D9E75",
-                borderWidth: "2px",
-              },
-              "& textarea::placeholder": {
-                color: "#999",
-                opacity: 1,
-              },
-            },
-          }}
+
+                "& .MuiOutlinedInput-root": {
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#153933",
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#1D9E75",
+                    borderWidth: "2px",
+                  },
+                  "& textarea::placeholder": {
+                    color: "#999",
+                    opacity: 1,
+                  },
+                },
+              }}
               onChange={(e) =>
                 onFieldChange(
                   "language",
@@ -231,21 +231,21 @@ const documents = [
                 !profileData.experience ? "Enter experience (in years)" : ""
               }
               sx={{
-        
-            "& .MuiOutlinedInput-root": {
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#153933",
-              },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#1D9E75",
-                borderWidth: "2px",
-              },
-              "& textarea::placeholder": {
-                color: "#999",
-                opacity: 1,
-              },
-            },
-          }}
+
+                "& .MuiOutlinedInput-root": {
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#153933",
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#1D9E75",
+                    borderWidth: "2px",
+                  },
+                  "& textarea::placeholder": {
+                    color: "#999",
+                    opacity: 1,
+                  },
+                },
+              }}
               onChange={(e) => onFieldChange("experience", e.target.value)}
               variant="outlined"
               size="small"
@@ -288,32 +288,32 @@ const documents = [
 
           {isEditing ? (
             <TextField
-              value={profileData.consultation_fee }
+              value={profileData.consultation_fee}
               placeholder={
                 !profileData.consultationFee ? "Enter consultation fee" : ""
               }
-           onChange={(e) =>
-  onFieldChange("consultation_fee", e.target.value)
-}
+              onChange={(e) =>
+                onFieldChange("consultation_fee", e.target.value)
+              }
               variant="outlined"
               size="small"
               type="number"
               sx={{
-        
-            "& .MuiOutlinedInput-root": {
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#153933",
-              },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#1D9E75",
-                borderWidth: "2px",
-              },
-              "& textarea::placeholder": {
-                color: "#999",
-                opacity: 1,
-              },
-            },
-          }}
+
+                "& .MuiOutlinedInput-root": {
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#153933",
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#1D9E75",
+                    borderWidth: "2px",
+                  },
+                  "& textarea::placeholder": {
+                    color: "#999",
+                    opacity: 1,
+                  },
+                },
+              }}
             />
           ) : (
             <Typography
@@ -362,21 +362,21 @@ const documents = [
               variant="outlined"
               size="small"
               sx={{
-            
-            "& .MuiOutlinedInput-root": {
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#153933",
-              },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#1D9E75",
-                borderWidth: "2px",
-              },
-              "& textarea::placeholder": {
-                color: "#999",
-                opacity: 1,
-              },
-            },
-          }}
+
+                "& .MuiOutlinedInput-root": {
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#153933",
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#1D9E75",
+                    borderWidth: "2px",
+                  },
+                  "& textarea::placeholder": {
+                    color: "#999",
+                    opacity: 1,
+                  },
+                },
+              }}
             />
           ) : (
             <Typography
@@ -542,7 +542,47 @@ const documents = [
             })}
           </Box>
         </Box>
-       <Box
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: { xs: "flex-start", sm: "center" },
+            justifyContent: "space-between",
+            backgroundColor: "#f5f5f5",
+            borderRadius: 1,
+            padding: 1.5,
+            gap: 1.5,
+          }}
+        >
+          <Typography
+            variant="h6"
+            fontWeight={600}
+            color="#153933"
+            fontSize={{ xs: "1rem", sm: "1.25rem" }}
+          >
+            Documents:
+          </Typography>
+
+          <Button
+            variant="contained"
+            onClick={() => setDocumentsModalOpen(true)}
+
+            sx={{
+              backgroundColor: "#14b8a6",
+              "&:hover": {
+                backgroundColor: "#0f7468",
+              },
+              color: "white",
+              textTransform: "none",
+              fontWeight: 700,
+              borderRadius: "8px",
+            }}
+          >
+            View Documents
+          </Button>
+        </Box>
+        {/* Registration Number */}
+<Box
   sx={{
     display: "flex",
     flexDirection: { xs: "column", sm: "row" },
@@ -560,138 +600,147 @@ const documents = [
     color="#153933"
     fontSize={{ xs: "1rem", sm: "1.25rem" }}
   >
-    Documents:
+    Registration Number:
   </Typography>
 
-  <Button
-    variant="contained"
-    onClick={() => setDocumentsModalOpen(true)}
-  
+ {isEditing ? (
+  <TextField
+    value={profileData?.registration_number || ""}
+    placeholder="Enter registration number"
+    onChange={(e) =>
+      onFieldChange(
+        "registration_number",
+        e.target.value
+      )
+    }
+    variant="outlined"
+    size="small"
+  />
+) : (
+  <Typography
     sx={{
-      backgroundColor: "#14b8a6",
-      "&:hover": {
-        backgroundColor: "#0f7468",
-      },
-      color: "white",
-      textTransform: "none",
-      fontWeight: 700,
-      borderRadius: "8px",
+      fontSize: { xs: 14, sm: 16, md: 18 },
+      color: "#7e8180",
     }}
   >
-    View Documents
-  </Button>
+    {profileData?.registration_number ||
+      "Not provided"}
+  </Typography>
+)}
 </Box>
       </Box>
-     <Dialog
-  open={documentsModalOpen}
-  onClose={() => setDocumentsModalOpen(false)}
-  fullWidth
-  maxWidth="sm"
->
-  <DialogTitle
-    sx={{
-      fontWeight: 700,
-      color: "#153933",
-    }}
-  >
-    Documents
-  </DialogTitle>
+      <Dialog
+        open={documentsModalOpen}
+        onClose={() => setDocumentsModalOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            color: "#153933",
+          }}
+        >
+          Documents
+        </DialogTitle>
 
-  <DialogContent>
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 1.5,
-        mt: 1,
-      }}
-    >
-      {documents.filter((document) => document.path).length > 0 ? (
-        documents
-          .filter((document) => document.path)
-          .map((document) => (
-            <Box
-              key={document.name}
+        <DialogContent>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1.5,
+              mt: 1,
+            }}
+          >
+            {documents.filter((document) => document.path).length > 0 ? (
+              documents
+                .filter((document) => document.path)
+                .map((document) => (
+                  <Box
+                    key={document.name}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 2,
+                      p: 1.5,
+                      border: "1px solid #e0e0e0",
+                      borderRadius: 2,
+                      backgroundColor: "#f9faf9",
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontWeight: 600,
+                        color: "#153933",
+                        fontSize: {
+                          xs: "0.85rem",
+                          sm: "0.95rem",
+                        },
+                      }}
+                    >
+                      {document.name}
+                    </Typography>
+
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        const baseUrl = process.env.NEXT_PUBLIC_S3_BUCKET_URL;
+
+                        const documentUrl = `${baseUrl}/${document.path}`;
+
+                        window.open(
+                          documentUrl,
+                          "_blank",
+                          "noopener,noreferrer"
+                        );
+                      }}
+                      sx={{
+                        flexShrink: 0,
+                        textTransform: "none",
+                        borderColor: "#14b8a6",
+                        color: "#0f7468",
+                        fontWeight: 600,
+
+                        "&:hover": {
+                          borderColor: "#0f7468",
+                          backgroundColor: "#e6f6ed",
+                        },
+                      }}
+                    >
+                      View
+                    </Button>
+                  </Box>
+                ))
+            ) : (
+              <Typography color="text.secondary">
+                No documents available.
+              </Typography>
+            )}
+
+            <Button
+              variant="contained"
+              onClick={() => setDocumentsModalOpen(false)}
               sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 2,
-                p: 1.5,
-                border: "1px solid #e0e0e0",
-                borderRadius: 2,
-                backgroundColor: "#f9faf9",
+                mt: 1,
+                alignSelf: "flex-end",
+                backgroundColor: "#14b8a6",
+                textTransform: "none",
+
+                "&:hover": {
+                  backgroundColor: "#0f7468",
+                },
               }}
             >
-              <Typography
-                sx={{
-                  fontWeight: 600,
-                  color: "#153933",
-                  fontSize: {
-                    xs: "0.85rem",
-                    sm: "0.95rem",
-                  },
-                }}
-              >
-                {document.name}
-              </Typography>
+              Close
+            </Button>
+          </Box>
+        </DialogContent>
+      </Dialog>
 
-              <Button
-                variant="outlined"
-                size="small"
-               onClick={() => {
-  const baseUrl = process.env.NEXT_PUBLIC_S3_BUCKET_URL;
 
-  const documentUrl = `${baseUrl}/${document.path}`;
-
-  window.open(
-    documentUrl,
-    "_blank",
-    "noopener,noreferrer"
-  );
-}}
-                sx={{
-                  flexShrink: 0,
-                  textTransform: "none",
-                  borderColor: "#14b8a6",
-                  color: "#0f7468",
-                  fontWeight: 600,
-
-                  "&:hover": {
-                    borderColor: "#0f7468",
-                    backgroundColor: "#e6f6ed",
-                  },
-                }}
-              >
-                View
-              </Button>
-            </Box>
-          ))
-      ) : (
-        <Typography color="text.secondary">
-          No documents available.
-        </Typography>
-      )}
-
-      <Button
-        variant="contained"
-        onClick={() => setDocumentsModalOpen(false)}
-        sx={{
-          mt: 1,
-          alignSelf: "flex-end",
-          backgroundColor: "#14b8a6",
-          textTransform: "none",
-
-          "&:hover": {
-            backgroundColor: "#0f7468",
-          },
-        }}
-      >
-        Close
-      </Button>
-    </Box>
-  </DialogContent>
-</Dialog>
     </Box>
   );
 };

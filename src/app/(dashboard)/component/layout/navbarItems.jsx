@@ -8,12 +8,7 @@ import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 
 export const navbarItems = {
   1: [
-    {
-      icon: NotificationsIcon,
-      label: "Notifications",
-      badge: 2,
-      onClick: () => console.log("User Notifications"),
-    },
+   
     {
       icon: CalendarIcon,
       label: "Calendar",

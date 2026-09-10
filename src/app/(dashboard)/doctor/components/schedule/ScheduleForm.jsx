@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import Grid from "@mui/material/Grid";
 import dayjs from "dayjs";
 
@@ -51,7 +51,20 @@ const availableDays = availability
   .map((item) => dayMap[item.day])
   .filter(Boolean);
 
+useEffect(() => {
+  if (!availability || availability.length === 0) {
+    return;
+  }
 
+  const daysFromAvailability = availability
+    .map((item) => dayMap[item.day])
+    .filter(Boolean);
+
+  setFormData((prev) => ({
+    ...prev,
+    activeDays: daysFromAvailability,
+  }));
+}, [availability]);
   const startTimeRef = useRef(null);
   const endTimeRef = useRef(null);
   const slotDurationRef = useRef(null);

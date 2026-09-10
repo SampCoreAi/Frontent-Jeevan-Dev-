@@ -193,6 +193,12 @@ if (changedFields.username) {
       ?.replace(/^@/, "")
       .trim() || "";
 }
+
+// Registration Number
+if (changedFields.registration_number) {
+  payload.registration_number =
+    profileData.registration_number?.trim() || "";
+}
     // Language
     if (changedFields.language) {
       payload.language = Array.isArray(

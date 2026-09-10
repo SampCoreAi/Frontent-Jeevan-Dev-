@@ -27,7 +27,7 @@ import html2canvas from "html2canvas";
 
 export default function PatientHistoryPage() {
   const [anchorEl, setAnchorEl] = useState(null);
-
+const [appointmentTracking, setAppointmentTracking] = useState({});
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
@@ -85,7 +85,44 @@ export default function PatientHistoryPage() {
     fetchData();
   }, []);
 
+useEffect(() => {
+  let intervalId;
 
+  const fetchTrackingData = async () => {
+    try {
+      const res = await api.get(
+        "/api/appointments/track-appointment"
+      );
+
+      const trackingData = res.data?.data || [];
+
+      // appointment_id ko key bana rahe hain
+      const trackingMap = {};
+
+      trackingData.forEach((item) => {
+        trackingMap[item.appointment_id] = item;
+      });
+
+      setAppointmentTracking(trackingMap);
+
+      console.log("Tracking Data:", trackingMap);
+    } catch (error) {
+      console.error(
+        "Tracking API Error:",
+        error.response?.data || error.message
+      );
+    }
+  };
+
+  // first call
+  fetchTrackingData();
+
+  // current serving change ho sakta hai,
+  // isliye har 15 sec fresh data
+  intervalId = setInterval(fetchTrackingData, 15000);
+
+  return () => clearInterval(intervalId);
+}, []);
 
 
 
@@ -256,14 +293,15 @@ export default function PatientHistoryPage() {
       />
 
       {filteredConsultations.length > 0 ? (
-        <CardHistory
-          consultationHistory={filteredConsultations}
-          searchQuery={searchQuery}
-          setSnackbar={setSnackbar}
-          setSelectedConsultation={setSelectedConsultation}
-          setPdfDialogOpen={setPdfDialogOpen}
-          handleCancelAppointment={handleCancelAppointment}
-        />
+       <CardHistory
+  consultationHistory={filteredConsultations}
+  appointmentTracking={appointmentTracking}
+  searchQuery={searchQuery}
+  setSnackbar={setSnackbar}
+  setSelectedConsultation={setSelectedConsultation}
+  setPdfDialogOpen={setPdfDialogOpen}
+  handleCancelAppointment={handleCancelAppointment}
+/>
       ) : (
         <Box
           sx={{

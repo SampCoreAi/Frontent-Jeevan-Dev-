@@ -21,7 +21,7 @@ import {
   Alert,
   useMediaQuery,
 } from "@mui/material";
-
+import NotificationPopover from "../../users/components/Header/NotificationPopover";
 import TrackAppointment from "../../users/components/TrackAppointment/TrackAppointment";
 import {
   Search as SearchIcon,
@@ -93,28 +93,28 @@ const Navbar = ({
     };
   }, []);
 
-useEffect(() => {
-  socket.on("connect", () => {
-    console.log("🟢 SOCKET CONNECTED:", socket.id);
-  });
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("🟢 SOCKET CONNECTED:", socket.id);
+    });
 
-  socket.on("connect_error", (error) => {
-    console.log("🔴 SOCKET CONNECTION ERROR:", error.message);
-  });
+    socket.on("connect_error", (error) => {
+      console.log("🔴 SOCKET CONNECTION ERROR:", error.message);
+    });
 
-  socket.on("disconnect", (reason) => {
-    console.log("🟠 SOCKET DISCONNECTED:", reason);
-  });
+    socket.on("disconnect", (reason) => {
+      console.log("🟠 SOCKET DISCONNECTED:", reason);
+    });
 
-  return () => {
-    socket.off("connect");
-    socket.off("connect_error");
-    socket.off("disconnect");
-  };
-}, []);
+    return () => {
+      socket.off("connect");
+      socket.off("connect_error");
+      socket.off("disconnect");
+    };
+  }, []);
 
   useEffect(() => {
-    
+
     const userData = localStorage.getItem("user");
     if (!userData) return;
 
@@ -186,27 +186,27 @@ useEffect(() => {
   };
 
 
-const handleEmergencyClick = () => {
-  const user =
-    storedUser ||
-    JSON.parse(localStorage.getItem("user"));
+  const handleEmergencyClick = () => {
+    const user =
+      storedUser ||
+      JSON.parse(localStorage.getItem("user"));
 
-  if (!user) {
-    console.log("❌ User not found");
-    return;
-  }
-
-
-  if (Number(user.role_id) === 1) {
-    console.log("❌ Role 1 cannot send");
-    return;
-  }
+    if (!user) {
+      console.log("❌ User not found");
+      return;
+    }
 
 
-  socket.emit("sendEmergency", {
-    message: "EMERGENCY ALERT!",
-  });
-};
+    if (Number(user.role_id) === 1) {
+      console.log("❌ Role 1 cannot send");
+      return;
+    }
+
+
+    socket.emit("sendEmergency", {
+      message: "EMERGENCY ALERT!",
+    });
+  };
 
   const handleSearch = (e) => {
     const value = e.target.value;
@@ -297,21 +297,36 @@ const handleEmergencyClick = () => {
           </Tooltip>
 
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            {/* 🔔 Notification */}
+            <NotificationPopover />
+
+            {/* Existing Navbar Icons */}
             {roleNavbar.map((item, index) => (
               <Tooltip key={index} title={item.label}>
                 <IconButton
                   onClick={(event) => {
                     if (item.label === "Calendar") {
                       setAnchorEl(event.currentTarget);
-                    } else if (item.label === "Track Appointment") {
+                    } else if (
+                      item.label === "Track Appointment"
+                    ) {
                       setTrackAppointmentOpen(true);
                     } else {
                       item.onClick?.();
                     }
                   }}
                 >
-                  <Badge badgeContent={item.badge} color="error">
+                  <Badge
+                    badgeContent={item.badge}
+                    color="error"
+                  >
                     <item.icon />
                   </Badge>
                 </IconButton>
@@ -412,10 +427,10 @@ const handleEmergencyClick = () => {
       </Drawer>
 
       <audio ref={alertAudioRef} src="/sound/alert.mp3" preload="auto" />
-<TrackAppointment
-  open={trackAppointmentOpen}
-  onClose={() => setTrackAppointmentOpen(false)}
-/>
+      <TrackAppointment
+        open={trackAppointmentOpen}
+        onClose={() => setTrackAppointmentOpen(false)}
+      />
       <Dialog
         open={emergencyOpen}
         onClose={handleCloseEmergency}

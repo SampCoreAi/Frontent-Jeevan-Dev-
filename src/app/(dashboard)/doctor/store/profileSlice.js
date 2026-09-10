@@ -151,7 +151,7 @@ return {
   specialization: apiData.specialization || "",
   chipLabel: apiData.specialization || "",
   bio: apiData.bio || "",
-
+registration_number: apiData.registration_number || "",
   language: Array.isArray(apiData.language)
     ? apiData.language
     : [],
@@ -225,6 +225,7 @@ const buildInitialState = () => {
       username: u.username || '@',
       qualification: '',
       bio: '',
+      registration_number: '',
       language: [],
       experience: '',
       medicalLicense: '',
