@@ -29,19 +29,22 @@ const PatientProfileSidebar = ({ userProfile, formData, editable, handleChange }
     setAnchorEl(event.currentTarget);
   };
   const [previewImage, setPreviewImage] = React.useState(null);
- const handleUpload = async (e) => {
-  const file = e.target.files[0];
+const handleUpload = async (e) => {
+  const file = e.target.files?.[0];
   if (!file) return;
 
-  const formData = new FormData();
-  formData.append("file", file);
+  const localPreview = URL.createObjectURL(file);
+  setPreviewImage(localPreview);
+
+  const uploadFormData = new FormData();
+  uploadFormData.append("file", file);
 
   const token = localStorage.getItem("token");
 
   try {
     const res = await axios.post(
       `${API_BASE_URL}${API_ENDPOINTS.UPLOAD_IMAGE}?folder=user-profile`,
-      formData,
+      uploadFormData,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -49,23 +52,11 @@ const PatientProfileSidebar = ({ userProfile, formData, editable, handleChange }
       }
     );
 
-    const data = res.data;
+    console.log("UPLOAD RESPONSE:", res.data);
 
-    if (data.success) {
-      const fullUrl = `${process.env.NEXT_PUBLIC_S3_BUCKET_URL}/${data.path}`;
-
-      setPreviewImage(fullUrl);
-      handleChange("doctor_image", data.path);
-
-      dispatch(setUserProfile({
-        ...userProfile,
-        doctor_image: data.path
-      }));
-    } else {
-      console.error(data.message);
-    }
   } catch (err) {
     console.error("Upload Error:", err);
+    setPreviewImage(null);
   }
 };
   const handleClose = () => {
@@ -91,11 +82,17 @@ const PatientProfileSidebar = ({ userProfile, formData, editable, handleChange }
     localUser?.phone_number ||
     "";
 
+const S3_URL = process.env.NEXT_PUBLIC_S3_BUCKET_URL;
+
 const displayImage =
   previewImage ||
-  userProfile?.image?.url ||
+  (userProfile?.image?.url
+    ? userProfile.image.url.startsWith("http")
+      ? userProfile.image.url
+      : `${S3_URL}/${userProfile.image.url}`
+    : null) ||
   (userProfile?.doctor_image
-    ? `${process.env.NEXT_PUBLIC_S3_BUCKET_URL}/${userProfile.doctor_image}`
+    ? `${S3_URL}/${userProfile.doctor_image}`
     : null);
 
   const avatarInitial = displayName
