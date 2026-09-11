@@ -6,19 +6,20 @@ import { API_BASE_URL } from "../../../../../config/api";
 import { Typography, Box, Paper, Drawer, IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useTheme, useMediaQuery } from "@mui/material";
-import { DocumentExplorer } from "../../components/document/DocumentExplorer";
-import { FileGridItem } from "../../components/document/FileGridItem";
-import { FileListItem } from "../../components/document/FileListItem";
-import { UploadDialog } from "../../components/document/UploadDialog";
-import { PdfViewerModal } from "../../components/document/PdfViewerModal";
-import { ImageViewerModal } from "../../components/document/ImageViewerModal";
-import { EmptyState } from "../../components/document/EmptyState";
-import { Header } from "../../components/document/Header";
-import { FileView } from "../../components/document/FileView";
+import { DocumentExplorer } from "../../components/Document/DocumentExplorer";
+import { FileGridItem } from "../../components/Document/FileGridItem";
+import { FileListItem } from "../../components/Document/FileListItem";
+import { UploadDialog } from "../../components/Document/UploadDialog";
+import { PdfViewerModal } from "../../components/Document/PdfViewerModal";
+import { ImageViewerModal } from "../../components/Document/ImageViewerModal";
+import { EmptyState } from "../../components/Document/EmptyState";
+import { Header } from "../../components/Document/Header";
+import { FileView } from "../../components/Document/FileView";
+
 import {
   getFileIcon,
   getSmallFileIcon,
-} from "../../components/document/FileIcons";
+} from "../../components/Document/FileIcons";
 
 export default function DocumentPage() {
   const theme = useTheme();
