@@ -26,7 +26,8 @@ export default function DocumentPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
-
+const [uploading, setUploading] = useState(false);
+const [uploadSuccess, setUploadSuccess] = useState("");
   const [folders, setFolders] = useState([
     {
       id: "root",
@@ -371,111 +372,66 @@ export default function DocumentPage() {
     setSelectedFolder("root");
   };
 
-  const processFiles = async (files) => {
-    const token = localStorage.getItem("token");
+const processFiles = async (files) => {
+  if (!files || files.length === 0) return;
 
-    if (!token) {
-      alert("Authentication token missing. Please log in.");
-      return;
-    }
+  const token = localStorage.getItem("token");
 
-    // Determine folder name to send to API
-  let folderNameParam = getFolderPath(selectedFolder);
+  if (!token) {
+    alert("Authentication token missing. Please log in.");
+    return;
+  }
 
-if (selectedFolder === "root") {
-  folderNameParam = "user-documents/adi";
-} else {
-  folderNameParam = folderNameParam
-    .replace(/^Document\/?/, "user-documents/");
-}
+  try {
+    setUploading(true);
+    setUploadSuccess("");
+
+    // ✅ Bas Document folder
+    const folderNameParam = "documents";
+
     for (const file of files) {
       const formData = new FormData();
       formData.append("file", file);
 
-      try {
-        const response = await axios.post(
-          `${API_BASE_URL}/licenseFile/upload?folder=${folderNameParam}`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.data.success) {
-          const apiData = response.data.data;
-          const fileId = apiData.fileKey || `file_${Date.now()}_${Math.random()}`;
-
-          const newFile = {
-            id: fileId,
-            name: file.name,
-            size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-            type: file.type,
-            fileType: file.name.split(".").pop().toLowerCase(),
-            folderId: selectedFolder,
-            url: apiData.fileUrl,
-            date: new Date().toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            }),
-
-          };
-
-          // Update Folders Tree
-          setFolders((prev) => {
-            const addFileToTree = (nodes) => {
-              return nodes.map((node) => {
-                if (node.id === selectedFolder) {
-                  return {
-                    ...node,
-                    children: [
-                      ...(node.children || []),
-                      {
-                        id: newFile.id,
-                        name: newFile.name,
-                        type: "file",
-                        fileType: newFile.fileType,
-                        folderId: selectedFolder,
-                      },
-                    ],
-                  };
-                }
-                if (node.children) {
-                  return {
-                    ...node,
-                    children: addFileToTree(node.children),
-                  };
-                }
-                return node;
-              });
-            };
-            return addFileToTree(prev);
-          });
-
-          setAllFiles((prev) => [...prev, newFile]);
-
-        } else {
-          console.error("Upload failed for file " + file.name, response.data);
-          alert(`Upload failed for ${file.name}: ${response.data.message || "Unknown error"}`);
+      await axios.post(
+        `${API_BASE_URL}/licenseFile/upload?folder=${encodeURIComponent(
+          folderNameParam
+        )}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-
-      } catch (error) {
-        console.error("Error uploading file " + file.name, error);
-        alert(`Error uploading ${file.name}. Check console.`);
-      }
+      );
     }
 
-    if (selectedFolder) {
-      setExpandedFolders((prev) => ({
-        ...prev,
-        [selectedFolder]: true,
-      }));
-    }
+    // ✅ IMPORTANT:
+    // backend se fresh files lao
+    // exactly wahi data milega jo refresh ke baad milta tha
+    await fetchFiles();
 
-    setOpenUpload(false);
-  };
+    setUploadSuccess(
+      files.length === 1
+        ? "File uploaded successfully!"
+        : `${files.length} files uploaded successfully!`
+    );
+
+    setTimeout(() => {
+      setOpenUpload(false);
+      setUploadSuccess("");
+    }, 1200);
+  } catch (error) {
+    console.error("Upload error:", error);
+
+    alert(
+      error.response?.data?.message ||
+        "File upload failed. Please try again."
+    );
+  } finally {
+    setUploading(false);
+  }
+};
 
   const uploadFiles = (e) => {
     processFiles(Array.from(e.target.files));
@@ -740,17 +696,19 @@ if (selectedFolder === "root") {
           </Box>
         </Paper>
 
-        <UploadDialog
-          openUpload={openUpload}
-          setOpenUpload={setOpenUpload}
-          isMobile={isMobile}
-          handleDrop={handleDrop}
-          handleDragOver={handleDragOver}
-          handleDragLeave={handleDragLeave}
-          isDragging={isDragging}
-          uploadFiles={uploadFiles}
-          currentFolderName={currentFolderName}
-        />
+     <UploadDialog
+  openUpload={openUpload}
+  setOpenUpload={setOpenUpload}
+  uploadFiles={uploadFiles}
+  handleDrop={handleDrop}
+  handleDragOver={handleDragOver}
+  handleDragLeave={handleDragLeave}
+  isDragging={isDragging}
+  uploading={uploading}
+  uploadSuccess={uploadSuccess}
+  currentFolderName={currentFolderName}
+  isMobile={isMobile}
+/>
 
         <PdfViewerModal
           openPdfViewer={openPdfViewer}
