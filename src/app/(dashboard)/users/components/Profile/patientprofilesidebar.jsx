@@ -3,8 +3,8 @@ import {
   Box,
   Stack,
   Avatar,
-  Switch,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import EmailIcon from "@mui/icons-material/Email";
 import PhoneIcon from "@mui/icons-material/Phone";
@@ -19,6 +19,7 @@ import axios from "axios";
 import { API_BASE_URL, API_ENDPOINTS } from "../../../../../config/api";
 const PatientProfileSidebar = ({ userProfile, formData, editable, handleChange }) => {
   const dispatch = useDispatch();
+  const [uploading, setUploading] = React.useState(false);
   const localUser = (() => {
     try { return JSON.parse(localStorage.getItem("user") || "{}"); }
     catch { return {}; }
@@ -42,6 +43,9 @@ const handleUpload = async (e) => {
   const token = localStorage.getItem("token");
 
   try {
+    // ✅ loading start
+    setUploading(true);
+
     const res = await axios.post(
       `${API_BASE_URL}${API_ENDPOINTS.UPLOAD_IMAGE}?folder=user-profile`,
       uploadFormData,
@@ -54,9 +58,23 @@ const handleUpload = async (e) => {
 
     console.log("UPLOAD RESPONSE:", res.data);
 
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || "Image upload failed");
+    }
+
   } catch (err) {
-    console.error("Upload Error:", err);
+    console.error(
+      "Upload Error:",
+      err.response?.data || err.message || err
+    );
+
     setPreviewImage(null);
+  } finally {
+    // ✅ loading stop
+    setUploading(false);
+
+    // same image dobara select kar sake
+    e.target.value = "";
   }
 };
   const handleClose = () => {
@@ -142,46 +160,78 @@ const displayImage =
         borderRadius: "12px",
       }}
     >
-      <Box sx={{ position: "relative" }}>
-        <Avatar
-          src={displayImage || undefined}
-          sx={{
-            width: { xs: 130, md: 190 },
-            height: { xs: 130, md: 230 },
-            borderRadius: 3,
-            border: "4px solid #15b8a7",
-            fontSize: { xs: "3rem", md: "4rem" },
-            backgroundColor: "#15b8a7",
-            color: "#fff",
-            fontWeight: 700,
-          }}
-        >
-          {!displayImage && avatarInitial}
-        </Avatar>
-        <input
-          type="file"
-          id="upload-photo-input"
-          hidden
-          accept="image/*"
-          onChange={handleUpload}
-        />
-        {/* ✅ Camera Icon (only in edit mode) */}
-        {editable && (
-          <IconButton
-            onClick={handleCameraClick}
-            sx={{
-              position: "absolute",
-              bottom: 8,
-              right: 8,
-              backgroundColor: "#fff",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-              "&:hover": { backgroundColor: "#f0f0f0" },
-            }}
-          >
-            <CameraAltIcon sx={{ color: "#15b8a7" }} />
-          </IconButton>
-        )}
-      </Box>
+   <Box sx={{ position: "relative" }}>
+  <Avatar
+    src={displayImage || undefined}
+    sx={{
+      width: { xs: 130, md: 190 },
+      height: { xs: 130, md: 230 },
+      borderRadius: 3,
+      border: "4px solid #15b8a7",
+      fontSize: { xs: "3rem", md: "4rem" },
+      backgroundColor: "#15b8a7",
+      color: "#fff",
+      fontWeight: 700,
+
+      // ✅ upload ke time image halka dark
+      opacity: uploading ? 0.5 : 1,
+    }}
+  >
+    {!displayImage && avatarInitial}
+  </Avatar>
+
+  {/* ✅ Upload Loading */}
+  {uploading && (
+    <Box
+      sx={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 3,
+        backgroundColor: "rgba(255,255,255,0.25)",
+        zIndex: 2,
+      }}
+    >
+      <CircularProgress
+        size={45}
+        sx={{
+          color: "#15b8a7",
+        }}
+      />
+    </Box>
+  )}
+
+  <input
+    type="file"
+    id="upload-photo-input"
+    hidden
+    accept="image/*"
+    onChange={handleUpload}
+  />
+
+  {editable && !uploading && (
+    <IconButton
+      onClick={handleCameraClick}
+      sx={{
+        position: "absolute",
+        bottom: 8,
+        right: 8,
+        backgroundColor: "#fff",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+        "&:hover": {
+          backgroundColor: "#f0f0f0",
+        },
+      }}
+    >
+      <CameraAltIcon sx={{ color: "#15b8a7" }} />
+    </IconButton>
+  )}
+</Box>
       <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
         <MenuItem
           onClick={() => {
