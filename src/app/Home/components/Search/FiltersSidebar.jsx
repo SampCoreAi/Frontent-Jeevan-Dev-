@@ -8,6 +8,7 @@ import {
   Button,
   Divider,
   Accordion,
+  
   AccordionSummary,
   AccordionDetails,
   FormControlLabel,
@@ -17,6 +18,7 @@ import {
   Slide,
   Zoom,
 } from "@mui/material";
+import CheckIcon from "@mui/icons-material/Check";
 import {
   ExpandMore,
   LocalHospital,
@@ -399,9 +401,11 @@ export default function FiltersSidebar({
                     {section.items.map((item, itemIndex) => {
                       const value = typeof item === "object" ? item.value : item;
                       const label = typeof item === "object" ? item.label : item;
-                      const isSelected = selectedFilters[section.id].includes(
-                        value
-                      );
+                     const normalizedValue =
+  typeof value === "string" ? value.toLowerCase() : value;
+
+const isSelected =
+  selectedFilters[section.id].includes(normalizedValue);
 
                       return (
                         <Zoom
@@ -412,43 +416,49 @@ export default function FiltersSidebar({
                             transitionDelay: `${itemIndex * 50}ms`,
                           }}
                         >
-                          <Chip
-                            label={`${section.prefix || ""}${label}`}
-                            onClick={() => toggleFilter(section.id, value)}
-                            size="small"
-                            sx={{
-                              borderRadius: "12px",
-                              px: 1,
+                         <Chip
+  label={`${section.prefix || ""}${label}`}
+  onClick={() => toggleFilter(section.id, value)}
+  size="small"
+  icon={
+    isSelected ? (
+      <CheckIcon
+        sx={{
+          color: "white !important",
+          fontSize: "16px !important",
+        }}
+      />
+    ) : undefined
+  }
+  sx={{
+    borderRadius: "12px",
+    px: 1,
+    fontWeight: isSelected ? 700 : 500,
+    fontSize: { xs: "0.75rem", md: "0.85rem" },
+    py: { xs: 2, md: 2.5 },
+    cursor: "pointer",
 
-                              fontWeight: 500,
-                              fontSize: { xs: "0.75rem", md: "0.85rem" },
-                              py: { xs: 2, md: 2.5 },
-                              cursor: "pointer",
-                              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                              background: isSelected
-                                ? "linear-gradient(135deg, #1e6658 0%, #163a4a 100%)"
-                                : "rgba(255, 255, 255, 0.8)",
-                              color: isSelected ? "white" : "#555",
-                              border: isSelected
-                                ? "none"
-                                : "1px solid rgba(0, 0, 0, 0.08)",
-                              boxShadow: isSelected
-                                ? "0 4px 15px rgba(30, 102, 88, 0.3)"
-                                : "0 2px 8px rgba(0, 0, 0, 0.04)",
-                              "&:hover": {
-                                transform: "translateY(-2px) scale(1.02)",
-                                boxShadow: isSelected
-                                  ? "0 6px 20px rgba(30, 102, 88, 0.4)"
-                                  : "0 4px 12px rgba(0, 0, 0, 0.08)",
-                                background: isSelected
-                                  ? "linear-gradient(135deg, #163a4a 0%, #1e6658 100%)"
-                                  : "rgba(255, 255, 255, 1)",
-                              },
-                              "&:active": {
-                                transform: "scale(0.95)",
-                              },
-                            }}
-                          />
+    background: isSelected
+      ? "linear-gradient(135deg, #1e6658 0%, #163a4a 100%)"
+      : "#fff",
+
+    color: isSelected ? "#fff" : "#555",
+
+    border: isSelected
+      ? "2px solid #1e6658"
+      : "1px solid rgba(0,0,0,0.10)",
+
+    boxShadow: isSelected
+      ? "0 4px 15px rgba(30, 102, 88, 0.35)"
+      : "none",
+
+    "&:hover": {
+      background: isSelected
+        ? "linear-gradient(135deg, #163a4a 0%, #1e6658 100%)"
+        : "rgba(30, 102, 88, 0.08)",
+    },
+  }}
+/>
                         </Zoom>
                       );
                     })}

@@ -70,28 +70,34 @@ export default function SearchPage() {
 const searchDoctorsByCity = async (pageNo = 1) => {
   try {
     setLoading(true);
+    setError("");
 
     const limit = itemsPerPage;
     const offset = (pageNo - 1) * itemsPerPage;
-    const city = await getCurrentCity();
 
-  const res = await api.get(
-  "/api/doctors/doctor/search",
-  {
-    params: {
-      search: city,
-      limit,
-      offset,
-    },
-  }
-);
+    let city = "";
+
+    try {
+      city = await getCurrentCity();
+      console.log("City:", city);
+    } catch (err) {
+      console.log("Location nahi mili, all doctors load honge");
+    }
+
+    const res = await api.get("/api/doctors/doctor/search", {
+      params: {
+        search: city || "",
+        limit,
+        offset,
+      },
+    });
 
     const mappedData = (res.data.data || []).map((doctor) => ({
       ...doctor,
       id: doctor.userId,
       name: doctor.fullName || "Dr. User",
-      speciality: doctor.specialization,
-      education: doctor.qualification,
+      speciality: doctor.specialization || "Speciality Not Available",
+      education: doctor.qualification || "Not Available",
       hospital:
         doctor.hospitalDetail?.[0]?.hospitalName ||
         "Hospital Not Available",
@@ -104,8 +110,12 @@ const searchDoctorsByCity = async (pageNo = 1) => {
 
     setResults(mappedData);
   } catch (err) {
-    console.log("Location denied. Loading all doctors.");
+    console.error(err);
 
+    setError(
+      err?.response?.data?.message ||
+        "Doctors load nahi ho pa rahe. Please try again."
+    );
   } finally {
     setLoading(false);
   }
@@ -257,10 +267,7 @@ const handlePageChange = (newPage) => {
     filteredResults.length / itemsPerPage
   );
 
-  const paginatedResults = filteredResults.slice(
-    (page - 1) * itemsPerPage,
-    page * itemsPerPage
-  );
+const paginatedResults = filteredResults;
 
   const styles = {
     container: {
@@ -336,38 +343,48 @@ const handlePageChange = (newPage) => {
   return (
     <div style={styles.container}>
       {/* Header Row - Search + Favorites in one line */}
-      <div style={{ ...styles.headerRow, marginBottom: "50px" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            width: "100%",
-            marginBottom: "50px",
-          }}
-        >
-          <div style={{ flex: 1 }}>
-            <SearchBar onSearch={searchDoctors} />
-          </div>
+    <div style={{ ...styles.headerRow, marginBottom: isMobile ? "20px" : "50px" }}>
+  <div
+    style={{
+      display: "flex",
+      flexDirection: isMobile ? "column" : "row",
+      alignItems: isMobile ? "stretch" : "center",
+      gap: isMobile ? "10px" : "12px",
+      width: "100%",
+      marginBottom: isMobile ? "20px" : "50px",
+    }}
+  >
+    {/* Search */}
+    <div style={{ flex: 1, width: "100%" }}>
+      <SearchBar onSearch={searchDoctors} />
+    </div>
 
-          <button
-            style={{
-              minWidth: "110px",
-              height: "48px",
-              background: "#1e6658",
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontWeight: 600,
-              padding: "0 20px",
-            }}
-            onClick={() => setFilterOpen(!filterOpen)}
-          >
-            Filter
-          </button>
-        </div>
-      </div>
+    {/* Filter */}
+    <div
+      style={{
+        display: "flex",
+        justifyContent: isMobile ? "flex-end" : "initial",
+      }}
+    >
+      <button
+        style={{
+          minWidth: "110px",
+          height: "48px",
+          background: "#1e6658",
+          color: "#fff",
+          border: "none",
+          borderRadius: "8px",
+          cursor: "pointer",
+          fontWeight: 600,
+          padding: "0 20px",
+        }}
+        onClick={() => setFilterOpen(!filterOpen)}
+      >
+        Filter
+      </button>
+    </div>
+  </div>
+</div>
 
       {/* Loading State */}
       {loading ? (
