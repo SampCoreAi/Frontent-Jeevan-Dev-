@@ -232,7 +232,7 @@ export default function DoctorCard() {
             </Box>
           </CardContent>
         </Card>
-      </Box>
+      </Box>FiltersSidebar.jsx
     </Box>
   );
 }

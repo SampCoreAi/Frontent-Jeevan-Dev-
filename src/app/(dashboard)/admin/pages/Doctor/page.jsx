@@ -72,11 +72,15 @@ const getAllDoctors = async () => {
   ];
 
   const filteredDoctors = doctorsList.filter((doctor) => {
-    const matchesSearch =
-      searchTerm === "" ||
-      doctor.user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.user.email.toLowerCase().includes(searchTerm.toLowerCase());
+   const search = searchTerm.toLowerCase().trim();
+
+const matchesSearch =
+  search === "" ||
+  doctor?.full_name?.toLowerCase().includes(search) ||
+  doctor?.username?.toLowerCase().includes(search) ||
+  doctor?.email?.toLowerCase().includes(search) ||
+  doctor?.phoneNumber?.toString().includes(search) ||
+  doctor?.specialization?.toLowerCase().includes(search);
 
     const matchesSpec =
       selectedSpec === "" || doctor.specialization === selectedSpec;

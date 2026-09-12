@@ -150,13 +150,13 @@ export default function DoctorsTable({
 
       <TableBody>
   {doctors && doctors.length > 0 ? (
-    doctors.map((doc) => (
-      <TableRow
-        key={doc.doctorId}
-        sx={{
-          "&:hover": { backgroundColor: "#f5f7fb" },
-        }}
-      >
+  doctors.map((doc, index) => (
+  <TableRow
+    key={doc.doctorId ?? doc.id ?? doc.email ?? `doctor-${index}`}
+    sx={{
+      "&:hover": { backgroundColor: "#f5f7fb" },
+    }}
+  >
         <TableCell>
           <Box display="flex" gap={1} alignItems="center">
             <Avatar src={doc.images?.[0]?.url || ""} />
@@ -469,7 +469,7 @@ export default function DoctorsTable({
               fontSize: 15,
             }}
           >
-            Enter Registration Number for {selectedDoctor?.user?.full_name}
+         Enter Registration Number for {selectedDoctor?.full_name || "Doctor"}
           </Typography>
 
           <TextField
