@@ -48,7 +48,6 @@ const Navbar = ({
   const [emergencyOpen, setEmergencyOpen] = useState(false);
   const soundIntervalRef = useRef(null);
   const router = useRouter();
-  const [trackAppointmentOpen, setTrackAppointmentOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [openCalendar, setOpenCalendar] = useState(false);
   const isMobile = useMediaQuery("(max-width:600px)");
@@ -314,11 +313,8 @@ const Navbar = ({
                   onClick={(event) => {
                     if (item.label === "Calendar") {
                       setAnchorEl(event.currentTarget);
-                    } else if (
-                      item.label === "Track Appointment"
-                    ) {
-                      setTrackAppointmentOpen(true);
-                    } else {
+                    } 
+                     else {
                       item.onClick?.();
                     }
                   }}
@@ -427,10 +423,7 @@ const Navbar = ({
       </Drawer>
 
       <audio ref={alertAudioRef} src="/sound/alert.mp3" preload="auto" />
-      <TrackAppointment
-        open={trackAppointmentOpen}
-        onClose={() => setTrackAppointmentOpen(false)}
-      />
+     
       <Dialog
         open={emergencyOpen}
         onClose={handleCloseEmergency}

@@ -217,7 +217,7 @@ const handleNavigation = (page) => {
         >
           {[
             { icon: LocalPhoneOutlinedIcon, text: "24x7 Support" },
-            { icon: LocalPhoneOutlinedIcon, text: "+880 1234 56789" },
+            { icon: LocalPhoneOutlinedIcon, text: "+91 8770753546" },
             { icon: EmailOutlinedIcon, text: "support@mail.com" },
             { icon: LocationOnOutlinedIcon, text: "123, Your Street" },
           ].map((item, index) => (
@@ -524,7 +524,7 @@ const handleNavigation = (page) => {
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <EmailOutlinedIcon sx={{ fontSize: 18, color: "text.secondary" }} />
               <Typography variant="body2" color="text.secondary">
-                support@yourmail.com
+                contact@sampcoreai.com
               </Typography>
             </Box>
           </Box>

@@ -154,7 +154,13 @@ const [uploadSuccess, setUploadSuccess] = useState("");
             fileType: fileKey.split(".").pop()?.toLowerCase(),
             folderId: targetFolderId,
             url: `${baseUrl}/${fileKey}`,
-            date: new Date(file.created_at).toLocaleDateString(),
+            date: file.createdAt
+  ? new Date(file.createdAt.replace(" ", "T")).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
+  : "-",
           };
 
           if (foldersMap[targetFolderId]) {
@@ -385,25 +391,21 @@ const processFiles = async (files) => {
   try {
     setUploading(true);
     setUploadSuccess("");
-
-    // ✅ Bas Document folder
-    const folderNameParam = "documents";
+const folderNameParam = getFolderPath(selectedFolder);
 
     for (const file of files) {
       const formData = new FormData();
       formData.append("file", file);
 
-      await axios.post(
-        `${API_BASE_URL}/licenseFile/upload?folder=${encodeURIComponent(
-          folderNameParam
-        )}`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+     await axios.post(
+  `${API_BASE_URL}/licenseFile/upload?folder=${folderNameParam}`,
+  formData,
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
     }
 
     // ✅ IMPORTANT:
@@ -509,15 +511,38 @@ const processFiles = async (files) => {
     }
   };
 
-  const handleDownload = (file) => {
-    const link = document.createElement("a");
-    link.href = file.url;
-    link.download = file.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+const handleDownload = async (file) => {
+  try {
+    const response = await fetch(file.url, {
+      method: "GET",
+      mode: "cors",
+    });
 
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = file.name || "download";
+    a.style.display = "none";
+
+    document.body.appendChild(a);
+    a.click();
+
+    setTimeout(() => {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }, 100);
+  } catch (error) {
+    console.error("Download error:", error);
+    alert("Download failed. S3 CORS check karo.");
+  }
+};
 
   const getFilesForCurrentFolder = () => {
     return allFiles.filter(

@@ -63,7 +63,6 @@ const NotificationPopover = () => {
 
       const result = await response.json();
 
-      console.log("🔔 Notification Response:", result);
 
       if (!response.ok) {
         throw new Error(

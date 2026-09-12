@@ -210,7 +210,14 @@ const CardHistory = ({
                     : {},
               }}
             >
-              <CardContent sx={{ p: 3 }}>
+              <CardContent
+  sx={{
+    p: {
+      xs: 0, 
+      sm: 3, 
+    },
+  }}
+>
 
                 {/* ================================================= */}
                 {/* HEADER */}

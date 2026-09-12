@@ -9,7 +9,20 @@ import {
   Typography,
   CircularProgress,
   Alert,
+  IconButton,
 } from "@mui/material";
+
+import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CloseIcon from "@mui/icons-material/Close";
+import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
+import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import SlideshowOutlinedIcon from "@mui/icons-material/SlideshowOutlined";
+
+const THEME_COLOR = "#0f4f3f";
+const THEME_COLOR_DARK = "#0c3f33";
 
 export const UploadDialog = ({
   openUpload,
@@ -38,6 +51,11 @@ export const UploadDialog = ({
       maxWidth="sm"
       fullWidth
       fullScreen={isMobile}
+      PaperProps={{
+        sx: {
+          borderRadius: isMobile ? 0 : 3,
+        },
+      }}
     >
       {/* ================= TITLE ================= */}
 
@@ -46,14 +64,34 @@ export const UploadDialog = ({
           fontWeight: 600,
           fontSize: isMobile ? "1.1rem" : "1.25rem",
           p: isMobile ? 2 : 3,
-          color: "#0f4f3f",
+          color: THEME_COLOR,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
-        {uploading
-          ? "Uploading File"
-          : uploadSuccess
-          ? "Upload Complete"
-          : "Upload Files"}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {uploadSuccess ? (
+            <CheckCircleOutlineIcon sx={{ color: THEME_COLOR }} />
+          ) : (
+            <CloudUploadOutlinedIcon sx={{ color: THEME_COLOR }} />
+          )}
+          {uploading
+            ? "Uploading File"
+            : uploadSuccess
+            ? "Upload Complete"
+            : "Upload Files"}
+        </Box>
+
+        {!uploading && (
+          <IconButton
+            onClick={handleClose}
+            size="small"
+            sx={{ color: THEME_COLOR }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        )}
       </DialogTitle>
 
       {/* ================= CONTENT ================= */}
@@ -68,7 +106,7 @@ export const UploadDialog = ({
         {uploading ? (
           <Box
             sx={{
-              border: "2px dashed #0f4f3f",
+              border: `2px dashed ${THEME_COLOR}`,
               borderRadius: 2,
               height: isMobile ? "200px" : "250px",
               bgcolor: "#fafafa",
@@ -86,22 +124,19 @@ export const UploadDialog = ({
               size={isMobile ? 40 : 50}
               thickness={4}
               sx={{
-                color: "#0f4f3f",
+                color: THEME_COLOR,
               }}
             />
 
             <Typography
               fontWeight={600}
               fontSize={isMobile ? 15 : 18}
-              color="#0f4f3f"
+              color={THEME_COLOR}
             >
               Uploading...
             </Typography>
 
-            <Typography
-              fontSize={isMobile ? 11 : 13}
-              color="text.secondary"
-            >
+            <Typography fontSize={isMobile ? 11 : 13} color="black">
               Please wait while your file is being uploaded.
             </Typography>
           </Box>
@@ -131,14 +166,16 @@ export const UploadDialog = ({
                 justifyContent: "center",
                 alignItems: "center",
 
-                fontSize: 36,
                 mb: 2,
               }}
             >
-              ✅
+              <CheckCircleOutlineIcon
+                sx={{ fontSize: 40, color: "#2e7d32" }}
+              />
             </Box>
 
             <Alert
+              icon={false}
               severity="success"
               sx={{
                 width: "100%",
@@ -150,7 +187,7 @@ export const UploadDialog = ({
 
             <Typography
               variant="body2"
-              color="text.secondary"
+              color="black"
               sx={{
                 mt: 2,
               }}
@@ -167,7 +204,7 @@ export const UploadDialog = ({
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               sx={{
-                border: "2px dashed #0f4f3f",
+                border: `2px dashed ${THEME_COLOR}`,
                 borderRadius: 2,
 
                 p: isMobile ? 2 : 4,
@@ -188,21 +225,20 @@ export const UploadDialog = ({
             >
               {/* Cloud Icon */}
 
-              <Box
+              <CloudUploadOutlinedIcon
                 sx={{
-                  fontSize: isMobile ? 32 : 48,
+                  fontSize: isMobile ? 40 : 56,
+                  color: THEME_COLOR,
                   mb: 1,
                 }}
-              >
-                ☁️
-              </Box>
+              />
 
               {/* Heading */}
 
               <Typography
                 fontWeight={600}
                 fontSize={isMobile ? 14 : 18}
-                color="#0f4f3f"
+                color={THEME_COLOR}
                 sx={{
                   mb: 0.5,
                 }}
@@ -216,21 +252,32 @@ export const UploadDialog = ({
                 fontSize={isMobile ? 11 : 13}
                 color="black"
                 sx={{
-                  mb: 2,
+                  mb: 1.5,
                 }}
                 textAlign="center"
               >
                 Files will be uploaded to:{" "}
                 <strong>{currentFolderName || "Document"}</strong>
-
                 <br />
-
-                Supported formats: PDF, DOC, DOCX, JPEG, PNG, PPT
-
-                <br />
-
                 Max size: 20MB
               </Typography>
+
+              {/* Supported format icons */}
+
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 1.5,
+                  mb: 2,
+                  color: THEME_COLOR,
+                  opacity: 0.75,
+                }}
+              >
+                <PictureAsPdfOutlinedIcon fontSize={isMobile ? "small" : "medium"} />
+                <DescriptionOutlinedIcon fontSize={isMobile ? "small" : "medium"} />
+                <ImageOutlinedIcon fontSize={isMobile ? "small" : "medium"} />
+                <SlideshowOutlinedIcon fontSize={isMobile ? "small" : "medium"} />
+              </Box>
 
               {/* Browse Button */}
 
@@ -238,16 +285,15 @@ export const UploadDialog = ({
                 component="label"
                 variant="contained"
                 size={isMobile ? "small" : "medium"}
+                startIcon={<InsertDriveFileOutlinedIcon />}
                 sx={{
-                  bgcolor: "#0f4f3f",
+                  bgcolor: THEME_COLOR,
 
                   "&:hover": {
-                    bgcolor: "#0c3f33",
+                    bgcolor: THEME_COLOR_DARK,
                   },
 
-                  fontSize: isMobile
-                    ? "0.75rem"
-                    : "0.875rem",
+                  fontSize: isMobile ? "0.75rem" : "0.875rem",
 
                   textTransform: "none",
                   px: 3,
@@ -277,11 +323,9 @@ export const UploadDialog = ({
                 onClick={handleClose}
                 size={isMobile ? "small" : "medium"}
                 sx={{
-                  fontSize: isMobile
-                    ? "0.75rem"
-                    : "0.875rem",
+                  fontSize: isMobile ? "0.75rem" : "0.875rem",
 
-                  color: "#0f4f3f",
+                  color: THEME_COLOR,
                   textTransform: "none",
                 }}
               >
