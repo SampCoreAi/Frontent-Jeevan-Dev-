@@ -124,57 +124,64 @@ const [uploadSuccess, setUploadSuccess] = useState("");
         };
 
         const mappedFiles = filesData.map((file) => {
-          let dbFolder = file.folder_name || "";
-          dbFolder = dbFolder.replace(/\\/g, "/");
+  let dbFolder = file.folderName || "";
 
-          const parts = dbFolder.split("/").filter(Boolean);
+  dbFolder = dbFolder.replace(/\\/g, "/");
 
-          if (parts[0]?.toLowerCase() === "document") {
-            parts.shift();
-          }
+  const parts = dbFolder.split("/").filter(Boolean);
 
-          const targetFolderId = findOrCreatePath(parts, "root");
+  // "Document" root already frontend me bana hua hai
+  if (parts[0]?.toLowerCase() === "document") {
+    parts.shift();
+  }
 
-          const baseUrl = process.env.NEXT_PUBLIC_S3_BUCKET_URL;
+  const targetFolderId = findOrCreatePath(parts, "root");
+const fileKey = file.fileUrl?.split("?")[0];
 
-          const fileKey = file.file_key;
-          const extension = fileKey.split(".").pop()?.toLowerCase();
+const extension = fileKey
+  ?.split(".")
+  .pop()
+  ?.toLowerCase();
 
-          const fileObj = {
-            id: file.id || file.file_key,
-            name: fileKey.split("/").pop(),
-            size: "0 MB",
+const S3_BUCKET_URL = process.env.NEXT_PUBLIC_S3_BUCKET_URL;
 
-            type:
-              extension === "pdf"
-                ? "application/pdf"
-                : ["jpg", "jpeg", "png", "webp"].includes(extension)
-                  ? "image"
-                  : "file",
-            fileType: fileKey.split(".").pop()?.toLowerCase(),
-            folderId: targetFolderId,
-            url: `${baseUrl}/${fileKey}`,
-            date: file.createdAt
-  ? new Date(file.createdAt.replace(" ", "T")).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    })
-  : "-",
-          };
+const fileObj = {
+  id: file.id,
 
-          if (foldersMap[targetFolderId]) {
-            foldersMap[targetFolderId].children.push({
-              id: fileObj.id,
-              name: fileObj.name,
-              type: "file",
-              fileType: fileObj.fileType,
-              folderId: targetFolderId,
-            });
-          }
+  name: file.originalName || "Unknown file",
 
-          return fileObj;
-        });
+  size: file.fileSize || "0 MB",
+
+  type:
+    extension === "pdf"
+      ? "application/pdf"
+      : ["jpg", "jpeg", "png", "webp"].includes(extension)
+        ? "image"
+        : "file",
+
+  fileType: extension,
+
+  folderId: targetFolderId,
+
+  url: `${S3_BUCKET_URL}${file.fileUrl}`,
+
+  date: file.createdAt || "-",
+};
+
+
+
+  if (foldersMap[targetFolderId]) {
+    foldersMap[targetFolderId].children.push({
+      id: fileObj.id,
+      name: fileObj.name,
+      type: "file",
+      fileType: fileObj.fileType,
+      folderId: targetFolderId,
+    });
+  }
+
+  return fileObj;
+});
 
 
         setFolders([rootFolder]);

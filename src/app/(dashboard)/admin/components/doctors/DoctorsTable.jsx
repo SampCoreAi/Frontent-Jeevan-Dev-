@@ -136,8 +136,8 @@ export default function DoctorsTable({
   }
 
   return (
-    <Paper>
-      <Table>
+    <Paper >
+      <Table >
         <TableHead>
           <TableRow sx={{ backgroundColor: "#f8f9fa" }}>
             <TableCell>DOCTOR NAME</TableCell>
@@ -149,91 +149,91 @@ export default function DoctorsTable({
           </TableRow>
         </TableHead>
 
-      <TableBody>
-  {doctors && doctors.length > 0 ? (
-  doctors.map((doc, index) => (
-  <TableRow
-    key={doc.doctorId ?? doc.id ?? doc.email ?? `doctor-${index}`}
-    sx={{
-      "&:hover": { backgroundColor: "#f5f7fb" },
-    }}
-  >
-        <TableCell>
-          <Box display="flex" gap={1} alignItems="center">
-            <Avatar src={doc.images?.[0]?.url || ""} />
-            <Box>
-              <Typography fontWeight={500}>
-                {doc.full_name || "N/A"}
-              </Typography>
-              <Typography fontSize={12} color="black">
-                ID: {doc.doctorId}
-              </Typography>
-            </Box>
-          </Box>
-        </TableCell>
+        <TableBody>
+          {doctors && doctors.length > 0 ? (
+            doctors.map((doc, index) => (
+              <TableRow
+                key={doc.doctorId ?? doc.id ?? doc.email ?? `doctor-${index}`}
+                sx={{
+                  "&:hover": { backgroundColor: "#f5f7fb" },
+                }}
+              >
+                <TableCell>
+                  <Box display="flex" gap={1} alignItems="center">
+                    <Avatar src={doc.images?.[0]?.url || ""} />
+                    <Box>
+                      <Typography fontWeight={500}>
+                        {doc.full_name || "N/A"}
+                      </Typography>
+                      <Typography fontSize={12} color="black">
+                        ID: {doc.doctorId}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </TableCell>
 
-        <TableCell>
-          <Typography fontSize={14}>
-            {doc.email || "N/A"}
-          </Typography>
-          <Typography fontSize={12} color="black">
-            {doc.phoneNumber || "N/A"}
-          </Typography>
-        </TableCell>
+                <TableCell>
+                  <Typography fontSize={14}>
+                    {doc.email || "N/A"}
+                  </Typography>
+                  <Typography fontSize={12} color="black">
+                    {doc.phoneNumber || "N/A"}
+                  </Typography>
+                </TableCell>
 
-        <TableCell>
-          <Typography fontSize={14}>
-            Age: {doc.age || "N/A"}
-          </Typography>
-          <Typography fontSize={12} color="black">
-            Gender: {doc.gender || "N/A"}
-          </Typography>
-        </TableCell>
+                <TableCell>
+                  <Typography fontSize={14}>
+                    Age: {doc.age || "N/A"}
+                  </Typography>
+                  <Typography fontSize={12} color="black">
+                    Gender: {doc.gender || "N/A"}
+                  </Typography>
+                </TableCell>
 
-        <TableCell>
-          <Typography fontSize={14}>
-            {doc.specialization || "N/A"}
-          </Typography>
-          <Typography fontSize={12} color="black">
-            {doc.qualification || "N/A"}
-          </Typography>
-        </TableCell>
+                <TableCell>
+                  <Typography fontSize={14}>
+                    {doc.specialization || "N/A"}
+                  </Typography>
+                  <Typography fontSize={12} color="black">
+                    {doc.qualification || "N/A"}
+                  </Typography>
+                </TableCell>
 
-        <TableCell>
-          <Chip
-            label={doc.status}
-            size="small"
-            color={statusColor[doc.status]}
-            sx={{ fontWeight: 500, minWidth: 80 }}
-          />
-        </TableCell>
+                <TableCell>
+                  <Chip
+                    label={doc.status}
+                    size="small"
+                    color={statusColor[doc.status]}
+                    sx={{ fontWeight: 500, minWidth: 80 }}
+                  />
+                </TableCell>
 
-        <TableCell align="right">
-          <IconButton
-            size="small"
-            onClick={(e) => handleMenuOpen(e, doc)}
-          >
-            <MoreVertIcon />
-          </IconButton>
-        </TableCell>
-      </TableRow>
-    ))
-  ) : (
-    <TableRow>
-      <TableCell
-        colSpan={6}
-        align="center"
-        sx={{
-          py: 6,
-          color: "black",
-          fontSize: 16,
-        }}
-      >
-        No Data Found
-      </TableCell>
-    </TableRow>
-  )}
-</TableBody>
+                <TableCell align="right">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleMenuOpen(e, doc)}
+                  >
+                    <MoreVertIcon />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell
+                colSpan={6}
+                align="center"
+                sx={{
+                  py: 6,
+                  color: "black",
+                  fontSize: 16,
+                }}
+              >
+                No Data Found
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
       </Table>
 
       <Box sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
@@ -470,7 +470,7 @@ export default function DoctorsTable({
               fontSize: 15,
             }}
           >
-         Enter Registration Number for {selectedDoctor?.full_name || "Doctor"}
+            Enter Registration Number for {selectedDoctor?.full_name || "Doctor"}
           </Typography>
 
           <TextField

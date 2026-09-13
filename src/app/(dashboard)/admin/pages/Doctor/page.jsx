@@ -96,11 +96,12 @@ const matchesSearch =
     <Box
       p={4}
       sx={{
-        backgroundColor: "#fff",
+        backgroundColor: "red",
         boxShadow: "0 4px 12px #0f7468",
         mt: 8.5,
         mx: 1,
         borderRadius: 1,
+
       }}
     >
     

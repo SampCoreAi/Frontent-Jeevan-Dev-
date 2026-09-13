@@ -83,13 +83,6 @@ const NotificationPopover = () => {
     }
   };
 
-  // ============================
-  // FETCH ON PAGE LOAD
-  // ============================
-
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
 
   // ============================
   // OPEN

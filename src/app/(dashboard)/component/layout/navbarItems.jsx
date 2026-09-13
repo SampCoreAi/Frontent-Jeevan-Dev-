@@ -14,11 +14,7 @@ export const navbarItems = {
       label: "Calendar",
       onClick: () => console.log("User Calendar"),
     },
-    {
-      icon: TrackChangesIcon,
-      label: "Track Appointment",
-      onClick: () => console.log("Track Appointment"),
-    },
+   
   ],
 
   2: [

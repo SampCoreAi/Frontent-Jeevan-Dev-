@@ -9,12 +9,13 @@ import {
   Typography,
   Collapse,
 } from "@mui/material";
+
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 
 export const DocumentExplorer = ({
   folders,
@@ -34,6 +35,10 @@ export const DocumentExplorer = ({
   createFolder,
   removeFolder,
 }) => {
+  // =========================
+  // FOLDER TREE
+  // =========================
+
   const renderTree = (nodes, depth = 0) => {
     return (
       <>
@@ -41,161 +46,402 @@ export const DocumentExplorer = ({
           const isExpanded = expandedFolders[node.id] || false;
           const isSelected = selectedFolder === node.id;
 
-          if (node.type === "folder") {
-            return (
-              <Box key={node.id}>
-                <ListItem
+          if (node.type !== "folder") return null;
+
+          return (
+            <Box key={node.id}>
+              {/* FOLDER ROW */}
+              <ListItem
+                disableGutters
+                onClick={(e) => {
+                  e.stopPropagation();
+
+                  toggleFolder(node.id);
+                  setSelectedFolder(node.id);
+
+                  if (isMobile) {
+                    setDrawerOpen(false);
+                  }
+                }}
+                sx={{
+                  minHeight: 36,
+
+                  pl: `${8 + depth * 14}px`,
+                  pr: 0.8,
+                  py: 0.3,
+                  mb: 0.2,
+
+                  cursor: "pointer",
+
+                  borderRadius: 1.5,
+
+                  bgcolor: isSelected ? "#e8f4f1" : "transparent",
+
+                  transition: "all 0.15s ease",
+
+                  "&:hover": {
+                    bgcolor: isSelected ? "#e1f0ec" : "#f5f8f7",
+                  },
+
+                  ...(isSelected && {
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      left: 0,
+                      top: 6,
+                      bottom: 6,
+                      width: 3,
+                      borderRadius: "0 4px 4px 0",
+                      bgcolor: "#0f7468",
+                    },
+                  }),
+                }}
+              >
+                {/* ARROW */}
+                <Box
                   sx={{
-                    pl: depth * 2 + 2,
-                    cursor: "pointer",
-                    borderRadius: 1,
-                    bgcolor: isSelected ? "#e6f2ef" : "transparent",
-                    "&:hover": { bgcolor: "#f5f5f5" },
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFolder(node.id);
-                    setSelectedFolder(node.id);
-                    if (isMobile) {
-                      setDrawerOpen(false);
-                    }
+                    width: 24,
+                    height: 28,
+
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+
+                    flexShrink: 0,
+
+                    color: "#69736f",
                   }}
                 >
-                  <IconButton size="small" sx={{ mr: 0.5, p: 0.5 }}>
-                    {isExpanded ? (
-                      <KeyboardArrowDownIcon sx={{ fontSize: 16 }} />
-                    ) : (
-                      <KeyboardArrowRightIcon sx={{ fontSize: 16 }} />
-                    )}
-                  </IconButton>
+                  {isExpanded ? (
+                    <KeyboardArrowDownIcon
+                      sx={{
+                        fontSize: 18,
+                      }}
+                    />
+                  ) : (
+                    <KeyboardArrowRightIcon
+                      sx={{
+                        fontSize: 18,
+                      }}
+                    />
+                  )}
+                </Box>
 
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        {isExpanded ? (
-                          <FolderOpenOutlinedIcon
-                            fontSize="small"
-                            sx={{ color: "#f8c159" }}
-                          />
-                        ) : (
+                {/* FOLDER */}
+                <Box
+                  sx={{
+                    width: 27,
+                    height: 28,
+
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+
+                    flexShrink: 0,
+                    mr: 0.6,
+                  }}
+                >
+                  {isExpanded ? (
+                    <FolderOpenOutlinedIcon
+                      sx={{
+                        fontSize: 20,
+                        color: "#e8a92e",
+                      }}
+                    />
+                  ) : (
+                    <FolderOutlinedIcon
+                      sx={{
+                        fontSize: 20,
+                        color: "#e8a92e",
+                      }}
+                    />
+                  )}
+                </Box>
+
+                {/* NAME */}
+                <ListItemText
+                  sx={{
+                    m: 0,
+                    minWidth: 0,
+                  }}
+                  primary={
+                    <Typography
+                      noWrap
+                      title={node.name}
+                      sx={{
+                        fontSize: "0.8rem",
+                        lineHeight: 1.3,
+
+                        fontWeight: isSelected ? 600 : 500,
+
+                        color: isSelected ? "#0f4f3f" : "#37413e",
+
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {node.name}
+                    </Typography>
+                  }
+                />
+              </ListItem>
+
+              {/* CHILDREN */}
+              {node.children && (
+                <Collapse
+                  in={isExpanded}
+                  timeout="auto"
+                  unmountOnExit
+                >
+                  <List
+                    dense
+                    disablePadding
+                    sx={{
+                      width: "100%",
+                    }}
+                  >
+                    {/* CREATE NEW FOLDER INPUT */}
+                    {creatingFolder &&
+                      parentForNewFolder === node.id && (
+                        <ListItem
+                          disableGutters
+                          sx={{
+                            minHeight: 36,
+                            pl: `${46 + depth * 14}px`,
+                            pr: 1,
+                            py: 0.4,
+                          }}
+                        >
                           <FolderOutlinedIcon
-                            fontSize="small"
-                            sx={{ color: "#f8c159" }}
+                            sx={{
+                              mr: 0.8,
+                              flexShrink: 0,
+                              fontSize: 19,
+                              color: "#e8a92e",
+                            }}
                           />
-                        )}
-                        <Typography fontSize={13}>{node.name}</Typography>
-                      </Box>
-                    }
-                  />
-                </ListItem>
 
-                {node.children && (
-                  <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                    <List dense sx={{ p: 0 }}>
-                      {creatingFolder && parentForNewFolder === node.id && (
-                        <ListItem sx={{ pl: depth * 2 + 4 }}>
-                          <FolderOutlinedIcon sx={{ mr: 1, color: "#f8c159" }} />
-                          <input
+                          <Box
+                            component="input"
                             autoFocus
                             value={newFolderName}
-                            onChange={(e) => setNewFolderName(e.target.value)}
+                            placeholder="Folder name"
+                            onChange={(e) =>
+                              setNewFolderName(e.target.value)
+                            }
                             onBlur={saveNewFolder}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") saveNewFolder();
+                              if (e.key === "Enter") {
+                                saveNewFolder();
+                              }
+
                               if (e.key === "Escape") {
                                 setCreatingFolder(false);
                                 setParentForNewFolder(null);
                               }
                             }}
-                            style={{
-                              border: "1px solid #ccc",
-                              borderRadius: 4,
-                              padding: "2px 6px",
-                              fontSize: 13,
+                            sx={{
                               width: "100%",
+                              minWidth: 0,
+
+                              height: 28,
+
+                              px: 1,
+
+                              boxSizing: "border-box",
+
+                              border: "1px solid #b7c8c3",
+                              borderRadius: 1,
+
+                              outline: "none",
+
+                              fontSize: "0.78rem",
+
+                              color: "#26332f",
+
+                              bgcolor: "#fff",
+
+                              "&:focus": {
+                                borderColor: "#0f7468",
+                                boxShadow:
+                                  "0 0 0 2px rgba(15,116,104,0.08)",
+                              },
                             }}
                           />
                         </ListItem>
                       )}
-                      {renderTree(node.children, depth + 1)}
-                    </List>
-                  </Collapse>
-                )}
-              </Box>
-            );
-          }
 
-          return null;
+                    {renderTree(node.children, depth + 1)}
+                  </List>
+                </Collapse>
+              )}
+            </Box>
+          );
         })}
       </>
     );
   };
 
-  const ExplorerContent = () => (
+  // =========================
+  // EXPLORER
+  // =========================
+
+  return (
     <Box
       sx={{
         width: isMobile ? "100%" : 260,
         minWidth: isMobile ? "auto" : 260,
-        borderRight: isMobile ? "none" : "1px solid #1e6658",
+
+        height: "100%",
+
         display: "flex",
         flexDirection: "column",
-        height: "100%",
+
         flexShrink: 0,
+
+        bgcolor: "#fff",
+
+        borderRight: isMobile
+          ? "none"
+          : "1px solid #898989",
       }}
     >
+      {/* ================= HEADER ================= */}
+
       <Box
         sx={{
-          p: isMobile ? 1.5 : 1.75,
-          borderBottom: "1px solid #1e6658",
-          bgcolor: "#ffffff",
-          flexShrink: 0,
+          height: 56,
+
+          px: 1.5,
+
           display: "flex",
-          justifyContent: "space-between",
           alignItems: "center",
+          justifyContent: "space-between",
+
+          flexShrink: 0,
+
+          borderBottom: "1px solid #898989",
+
+          bgcolor: "#fff",
         }}
       >
-        <Typography fontSize={isMobile ? 13 : 14} fontWeight={600} color="#0f4f3f">
+        <Typography
+          sx={{
+            fontSize: "0.78rem",
+            fontWeight: 700,
+
+            color: "#0f4f3f",
+
+            letterSpacing: "0.5px",
+          }}
+        >
           EXPLORER
         </Typography>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          <IconButton size="small" onClick={createFolder} title="Create Folder">
-            <AddIcon sx={{ fontSize: 18, color: "#0f4f3f" }} />
+        {/* HEADER ACTIONS */}
+
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0.3,
+          }}
+        >
+          {/* CREATE FOLDER */}
+
+          <IconButton
+            size="small"
+            onClick={createFolder}
+            title="Create Folder"
+            sx={{
+              width: 32,
+              height: 32,
+
+              color: "#0f4f3f",
+
+              "&:hover": {
+                bgcolor: "#e8f4f1",
+              },
+            }}
+          >
+            <AddIcon
+              sx={{
+                fontSize: 19,
+              }}
+            />
           </IconButton>
+
+          {/* DELETE FOLDER */}
 
           <IconButton
             size="small"
             onClick={removeFolder}
-            disabled={selectedFolder === "Document" || selectedFolder === "root"}
+            disabled={
+              selectedFolder === "Document" ||
+              selectedFolder === "root"
+            }
             title="Delete Folder"
+            sx={{
+              width: 32,
+              height: 32,
+
+              color: "#dc2626",
+
+              "&:hover": {
+                bgcolor: "#fef2f2",
+              },
+
+              "&.Mui-disabled": {
+                color: "#cbd5d1",
+              },
+            }}
           >
-            <DeleteIcon
+            <DeleteOutlineIcon
               sx={{
-                fontSize: 18,
-                color:
-                  selectedFolder === "Document" || selectedFolder === "root"
-                    ? "#ccc"
-                    : "#d32f2f",
+                fontSize: 19,
               }}
             />
           </IconButton>
         </Box>
       </Box>
 
+      {/* ================= FOLDER LIST ================= */}
+
       <Box
         sx={{
           flex: 1,
+
           overflowY: "auto",
           overflowX: "hidden",
-          p: isMobile ? 1.5 : 2,
+
+          px: 0.8,
+          py: 1,
+
+          // cleaner scrollbar
+          "&::-webkit-scrollbar": {
+            width: 5,
+          },
+
+          "&::-webkit-scrollbar-thumb": {
+            bgcolor: "#d5ddda",
+            borderRadius: 10,
+          },
+
+          "&::-webkit-scrollbar-thumb:hover": {
+            bgcolor: "#b7c5c1",
+          },
         }}
       >
-        <List dense sx={{ p: 0, width: "100%" }}>
+        <List
+          dense
+          disablePadding
+          sx={{
+            width: "100%",
+          }}
+        >
           {renderTree(folders)}
         </List>
       </Box>
     </Box>
   );
-
-  return <ExplorerContent />;
 };

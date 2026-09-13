@@ -22,11 +22,10 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import NotificationPopover from "../../users/components/Header/NotificationPopover";
-import TrackAppointment from "../../users/components/TrackAppointment/TrackAppointment";
+
 import {
   Search as SearchIcon,
   Menu as MenuIcon,
-  TrackChanges as TrackChangesIcon,
 } from "@mui/icons-material";
 
 import { navbarItems } from "./navbarItems";

@@ -60,183 +60,251 @@ export const FileListItem = ({
 
   return (
     <Paper
-      elevation={0}
+  elevation={0}
+  onClick={() => handleFileClick(file)}
+  sx={{
+    display: "flex",
+    alignItems: "center",
+    width: "100%",
+    minHeight: { xs: 64, sm: 68, md: 72 },
+    px: { xs: 1.2, sm: 1.5, md: 2 },
+    py: 0.8,
+    mb: 1,
+
+    border: "1px solid #e5e7eb",
+    borderRadius: 2,
+    bgcolor: "#fff",
+    boxSizing: "border-box",
+    cursor: "pointer",
+
+    transition: "all 0.18s ease",
+
+    "&:hover": {
+      bgcolor: "#f8fbfa",
+      borderColor: "#c7ddd7",
+      boxShadow: "0 2px 8px rgba(15, 79, 63, 0.08)",
+    },
+  }}
+>
+  {/* FILE TYPE ICON */}
+  <Box
+    sx={{
+      width: { xs: 36, sm: 38, md: 40 },
+      height: { xs: 36, sm: 38, md: 40 },
+      borderRadius: 2,
+      bgcolor: "#edf7f4",
+
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+
+      flexShrink: 0,
+      mr: { xs: 1.2, sm: 1.5 },
+    }}
+  >
+    {getSmallFileIcon(file.fileType)}
+  </Box>
+
+  {/* FILE INFO */}
+  <Box
+    sx={{
+      flex: 1,
+      minWidth: 0,
+      overflow: "hidden",
+    }}
+  >
+    <Typography
+      title={file.name}
+      noWrap
+      sx={{
+        fontSize: { xs: "0.82rem", sm: "0.88rem", md: "0.9rem" },
+        fontWeight: 600,
+        color: "#1f2937",
+        lineHeight: 1.35,
+        mb: 0.25,
+      }}
+    >
+      {file.name || "Unknown file"}
+    </Typography>
+
+    <Typography
+      noWrap
+      sx={{
+        fontSize: { xs: "0.65rem", sm: "0.7rem", md: "0.72rem" },
+        fontWeight: 400,
+        color: "#8a9491",
+        lineHeight: 1.3,
+      }}
+    >
+      {file.size || "0 MB"}
+
+      {file.date && (
+        <>
+          {" • "}
+          {new Date(file.date).toLocaleString("en-IN", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          })}
+        </>
+      )}
+    </Typography>
+  </Box>
+
+  {/* ACTIONS */}
+  {isDesktop ? (
+    <Box
       sx={{
         display: "flex",
         alignItems: "center",
-        p: isMobile ? 1 : isTablet ? 1.5 : 2,
-        mb: isMobile ? 0.5 : 1,
-        border: "2px solid #cecece",
-        borderRadius: 1,
-        cursor: "pointer",
-        width: "100%",
-        boxSizing: "border-box",
-        "&:hover": {
-          bgcolor: "#fafafa",
-          borderColor: "#0f4f3f",
-          boxShadow: "0 1px 4px rgba(15, 79, 63, 0.1)",
-        },
-        position: "relative",
+        gap: 0.4,
+        flexShrink: 0,
+        ml: 2,
+        p: 0.3,
+        borderRadius: 2,
+        bgcolor: "#f8faf9",
       }}
-      onClick={() => handleFileClick(file)}
     >
-      <Box
+      <IconButton
+        size="small"
+        title="Download"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleDownload(file);
+        }}
         sx={{
-          mr: isMobile ? 1 : isTablet ? 1.5 : 2,
-          flexShrink: 0,
+          width: 34,
+          height: 34,
+          color: "#0f5c4b",
+
+          "&:hover": {
+            bgcolor: "#e5f3ef",
+          },
         }}
       >
-        {getSmallFileIcon(file.fileType)}
-      </Box>
-      <Box sx={{ flex: 1, minWidth: 0, overflow: "hidden" ,  }}>
-        <Typography
-          variant="body1"
-          fontWeight={500}
-          noWrap
-          sx={{
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            fontSize: isMobile ? "0.8rem" : isTablet ? "0.9rem" : "1rem",
-          }}
-          title={file.name}
-        >
-          {file.name}
-        </Typography>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{
-            fontSize: isMobile ? "0.65rem" : isTablet ? "0.7rem" : "0.75rem",
-            color:"black"
-          }}
-        >
-          {file.size} • {file.date}
-        </Typography>
-      </Box>
+        <DownloadIcon sx={{ fontSize: 19 }} />
+      </IconButton>
 
-      {isDesktop ? (
-        <Box
-          sx={{
-            flexShrink: 0,
-            display: "flex",
-            gap: isMobile ? 0.25 : 0.5,
-          }}
-        >
-          <IconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDownload(file);
-            }}
-            sx={{
-              color: "#0f4f3f",
-              padding: isMobile ? "2px" : "4px",
-              "&:hover": { bgcolor: "#e6f2ef" },
-            }}
-            title="Download"
-          >
-            <DownloadIcon fontSize={isMobile ? "small" : "medium"} />
-          </IconButton>
+      <IconButton
+        size="small"
+        title="Open"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleFileClick(file);
+        }}
+        sx={{
+          width: 34,
+          height: 34,
+          color: "#0f5c4b",
 
-          <IconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              handleFileClick(file);
-            }}
-            sx={{
-              color: "#0f4f3f",
-              padding: isMobile ? "2px" : "4px",
-              "&:hover": { bgcolor: "#e6f2ef" },
-            }}
-            title="Open"
-          >
-            <OpenInNewIcon fontSize={isMobile ? "small" : "medium"} />
-          </IconButton>
+          "&:hover": {
+            bgcolor: "#e5f3ef",
+          },
+        }}
+      >
+        <OpenInNewIcon sx={{ fontSize: 19 }} />
+      </IconButton>
 
-          <IconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              removeFile(file.id);
-            }}
-            sx={{
-              color: "#d32f2f",
-              padding: isMobile ? "2px" : "4px",
-              "&:hover": { bgcolor: "#ffebee" },
-            }}
-            title="Delete"
-          >
-            <DeleteOutlineIcon fontSize={isMobile ? "small" : "medium"} />
-          </IconButton>
-        </Box>
-      ) : (
-        <>
-          <IconButton
-            size="small"
-            onClick={handleMenuClick}
-            sx={{
-              color: "#666",
-              padding: "4px",
-              "&:hover": {
-                bgcolor: "rgba(0, 0, 0, 0.04)",
-                color: "#0f4f3f",
-              },
-            }}
-            aria-label="file options"
-            aria-controls={open ? `list-menu-${file.id}` : undefined}
-            aria-haspopup="true"
-            aria-expanded={open ? "true" : undefined}
-          >
-            <MoreVertIcon fontSize="small" />
-          </IconButton>
+      <IconButton
+        size="small"
+        title="Delete"
+        onClick={(e) => {
+          e.stopPropagation();
+          removeFile(file.id);
+        }}
+        sx={{
+          width: 34,
+          height: 34,
+          color: "#dc2626",
 
-          <Menu
-            id={`list-menu-${file.id}`}
-            anchorEl={anchorEl}
-            open={open}
-            onClose={handleMenuClose}
-            onClick={(e) => e.stopPropagation()}
-            MenuListProps={{
-              "aria-labelledby": `list-button-${file.id}`,
-              dense: true,
-            }}
-            transformOrigin={{
-              horizontal: "right",
-              vertical: "top",
-            }}
-            anchorOrigin={{
-              horizontal: "right",
-              vertical: "bottom",
-            }}
-            sx={{
-              "& .MuiPaper-root": {
-                mt: 1,
-                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
-                borderRadius: 2,
-                minWidth: 180,
-              },
-            }}
-          >
-            <MenuItem onClick={handleOpenClick} sx={{ py: 1 }}>
-              <ListItemIcon>
-                <OpenInNewIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary="Open" />
-            </MenuItem>
-            <MenuItem onClick={handleDownloadClick} sx={{ py: 1 }}>
-              <ListItemIcon>
-                <DownloadIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary="Download" />
-            </MenuItem>
-            <Divider />
-            <MenuItem onClick={handleDeleteClick} sx={{ py: 1 }}>
-              <ListItemIcon>
-                <DeleteOutlineIcon fontSize="small" sx={{ color: "#d32f2f" }} />
-              </ListItemIcon>
-              <ListItemText primary="Delete" sx={{ color: "#d32f2f" }} />
-            </MenuItem>
-          </Menu>
-        </>
-      )}
-    </Paper>
+          "&:hover": {
+            bgcolor: "#feecec",
+          },
+        }}
+      >
+        <DeleteOutlineIcon sx={{ fontSize: 19 }} />
+      </IconButton>
+    </Box>
+  ) : (
+    <>
+      <IconButton
+        size="small"
+        onClick={handleMenuClick}
+        sx={{
+          width: 34,
+          height: 34,
+          ml: 1,
+          flexShrink: 0,
+          color: "#64706c",
+
+          "&:hover": {
+            bgcolor: "#edf5f2",
+            color: "#0f4f3f",
+          },
+        }}
+      >
+        <MoreVertIcon sx={{ fontSize: 20 }} />
+      </IconButton>
+
+      <Menu
+        id={`list-menu-${file.id}`}
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleMenuClose}
+        onClick={(e) => e.stopPropagation()}
+        anchorOrigin={{
+          horizontal: "right",
+          vertical: "bottom",
+        }}
+        transformOrigin={{
+          horizontal: "right",
+          vertical: "top",
+        }}
+        sx={{
+          "& .MuiPaper-root": {
+            mt: 0.5,
+            minWidth: 180,
+            borderRadius: 2,
+            border: "1px solid #e5e7eb",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+          },
+        }}
+      >
+        <MenuItem onClick={handleOpenClick} sx={{ py: 1 }}>
+          <ListItemIcon>
+            <OpenInNewIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Open" />
+        </MenuItem>
+
+        <MenuItem onClick={handleDownloadClick} sx={{ py: 1 }}>
+          <ListItemIcon>
+            <DownloadIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Download" />
+        </MenuItem>
+
+        <Divider />
+
+        <MenuItem onClick={handleDeleteClick} sx={{ py: 1 }}>
+          <ListItemIcon>
+            <DeleteOutlineIcon
+              fontSize="small"
+              sx={{ color: "#dc2626" }}
+            />
+          </ListItemIcon>
+
+          <ListItemText
+            primary="Delete"
+            sx={{ color: "#dc2626" }}
+          />
+        </MenuItem>
+      </Menu>
+    </>
+  )}
+</Paper>
   );
 };
