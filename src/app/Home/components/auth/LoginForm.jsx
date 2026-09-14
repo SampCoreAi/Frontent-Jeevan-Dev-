@@ -56,55 +56,65 @@ if (!API_URL) {
     );
   };
 
-  const handleLogin = async () => {
-    if (loading) return;
-    
-    const error = validateForm();
-    if (error) {
-      showMessage(error, "error");
-      return;
-    }
 
-   const emailValue = email.trim().toLowerCase();
-    let timeout;
+const handleLogin = async () => {
+  if (loading) return;
 
-    try {
-      setLoading(true);
-      const controller = new AbortController();
-      timeout = setTimeout(() => controller.abort(), 8000);
+  const error = validateForm();
 
-      const response = await axios.post(
-        `${API_URL}/api/auth/login`,
-        { email: emailValue, password },
-        { signal: controller.signal }
-      );
-      
-      const resData = response.data.data || response.data;
-      localStorage.setItem("token", resData.accessToken);
-      localStorage.setItem("refreshToken", resData.refreshToken);
-      localStorage.setItem("user", JSON.stringify(resData.user));
+  if (error) {
+    showMessage(error, "error");
+    return;
+  }
 
-      showMessage("Login successful!", "success");
+  const emailValue = email.trim().toLowerCase();
+  let timeout;
 
-      setTimeout(() => {
-        const role = resData.user.role_id;
-        if (role === 1) router.push("/users/pages/doctor");
-        else if (role === 2) router.push("/doctor/pages/dashboard");
-        else if (role === 3) router.push("/doctor/pages/dashboard");
-        else if (role === 4) router.push("/admin/pages/dashboard");
-        else router.push("/Home/pages/Register");
-      }, 1500);
-    } catch (error) {
-      if (error.name === "AbortError") {
-        showMessage("Request timed out. Try again.", "error");
-      } else {
-        showMessage(getErrorMessage(error), "error");
+  try {
+    setLoading(true);
+
+    const controller = new AbortController();
+    timeout = setTimeout(() => controller.abort(), 8000);
+
+    const response = await axios.post(
+      "/api/auth/login",
+      {
+        email: emailValue,
+        password,
+      },
+      {
+        signal: controller.signal,
       }
-    } finally {
-      clearTimeout(timeout);
-      setLoading(false);
+    );
+
+    const resData = response.data.data || response.data;
+
+    localStorage.setItem("token", resData.accessToken);
+    localStorage.setItem("refreshToken", resData.refreshToken);
+    localStorage.setItem("user", JSON.stringify(resData.user));
+
+    showMessage("Login successful!", "success");
+
+    setTimeout(() => {
+      const role = resData.user.role_id;
+
+      if (role === 1) router.push("/users/pages/doctor");
+      else if (role === 2) router.push("/doctor/pages/dashboard");
+      else if (role === 3) router.push("/doctor/pages/dashboard");
+      else if (role === 4) router.push("/admin/pages/dashboard");
+      else router.push("/Home/pages/Register");
+    }, 1500);
+  } catch (error) {
+    if (error.name === "AbortError" || error.code === "ERR_CANCELED") {
+      showMessage("Request timed out. Try again.", "error");
+    } else {
+      showMessage(getErrorMessage(error), "error");
     }
-  };
+  } finally {
+    clearTimeout(timeout);
+    setLoading(false);
+  }
+};
 
   return (
     <>
