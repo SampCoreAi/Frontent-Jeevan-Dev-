@@ -99,10 +99,16 @@ const TimeSlots = ({
             const isSelected =
               selectedSlot?.start === slot.start &&
               selectedSlot?.date === slot.date;
-            const isDisabled = slot.status !== "ACTIVE";
+            const isDisabled = slot.status?.toUpperCase() !== "ACTIVE";
 
-            const getTooltipMessage = () => {
-              if (slot.status === "INACTIVE") return "Already booked";
+    const getTooltipMessage = () => {
+  if (slot.status?.toUpperCase() === "DELETED") {
+    return "Slot unavailable";
+  }
+
+  if (slot.status?.toUpperCase() !== "ACTIVE") {
+    return "Already booked";
+  }
 
               const startTime = dayjs(`2000-01-01 ${slot.start}`);
 
