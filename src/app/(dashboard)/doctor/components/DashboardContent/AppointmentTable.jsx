@@ -6,14 +6,21 @@ import {
   Paper,
   Typography,
   Divider,
-
   Avatar,
   Box,
   CircularProgress,
 } from "@mui/material";
 
-const AppointmentTable = ({ appointments = [], loading }) => {
- 
+const AppointmentTable = ({
+  appointments = [],
+  loading,
+  onSelectAppointment,
+}) => {
+  const displayValue = (value) => {
+    return value !== null && value !== undefined && value !== ""
+      ? value
+      : "Not provided";
+  };
 
   return (
     <Paper
@@ -27,19 +34,20 @@ const AppointmentTable = ({ appointments = [], loading }) => {
       }}
     >
       <Typography
-              variant="h6"
-              sx={{
-                fontSize: {
-                  xs: "1rem",
-                  sm: "1.25rem",
-                },
-                fontWeight: 700,
-              }}
-            >
-              Today Appointment
-            </Typography>
-      
-            <Divider sx={{ my: 2 }} />
+        variant="h6"
+        sx={{
+          fontSize: {
+            xs: "1rem",
+            sm: "1.25rem",
+          },
+          fontWeight: 700,
+        }}
+      >
+        Today Appointment
+      </Typography>
+
+      <Divider sx={{ my: 2 }} />
+
       {loading ? (
         <Box
           sx={{
@@ -61,11 +69,18 @@ const AppointmentTable = ({ appointments = [], loading }) => {
           No appointments today
         </Typography>
       ) : (
-       <Box
-  
->
+        <Box>
           {appointments.slice(0, 5).map((appointment, index) => (
-            <Box key={appointment.appointment_id}>
+           <Box
+  key={appointment.appointment_id}
+  onClick={() => onSelectAppointment?.(appointment)}
+  sx={{
+    cursor: "pointer",
+    "&:hover": {
+      backgroundColor: "#f8fdfb",
+    },
+  }}
+>
               <Box
                 sx={{
                   display: "flex",
@@ -95,11 +110,22 @@ const AppointmentTable = ({ appointments = [], loading }) => {
                       flexShrink: 0,
                     }}
                   >
-                    {appointment.patient_name?.charAt(0) || "?"}
+                    {appointment.patient_name?.charAt(0)?.toUpperCase() || "?"}
                   </Avatar>
 
                   <Box sx={{ minWidth: 0 }}>
                     {/* USER NAME */}
+                    <Typography
+  sx={{
+    display: { xs: "block", sm: "none" },
+    color: "#1e6658",
+    fontSize: "0.7rem",
+    fontWeight: 600,
+    mt: 0.3,
+  }}
+>
+  Token {displayValue(appointment.token_number)}
+</Typography>
                     <Typography
                       sx={{
                         fontWeight: 700,
@@ -112,25 +138,56 @@ const AppointmentTable = ({ appointments = [], loading }) => {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {appointment.patient_name}
+                      {displayValue(appointment.patient_name)}
                     </Typography>
+                    {/* TOKEN NUMBER */}
+                   
 
                     {/* REASON FOR VISIT */}
                     <Typography
                       sx={{
-                        color: "#1e6658",
+                        color: "#666",
                         fontSize: {
                           xs: "0.75rem",
                           sm: "0.85rem",
                         },
-                        mt: 0.3,
+                        mt: 0.2,
                       }}
                     >
-                      {appointment.reason_for_visit}
+                      {displayValue(appointment.reason_for_visit)}
                     </Typography>
                   </Box>
                 </Box>
+{/* TOKEN - CENTER ON DESKTOP */}
+<Box
+  sx={{
+    display: { xs: "none", sm: "flex" },
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 100,
+  }}
+>
+  <Typography
+    sx={{
+      fontSize: "0.75rem",
+      color: "#777",
+      fontWeight: 500,
+    }}
+  >
+    Token
+  </Typography>
 
+  <Typography
+    sx={{
+      fontSize: "1rem",
+      color: "#1e6658",
+      fontWeight: 700,
+    }}
+  >
+    {displayValue(appointment.token_number)}
+  </Typography>
+</Box>
                 {/* RIGHT SIDE */}
                 <Box
                   sx={{
@@ -149,7 +206,7 @@ const AppointmentTable = ({ appointments = [], loading }) => {
                       mb: 0.8,
                     }}
                   >
-                    {appointment.start_time}
+                    {displayValue(appointment.start_time)}
                   </Typography>
 
                   {/* STATUS */}
@@ -166,52 +223,51 @@ const AppointmentTable = ({ appointments = [], loading }) => {
                         sm: "0.75rem",
                       },
                       fontWeight: 600,
+
                       bgcolor:
                         appointment.status === "Complete"
                           ? "#e7f7ef"
                           : appointment.status === "Pending"
-                          ? "#fff4e5"
-                          : "#e8f0ff",
+                            ? "#fff4e5"
+                            : "#e8f0ff",
+
                       color:
                         appointment.status === "Complete"
                           ? "#1b7f5f"
                           : appointment.status === "Pending"
-                          ? "#d97706"
-                          : "#2563eb",
+                            ? "#d97706"
+                            : "#2563eb",
                     }}
                   >
-                    {appointment.status}
+                    {displayValue(appointment.status)}
                   </Box>
                 </Box>
               </Box>
 
-              {index !== Math.min(appointments.length, 5) - 1&& (
+              {index !== Math.min(appointments.length, 5) - 1 && (
                 <Divider sx={{ borderColor: "#f1f1f1" }} />
               )}
-
-              
             </Box>
           ))}
 
           {appointments.length > 5 && (
-  <>
-    <Divider sx={{ my: 2 }} />
-    <Typography
-      sx={{
-        textAlign: "center",
-        color: "#1e6658",
-        fontWeight: 600,
-        cursor: "default",
-      }}
-    >
-      +{appointments.length - 5} More
-    </Typography>
-  </>
-)}
+            <>
+              <Divider sx={{ my: 2 }} />
+
+              <Typography
+                sx={{
+                  textAlign: "center",
+                  color: "#1e6658",
+                  fontWeight: 600,
+                  cursor: "default",
+                }}
+              >
+                +{appointments.length - 5} More
+              </Typography>
+            </>
+          )}
         </Box>
       )}
-
-     
     </Paper>
   );
 };

@@ -30,7 +30,7 @@ export default function Page() {
     today_cancelled: 0,
   });
 
-  const nextPatient = appointments[0] || null;
+const [selectedPatient, setSelectedPatient] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -76,7 +76,13 @@ export default function Page() {
           ),
         ]);
 
-        setAppointments(appointmentsRes.data.appointments || []);
+       const fetchedAppointments = appointmentsRes.data.appointments || [];
+
+setAppointments(fetchedAppointments);
+
+if (fetchedAppointments.length > 0) {
+  setSelectedPatient(fetchedAppointments[0]);
+}
 
         if (statsRes.data.success) {
           setTodayStats(statsRes.data.data);
@@ -122,17 +128,20 @@ export default function Page() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <AppointmentCard
-            appointments={appointments}
-            loading={loadingAppointments}
-          />
+        <AppointmentCard
+  appointments={appointments}
+  loading={loadingAppointments}
+  onSelectAppointment={(appointment) => {
+    setSelectedPatient(appointment);
+  }}
+/>
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <NextPatientCard
-            patient={nextPatient}
-            loading={loadingAppointments}
-          />
+         <NextPatientCard
+  patient={selectedPatient}
+  loading={loadingAppointments}
+/>
         </Grid>
       </Grid>
     </Box>
