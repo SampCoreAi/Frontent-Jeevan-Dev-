@@ -1,31 +1,31 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Avatar,
+  Box,
+  Button,
   Card,
   CardContent,
-  Typography,
-  Box,
   Chip,
-  Avatar,
-  Tooltip,
-  Zoom,
-  Button,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
+  DialogContent,
+  DialogTitle,
   TextField,
+  Tooltip,
+  Typography,
+  Zoom,
 } from "@mui/material";
 
 import dayjs from "dayjs";
 
-import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
-import VerifiedIcon from "@mui/icons-material/Verified";
-import CheckIcon from "@mui/icons-material/Check";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import CheckIcon from "@mui/icons-material/Check";
+import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import PersonIcon from "@mui/icons-material/Person";
-import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
+import VerifiedIcon from "@mui/icons-material/Verified";
+import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 
 const CardHistory = ({
   consultationHistory = [],
@@ -41,32 +41,28 @@ const CardHistory = ({
   const [mountedCards, setMountedCards] = useState([]);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [reasonOpen, setReasonOpen] = useState(false);
+  const [reasonOpen] = useState(false);
   const [cancelId, setCancelId] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
-  const [showReason, setShowReason] = useState(false);
-  const [expandedReasonId, setExpandedReasonId] = useState(null);
 
   useEffect(() => {
-    let timers = [];
+    const timers = [];
 
     setMountedCards([]);
 
     consultationHistory.forEach((item, index) => {
-      const t = setTimeout(() => {
+      const timer = setTimeout(() => {
         setMountedCards((prev) => [...prev, item.id]);
       }, index * 150);
 
-      timers.push(t);
+      timers.push(timer);
     });
 
     return () => timers.forEach(clearTimeout);
   }, [consultationHistory]);
 
   const copyTokenAndCode = (token, code, id) => {
-    navigator.clipboard.writeText(
-      `Token: ${token}\nCode: ${code}`
-    );
+    navigator.clipboard.writeText(`Token: ${token}\nCode: ${code}`);
 
     setSnackbar({
       open: true,
@@ -81,15 +77,15 @@ const CardHistory = ({
     }, 2000);
   };
 
-  const highlightText = (text, searchQuery) => {
-    if (!searchQuery) return text;
+  const highlightText = (text, query) => {
+    if (!query) return text;
 
-    const regex = new RegExp(`(${searchQuery})`, "gi");
+    const regex = new RegExp(`(${query})`, "gi");
 
     return String(text || "")
       .split(regex)
       .map((part, index) =>
-        part.toLowerCase() === searchQuery.toLowerCase() ? (
+        part.toLowerCase() === query.toLowerCase() ? (
           <span
             key={index}
             style={{
@@ -141,15 +137,57 @@ const CardHistory = ({
     }
   };
 
+  const infoItemSx = {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: {
+      xs: 1,
+      sm: 1.3,
+      md: 1.5,
+    },
+    minWidth: 0,
+  };
+
+  const infoContentSx = {
+    minWidth: 0,
+    flex: 1,
+  };
+
+  const infoValueSx = {
+    fontSize: {
+      xs: "12px",
+      sm: "13px",
+      md: "14px",
+    },
+    overflowWrap: "anywhere",
+    wordBreak: "break-word",
+    lineHeight: 1.5,
+  };
+
+  const infoIconSx = {
+    fontSize: {
+      xs: 17,
+      sm: 18,
+    },
+    color: "#1b5e20",
+    mt: 0.3,
+    flexShrink: 0,
+  };
+
   return (
-    <Box sx={{ pb: 3 }}>
+    <Box
+      sx={{
+        pb: 3,
+        width: "100%",
+        minWidth: 0,
+      }}
+    >
       {consultationHistory.map((item, index) => {
         const statusStyle = getStatusColor(item.status);
         const isMounted = mountedCards.includes(item.id);
         const isTokenHovered = hoveredToken === item.id;
         const isCopied = copiedId === item.id;
 
-        // ✅ Tracking data appointment id se match hoga
         const tracking = appointmentTracking[item.id];
 
         const isUpcoming =
@@ -164,9 +202,7 @@ const CardHistory = ({
             in={isMounted}
             timeout={500}
             style={{
-              transitionDelay: isMounted
-                ? "0ms"
-                : `${index * 100}ms`,
+              transitionDelay: isMounted ? "0ms" : `${index * 100}ms`,
             }}
           >
             <Card
@@ -188,11 +224,23 @@ const CardHistory = ({
                     ? "pointer"
                     : "default",
 
-                mb: 3,
-                borderRadius: 0.5,
+                mb: {
+                  xs: 2,
+                  sm: 2.5,
+                  md: 3,
+                },
+
+                borderRadius: {
+                  xs: 1.5,
+                  sm: 1,
+                  md: 0.5,
+                },
+
                 boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
                 border: "1px solid #e0e0e0",
                 overflow: "hidden",
+                width: "100%",
+                minWidth: 0,
 
                 transition:
                   "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -203,83 +251,124 @@ const CardHistory = ({
                   item.status === "Complete" ||
                   item.status === "COMPLETED"
                     ? {
-                        transform: "translateY(-4px)",
-                        boxShadow:
-                          "0 12px 40px rgba(0,0,0,0.12)",
+                        transform: {
+                          xs: "none",
+                          md: "translateY(-4px)",
+                        },
+                        boxShadow: {
+                          xs: "0 4px 20px rgba(0,0,0,0.08)",
+                          md: "0 12px 40px rgba(0,0,0,0.12)",
+                        },
                       }
                     : {},
               }}
             >
               <CardContent
-  sx={{
-    p: {
-      xs: 0, 
-      sm: 3, 
-    },
-  }}
->
+                sx={{
+                  p: {
+                    xs: 1.5,
+                    sm: 2,
+                    md: 3,
+                  },
 
-                {/* ================================================= */}
-                {/* HEADER */}
-                {/* ================================================= */}
+                  "&:last-child": {
+                    pb: {
+                      xs: 1.5,
+                      sm: 2,
+                      md: 3,
+                    },
+                  },
+                }}
+              >
+                {/* ================= HEADER ================= */}
 
                 <Box
                   sx={{
                     position: "relative",
 
                     display: "flex",
-                    alignItems: "center",
 
-                    minHeight: 60,
-                    mb: 2.5,
-
-                    // mobile
                     flexDirection: {
                       xs: "column",
                       md: "row",
                     },
 
-                    gap: {
-                      xs: 2,
-                      md: 0,
+                    alignItems: {
+                      xs: "stretch",
+                      md: "center",
                     },
+
+                    minHeight: {
+                      xs: "auto",
+                      md: 60,
+                    },
+
+                    gap: {
+                      xs: 1.5,
+                      sm: 2,
+                      md: 1,
+                    },
+
+                    mb: {
+                      xs: 2,
+                      md: 2.5,
+                    },
+
+                    width: "100%",
+                    minWidth: 0,
                   }}
                 >
-
-                  {/* ============================================= */}
-                  {/* LEFT SIDE - AVATAR + TITLE */}
-                  {/* ============================================= */}
+                  {/* LEFT - AVATAR + TITLE */}
 
                   <Box
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 2,
 
-                      mr: {
-                        xs: 0,
-                        md: "auto",
+                      gap: {
+                        xs: 1.2,
+                        sm: 1.5,
+                        md: 2,
                       },
 
                       width: {
                         xs: "100%",
                         md: "auto",
                       },
+
+                      mr: {
+                        xs: 0,
+                        md: "auto",
+                      },
+
+                      minWidth: 0,
                     }}
                   >
                     <Avatar
                       src={item.avatar}
                       sx={{
-                        width: 52,
-                        height: 52,
+                        width: {
+                          xs: 42,
+                          sm: 48,
+                          md: 52,
+                        },
 
-                        border: "3px solid #e8f5e9",
+                        height: {
+                          xs: 42,
+                          sm: 48,
+                          md: 52,
+                        },
 
-                        boxShadow:
-                          "0 2px 8px rgba(0,0,0,0.1)",
+                        flexShrink: 0,
 
-                        transition:
-                          "transform 0.3s ease",
+                        border: {
+                          xs: "2px solid #e8f5e9",
+                          md: "3px solid #e8f5e9",
+                        },
+
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+
+                        transition: "transform 0.3s ease",
 
                         "&:hover": {
                           transform: "scale(1.05)",
@@ -291,150 +380,234 @@ const CardHistory = ({
                       variant="h6"
                       fontWeight={600}
                       color="#1b5e20"
+                      sx={{
+                        fontSize: {
+                          xs: "15px",
+                          sm: "17px",
+                          md: "20px",
+                        },
+
+                        lineHeight: 1.3,
+                        minWidth: 0,
+
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+
+                        whiteSpace: {
+                          xs: "normal",
+                          sm: "nowrap",
+                        },
+
+                        overflowWrap: "anywhere",
+                      }}
                     >
                       {item.title}
                     </Typography>
                   </Box>
 
-                  {/* ============================================= */}
-                  {/* EXACT CENTER - LIVE TRACKING */}
-                  {/* ============================================= */}
+                  {/* ================= TRACKING ================= */}
 
-                  {item.title === "Online Consultation" &&
-                    tracking && (
+                  {item.title === "Online Consultation" && tracking && (
+                    <Box
+                      sx={{
+                        position: {
+                          xs: "static",
+                          md: "absolute",
+                        },
+
+                        left: {
+                          md: "50%",
+                        },
+
+                        top: {
+                          md: "50%",
+                        },
+
+                        transform: {
+                          md: "translate(-50%, -50%)",
+                        },
+
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+
+                        flexDirection: {
+                          xs: "row",
+                          sm: "row",
+                        },
+
+                        flexWrap: {
+                          xs: "wrap",
+                          sm: "nowrap",
+                        },
+
+                        gap: {
+                          xs: 0.7,
+                          sm: 1.5,
+                        },
+
+                        px: {
+                          xs: 1,
+                          sm: 1.5,
+                          md: 2,
+                        },
+
+                        py: {
+                          xs: 0.8,
+                          sm: 1,
+                        },
+
+                        borderRadius: 2,
+
+                        backgroundColor: "#f1f8f4",
+
+                        border: "1px solid #d8eadc",
+
+                        width: {
+                          xs: "100%",
+                          sm: "fit-content",
+                        },
+
+                        maxWidth: "100%",
+
+                        boxSizing: "border-box",
+
+                        zIndex: 1,
+                      }}
+                    >
+                      {/* Currently Serving */}
+
                       <Box
                         sx={{
-                          // ✅ Desktop me EXACT center
-                          position: {
-                            xs: "static",
-                            md: "absolute",
-                          },
-
-                          left: {
-                            md: "50%",
-                          },
-
-                          top: {
-                            md: "50%",
-                          },
-
-                          transform: {
-                            md: "translate(-50%, -50%)",
-                          },
-
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-
-                          gap: 1.5,
-
-                          px: 2,
-                          py: 1,
-
-                          borderRadius: 2,
-
-                          backgroundColor: "#f1f8f4",
-
-                          border:
-                            "1px solid #d8eadc",
-
-                          whiteSpace: "nowrap",
-
-                          width: {
-                            xs: "100%",
-                            sm: "auto",
-                          },
-
-                          zIndex: 1,
+                          gap: 0.5,
+                          minWidth: 0,
                         }}
                       >
-
-                        {/* Currently Serving */}
-
-                        <Box
+                        <Typography
+                          variant="caption"
                           sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.6,
+                            fontWeight: 600,
+                            color: "#607d68",
+
+                            fontSize: {
+                              xs: "10px",
+                              sm: "11px",
+                              md: "12px",
+                            },
+
+                            whiteSpace: "nowrap",
                           }}
                         >
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              fontWeight: 600,
-                              color: "#607d68",
-                            }}
-                          >
-                            Currently Serving:
-                          </Typography>
+                          Currently Serving:
+                        </Typography>
 
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              fontWeight: 800,
-                              color: "#1b5e20",
-                              fontFamily: "monospace",
-                            }}
-                          >
-                            {tracking.currently_serving ?? 0}
-                          </Typography>
-                        </Box>
-
-                        {/* Divider */}
-
-                        <Box
+                        <Typography
+                          variant="caption"
                           sx={{
-                            width: "1px",
-                            height: "20px",
-                            backgroundColor: "#b7d7bd",
-                          }}
-                        />
+                            fontWeight: 800,
+                            color: "#1b5e20",
+                            fontFamily: "monospace",
 
-                        {/* Approx Waiting */}
-
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.6,
+                            fontSize: {
+                              xs: "11px",
+                              sm: "12px",
+                            },
                           }}
                         >
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              fontWeight: 600,
-                              color: "#607d68",
-                            }}
-                          >
-                            Approx Waiting:
-                          </Typography>
-
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              fontWeight: 800,
-                              color: "#1b5e20",
-                            }}
-                          >
-                            {tracking.approx_waiting_time ??
-                              "--"}
-                          </Typography>
-                        </Box>
+                          {tracking.currently_serving ?? 0}
+                        </Typography>
                       </Box>
-                    )}
 
-                  {/* ============================================= */}
-                  {/* RIGHT SIDE - TOKEN + CODE */}
-                  {/* ============================================= */}
+                      {/* Divider */}
+
+                      <Box
+                        sx={{
+                          width: "1px",
+                          height: "20px",
+                          backgroundColor: "#b7d7bd",
+                          flexShrink: 0,
+
+                          display: {
+                            xs: "none",
+                            sm: "block",
+                          },
+                        }}
+                      />
+
+                      {/* Waiting */}
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 0.5,
+                          minWidth: 0,
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontWeight: 600,
+                            color: "#607d68",
+
+                            fontSize: {
+                              xs: "10px",
+                              sm: "11px",
+                              md: "12px",
+                            },
+
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Approx Waiting:
+                        </Typography>
+
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontWeight: 800,
+                            color: "#1b5e20",
+
+                            fontSize: {
+                              xs: "11px",
+                              sm: "12px",
+                            },
+
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {tracking.approx_waiting_time ?? "--"}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* ================= RIGHT ================= */}
 
                   <Box
                     sx={{
                       display: "flex",
-                      flexDirection: "column",
+
+                      flexDirection: {
+                        xs: "row",
+                        md: "column",
+                      },
+
                       alignItems: {
                         xs: "center",
                         md: "flex-end",
                       },
+
+                      justifyContent: {
+                        xs: "space-between",
+                        md: "center",
+                      },
+
+                      flexWrap: "wrap",
 
                       ml: {
                         xs: 0,
@@ -446,11 +619,15 @@ const CardHistory = ({
                         md: "auto",
                       },
 
-                      gap: 3,
+                      gap: {
+                        xs: 1,
+                        md: 2,
+                      },
+
+                      minWidth: 0,
                     }}
                   >
-                    {(item.status || "").toUpperCase() !==
-                      "CANCELLED" && (
+                    {(item.status || "").toUpperCase() !== "CANCELLED" && (
                       <Tooltip
                         title="Click to copy Token & Code"
                         arrow
@@ -460,15 +637,16 @@ const CardHistory = ({
                           icon={
                             <VerifiedIcon
                               sx={{
-                                fontSize: 16,
+                                fontSize: {
+                                  xs: 14,
+                                  sm: 16,
+                                },
 
-                                transition:
-                                  "all 0.3s ease",
+                                transition: "all 0.3s ease",
 
-                                transform:
-                                  isTokenHovered
-                                    ? "scale(1.2)"
-                                    : "scale(1)",
+                                transform: isTokenHovered
+                                  ? "scale(1.2)"
+                                  : "scale(1)",
 
                                 color: isCopied
                                   ? "#2e7d32"
@@ -476,21 +654,29 @@ const CardHistory = ({
                               }}
                             />
                           }
-
                           label={
                             <Box
                               sx={{
                                 display: "flex",
                                 alignItems: "center",
-                                gap: 1.5,
+
+                                gap: {
+                                  xs: 0.7,
+                                  sm: 1.5,
+                                },
+
+                                minWidth: 0,
+                                whiteSpace: "nowrap",
 
                                 transition:
                                   "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
 
-                                transform:
-                                  isTokenHovered
-                                    ? "scale(1.05)"
-                                    : "scale(1)",
+                                transform: isTokenHovered
+                                  ? {
+                                      xs: "none",
+                                      md: "scale(1.05)",
+                                    }
+                                  : "scale(1)",
                               }}
                             >
                               {/* Token */}
@@ -499,7 +685,7 @@ const CardHistory = ({
                                 sx={{
                                   display: "flex",
                                   alignItems: "center",
-                                  gap: 0.5,
+                                  gap: 0.4,
                                 }}
                               >
                                 <Typography
@@ -507,6 +693,11 @@ const CardHistory = ({
                                   fontWeight={700}
                                   sx={{
                                     color: "#1b5e20",
+
+                                    fontSize: {
+                                      xs: "10px",
+                                      sm: "12px",
+                                    },
                                   }}
                                 >
                                   Token:
@@ -516,11 +707,17 @@ const CardHistory = ({
                                   variant="caption"
                                   fontWeight={800}
                                   sx={{
-                                    fontFamily:
-                                      "monospace",
+                                    fontFamily: "monospace",
 
-                                    letterSpacing:
-                                      1.2,
+                                    letterSpacing: {
+                                      xs: 0.5,
+                                      sm: 1.2,
+                                    },
+
+                                    fontSize: {
+                                      xs: "10px",
+                                      sm: "12px",
+                                    },
 
                                     color: isCopied
                                       ? "#2e7d32"
@@ -531,14 +728,14 @@ const CardHistory = ({
                                 </Typography>
                               </Box>
 
-                              {/* divider */}
+                              {/* Divider */}
 
                               <Box
                                 sx={{
                                   width: "1px",
                                   height: "18px",
-                                  backgroundColor:
-                                    "#a5d6a7",
+                                  backgroundColor: "#a5d6a7",
+                                  flexShrink: 0,
                                 }}
                               />
 
@@ -548,7 +745,7 @@ const CardHistory = ({
                                 sx={{
                                   display: "flex",
                                   alignItems: "center",
-                                  gap: 0.5,
+                                  gap: 0.4,
                                 }}
                               >
                                 <Typography
@@ -556,6 +753,11 @@ const CardHistory = ({
                                   fontWeight={700}
                                   sx={{
                                     color: "#1b5e20",
+
+                                    fontSize: {
+                                      xs: "10px",
+                                      sm: "12px",
+                                    },
                                   }}
                                 >
                                   Code:
@@ -565,11 +767,17 @@ const CardHistory = ({
                                   variant="caption"
                                   fontWeight={800}
                                   sx={{
-                                    fontFamily:
-                                      "monospace",
+                                    fontFamily: "monospace",
 
-                                    letterSpacing:
-                                      1.2,
+                                    letterSpacing: {
+                                      xs: 0.5,
+                                      sm: 1.2,
+                                    },
+
+                                    fontSize: {
+                                      xs: "10px",
+                                      sm: "12px",
+                                    },
 
                                     color: "#1b5e20",
                                   }}
@@ -581,14 +789,16 @@ const CardHistory = ({
                               {isCopied && (
                                 <CheckIcon
                                   sx={{
-                                    fontSize: 14,
+                                    fontSize: {
+                                      xs: 12,
+                                      sm: 14,
+                                    },
                                     color: "#2e7d32",
                                   }}
                                 />
                               )}
                             </Box>
                           }
-
                           onClick={(e) => {
                             e.stopPropagation();
 
@@ -598,15 +808,12 @@ const CardHistory = ({
                               item.id
                             );
                           }}
-
                           onMouseEnter={() =>
                             setHoveredToken(item.id)
                           }
-
                           onMouseLeave={() =>
                             setHoveredToken(null)
                           }
-
                           sx={{
                             backgroundColor: isCopied
                               ? "#c8e6c9"
@@ -619,48 +826,83 @@ const CardHistory = ({
                             }`,
 
                             borderRadius: 2,
+
                             cursor: "pointer",
 
-                            transition:
-                              "all 0.3s ease",
+                            maxWidth: "100%",
 
-                            px: 1.5,
-                            py: 0.5,
+                            height: {
+                              xs: 34,
+                              sm: 36,
+                            },
+
+                            transition: "all 0.3s ease",
+
+                            px: {
+                              xs: 0.3,
+                              sm: 1,
+                            },
+
+                            "& .MuiChip-label": {
+                              px: {
+                                xs: 0.5,
+                                sm: 1,
+                              },
+                              overflow: "hidden",
+                            },
+
+                            "& .MuiChip-icon": {
+                              ml: {
+                                xs: "5px",
+                                sm: "8px",
+                              },
+                            },
 
                             "&:hover": {
-                              backgroundColor:
-                                "#c8e6c9",
+                              backgroundColor: "#c8e6c9",
+                              borderColor: "#4caf50",
 
-                              borderColor:
-                                "#4caf50",
-
-                              boxShadow:
-                                "0 4px 12px rgba(76, 175, 80, 0.3)",
+                              boxShadow: {
+                                xs: "none",
+                                md:
+                                  "0 4px 12px rgba(76, 175, 80, 0.3)",
+                              },
                             },
 
                             "&:active": {
-                              transform:
-                                "scale(0.95)",
+                              transform: "scale(0.95)",
                             },
                           }}
                         />
                       </Tooltip>
                     )}
 
-                    {/* Cancel Button */}
+                    {/* CANCEL BUTTON */}
 
                     {isUpcoming && (
                       <Button
                         variant="outlined"
                         color="error"
                         size="small"
-
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
 
                           setCancelId(item.id);
                           setConfirmOpen(true);
+                        }}
+                        sx={{
+                          flexShrink: 0,
+
+                          minWidth: {
+                            xs: 70,
+                            sm: 80,
+                          },
+
+                          fontSize: {
+                            xs: "11px",
+                            sm: "13px",
+                          },
                         }}
                       >
                         Cancel
@@ -669,9 +911,7 @@ const CardHistory = ({
                   </Box>
                 </Box>
 
-                {/* ================================================= */}
-                {/* CANCEL DIALOG */}
-                {/* ================================================= */}
+                {/* ================= CANCEL DIALOG ================= */}
 
                 <Dialog
                   open={confirmOpen}
@@ -681,11 +921,27 @@ const CardHistory = ({
                   }}
                   maxWidth="xs"
                   fullWidth
+                  PaperProps={{
+                    sx: {
+                      m: {
+                        xs: 2,
+                        sm: 3,
+                      },
+
+                      width: {
+                        xs: "calc(100% - 32px)",
+                        sm: "100%",
+                      },
+
+                      borderRadius: {
+                        xs: 2,
+                        sm: 1,
+                      },
+                    },
+                  }}
                   BackdropProps={{
                     sx: {
-                      backgroundColor:
-                        "rgba(0, 0, 0, 0.08)",
-
+                      backgroundColor: "rgba(0, 0, 0, 0.08)",
                       backdropFilter: "blur(2px)",
                     },
                   }}
@@ -695,17 +951,46 @@ const CardHistory = ({
                       display: "flex",
                       justifyContent: "center",
                       alignItems: "center",
-                      gap: 1,
+
+                      gap: {
+                        xs: 0.5,
+                        sm: 1,
+                      },
+
                       fontWeight: 700,
                       color: "#d32f2f",
+
                       py: 2,
+
+                      fontSize: {
+                        xs: "17px",
+                        sm: "20px",
+                      },
+
+                      textAlign: "center",
                     }}
                   >
-                    <WarningAmberRoundedIcon color="warning" />
+                    <WarningAmberRoundedIcon
+                      color="warning"
+                      sx={{
+                        fontSize: {
+                          xs: 20,
+                          sm: 24,
+                        },
+                      }}
+                    />
 
                     Cancel Appointment
 
-                    <WarningAmberRoundedIcon color="warning" />
+                    <WarningAmberRoundedIcon
+                      color="warning"
+                      sx={{
+                        fontSize: {
+                          xs: 20,
+                          sm: 24,
+                        },
+                      }}
+                    />
                   </DialogTitle>
 
                   <DialogContent>
@@ -713,7 +998,12 @@ const CardHistory = ({
                       align="center"
                       sx={{
                         color: "#424242",
-                        fontSize: 16,
+
+                        fontSize: {
+                          xs: 14,
+                          sm: 16,
+                        },
+
                         mb: 3,
                       }}
                     >
@@ -727,25 +1017,21 @@ const CardHistory = ({
                       rows={4}
                       label="Cancellation Reason"
                       value={cancelReason}
-
                       onChange={(e) =>
                         setCancelReason(e.target.value)
                       }
-
                       InputLabelProps={{
                         sx: {
                           color: "#616161",
                         },
                       }}
-
                       InputProps={{
                         sx: {
                           color: "#212121",
 
-                          "& .MuiOutlinedInput-notchedOutline":
-                            {
-                              borderColor: "#bdbdbd",
-                            },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#bdbdbd",
+                          },
 
                           "&:hover .MuiOutlinedInput-notchedOutline":
                             {
@@ -764,17 +1050,44 @@ const CardHistory = ({
                   <DialogActions
                     sx={{
                       justifyContent: "center",
+
+                      flexDirection: {
+                        xs: "column-reverse",
+                        sm: "row",
+                      },
+
+                      px: {
+                        xs: 3,
+                        sm: 2,
+                      },
+
                       pb: 3,
-                      gap: 2,
+
+                      gap: {
+                        xs: 1,
+                        sm: 2,
+                      },
+
+                      "& > :not(style) ~ :not(style)": {
+                        ml: {
+                          xs: 0,
+                          sm: 2,
+                        },
+                      },
                     }}
                   >
                     <Button
                       variant="outlined"
                       color="inherit"
-
                       onClick={() => {
                         setConfirmOpen(false);
                         setCancelReason("");
+                      }}
+                      sx={{
+                        width: {
+                          xs: "100%",
+                          sm: "auto",
+                        },
                       }}
                     >
                       Close
@@ -783,7 +1096,6 @@ const CardHistory = ({
                     <Button
                       variant="contained"
                       color="error"
-
                       onClick={() => {
                         handleCancelAppointment(
                           cancelId,
@@ -793,53 +1105,65 @@ const CardHistory = ({
                         setConfirmOpen(false);
                         setCancelReason("");
                       }}
+                      sx={{
+                        width: {
+                          xs: "100%",
+                          sm: "auto",
+                        },
+                      }}
                     >
                       Submit
                     </Button>
                   </DialogActions>
                 </Dialog>
 
-                {/* ================================================= */}
-                {/* INFO GRID */}
-                {/* ================================================= */}
+                {/* ================= INFO GRID ================= */}
 
                 <Box
                   sx={{
                     backgroundColor: "#f8faf8",
 
-                    borderRadius: 2,
+                    borderRadius: {
+                      xs: 1.5,
+                      sm: 2,
+                    },
 
-                    p: 2.5,
+                    p: {
+                      xs: 1.5,
+                      sm: 2,
+                      md: 2.5,
+                    },
 
                     display: "grid",
 
                     gridTemplateColumns: {
                       xs: "1fr",
-                      sm: "repeat(2, 1fr)",
-                      md: "repeat(3, 1fr)",
+                      sm: "repeat(2, minmax(0, 1fr))",
+                      md: "repeat(3, minmax(0, 1fr))",
                     },
 
-                    gap: 2.5,
+                    columnGap: {
+                      xs: 1.5,
+                      sm: 2,
+                      md: 2.5,
+                    },
+
+                    rowGap: {
+                      xs: 1.8,
+                      md: 2.5,
+                    },
+
+                    width: "100%",
+                    minWidth: 0,
+                    boxSizing: "border-box",
                   }}
                 >
                   {/* Doctor */}
 
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 1.5,
-                    }}
-                  >
-                    <PersonIcon
-                      sx={{
-                        fontSize: 18,
-                        color: "#1b5e20",
-                        mt: 0.3,
-                      }}
-                    />
+                  <Box sx={infoItemSx}>
+                    <PersonIcon sx={infoIconSx} />
 
-                    <Box>
+                    <Box sx={infoContentSx}>
                       <Typography
                         variant="caption"
                         color="#1b5e20"
@@ -854,6 +1178,7 @@ const CardHistory = ({
                         variant="body2"
                         color="text.primary"
                         fontWeight={500}
+                        sx={infoValueSx}
                       >
                         {highlightText(
                           item.doctor,
@@ -865,22 +1190,10 @@ const CardHistory = ({
 
                   {/* Department */}
 
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 1.5,
-                    }}
-                  >
-                    <LocalHospitalIcon
-                      sx={{
-                        fontSize: 18,
-                        color: "#1b5e20",
-                        mt: 0.3,
-                      }}
-                    />
+                  <Box sx={infoItemSx}>
+                    <LocalHospitalIcon sx={infoIconSx} />
 
-                    <Box>
+                    <Box sx={infoContentSx}>
                       <Typography
                         variant="caption"
                         color="#1b5e20"
@@ -895,6 +1208,7 @@ const CardHistory = ({
                         variant="body2"
                         color="text.primary"
                         fontWeight={500}
+                        sx={infoValueSx}
                       >
                         {highlightText(
                           item.department,
@@ -906,22 +1220,10 @@ const CardHistory = ({
 
                   {/* Address */}
 
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 1.5,
-                    }}
-                  >
-                    <LocationOnIcon
-                      sx={{
-                        fontSize: 18,
-                        color: "#1b5e20",
-                        mt: 0.3,
-                      }}
-                    />
+                  <Box sx={infoItemSx}>
+                    <LocationOnIcon sx={infoIconSx} />
 
-                    <Box>
+                    <Box sx={infoContentSx}>
                       <Typography
                         variant="caption"
                         color="#1b5e20"
@@ -936,6 +1238,7 @@ const CardHistory = ({
                         variant="body2"
                         color="text.primary"
                         fontWeight={500}
+                        sx={infoValueSx}
                       >
                         {item.address}
                       </Typography>
@@ -944,22 +1247,10 @@ const CardHistory = ({
 
                   {/* Time */}
 
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 1.5,
-                    }}
-                  >
-                    <AccessTimeIcon
-                      sx={{
-                        fontSize: 18,
-                        color: "#1b5e20",
-                        mt: 0.3,
-                      }}
-                    />
+                  <Box sx={infoItemSx}>
+                    <AccessTimeIcon sx={infoIconSx} />
 
-                    <Box>
+                    <Box sx={infoContentSx}>
                       <Typography
                         variant="caption"
                         color="#1b5e20"
@@ -973,6 +1264,10 @@ const CardHistory = ({
                       <Typography
                         variant="body2"
                         fontWeight={500}
+                        sx={{
+                          ...infoValueSx,
+                          whiteSpace: "nowrap",
+                        }}
                       >
                         {(() => {
                           const startTime = dayjs(
@@ -980,16 +1275,10 @@ const CardHistory = ({
                           );
 
                           const beforeTime =
-                            startTime.subtract(
-                              10,
-                              "minute"
-                            );
+                            startTime.subtract(10, "minute");
 
                           const afterTime =
-                            startTime.add(
-                              10,
-                              "minute"
-                            );
+                            startTime.add(10, "minute");
 
                           return `${beforeTime.format(
                             "hh:mm A"
@@ -1003,22 +1292,10 @@ const CardHistory = ({
 
                   {/* Date */}
 
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 1.5,
-                    }}
-                  >
-                    <CalendarTodayIcon
-                      sx={{
-                        fontSize: 18,
-                        color: "#1b5e20",
-                        mt: 0.3,
-                      }}
-                    />
+                  <Box sx={infoItemSx}>
+                    <CalendarTodayIcon sx={infoIconSx} />
 
-                    <Box>
+                    <Box sx={infoContentSx}>
                       <Typography
                         variant="caption"
                         color="#1b5e20"
@@ -1032,6 +1309,7 @@ const CardHistory = ({
                       <Typography
                         variant="body2"
                         fontWeight={500}
+                        sx={infoValueSx}
                       >
                         {item.date}
                       </Typography>
@@ -1040,22 +1318,22 @@ const CardHistory = ({
 
                   {/* Status */}
 
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 1.5,
-                    }}
-                  >
+                  <Box sx={infoItemSx}>
                     <Box
                       sx={{
-                        width: 18,
-                        height: 18,
+                        width: {
+                          xs: 16,
+                          sm: 18,
+                        },
+
+                        height: {
+                          xs: 16,
+                          sm: 18,
+                        },
 
                         borderRadius: "50%",
 
-                        backgroundColor:
-                          statusStyle.bg,
+                        backgroundColor: statusStyle.bg,
 
                         border: `2px solid ${statusStyle.color}`,
 
@@ -1065,7 +1343,7 @@ const CardHistory = ({
                       }}
                     />
 
-                    <Box>
+                    <Box sx={infoContentSx}>
                       <Typography
                         variant="caption"
                         color="#1b5e20"
@@ -1079,21 +1357,28 @@ const CardHistory = ({
                       <Typography
                         variant="body2"
                         sx={{
-                          color:
-                            statusStyle.color,
+                          color: statusStyle.color,
 
                           fontWeight: 600,
 
-                          display:
-                            "inline-block",
+                          display: "inline-block",
 
-                          px: 1.5,
+                          fontSize: {
+                            xs: "11px",
+                            sm: "13px",
+                            md: "14px",
+                          },
+
+                          px: {
+                            xs: 1,
+                            sm: 1.5,
+                          },
+
                           py: 0.25,
 
                           borderRadius: 1,
 
-                          backgroundColor:
-                            statusStyle.bg,
+                          backgroundColor: statusStyle.bg,
                         }}
                       >
                         {item.status}
