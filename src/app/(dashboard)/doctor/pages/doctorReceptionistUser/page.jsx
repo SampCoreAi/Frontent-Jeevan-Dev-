@@ -217,13 +217,21 @@ export default function UsersPage() {
       });
 
       setErrors({});
-    } catch (err) {
-      alert("Failed to create user");
-      console.error(err);
-      alert(
-        err.response?.data?.message || "Failed to register assistant"
-      );
-    } finally {
+   } catch (err) {
+  console.error("Create assistant error:", err);
+
+  const message =
+    err.response?.data?.message || "Failed to create user";
+
+  if (message.toLowerCase().includes("email")) {
+    setErrors((prev) => ({
+      ...prev,
+      email: message,
+    }));
+  } else {
+    alert(message);
+  }
+}finally {
       setLoading(false);
     }
   };

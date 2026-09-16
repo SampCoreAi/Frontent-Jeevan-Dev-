@@ -371,37 +371,7 @@ export const DocumentExplorer = ({
             />
           </IconButton>
 
-          {/* DELETE FOLDER */}
-
-          <IconButton
-            size="small"
-            onClick={removeFolder}
-            disabled={
-              selectedFolder === "Document" ||
-              selectedFolder === "root"
-            }
-            title="Delete Folder"
-            sx={{
-              width: 32,
-              height: 32,
-
-              color: "#dc2626",
-
-              "&:hover": {
-                bgcolor: "#fef2f2",
-              },
-
-              "&.Mui-disabled": {
-                color: "#cbd5d1",
-              },
-            }}
-          >
-            <DeleteOutlineIcon
-              sx={{
-                fontSize: 19,
-              }}
-            />
-          </IconButton>
+          
         </Box>
       </Box>
 

@@ -3,7 +3,16 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../../../../../config/api";
-import { Typography, Box, Paper, Drawer, IconButton } from "@mui/material";
+
+import {
+  Dialog,
+  Typography, Box, Paper, Drawer, IconButton,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useTheme, useMediaQuery } from "@mui/material";
 import { DocumentExplorer } from "../../components/Document/DocumentExplorer";
@@ -27,6 +36,9 @@ export default function DocumentPage() {
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
 const [uploading, setUploading] = useState(false);
+const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+const [fileToDelete, setFileToDelete] = useState(null);
+const [deleting, setDeleting] = useState(false);
 const [uploadSuccess, setUploadSuccess] = useState("");
   const [folders, setFolders] = useState([
     {
@@ -461,48 +473,87 @@ const folderNameParam = getFolderPath(selectedFolder);
   const handleDragLeave = () => {
     setIsDragging(false);
   };
+const removeFile = (fileId) => {
+  setFileToDelete(fileId);
+  setDeleteDialogOpen(true);
+};
+const confirmDeleteFile = async () => {
+  if (!fileToDelete) return;
 
-  const removeFile = (fileId) => {
-    if (!window.confirm("Are you sure you want to delete this file?")) {
-      return;
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    alert("Authentication token missing. Please log in.");
+    return;
+  }
+
+  try {
+    setDeleting(true);
+
+    const response = await axios.delete(
+      `${API_BASE_URL}/licenseFile/deleteFiles/${fileToDelete}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (response.data?.success) {
+      setAllFiles((prev) =>
+        prev.filter((file) => file.id !== fileToDelete)
+      );
+
+      setFolders((prev) => {
+        const removeFromTree = (nodes) =>
+          nodes
+            .map((node) => {
+              if (
+                node.type === "file" &&
+                node.id === fileToDelete
+              ) {
+                return null;
+              }
+
+              if (node.children) {
+                return {
+                  ...node,
+                  children: removeFromTree(
+                    node.children
+                  ).filter(Boolean),
+                };
+              }
+
+              return node;
+            })
+            .filter(Boolean);
+
+        return removeFromTree(prev);
+      });
+
+      if (selectedFile?.id === fileToDelete) {
+        setSelectedFile(null);
+        setOpenPdfViewer(false);
+        setOpenImageViewer(false);
+      }
+
+      setDeleteDialogOpen(false);
+      setFileToDelete(null);
     }
+  } catch (error) {
+    console.error(
+      "Delete error:",
+      error?.response?.data || error
+    );
 
-
-
-    setAllFiles((prev) => prev.filter((file) => file.id !== fileId));
-
-    setFolders((prev) => {
-      const removeFileFromTree = (nodes) => {
-        return nodes
-          .map((node) => {
-            if (node.type === "file" && node.id === fileId) {
-              return null;
-            }
-
-            if (node.children) {
-              const filteredChildren = removeFileFromTree(node.children).filter(
-                Boolean
-              );
-              return {
-                ...node,
-                children:
-                  filteredChildren.length > 0 ? filteredChildren : undefined,
-              };
-            }
-
-            return node;
-          })
-          .filter(Boolean);
-      };
-      return removeFileFromTree(prev);
-    });
-
-    if (selectedFile?.id === fileId) {
-      setSelectedFile(null);
-      setOpenPdfViewer(false);
-      setOpenImageViewer(false);
-    }
-  };
+    alert(
+      error?.response?.data?.message ||
+        "Failed to delete file."
+    );
+  } finally {
+    setDeleting(false);
+  }
+};
   const handleFileClick = (file) => {
     const fileType = (file.fileType || "").toLowerCase();
 
@@ -547,7 +598,7 @@ const handleDownload = async (file) => {
     }, 100);
   } catch (error) {
     console.error("Download error:", error);
-    alert("Download failed. S3 CORS check karo.");
+    
   }
 };
 
@@ -761,6 +812,80 @@ const handleDownload = async (file) => {
           isMobile={isMobile}
           isTablet={isTablet}
         />
+        <Dialog
+  open={deleteDialogOpen}
+  onClose={() => {
+    if (!deleting) {
+      setDeleteDialogOpen(false);
+      setFileToDelete(null);
+    }
+  }}
+  PaperProps={{
+    sx: {
+      borderRadius: 3,
+      width: "100%",
+      maxWidth: 400,
+      mx: 2,
+    },
+  }}
+>
+  <DialogTitle
+    sx={{
+      fontWeight: 700,
+      fontSize: "1.1rem",
+      pb: 1,
+    }}
+  >
+    Delete File?
+  </DialogTitle>
+
+  <DialogContent>
+    <DialogContentText
+      sx={{
+        fontSize: "0.9rem",
+        color: "#6b7280",
+      }}
+    >
+      Are you sure you want to delete this file? This action
+      cannot be undone.
+    </DialogContentText>
+  </DialogContent>
+
+  <DialogActions sx={{ px: 3, pb: 2.5 }}>
+    <Button
+      disabled={deleting}
+      onClick={() => {
+        setDeleteDialogOpen(false);
+        setFileToDelete(null);
+      }}
+      sx={{
+        color: "#4b5563",
+        textTransform: "none",
+        fontWeight: 600,
+      }}
+    >
+      Cancel
+    </Button>
+
+    <Button
+      variant="contained"
+      disabled={deleting}
+      onClick={confirmDeleteFile}
+      sx={{
+        bgcolor: "#dc2626",
+        textTransform: "none",
+        fontWeight: 600,
+        borderRadius: 2,
+
+        "&:hover": {
+          bgcolor: "#b91c1c",
+        },
+      }}
+    >
+      {deleting ? "Deleting..." : "Delete"}
+    </Button>
+  </DialogActions>
+</Dialog>
       </Box>
     </Box>
   );

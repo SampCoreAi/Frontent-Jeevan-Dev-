@@ -8,20 +8,38 @@ export default function SearchPagination({
   page,
   onPageChange,
 }) {
-  if (pageCount <= 1) return null;
-
   return (
-    <Stack spacing={2} alignItems="center" sx={{ mt: 4 }}>
+    <Stack spacing={2} alignItems="center" sx={{ mt: 4, mb: 2 }}>
       <Pagination
-        count={pageCount}
+        count={Math.max(pageCount, 1)}
         page={page}
         onChange={(event, value) => onPageChange(value)}
-        color="primary"
         shape="rounded"
         showFirstButton
         showLastButton
         siblingCount={1}
         boundaryCount={1}
+        sx={{
+          // Normal numbers + arrows
+          "& .MuiPaginationItem-root": {
+            color: "#028275",
+          },
+
+          // Selected page
+          "& .MuiPaginationItem-root.Mui-selected": {
+            backgroundColor: "#028275",
+            color: "#fff",
+
+            "&:hover": {
+              backgroundColor: "#026d63",
+            },
+          },
+
+          // Hover
+          "& .MuiPaginationItem-root:hover": {
+            backgroundColor: "#e6f4f2",
+          },
+        }}
       />
     </Stack>
   );

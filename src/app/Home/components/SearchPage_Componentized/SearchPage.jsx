@@ -89,15 +89,6 @@ const searchDoctorsByCity = async (pageNo = 1) => {
       setResults([]);
       return;
     }
-
-    /*
-      permission === "prompt"
-      => getCurrentCity() browser ka location popup open karega
-
-      permission === "granted"
-      => direct location mil jayegi
-    */
-
     setLocationStatus("checking");
 
     let city;
@@ -112,7 +103,7 @@ const searchDoctorsByCity = async (pageNo = 1) => {
     } catch (locationError) {
       console.log("Location Error:", locationError);
 
-      // User ne popup me Block kiya
+
       if (locationError?.code === 1) {
         setLocationStatus("blocked");
       } else {
@@ -144,7 +135,7 @@ const searchDoctorsByCity = async (pageNo = 1) => {
   } catch (err) {
     console.error("Nearby doctors error:", err);
 
-    // Doctors nahi mile
+
     if (err?.response?.status === 404) {
       setResults([]);
       setError("");
@@ -153,7 +144,7 @@ const searchDoctorsByCity = async (pageNo = 1) => {
 
     setError(
       err?.response?.data?.message ||
-        "Doctors load nahi ho pa rahe. Please try again."
+        "Unable to load doctors. Please try again."
     );
   } finally {
     setLoading(false);
@@ -194,7 +185,7 @@ const searchDoctorsByCity = async (pageNo = 1) => {
 
       setError(
         err?.response?.data?.message ||
-          "Doctors load nahi ho pa rahe. Please try again."
+          "Unable to load doctors. Please try again."
       );
     } finally {
       setLoading(false);
@@ -234,7 +225,7 @@ const searchDoctorsByCity = async (pageNo = 1) => {
 
       setError(
         err?.response?.data?.message ||
-          "Doctors search nahi ho pa rahe."
+         "Unable to search for doctors. Please try again."
       );
     } finally {
       setLoading(false);
