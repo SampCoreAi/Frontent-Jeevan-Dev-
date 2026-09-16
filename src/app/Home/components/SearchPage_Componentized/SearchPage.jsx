@@ -33,14 +33,15 @@ const [showLocationHelp, setShowLocationHelp] = useState(false);
 
   // nearby | all | search
   const [resultMode, setResultMode] = useState("nearby");
-
+const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [bookingLoadingId, setBookingLoadingId] = useState(null);
   const [hoveredCard, setHoveredCard] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedDoctorId, setSelectedDoctorId] = useState(null);
 
-  const itemsPerPage = 3;
+const [totalDoctors, setTotalDoctors] = useState(0);
+  const itemsPerPage = 6;
 
   const [selectedFilters, setSelectedFilters] = useState({
     specialization: [],
@@ -128,10 +129,10 @@ const searchDoctorsByCity = async (pageNo = 1) => {
       },
     });
 
-    console.log("Nearby Doctors:", res?.data);
 
-    setResults(mapDoctors(res?.data?.data || []));
-    setPage(pageNo);
+setResults(mapDoctors(res?.data?.data || []));
+setTotalDoctors(res?.data?.count || 0);
+setPage(pageNo);
   } catch (err) {
     console.error("Nearby doctors error:", err);
 
@@ -171,9 +172,10 @@ const searchDoctorsByCity = async (pageNo = 1) => {
         },
       });
 
-      setResults(mapDoctors(res?.data?.data || []));
-      setPage(pageNo);
-      resetFilters();
+   setResults(mapDoctors(res?.data?.data || []));
+setTotalDoctors(res?.data?.count || 0);
+setPage(pageNo);
+resetFilters();
     } catch (err) {
       console.error("All doctors error:", err);
 
@@ -195,42 +197,51 @@ const searchDoctorsByCity = async (pageNo = 1) => {
   // -----------------------------------------
   // Search
   // -----------------------------------------
-  const searchDoctors = async (query) => {
-    if (!query?.trim()) {
-      loadAllDoctors(1);
+ const searchDoctors = async (query, pageNo = 1) => {
+  if (!query?.trim()) {
+    setSearchQuery("");
+    loadAllDoctors(1);
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError("");
+    setResultMode("search");
+    setSearchQuery(query.trim());
+
+    const limit = itemsPerPage;
+    const offset = (pageNo - 1) * itemsPerPage;
+
+    const res = await api.get("/api/doctors/doctor/search", {
+      params: {
+        search: query.trim(),
+        limit,
+        offset,
+      },
+    });
+
+    setResults(mapDoctors(res?.data?.data || []));
+    setTotalDoctors(res?.data?.count || 0);
+    setPage(pageNo);
+  } catch (err) {
+    console.error("Doctor search error:", err);
+
+    if (err?.response?.status === 404) {
+      setResults([]);
+      setTotalDoctors(0);
+      setError("");
       return;
     }
 
-    try {
-      setLoading(true);
-      setError("");
-      setResultMode("search");
-      setPage(1);
-
-      const res = await api.get("/api/doctors/doctor/search", {
-        params: {
-          search: query.trim(),
-        },
-      });
-
-      setResults(mapDoctors(res?.data?.data || []));
-    } catch (err) {
-      console.error("Doctor search error:", err);
-
-      if (err?.response?.status === 404) {
-        setResults([]);
-        setError("");
-        return;
-      }
-
-      setError(
-        err?.response?.data?.message ||
-         "Unable to search for doctors. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    setError(
+      err?.response?.data?.message ||
+        "Unable to search for doctors. Please try again."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   // -----------------------------------------
   // Initial Load
@@ -260,20 +271,22 @@ const searchDoctorsByCity = async (pageNo = 1) => {
   // -----------------------------------------
   // Pagination
   // -----------------------------------------
-  const handlePageChange = (newPage) => {
-    setPage(newPage);
+const handlePageChange = (newPage) => {
+  setPage(newPage);
 
-    if (resultMode === "nearby") {
-      searchDoctorsByCity(newPage);
-    } else if (resultMode === "all") {
-      loadAllDoctors(newPage);
-    }
+  if (resultMode === "nearby") {
+    searchDoctorsByCity(newPage);
+  } else if (resultMode === "all") {
+    loadAllDoctors(newPage);
+  } else if (resultMode === "search") {
+    searchDoctors(searchQuery, newPage);
+  }
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  };
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+};
 
   // -----------------------------------------
   // Navigation
@@ -297,10 +310,7 @@ const searchDoctorsByCity = async (pageNo = 1) => {
     selectedFilters,
   });
 
-  const pageCount = Math.ceil(
-    filteredResults.length / itemsPerPage
-  );
-
+const pageCount = Math.ceil(totalDoctors / itemsPerPage);
   const styles = {
     container: {
       backgroundColor: "white",
@@ -380,10 +390,21 @@ const searchDoctorsByCity = async (pageNo = 1) => {
   };
 
   const renderContent = () => {
-    if (loading) {
-      return <SearchLoading count={itemsPerPage} styles={styles} />;
-    }
+   if (loading) {
+  return (
+    <>
+      <SearchLoading count={itemsPerPage} styles={styles} />
 
+      {pageCount > 1 && (
+        <SearchPagination
+          pageCount={pageCount}
+          page={page}
+          onPageChange={handlePageChange}
+        />
+      )}
+    </>
+  );
+}
     if (error) {
       return (
         <EmptyState

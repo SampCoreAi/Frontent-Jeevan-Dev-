@@ -66,21 +66,46 @@ const res = await axios.get(
             );
           },
         }}
-        sx={{
-          "& .MuiPickersDay-root.Mui-selected": {
-            backgroundColor: "#1e6658 !important",
-          },
+      sx={{
+  // Mobile only
+  width: { xs: "100%", sm: "320px" },
+  maxWidth: "100%",
+  height: { xs: "300px", sm: "336px" },
 
-          "& .MuiPickersDay-root.Mui-selected:hover": {
-            backgroundColor: "#1e6658 !important",
-          },
+  // Mobile me day size chhota
+  "& .MuiPickersDay-root": {
+    width: { xs: "32px", sm: "36px" },
+    height: { xs: "32px", sm: "36px" },
+    fontSize: { xs: "0.75rem", sm: "0.875rem" },
+  },
 
-          "& .MuiBadge-badge": {
-            fontSize: "10px",
-            minWidth: "16px",
-            height: "16px",
-          },
-        }}
+  // Selected date
+  "& .MuiPickersDay-root.Mui-selected": {
+    backgroundColor: "#1e6658 !important",
+  },
+
+  "& .MuiPickersDay-root.Mui-selected:hover": {
+    backgroundColor: "#1e6658 !important",
+  },
+
+  // Appointment count badge
+  "& .MuiBadge-badge": {
+    fontSize: { xs: "8px", sm: "10px" },
+    minWidth: { xs: "14px", sm: "16px" },
+    height: { xs: "14px", sm: "16px" },
+  },
+
+  // Month/year heading
+  "& .MuiPickersCalendarHeader-label": {
+    fontSize: { xs: "0.9rem", sm: "1rem" },
+  },
+
+  // Week names
+  "& .MuiDayCalendar-weekDayLabel": {
+    width: { xs: "32px", sm: "36px" },
+    fontSize: { xs: "0.7rem", sm: "0.75rem" },
+  },
+}}
       />
     </LocalizationProvider>
   );

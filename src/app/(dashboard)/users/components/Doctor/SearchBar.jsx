@@ -40,7 +40,9 @@ export default function SearchBar({ onSearch }) {
         "/api/doctors/doctor/search",
         {
           params: {
-            search: query,
+  search: query.trim(),
+  limit: 6,
+  offset: 0,
           },
         }
       );
@@ -51,17 +53,10 @@ export default function SearchBar({ onSearch }) {
         ? data
         : data.doctors ?? data.results ?? data.data ?? [];
 
-      const labels = results.slice(0, 6).map((item) => {
-        return (
-          item.name ||
-          item.doctorName ||
-          item.fullName ||
-          item.hospitalName ||
-          item.title ||
-          String(item)
-        );
-      });
-
+  const labels = results
+  .slice(0, 6)
+  .map((item) => item.fullName)
+  .filter(Boolean);
       setSuggestions(labels);
       setShowSuggestions(labels.length > 0);
     } catch (err) {
@@ -138,6 +133,9 @@ export default function SearchBar({ onSearch }) {
           <InputBase
             placeholder="Search doctors, hospitals..."
             value={searchQuery}
+              inputProps={{
+    maxLength: 100,
+  }}
             onChange={handleQueryChange}
 
             sx={{

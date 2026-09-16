@@ -357,68 +357,63 @@ const Navbar = ({
           },
         }}
       >
-        <Box sx={{ p: 2, width: "250px" }}>
-          {/* 🔍 Search Bar */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              px: 2,
-              height: 42,
-              borderRadius: 1,
-              backgroundColor: "background.third",
-              borderColor: "border.third",
-              border: 1,
-              mb: 2,
-            }}
-          >
-            <SearchIcon sx={{ color: "text.fourth", mr: 1 }} />
-            <InputBase
-              placeholder="Search..."
-              fullWidth
-              value={searchQuery}
-              onChange={handleSearch}
-            />
-          </Box>
+<Box sx={{ p: 2, width: "250px" }}>
+<NotificationPopover />
 
-          {/* 📌 Icons with Name (Column) */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {roleNavbar.map((item, index) => (
-              <Button
-                key={index}
-                onClick={() => {
-                  if (item.label === "Schedule") {
-                    router.push("/doctor/components/Header/Calender");
-                  } else {
-                    item.onClick?.();
-                  }
-                }}
-                startIcon={
-                  <Badge badgeContent={item.badge} color="error">
-                    <item.icon />
-                  </Badge>
-                }
-                sx={{
-                  justifyContent: "flex-start",
-                  color: "background.primary",
-                  textTransform: "none",
-                }}
-              >
-                {item.label}
-              </Button>
-            ))}
-          </Box>
+  {/* Calendar */}
+  {roleNavbar.map((item, index) => (
+    <Button
+      key={index}
+      fullWidth
+      onClick={(event) => {
+        if (item.label === "Calendar") {
+          setAnchorEl(event.currentTarget);
+        } else {
+          item.onClick?.();
+        }
+      }}
+      startIcon={
+        <Badge badgeContent={item.badge} color="error">
+          <item.icon />
+        </Badge>
+      }
+      sx={{
+        minHeight: 52,
+        justifyContent: "flex-start",
+        px: 1.5,
+        mb: 1.5,
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: 2,
+        color: "background.primary",
+        textTransform: "none",
+        fontWeight: 600,
+      }}
+    >
+      {item.label}
+    </Button>
+  ))}
 
-          {/* 🚨 Emergency Button */}
-          <Button
-            id="emergency-btn-mobile"
-            variant="contained"
-            onClick={handleEmergencyClick}
-            sx={{ backgroundColor: "red" }}
-          >
-            Emergency
-          </Button>
-        </Box>
+  {/* Emergency */}
+  <Button
+    id="emergency-btn-mobile"
+    fullWidth
+    variant="outlined"
+    color="error"
+    onClick={handleEmergencyClick}
+    sx={{
+      minHeight: 52,
+      justifyContent: "flex-start",
+      px: 1.5,
+      borderRadius: 2,
+      textTransform: "none",
+      fontWeight: 700,
+    }}
+  >
+    🚨 &nbsp; Emergency
+  </Button>
+
+</Box>
       </Drawer>
 
       <audio ref={alertAudioRef} src="/sound/alert.mp3" preload="auto" />
