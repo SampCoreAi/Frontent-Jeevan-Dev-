@@ -200,20 +200,61 @@ const NotificationPopover = () => {
 </Box>
 
 {/* DESKTOP */}
-<Box sx={{ display: { xs: "none", sm: "block" } }}>
-  <Tooltip title="Notifications">
-    <IconButton onClick={handleOpen}>
-      <Badge
-        badgeContent={unreadCount}
-        color="error"
-        max={99}
-        invisible={unreadCount === 0}
-      >
-        <NotificationsIcon />
-      </Badge>
-    </IconButton>
-  </Tooltip>
-</Box>
+{/* DESKTOP */}
+<Tooltip title="Notifications">
+  <Box
+    onClick={handleOpen}
+    sx={{
+      display: { xs: "none", sm: "flex" },
+      alignItems: "center",
+      gap: 0.8,
+
+      height: 40,
+      px: 1.4,
+
+      borderRadius: "8px",
+      border: "1px solid #d5eee7",
+
+      backgroundColor: "#f0faf7",
+      color: "#586762",
+
+      cursor: "pointer",
+      userSelect: "none",
+
+      transition: "all 0.2s ease",
+
+      "&:hover": {
+        backgroundColor: "#e5f7f1",
+        borderColor: "#b9e5d9",
+        color: "#0a9f7d",
+      },
+    }}
+  >
+    <Badge
+      badgeContent={unreadCount}
+      color="error"
+      max={99}
+      invisible={unreadCount === 0}
+    >
+      <NotificationsIcon
+        sx={{
+          fontSize: 20,
+        }}
+      />
+    </Badge>
+
+    <Typography
+      component="span"
+      sx={{
+        fontSize: "12px",
+        fontWeight: 600,
+        color: "inherit",
+      }}
+    >
+      Notifications
+    </Typography>
+  </Box>
+</Tooltip>
       </Tooltip>
 
       {/* ============================

@@ -1,19 +1,45 @@
 export const mapDoctors = (doctors = []) => {
-  return doctors.map((doctor) => ({
-    id: doctor.userId,
-    name: doctor.fullName || "Dr. User",
-    speciality: doctor.specialization || "Speciality Not Available",
-    education: doctor.qualification || "Not Available",
-    hospital:
-      doctor.hospitalDetail?.[0]?.hospitalName || "Hospital Not Available",
-    fee: Number(doctor.consultationFee) || 0,
-    experience: Number(doctor.experience) || 0,
-    rating: Number(doctor.avgRating) || 0,
-    totalFeedbacks: Number(doctor.totalFeedbacks) || 0,
-    photo: doctor.profileImage || "/img/IconDoctor.png",
+  return doctors.map((item) => ({
+    // IDs
+    id: item.userId,
+    userId: item.userId,
+    registrationId: item.registrationId,
+
+    // Basic info
+    name: item.fullName || item.username || "Doctor",
+    username: item.username || "",
+    gender: item.gender || "N/A",
+
+    // Professional info
+    qualification: item.qualification || "N/A",
+    specialization: item.specialization || "N/A",
+    experience: item.experience ?? 0,
+    consultationFee: item.consultationFee ?? 0,
+
+    // Rating
+    rating: item.avgRating ?? "0.0",
+    avgRating: item.avgRating ?? "0.0",
+    totalFeedbacks: item.totalFeedbacks ?? 0,
+
+    // Image
+    photo: item.profileImage || null,
+    profileImage: item.profileImage || null,
+
+    // Hospital
+    hospitalDetail: item.hospitalDetail || [],
+    hospitalName:
+      item.hospitalDetail?.[0]?.hospitalName ||
+      "Hospital not available",
+
+    city:
+      item.hospitalDetail?.[0]?.city ||
+      "",
+
+    area:
+      item.hospitalDetail?.[0]?.areaLocality ||
+      "",
   }));
 };
-
 // Browser permission status check
 export const checkLocationPermission = async () => {
   try {

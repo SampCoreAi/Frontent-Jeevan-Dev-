@@ -16,7 +16,7 @@ export default function DashboardLayout({ children }) {
   const isMobile = useMediaQuery("(max-width:900px)");
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
-  const drawerWidth = isMobile ? "80%" : 290;
+  const drawerWidth = isMobile ? "80%" : 220;
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");

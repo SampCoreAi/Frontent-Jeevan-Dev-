@@ -1,5 +1,12 @@
 "use client";
-import React, { useState, useRef, useCallback, useEffect } from "react";
+
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+} from "react";
+
 import {
   Box,
   Paper,
@@ -7,30 +14,51 @@ import {
   InputBase,
   ClickAwayListener,
   CircularProgress,
+  Typography,
 } from "@mui/material";
+
 import SearchIcon from "@mui/icons-material/Search";
-import { useRouter } from "next/navigation";
+import TuneIcon from "@mui/icons-material/Tune";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
+
 import api from "../../../../../utils/axiosInstance";
 
+const PRIMARY = "#0a9f7d";
+const PRIMARY_DARK = "#07876a";
 
-export default function SearchBar({ onSearch }) {
+export default function SearchBar({
+  onSearch,
+  onFilterClick,
+  onNearbyClick,
+}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const router = useRouter();
-  const searchRef = useRef(null);
   const debounceRef = useRef(null);
-
   const isFetching = useRef(false);
   const lastQueryRef = useRef("");
 
-  const fetchSuggestions = useCallback(async (query) => {
-    if (!query.trim() || isFetching.current) return;
+  // ==========================================
+  // FETCH SUGGESTIONS
+  // ==========================================
 
-    if (lastQueryRef.current === query) return;
-    lastQueryRef.current = query;
+  const fetchSuggestions = useCallback(async (query) => {
+    const cleanQuery = query.trim();
+
+    if (!cleanQuery) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      lastQueryRef.current = "";
+      return;
+    }
+
+    if (isFetching.current) return;
+
+    if (lastQueryRef.current === cleanQuery) return;
+
+    lastQueryRef.current = cleanQuery;
 
     isFetching.current = true;
     setLoading(true);
@@ -40,9 +68,9 @@ export default function SearchBar({ onSearch }) {
         "/api/doctors/doctor/search",
         {
           params: {
-  search: query.trim(),
-  limit: 6,
-  offset: 0,
+            search: cleanQuery,
+            limit: 6,
+            offset: 0,
           },
         }
       );
@@ -51,157 +79,540 @@ export default function SearchBar({ onSearch }) {
 
       const results = Array.isArray(data)
         ? data
-        : data.doctors ?? data.results ?? data.data ?? [];
+        : data.doctors ??
+          data.results ??
+          data.data ??
+          [];
 
-  const labels = results
-  .slice(0, 6)
-  .map((item) => item.fullName)
-  .filter(Boolean);
+      const labels = results
+        .slice(0, 6)
+        .map(
+          (item) =>
+            item.fullName ||
+            item.username ||
+            item.specialization ||
+            item.hospitalDetail?.[0]?.hospitalName
+        )
+        .filter(Boolean);
+
       setSuggestions(labels);
       setShowSuggestions(labels.length > 0);
     } catch (err) {
-      console.error(err);
+      console.error("Suggestion Error:", err);
+
+      setSuggestions([]);
+      setShowSuggestions(false);
     } finally {
       setLoading(false);
       isFetching.current = false;
     }
   }, []);
+
+  // ==========================================
+  // INPUT CHANGE
+  // ==========================================
+
   const handleQueryChange = (e) => {
     const value = e.target.value;
+
     setSearchQuery(value);
 
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
 
+    if (!value.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      lastQueryRef.current = "";
+      return;
+    }
+
     debounceRef.current = setTimeout(() => {
       fetchSuggestions(value);
-    }, 500); // thoda increase bhi kar diya
+    }, 500);
   };
-  // Cleanup debounce on unmount
+
+  // ==========================================
+  // CLEANUP
+  // ==========================================
+
   useEffect(() => {
-    return () => clearTimeout(debounceRef.current);
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
   }, []);
+
+  // ==========================================
+  // SEARCH
+  // ==========================================
 
   const handleSearch = (e) => {
     e.preventDefault();
 
-    onSearch(searchQuery); // parent ko query bhejo
+    setShowSuggestions(false);
+
+    onSearch?.(searchQuery.trim());
   };
+
+  // ==========================================
+  // SUGGESTION CLICK
+  // ==========================================
 
   const handleSuggestionClick = (item) => {
     setSearchQuery(item);
+
+    setSuggestions([]);
     setShowSuggestions(false);
 
-    onSearch(item);
+    onSearch?.(item);
+  };
+
+  // ==========================================
+  // NEARBY
+  // ==========================================
+
+  const handleNearby = () => {
+    setShowSuggestions(false);
+
+    onNearbyClick?.();
   };
 
   return (
     <Box
       sx={{
-        maxWidth: 900,
-        mx: "auto",
+        width: "100%",
         position: "relative",
-        px: { xs: 2, sm: 0 },
       }}
-      ref={searchRef}
     >
-      <Paper
+      {/* ===============================
+          TITLE
+      =============================== */}
+
+
+      {/* ===============================
+          SEARCH ROW
+      =============================== */}
+
+      <Box
         component="form"
         onSubmit={handleSearch}
         sx={{
           display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          gap: { xs: 1, sm: 1.5 },
-          p: { xs: 1.2, sm: 1.5 },
-          borderRadius: { xs: "16px", sm: "20px" },
-          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+          alignItems: "center",
+          gap: {
+            xs: "7px",
+            sm: "10px",
+          },
+          width: "100%",
         }}
       >
-        {/* Search Input */}
+        {/* ===========================
+            INPUT
+        =========================== */}
+
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
             flex: 1,
-            bgcolor: "#f1f5f9",
-            px: { xs: 2, sm: 3 },
-            borderRadius: "50px",
+            minWidth: 0,
+            position: "relative",
           }}
         >
-          <SearchIcon sx={{ color: "#94a3b8", mr: 1 }} />
-          <InputBase
-            placeholder="Search doctors, hospitals..."
-            value={searchQuery}
-              inputProps={{
-    maxLength: 100,
-  }}
-            onChange={handleQueryChange}
-
+          <Paper
+            elevation={0}
             sx={{
-              flex: 1,
-              py: { xs: 1, sm: 1.2 },
-              fontSize: { xs: "0.9rem", sm: "1rem" },
+              width: "100%",
+
+              height: {
+                xs: "48px",
+                sm: "56px",
+              },
+
+              display: "flex",
+              alignItems: "center",
+
+              px: {
+                xs: "13px",
+                sm: "18px",
+              },
+
+              bgcolor: "#ffffff",
+
+              border: "1px solid #d9e4e1",
+
+              borderRadius: {
+                xs: "11px",
+                sm: "13px",
+              },
+
+              boxShadow:
+                "0 2px 8px rgba(15,23,42,0.03)",
+
+              transition: "all .2s ease",
+
+              "&:hover": {
+                borderColor: "#b9cec8",
+              },
+
+              "&:focus-within": {
+                borderColor: PRIMARY,
+
+                boxShadow:
+                  "0 0 0 3px rgba(10,159,125,0.08)",
+              },
             }}
-          />
-          {/* Loading spinner inside input */}
-          {loading && (
-            <CircularProgress size={18} sx={{ color: "#1e6658", ml: 1 }} />
-          )}
+          >
+            <SearchIcon
+              sx={{
+                color: "#8795a8",
+
+                fontSize: {
+                  xs: "20px",
+                  sm: "22px",
+                },
+
+                mr: {
+                  xs: 1,
+                  sm: 1.5,
+                },
+
+                flexShrink: 0,
+              }}
+            />
+
+            <InputBase
+              placeholder="Doctor, specialization or hospital"
+              value={searchQuery}
+              onChange={handleQueryChange}
+              onFocus={() => {
+                if (suggestions.length > 0) {
+                  setShowSuggestions(true);
+                }
+              }}
+              inputProps={{
+                maxLength: 100,
+              }}
+              sx={{
+                flex: 1,
+                minWidth: 0,
+
+                color: "#27364b",
+
+                fontSize: {
+                  xs: "12px",
+                  sm: "14px",
+                },
+
+                "& input::placeholder": {
+                  color: "#929caf",
+                  opacity: 1,
+                },
+              }}
+            />
+
+            {loading && (
+              <CircularProgress
+                size={18}
+                thickness={4}
+                sx={{
+                  color: PRIMARY,
+                  ml: 1,
+                }}
+              />
+            )}
+          </Paper>
+
+          {/* ===========================
+              SUGGESTIONS
+          =========================== */}
+
+          {showSuggestions &&
+            suggestions.length > 0 && (
+              <ClickAwayListener
+                onClickAway={() =>
+                  setShowSuggestions(false)
+                }
+              >
+                <Paper
+                  elevation={0}
+                  sx={{
+                    position: "absolute",
+
+                    top: "calc(100% + 6px)",
+                    left: 0,
+                    right: 0,
+
+                    bgcolor: "#fff",
+
+                    border:
+                      "1px solid #e1e8e6",
+
+                    borderRadius: "11px",
+
+                    overflow: "hidden",
+
+                    boxShadow:
+                      "0 12px 30px rgba(15,23,42,0.12)",
+
+                    zIndex: 1500,
+                  }}
+                >
+                  {suggestions.map(
+                    (item, index) => (
+                      <Box
+                        key={`${item}-${index}`}
+                        onClick={() =>
+                          handleSuggestionClick(
+                            item
+                          )
+                        }
+                        sx={{
+                          height: "46px",
+
+                          px: 2,
+
+                          display: "flex",
+                          alignItems: "center",
+
+                          gap: 1.3,
+
+                          cursor: "pointer",
+
+                          borderBottom:
+                            index !==
+                            suggestions.length -
+                              1
+                              ? "1px solid #f0f3f2"
+                              : "none",
+
+                          "&:hover": {
+                            bgcolor:
+                              "#f0faf7",
+                          },
+                        }}
+                      >
+                        <SearchIcon
+                          sx={{
+                            fontSize: "18px",
+                            color: "#8795a5",
+                          }}
+                        />
+
+                        <Typography
+                          sx={{
+                            fontSize: "13px",
+                            fontWeight: 500,
+                            color: "#263238",
+                          }}
+                        >
+                          {item}
+                        </Typography>
+                      </Box>
+                    )
+                  )}
+                </Paper>
+              </ClickAwayListener>
+            )}
         </Box>
 
-        {/* Search Button */}
+        {/* ===========================
+            SEARCH
+        =========================== */}
+
         <Button
           type="submit"
+          disableElevation
           variant="contained"
           sx={{
-            borderRadius: "50px",
-            px: { xs: 2, sm: 3, md: 4 },
-            py: { xs: 1, sm: 1.2 },
-            bgcolor: "#1e6658",
+            height: {
+              xs: "48px",
+              sm: "56px",
+            },
+
+            minWidth: {
+              xs: "74px",
+              sm: "112px",
+            },
+
+            px: {
+              xs: 1.5,
+              sm: 2.5,
+            },
+
+            bgcolor: PRIMARY,
+
+            color: "#fff",
+
+            borderRadius: {
+              xs: "11px",
+              sm: "13px",
+            },
+
+            fontSize: {
+              xs: "11px",
+              sm: "13px",
+            },
+
+            fontWeight: 700,
+
             textTransform: "none",
-            fontSize: { xs: "0.9rem", sm: "1rem" },
-            width: { xs: "100%", sm: "auto" },
-            minWidth: { sm: "120px" },
+
+            "&:hover": {
+              bgcolor: PRIMARY_DARK,
+            },
           }}
         >
           Search
         </Button>
-      </Paper>
 
-      {/* Suggestions Dropdown */}
-      {showSuggestions && suggestions.length > 0 && (
-        <ClickAwayListener onClickAway={() => setShowSuggestions(false)}>
-          <Paper
+        {/* ===========================
+            FILTER
+        =========================== */}
+
+        <Button
+          type="button"
+          onClick={onFilterClick}
+          startIcon={
+            <TuneIcon
+              sx={{
+                fontSize: "19px !important",
+              }}
+            />
+          }
+          sx={{
+            height: {
+              xs: "48px",
+              sm: "56px",
+            },
+
+            minWidth: {
+              xs: "48px",
+              sm: "112px",
+            },
+
+            px: {
+              xs: 0,
+              sm: 2,
+            },
+
+            bgcolor: "#f0faf7",
+
+            color: "#087d64",
+
+            border:
+              "1px solid #c6e8df",
+
+            borderRadius: {
+              xs: "11px",
+              sm: "13px",
+            },
+
+            fontSize: "13px",
+            fontWeight: 700,
+
+            textTransform: "none",
+
+            "&:hover": {
+              bgcolor: "#e5f7f2",
+              borderColor: "#9edaca",
+            },
+
+            "& .MuiButton-startIcon": {
+              margin: {
+                xs: 0,
+                sm: "0 7px 0 0",
+              },
+            },
+          }}
+        >
+          <Box
+            component="span"
             sx={{
-              position: "absolute",
-              top: "calc(100% + 6px)",
-              left: 0,
-              right: 0,
-              borderRadius: 2,
-              boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-              zIndex: 10,
-              overflow: "hidden",
+              display: {
+                xs: "none",
+                sm: "inline",
+              },
             }}
           >
-            {suggestions.map((item, index) => (
-              <Box
-                key={index}
-                onClick={() => handleSuggestionClick(item)}
-                sx={{
-                  px: { xs: 2, sm: 3 },
-                  py: { xs: 1.5, sm: 2 },
-                  fontSize: { xs: "0.9rem", sm: "1rem" },
-                  cursor: "pointer",
-                  "&:hover": { bgcolor: "#f0fdf4" },
-                }}
-              >
-                {item}
-              </Box>
-            ))}
-          </Paper>
-        </ClickAwayListener>
-      )}
+            Filters
+          </Box>
+        </Button>
+
+        {/* ===========================
+            NEARBY
+        =========================== */}
+
+        <Button
+          type="button"
+          onClick={handleNearby}
+          startIcon={
+            <LocationOnOutlinedIcon
+              sx={{
+                fontSize: "20px !important",
+              }}
+            />
+          }
+          sx={{
+            height: {
+              xs: "48px",
+              sm: "56px",
+            },
+
+            minWidth: {
+              xs: "48px",
+              sm: "112px",
+            },
+
+            px: {
+              xs: 0,
+              sm: 2,
+            },
+
+            bgcolor: "#ffffff",
+
+            color: PRIMARY,
+
+            border:
+              "1px solid #bde3da",
+
+            borderRadius: {
+              xs: "11px",
+              sm: "13px",
+            },
+
+            fontSize: "13px",
+            fontWeight: 700,
+
+            textTransform: "none",
+
+            "&:hover": {
+              bgcolor: "#f0faf7",
+              borderColor: PRIMARY,
+            },
+
+            "& .MuiButton-startIcon": {
+              margin: {
+                xs: 0,
+                sm: "0 7px 0 0",
+              },
+            },
+          }}
+        >
+          <Box
+            component="span"
+            sx={{
+              display: {
+                xs: "none",
+                sm: "inline",
+              },
+            }}
+          >
+            Nearby
+          </Box>
+        </Button>
+      </Box>
     </Box>
   );
 }

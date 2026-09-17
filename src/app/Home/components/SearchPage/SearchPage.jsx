@@ -22,7 +22,7 @@ import {
 
 export default function SearchPage() {
   const router = useRouter();
-const [showLocationHelp, setShowLocationHelp] = useState(false);
+  const [showLocationHelp, setShowLocationHelp] = useState(false);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -33,14 +33,14 @@ const [showLocationHelp, setShowLocationHelp] = useState(false);
 
   // nearby | all | search
   const [resultMode, setResultMode] = useState("nearby");
-const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [bookingLoadingId, setBookingLoadingId] = useState(null);
   const [hoveredCard, setHoveredCard] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedDoctorId, setSelectedDoctorId] = useState(null);
 
-const [totalDoctors, setTotalDoctors] = useState(0);
+  const [totalDoctors, setTotalDoctors] = useState(0);
   const itemsPerPage = 6;
 
   const [selectedFilters, setSelectedFilters] = useState({
@@ -72,85 +72,85 @@ const [totalDoctors, setTotalDoctors] = useState(0);
 
   // -----------------------------------------
   // Nearby Doctors
-const searchDoctorsByCity = async (pageNo = 1) => {
-  try {
-    setLoading(true);
-    setError("");
-    setResultMode("nearby");
-
-    // 1. Browser permission status check
-    const permission = await checkLocationPermission();
-
-    console.log("Location Permission:", permission);
-
-    // Already permanently blocked
-    if (permission === "denied") {
-      setLocationStatus("blocked");
-      setCurrentCity("");
-      setResults([]);
-      return;
-    }
-    setLocationStatus("checking");
-
-    let city;
-
+  const searchDoctorsByCity = async (pageNo = 1) => {
     try {
-      city = await getCurrentCity();
+      setLoading(true);
+      setError("");
+      setResultMode("nearby");
 
-      console.log("Current city:", city);
+      // 1. Browser permission status check
+      const permission = await checkLocationPermission();
 
-      setCurrentCity(city);
-      setLocationStatus("allowed");
-    } catch (locationError) {
-      console.log("Location Error:", locationError);
+      console.log("Location Permission:", permission);
 
-
-      if (locationError?.code === 1) {
+      // Already permanently blocked
+      if (permission === "denied") {
         setLocationStatus("blocked");
-      } else {
-        setLocationStatus("denied");
+        setCurrentCity("");
+        setResults([]);
+        return;
+      }
+      setLocationStatus("checking");
+
+      let city;
+
+      try {
+        city = await getCurrentCity();
+
+        console.log("Current city:", city);
+
+        setCurrentCity(city);
+        setLocationStatus("allowed");
+      } catch (locationError) {
+        console.log("Location Error:", locationError);
+
+
+        if (locationError?.code === 1) {
+          setLocationStatus("blocked");
+        } else {
+          setLocationStatus("denied");
+        }
+
+        setCurrentCity("");
+        setResults([]);
+
+        return;
       }
 
-      setCurrentCity("");
-      setResults([]);
+      // Doctor API
+      const limit = itemsPerPage;
+      const offset = (pageNo - 1) * itemsPerPage;
 
-      return;
-    }
-
-    // Doctor API
-    const limit = itemsPerPage;
-    const offset = (pageNo - 1) * itemsPerPage;
-
-    const res = await api.get("/api/doctors/doctor/search", {
-      params: {
-        search: city,
-        limit,
-        offset,
-      },
-    });
+      const res = await api.get("/api/doctors/doctor/search", {
+        params: {
+          search: city,
+          limit,
+          offset,
+        },
+      });
 
 
-setResults(mapDoctors(res?.data?.data || []));
-setTotalDoctors(res?.data?.count || 0);
-setPage(pageNo);
-  } catch (err) {
-    console.error("Nearby doctors error:", err);
+      setResults(mapDoctors(res?.data?.data || []));
+      setTotalDoctors(res?.data?.count || 0);
+      setPage(pageNo);
+    } catch (err) {
+      console.error("Nearby doctors error:", err);
 
 
-    if (err?.response?.status === 404) {
-      setResults([]);
-      setError("");
-      return;
-    }
+      if (err?.response?.status === 404) {
+        setResults([]);
+        setError("");
+        return;
+      }
 
-    setError(
-      err?.response?.data?.message ||
+      setError(
+        err?.response?.data?.message ||
         "Unable to load doctors. Please try again."
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // -----------------------------------------
   // All Doctors
@@ -172,10 +172,10 @@ setPage(pageNo);
         },
       });
 
-   setResults(mapDoctors(res?.data?.data || []));
-setTotalDoctors(res?.data?.count || 0);
-setPage(pageNo);
-resetFilters();
+      setResults(mapDoctors(res?.data?.data || []));
+      setTotalDoctors(res?.data?.count || 0);
+      setPage(pageNo);
+      resetFilters();
     } catch (err) {
       console.error("All doctors error:", err);
 
@@ -187,7 +187,7 @@ resetFilters();
 
       setError(
         err?.response?.data?.message ||
-          "Unable to load doctors. Please try again."
+        "Unable to load doctors. Please try again."
       );
     } finally {
       setLoading(false);
@@ -197,51 +197,51 @@ resetFilters();
   // -----------------------------------------
   // Search
   // -----------------------------------------
- const searchDoctors = async (query, pageNo = 1) => {
-  if (!query?.trim()) {
-    setSearchQuery("");
-    loadAllDoctors(1);
-    return;
-  }
-
-  try {
-    setLoading(true);
-    setError("");
-    setResultMode("search");
-    setSearchQuery(query.trim());
-
-    const limit = itemsPerPage;
-    const offset = (pageNo - 1) * itemsPerPage;
-
-    const res = await api.get("/api/doctors/doctor/search", {
-      params: {
-        search: query.trim(),
-        limit,
-        offset,
-      },
-    });
-
-    setResults(mapDoctors(res?.data?.data || []));
-    setTotalDoctors(res?.data?.count || 0);
-    setPage(pageNo);
-  } catch (err) {
-    console.error("Doctor search error:", err);
-
-    if (err?.response?.status === 404) {
-      setResults([]);
-      setTotalDoctors(0);
-      setError("");
+  const searchDoctors = async (query, pageNo = 1) => {
+    if (!query?.trim()) {
+      setSearchQuery("");
+      loadAllDoctors(1);
       return;
     }
 
-    setError(
-      err?.response?.data?.message ||
+    try {
+      setLoading(true);
+      setError("");
+      setResultMode("search");
+      setSearchQuery(query.trim());
+
+      const limit = itemsPerPage;
+      const offset = (pageNo - 1) * itemsPerPage;
+
+      const res = await api.get("/api/doctors/doctor/search", {
+        params: {
+          search: query.trim(),
+          limit,
+          offset,
+        },
+      });
+
+      setResults(mapDoctors(res?.data?.data || []));
+      setTotalDoctors(res?.data?.count || 0);
+      setPage(pageNo);
+    } catch (err) {
+      console.error("Doctor search error:", err);
+
+      if (err?.response?.status === 404) {
+        setResults([]);
+        setTotalDoctors(0);
+        setError("");
+        return;
+      }
+
+      setError(
+        err?.response?.data?.message ||
         "Unable to search for doctors. Please try again."
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // -----------------------------------------
   // Initial Load
@@ -271,22 +271,22 @@ resetFilters();
   // -----------------------------------------
   // Pagination
   // -----------------------------------------
-const handlePageChange = (newPage) => {
-  setPage(newPage);
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
 
-  if (resultMode === "nearby") {
-    searchDoctorsByCity(newPage);
-  } else if (resultMode === "all") {
-    loadAllDoctors(newPage);
-  } else if (resultMode === "search") {
-    searchDoctors(searchQuery, newPage);
-  }
+    if (resultMode === "nearby") {
+      searchDoctorsByCity(newPage);
+    } else if (resultMode === "all") {
+      loadAllDoctors(newPage);
+    } else if (resultMode === "search") {
+      searchDoctors(searchQuery, newPage);
+    }
 
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-};
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
   // -----------------------------------------
   // Navigation
@@ -310,21 +310,29 @@ const handlePageChange = (newPage) => {
     selectedFilters,
   });
 
-const pageCount = Math.ceil(totalDoctors / itemsPerPage);
+  const pageCount = Math.ceil(totalDoctors / itemsPerPage);
   const styles = {
     container: {
       backgroundColor: "white",
       boxShadow: "0 4px 12px #0f7468",
-      borderRadius: "8px",
-      marginTop: "64px",
+      borderRadius: "1px",
+      marginTop: "74px",
       marginBottom: "8px",
       marginLeft: "8px",
       marginRight: "8px",
-      padding: isMobile ? "16px" : "32px 48px",
-    },
 
+      padding: isMobile ? "16px" : "32px",
+
+      width: "auto",
+      maxWidth: "100%",
+      minWidth: 0,
+      boxSizing: "border-box",
+      overflowX: "hidden",
+    },
     card: {
-      width: isLaptopUp ? "357px" : "100%",
+      width: "100%",
+      minWidth: 0,
+      boxSizing: "border-box",
       border: "2px solid #028275",
       borderRadius: "8px",
       padding: "16px",
@@ -335,12 +343,16 @@ const pageCount = Math.ceil(totalDoctors / itemsPerPage);
 
     grid: {
       display: "grid",
+
       gridTemplateColumns: isMobile
         ? "1fr"
-        : isLaptopUp
-          ? "repeat(3, 1fr)"
-          : "repeat(2, 1fr)",
+        : "repeat(auto-fit, minmax(300px, 1fr))",
+
       gap: "20px",
+
+      width: "100%",
+      minWidth: 0,
+      boxSizing: "border-box",
     },
 
     avatar: {
@@ -390,21 +402,21 @@ const pageCount = Math.ceil(totalDoctors / itemsPerPage);
   };
 
   const renderContent = () => {
-   if (loading) {
-  return (
-    <>
-      <SearchLoading count={itemsPerPage} styles={styles} />
+    if (loading) {
+      return (
+        <>
+          <SearchLoading count={itemsPerPage} styles={styles} />
 
-      {pageCount > 1 && (
-        <SearchPagination
-          pageCount={pageCount}
-          page={page}
-          onPageChange={handlePageChange}
-        />
-      )}
-    </>
-  );
-}
+          {pageCount > 1 && (
+            <SearchPagination
+              pageCount={pageCount}
+              page={page}
+              onPageChange={handlePageChange}
+            />
+          )}
+        </>
+      );
+    }
     if (error) {
       return (
         <EmptyState
@@ -423,40 +435,40 @@ const pageCount = Math.ceil(totalDoctors / itemsPerPage);
         />
       );
     }
-if (locationStatus === "blocked" && resultMode === "nearby") {
-  return (
-    <EmptyState
-      icon="📍"
-      title="Location Permission Blocked"
-      description="Location permission is blocked in your browser."
-      subDescription="Click below to see the steps to allow it."
-      primaryText="See Steps to Allow Location"
-      onPrimary={() => setShowLocationHelp(true)}
-      secondaryText="View All Doctors"
-      onSecondary={() => loadAllDoctors(1)}
-      styles={styles}
-    />
-  );
-}
+    if (locationStatus === "blocked" && resultMode === "nearby") {
+      return (
+        <EmptyState
+          icon="📍"
+          title="Location Permission Blocked"
+          description="Location permission is blocked in your browser."
+          subDescription="Click below to see the steps to allow it."
+          primaryText="See Steps to Allow Location"
+          onPrimary={() => setShowLocationHelp(true)}
+          secondaryText="View All Doctors"
+          onSecondary={() => loadAllDoctors(1)}
+          styles={styles}
+        />
+      );
+    }
 
- if (
-  locationStatus === "denied" &&
-  resultMode === "nearby"
-) {
-  return (
-    <EmptyState
-      icon="📍"
-      title="Location Not Available"
-      description="We could not detect your current location."
-      subDescription="Turn on your device location and click Retry Location."
-      primaryText="Retry Location"
-      onPrimary={() => searchDoctorsByCity(1)}
-      secondaryText="View All Doctors"
-      onSecondary={() => loadAllDoctors(1)}
-      styles={styles}
-    />
-  );
-}
+    if (
+      locationStatus === "denied" &&
+      resultMode === "nearby"
+    ) {
+      return (
+        <EmptyState
+          icon="📍"
+          title="Location Not Available"
+          description="We could not detect your current location."
+          subDescription="Turn on your device location and click Retry Location."
+          primaryText="Retry Location"
+          onPrimary={() => searchDoctorsByCity(1)}
+          secondaryText="View All Doctors"
+          onSecondary={() => loadAllDoctors(1)}
+          styles={styles}
+        />
+      );
+    }
 
     if (
       results.length === 0 &&
@@ -547,53 +559,26 @@ if (locationStatus === "blocked" && resultMode === "nearby") {
   return (
     <div style={styles.container}>
       {/* Search + Filter */}
+      {/* Search + Filter + Nearby */}
       <div
         style={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          alignItems: isMobile ? "stretch" : "center",
-          gap: isMobile ? "10px" : "12px",
           width: "100%",
-          marginBottom: isMobile ? "20px" : "50px",
+          marginBottom: isMobile ? "24px" : "36px",
         }}
       >
-        <div style={{ flex: 1, width: "100%" }}>
-          <SearchBar onSearch={searchDoctors} />
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: isMobile
-              ? "flex-end"
-              : "initial",
-          }}
-        >
-          <button
-            style={{
-              minWidth: "110px",
-              height: "48px",
-              background: "#1e6658",
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontWeight: 600,
-              padding: "0 20px",
-            }}
-            onClick={() => setFilterOpen(!filterOpen)}
-          >
-            Filter
-          </button>
-        </div>
+        <SearchBar
+          onSearch={searchDoctors}
+          onFilterClick={() => setFilterOpen(true)}
+          onNearbyClick={() => searchDoctorsByCity(1)}
+        />
       </div>
 
       {renderContent()}
-<LocationHelpDialog
-  open={showLocationHelp}
-  onClose={() => setShowLocationHelp(false)}
-  onRetry={() => searchDoctorsByCity(1)}
-/>
+      <LocationHelpDialog
+        open={showLocationHelp}
+        onClose={() => setShowLocationHelp(false)}
+        onRetry={() => searchDoctorsByCity(1)}
+      />
       <Drawer
         anchor="right"
         open={filterOpen}

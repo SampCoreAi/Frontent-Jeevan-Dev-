@@ -1,5 +1,5 @@
 import React from 'react'
-import AllDoctor from '../../../../Home/components/SearchPage_Componentized/SearchPage'
+import AllDoctor from '../../../../Home/components/SearchPage/SearchPage'
 
 const page = () => {
   return (
