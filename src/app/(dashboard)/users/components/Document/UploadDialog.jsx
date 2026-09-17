@@ -8,6 +8,7 @@ import {
   Box,
   Typography,
   CircularProgress,
+  LinearProgress,
   Alert,
   IconButton,
 } from "@mui/material";
@@ -33,6 +34,7 @@ export const UploadDialog = ({
   handleDragLeave,
   isDragging,
   uploading,
+  uploadProgress,
   uploadSuccess,
   currentFolderName,
   isMobile,
@@ -43,6 +45,7 @@ export const UploadDialog = ({
 
     setOpenUpload(false);
   };
+  
 
   return (
     <Dialog
@@ -104,97 +107,146 @@ export const UploadDialog = ({
         {/* ================= UPLOADING ================= */}
 
         {uploading ? (
-          <Box
-            sx={{
-              border: `2px dashed ${THEME_COLOR}`,
-              borderRadius: 2,
-              height: isMobile ? "200px" : "250px",
-              bgcolor: "#fafafa",
+  <Box
+    sx={{
+      border: `2px dashed ${THEME_COLOR}`,
+      borderRadius: 2,
+      height: isMobile ? "220px" : "250px",
+      bgcolor: "#fafafa",
 
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
 
-              textAlign: "center",
-              gap: 2,
-            }}
-          >
-            <CircularProgress
-              size={isMobile ? 40 : 50}
-              thickness={4}
-              sx={{
-                color: THEME_COLOR,
-              }}
-            />
+      textAlign: "center",
+      px: 3,
+    }}
+  >
+    <CloudUploadOutlinedIcon
+      sx={{
+        fontSize: isMobile ? 40 : 50,
+        color: THEME_COLOR,
+        mb: 1.5,
+      }}
+    />
 
-            <Typography
-              fontWeight={600}
-              fontSize={isMobile ? 15 : 18}
-              color={THEME_COLOR}
-            >
-              Uploading...
-            </Typography>
+    <Typography
+      fontWeight={600}
+      fontSize={isMobile ? 15 : 18}
+      color={THEME_COLOR}
+    >
+      Uploading File...
+    </Typography>
 
-            <Typography fontSize={isMobile ? 11 : 13} color="black">
-              Please wait while your file is being uploaded.
-            </Typography>
-          </Box>
-        ) : uploadSuccess ? (
-          /* ================= SUCCESS ================= */
+    {/* PERCENTAGE */}
 
-          <Box
-            sx={{
-              minHeight: isMobile ? "200px" : "250px",
+    <Typography
+      sx={{
+        mt: 1.5,
+        fontSize: isMobile ? 24 : 30,
+        fontWeight: 700,
+        color: THEME_COLOR,
+      }}
+    >
+      {uploadProgress}%
+    </Typography>
 
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
+    {/* PROGRESS BAR */}
 
-              textAlign: "center",
-            }}
-          >
-            <Box
-              sx={{
-                width: 70,
-                height: 70,
-                borderRadius: "50%",
-                bgcolor: "#e8f5e9",
+    <Box
+      sx={{
+        width: "100%",
+        maxWidth: 350,
+        mt: 1.5,
+      }}
+    >
+      <LinearProgress
+        variant="determinate"
+        value={uploadProgress}
+        sx={{
+          height: 8,
+          borderRadius: 10,
+          bgcolor: "#dce8e4",
 
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
+          "& .MuiLinearProgress-bar": {
+            borderRadius: 10,
+            bgcolor: THEME_COLOR,
+          },
+        }}
+      />
+    </Box>
 
-                mb: 2,
-              }}
-            >
-              <CheckCircleOutlineIcon
-                sx={{ fontSize: 40, color: "#2e7d32" }}
-              />
-            </Box>
+    <Typography
+      sx={{
+        mt: 1.5,
+        fontSize: isMobile ? 11 : 13,
+        color: "text.secondary",
+      }}
+    >
+      Please wait while your file is being uploaded.
+    </Typography>
+  </Box>
+) : uploadSuccess ? (
+  <Box
+    sx={{
+      minHeight: isMobile ? "220px" : "250px",
 
-            <Alert
-              icon={false}
-              severity="success"
-              sx={{
-                width: "100%",
-                maxWidth: 400,
-              }}
-            >
-              {uploadSuccess}
-            </Alert>
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
 
-            <Typography
-              variant="body2"
-              color="black"
-              sx={{
-                mt: 2,
-              }}
-            >
-              Your file is ready to view.
-            </Typography>
-          </Box>
+      textAlign: "center",
+    }}
+  >
+    <CheckCircleOutlineIcon
+      sx={{
+        fontSize: isMobile ? 55 : 65,
+        color: "#2e7d32",
+      }}
+    />
+
+    <Typography
+      sx={{
+        mt: 1.5,
+        fontSize: isMobile ? 18 : 21,
+        fontWeight: 700,
+        color: THEME_COLOR,
+      }}
+    >
+      Upload Complete
+    </Typography>
+
+    <Typography
+      sx={{
+        mt: 0.5,
+        fontSize: isMobile ? 12 : 14,
+        color: "text.secondary",
+      }}
+    >
+      {uploadSuccess}
+    </Typography>
+
+    <Button
+      variant="contained"
+      onClick={handleClose}
+      sx={{
+        mt: 3,
+        minWidth: 120,
+
+        bgcolor: THEME_COLOR,
+        textTransform: "none",
+        fontWeight: 600,
+
+        "&:hover": {
+          bgcolor: THEME_COLOR_DARK,
+        },
+      }}
+    >
+      Close
+    </Button>
+  </Box>
         ) : (
           /* ================= NORMAL UPLOAD UI ================= */
 

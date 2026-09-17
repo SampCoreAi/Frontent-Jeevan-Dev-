@@ -9,7 +9,14 @@ export default function SearchPagination({
   onPageChange,
 }) {
   return (
-    <Stack spacing={2} alignItems="center" sx={{ mt: 4, mb: 2 }}>
+    <Stack
+      spacing={2}
+      alignItems="center"
+      sx={{
+        mt: 4,
+        mb: 2,
+      }}
+    >
       <Pagination
         count={Math.max(pageCount, 1)}
         page={page}
@@ -20,24 +27,26 @@ export default function SearchPagination({
         siblingCount={1}
         boundaryCount={1}
         sx={{
-          // Normal numbers + arrows
+          // Normal page numbers + arrows
           "& .MuiPaginationItem-root": {
-            color: "#028275",
+            color: "primary.dark",
+            transition: "all 0.2s ease",
+          },
+
+          // Normal item hover
+          "& .MuiPaginationItem-root:hover": {
+            backgroundColor: "primary.light",
           },
 
           // Selected page
           "& .MuiPaginationItem-root.Mui-selected": {
-            backgroundColor: "#028275",
-            color: "#fff",
+            backgroundColor: "primary.main",
+            color: "primary.contrastText",
+            fontWeight: 600,
 
             "&:hover": {
-              backgroundColor: "#026d63",
+              backgroundColor: "primary.dark",
             },
-          },
-
-          // Hover
-          "& .MuiPaginationItem-root:hover": {
-            backgroundColor: "#e6f4f2",
           },
         }}
       />

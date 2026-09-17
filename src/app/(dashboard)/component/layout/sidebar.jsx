@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+
 import {
   Drawer,
-  Grid,
   Avatar,
   Typography,
   Button,
@@ -18,13 +18,12 @@ import Link from "next/link";
 import {
   Share,
   ChevronRight,
-  Favorite,
 } from "@mui/icons-material";
 
-import { useTheme } from "@mui/material/styles";
+import { useTheme, alpha } from "@mui/material/styles";
 import { usePathname } from "next/navigation";
-import { menuItems } from "./menuItems";
 
+import { menuItems } from "./menuItems";
 
 const Sidebar = ({
   isOpen,
@@ -34,9 +33,9 @@ const Sidebar = ({
   setActiveButton,
   drawerWidth,
 }) => {
-  /* =========================================================
-     EXISTING STATES
-  ========================================================= */
+  // =========================================================
+  // STATES
+  // =========================================================
 
   const [roleId, setRoleId] = useState(0);
   const [profileImage, setProfileImage] = useState("");
@@ -48,16 +47,19 @@ const Sidebar = ({
 
   const [specialization, setSpecialization] = useState("");
 
+  // =========================================================
+  // THEME
+  // =========================================================
+
   const theme = useTheme();
 
   const isMobile = useMediaQuery("(max-width:900px)");
 
   const pathname = usePathname();
 
-
-  /* =========================================================
-     GET USER
-  ========================================================= */
+  // =========================================================
+  // GET USER
+  // =========================================================
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -68,8 +70,15 @@ const Sidebar = ({
 
         setRoleId(user.role_id || 0);
         setUserName(user.full_name || "Not Provided");
-        setQualification(user.qualification || "Not Provided");
-        setSpecialization(user.specialization || "Not Provided");
+
+        setQualification(
+          user.qualification || "Not Provided"
+        );
+
+        setSpecialization(
+          user.specialization || "Not Provided"
+        );
+
         setProfileImage(user.image || "");
       } else {
         setUserName("Not Provided");
@@ -79,12 +88,12 @@ const Sidebar = ({
     }
   }, []);
 
+  // =========================================================
+  // PROFILE IMAGE
+  // =========================================================
 
-  /* =========================================================
-     PROFILE IMAGE
-  ========================================================= */
-
-  const S3_BUCKET_URL = process.env.NEXT_PUBLIC_S3_BUCKET_URL;
+  const S3_BUCKET_URL =
+    process.env.NEXT_PUBLIC_S3_BUCKET_URL;
 
   const avatarSrc = profileImage
     ? `${S3_BUCKET_URL}/${profileImage}`
@@ -92,18 +101,15 @@ const Sidebar = ({
     ? "/img/IconPatient.png"
     : "/img/IconDoctor.png";
 
-
-  /* =========================================================
-     MENU ITEMS
-  ========================================================= */
+  // =========================================================
+  // MENU ITEMS
+  // =========================================================
 
   const currentMenuItems = menuItems[roleId] || [];
 
-
-  /* =========================================================
-     ACTIVE ROUTE
-     SAME LOGIC
-  ========================================================= */
+  // =========================================================
+  // ACTIVE ROUTE
+  // =========================================================
 
   useEffect(() => {
     // Prescription / Report Patient pages
@@ -116,7 +122,9 @@ const Sidebar = ({
     }
 
     // Appointment page should keep Doctor selected
-    if (pathname.startsWith("/users/pages/Appointment")) {
+    if (
+      pathname.startsWith("/users/pages/Appointment")
+    ) {
       setActiveButton("Doctor");
       return;
     }
@@ -131,12 +139,15 @@ const Sidebar = ({
     if (currentItem) {
       setActiveButton(currentItem.label);
     }
-  }, [pathname, currentMenuItems, setActiveButton]);
+  }, [
+    pathname,
+    currentMenuItems,
+    setActiveButton,
+  ]);
 
-
-  /* =========================================================
-     NAVIGATION
-  ========================================================= */
+  // =========================================================
+  // NAVIGATION
+  // =========================================================
 
   const handleNavigation = (item) => {
     setActiveButton(item.label);
@@ -146,10 +157,9 @@ const Sidebar = ({
     }
   };
 
-
-  /* =========================================================
-     SIDEBAR CONTENT
-  ========================================================= */
+  // =========================================================
+  // SIDEBAR CONTENT
+  // =========================================================
 
   const sidebarContent = (
     <Box
@@ -160,9 +170,11 @@ const Sidebar = ({
         display: "flex",
         flexDirection: "column",
 
-        backgroundColor: "#ffffff",
+        // GLOBAL THEME
+        bgcolor: "background.paper",
 
-        borderRight: "1px solid #e6ecea",
+        borderRight: "1px solid",
+        borderColor: "divider",
 
         px: {
           xs: "14px",
@@ -177,7 +189,6 @@ const Sidebar = ({
         overflow: "hidden",
       }}
     >
-
       {/* =====================================================
           PROFILE CARD
       ====================================================== */}
@@ -186,9 +197,11 @@ const Sidebar = ({
         sx={{
           p: "16px",
 
-          backgroundColor: "#f0faf7",
+          // #EDF7F2
+          bgcolor: "secondary.light",
 
-          border: "1px solid #d1ebe4",
+          border: "1px solid",
+          borderColor: "divider",
 
           borderRadius: "14px",
 
@@ -198,24 +211,30 @@ const Sidebar = ({
             "border-color 0.3s ease, box-shadow 0.35s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1)",
 
           "&:hover": {
-            borderColor: "#b9e2d8",
+            // #8DDBC7
+            borderColor: "primary.light",
 
             transform: "translateY(-2px)",
 
-            boxShadow:
-              "0 8px 24px rgba(10,159,125,0.08)",
+            boxShadow: `0 8px 24px ${alpha(
+              theme.palette.primary.main,
+              0.1
+            )}`,
 
             "& .profile-avatar": {
               transform: "scale(1.06)",
 
-              boxShadow:
-                "0 5px 14px rgba(10,159,125,0.14)",
+              boxShadow: `0 5px 14px ${alpha(
+                theme.palette.primary.main,
+                0.16
+              )}`,
             },
           },
         }}
       >
-
-        {/* PROFILE TOP */}
+        {/* =================================================
+            PROFILE TOP
+        ================================================= */}
 
         <Box
           sx={{
@@ -224,7 +243,6 @@ const Sidebar = ({
             gap: "12px",
           }}
         >
-
           {/* AVATAR */}
 
           <Avatar
@@ -237,20 +255,23 @@ const Sidebar = ({
 
               flexShrink: 0,
 
-              backgroundColor: "#ffffff",
+              bgcolor: "background.paper",
 
-              border: "1.5px solid #bce5da",
+              border: "1.5px solid",
+              borderColor: "primary.light",
 
-              color: "#0a9f7d",
+              // #3FA65A
+              color: "primary.main",
 
-              boxShadow:
-                "0 2px 6px rgba(10,159,125,0.08)",
+              boxShadow: `0 2px 6px ${alpha(
+                theme.palette.primary.main,
+                0.1
+              )}`,
 
               transition:
                 "transform 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s ease",
             }}
           />
-
 
           {/* USER DETAILS */}
 
@@ -260,7 +281,6 @@ const Sidebar = ({
               flex: 1,
             }}
           >
-
             <Typography
               sx={{
                 fontSize: "16px",
@@ -269,7 +289,7 @@ const Sidebar = ({
 
                 fontWeight: 700,
 
-                color: "#075f50",
+                color: "text.primary",
 
                 whiteSpace: "nowrap",
                 overflow: "hidden",
@@ -279,7 +299,6 @@ const Sidebar = ({
               {userName}
             </Typography>
 
-
             <Typography
               sx={{
                 mt: "3px",
@@ -288,7 +307,7 @@ const Sidebar = ({
 
                 lineHeight: 1.3,
 
-                color: "#7b8b87",
+                color: "text.secondary",
 
                 whiteSpace: "nowrap",
                 overflow: "hidden",
@@ -300,8 +319,7 @@ const Sidebar = ({
                 : specialization || qualification}
             </Typography>
 
-
-            {/* ACTIVE */}
+            {/* ACTIVE STATUS */}
 
             <Box
               sx={{
@@ -313,8 +331,18 @@ const Sidebar = ({
                 gap: "5px",
               }}
             >
+              <Box
+                sx={{
+                  width: "6px",
+                  height: "6px",
 
-             
+                  borderRadius: "50%",
+
+                  bgcolor: "success.main",
+
+                  boxShadow: `0 0 0 3px ${theme.palette.success.light}`,
+                }}
+              />
 
               <Typography
                 sx={{
@@ -322,26 +350,28 @@ const Sidebar = ({
 
                   fontWeight: 600,
 
-                  color: "#08775f",
+                  color: "success.dark",
                 }}
               >
                 Active
               </Typography>
-
             </Box>
-
           </Box>
-
         </Box>
-
 
         {/* =================================================
             SHARE PROFILE
-        ================================================== */}
+        ================================================= */}
 
         <Button
           fullWidth
-          startIcon={<Share sx={{ fontSize: "17px !important" }} />}
+          startIcon={
+            <Share
+              sx={{
+                fontSize: "17px !important",
+              }}
+            />
+          }
           sx={{
             height: "40px",
 
@@ -349,12 +379,11 @@ const Sidebar = ({
 
             borderRadius: "9px",
 
-            backgroundColor: "#0a9f7d",
-
-            color: "#ffffff",
+            // EXACT THEME PRIMARY
+            bgcolor: "primary.main",
+            color: "primary.contrastText",
 
             fontSize: "12px",
-
             fontWeight: 650,
 
             textTransform: "none",
@@ -370,28 +399,30 @@ const Sidebar = ({
             },
 
             "&:hover": {
-              backgroundColor: "#07876a",
+              bgcolor: "primary.dark",
 
               transform: "translateY(-2px)",
 
-              boxShadow:
-                "0 7px 18px rgba(10,159,125,0.20)",
+              boxShadow: `0 7px 18px ${alpha(
+                theme.palette.primary.main,
+                0.22
+              )}`,
 
               "& .MuiButton-startIcon": {
-                transform: "rotate(-12deg) scale(1.1)",
+                transform:
+                  "rotate(-12deg) scale(1.1)",
               },
             },
 
             "&:active": {
-              transform: "translateY(0) scale(0.99)",
+              transform:
+                "translateY(0) scale(0.99)",
             },
           }}
         >
           Share Profile
         </Button>
-
       </Box>
-
 
       {/* =====================================================
           DIVIDER
@@ -400,11 +431,9 @@ const Sidebar = ({
       <Divider
         sx={{
           my: "18px",
-
-          borderColor: "#edf1f0",
+          borderColor: "divider",
         }}
       />
-
 
       {/* =====================================================
           MAIN MENU
@@ -422,12 +451,11 @@ const Sidebar = ({
 
           letterSpacing: "1px",
 
-          color: "#9ba8a4",
+          color: "text.disabled",
         }}
       >
         MAIN MENU
       </Typography>
-
 
       {/* =====================================================
           MENU ITEMS
@@ -449,236 +477,250 @@ const Sidebar = ({
           },
         }}
       >
+        {currentMenuItems.map(
+          (item, index) => {
+            const isActive =
+              activeButton === item.label;
 
-        {currentMenuItems.map((item, index) => {
-          const isActive = activeButton === item.label;
-
-          return (
-            <Tooltip
-              key={index}
-              title={!isOpen && !isMobile ? item.label : ""}
-              placement="right"
-              arrow
-            >
-              <Link
-                href={item.route}
-                style={{
-                  width: "100%",
-                  textDecoration: "none",
-                }}
-                passHref
+            return (
+              <Tooltip
+                key={index}
+                title={
+                  !isOpen && !isMobile
+                    ? item.label
+                    : ""
+                }
+                placement="right"
+                arrow
               >
-
-                <Button
-                  onClick={() => handleNavigation(item)}
-                  disableRipple
-                  sx={{
-                    position: "relative",
-
+                <Link
+                  href={item.route}
+                  style={{
                     width: "100%",
+                    textDecoration: "none",
+                  }}
+                  passHref
+                >
+                  <Button
+                    onClick={() =>
+                      handleNavigation(item)
+                    }
+                    disableRipple
+                    sx={{
+                      position: "relative",
 
-                    height: "46px",
+                      width: "100%",
 
-                    minHeight: "46px",
+                      height: "46px",
+                      minHeight: "46px",
 
-                    px: "11px",
-
-                    display: "flex",
-
-                    justifyContent: "flex-start",
-
-                    alignItems: "center",
-
-                    gap: "11px",
-
-                    borderRadius: "10px",
-
-                    color: isActive
-                      ? "#08775f"
-                      : "#3f4d49",
-
-                    backgroundColor: isActive
-                      ? "#eaf7f3"
-                      : "transparent",
-
-                    textTransform: "none",
-
-                    overflow: "hidden",
-
-                    transition:
-                      "background-color 0.3s cubic-bezier(0.22,1,0.36,1), color 0.3s cubic-bezier(0.22,1,0.36,1), transform 0.3s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s cubic-bezier(0.22,1,0.36,1)",
-
-
-                    /* LEFT ACTIVE LINE */
-
-                    "&::before": isActive
-                      ? {
-                          content: '""',
-
-                          position: "absolute",
-
-                          left: 0,
-                          top: "11px",
-
-                          width: "3px",
-                          height: "24px",
-
-                          borderRadius:
-                            "0 4px 4px 0",
-
-                          backgroundColor:
-                            "#0a9f7d",
-
-                          transition:
-                            "height 0.3s ease, top 0.3s ease",
-                        }
-                      : {},
-
-
-                    /* ICON */
-
-                    "& .menu-icon": {
-                      width: "24px",
-                      minWidth: "24px",
+                      px: "11px",
 
                       display: "flex",
+
+                      justifyContent:
+                        "flex-start",
+
                       alignItems: "center",
-                      justifyContent: "center",
 
+                      gap: "11px",
+
+                      borderRadius: "10px",
+
+                      // ACTIVE TEXT
                       color: isActive
-                        ? "#0a9f7d"
-                        : "#64746f",
+                        ? "primary.main"
+                        : "text.secondary",
+
+                      // ACTIVE BACKGROUND
+                      bgcolor: isActive
+                        ? "secondary.light"
+                        : "transparent",
+
+                      textTransform: "none",
+
+                      overflow: "hidden",
 
                       transition:
-                        "color 0.3s ease, transform 0.3s cubic-bezier(0.22,1,0.36,1)",
+                        "background-color 0.3s cubic-bezier(0.22,1,0.36,1), color 0.3s cubic-bezier(0.22,1,0.36,1), transform 0.3s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s cubic-bezier(0.22,1,0.36,1)",
 
-                      "& svg": {
-                        fontSize: "20px",
-                      },
-                    },
+                      // =========================
+                      // LEFT ACTIVE LINE
+                      // =========================
 
+                      "&::before": isActive
+                        ? {
+                            content: '""',
 
-                    /* LABEL */
+                            position:
+                              "absolute",
 
-                    "& .menu-label": {
-                      flex: 1,
+                            left: 0,
+                            top: "11px",
 
-                      textAlign: "left",
+                            width: "3px",
+                            height: "24px",
 
-                      fontSize: "12.5px",
+                            borderRadius:
+                              "0 4px 4px 0",
 
-                      fontWeight: isActive
-                        ? 700
-                        : 600,
+                            // #3FA65A
+                            bgcolor:
+                              "primary.main",
 
-                      letterSpacing:
-                        "0.15px",
+                            transition:
+                              "height 0.3s ease, top 0.3s ease",
+                          }
+                        : {},
 
-                      transition:
-                        "transform 0.3s cubic-bezier(0.22,1,0.36,1)",
-                    },
-
-
-                    /* ARROW */
-
-                    "& .menu-arrow": {
-                      fontSize: "17px",
-
-                      color: "#0a9f7d",
-
-                      opacity: isActive ? 1 : 0,
-
-                      transform: isActive
-                        ? "translateX(0)"
-                        : "translateX(-7px)",
-
-                      transition:
-                        "opacity 0.25s ease, transform 0.3s cubic-bezier(0.22,1,0.36,1)",
-                    },
-
-
-                    /* ==========================
-                       HOVER ANIMATION
-                    ========================== */
-
-                    "&:hover": {
-                      backgroundColor: isActive
-                        ? "#eaf7f3"
-                        : "#f0faf7",
-
-                      color: "#08775f",
-
-                      transform:
-                        "translateX(3px)",
-
-                      boxShadow:
-                        "0 4px 14px rgba(10,159,125,0.06)",
-
+                      // =========================
+                      // ICON
+                      // =========================
 
                       "& .menu-icon": {
-                        color: "#0a9f7d",
+                        width: "24px",
+                        minWidth: "24px",
 
-                        transform:
-                          "translateX(2px) scale(1.06)",
+                        display: "flex",
+
+                        alignItems: "center",
+
+                        justifyContent:
+                          "center",
+
+                        color: isActive
+                          ? "primary.main"
+                          : "text.secondary",
+
+                        transition:
+                          "color 0.3s ease, transform 0.3s cubic-bezier(0.22,1,0.36,1)",
+
+                        "& svg": {
+                          fontSize: "20px",
+                        },
                       },
 
+                      // =========================
+                      // LABEL
+                      // =========================
 
                       "& .menu-label": {
-                        transform:
-                          "translateX(2px)",
+                        flex: 1,
+
+                        textAlign: "left",
+
+                        fontSize: "12.5px",
+
+                        fontWeight:
+                          isActive
+                            ? 700
+                            : 600,
+
+                        letterSpacing:
+                          "0.15px",
+
+                        transition:
+                          "transform 0.3s cubic-bezier(0.22,1,0.36,1)",
                       },
 
+                      // =========================
+                      // ARROW
+                      // =========================
 
                       "& .menu-arrow": {
-                        opacity: 1,
+                        fontSize: "17px",
 
-                        transform:
-                          "translateX(0)",
+                        color:
+                          "primary.main",
+
+                        opacity: isActive
+                          ? 1
+                          : 0,
+
+                        transform: isActive
+                          ? "translateX(0)"
+                          : "translateX(-7px)",
+
+                        transition:
+                          "opacity 0.25s ease, transform 0.3s cubic-bezier(0.22,1,0.36,1)",
                       },
 
+                      // =========================
+                      // HOVER
+                      // =========================
 
-                      ...(isActive && {
-                        "&::before": {
-                          height: "28px",
-                          top: "9px",
+                      "&:hover": {
+                        bgcolor:
+                          "secondary.light",
+
+                        color:
+                          "primary.main",
+
+                        transform:
+                          "translateX(3px)",
+
+                        boxShadow: `0 4px 14px ${alpha(
+                          theme.palette.primary
+                            .main,
+                          0.08
+                        )}`,
+
+                        "& .menu-icon": {
+                          color:
+                            "primary.main",
+
+                          transform:
+                            "translateX(2px) scale(1.06)",
                         },
-                      }),
-                    },
-                  }}
-                >
 
-                  {/* ICON */}
+                        "& .menu-label": {
+                          transform:
+                            "translateX(2px)",
+                        },
 
-                  <Box className="menu-icon">
-                    {item.icon}
-                  </Box>
+                        "& .menu-arrow": {
+                          opacity: 1,
 
+                          transform:
+                            "translateX(0)",
+                        },
 
-                  {/* LABEL */}
+                        ...(isActive && {
+                          "&::before": {
+                            height: "28px",
+                            top: "9px",
+                          },
+                        }),
+                      },
+                    }}
+                  >
+                    {/* ICON */}
 
-                  {(isOpen || isMobile) && (
-                    <>
-                      <Typography
-                        component="span"
-                        className="menu-label"
-                      >
-                        {item.label}
-                      </Typography>
+                    <Box className="menu-icon">
+                      {item.icon}
+                    </Box>
 
-                      <ChevronRight className="menu-arrow" />
-                    </>
-                  )}
+                    {/* LABEL */}
 
-                </Button>
+                    {(isOpen || isMobile) && (
+                      <>
+                        <Typography
+                          component="span"
+                          className="menu-label"
+                        >
+                          {item.label}
+                        </Typography>
 
-              </Link>
-
-            </Tooltip>
-          );
-        })}
-
+                        <ChevronRight className="menu-arrow" />
+                      </>
+                    )}
+                  </Button>
+                </Link>
+              </Tooltip>
+            );
+          }
+        )}
       </Box>
-
 
       {/* =====================================================
           FOOTER
@@ -692,11 +734,10 @@ const Sidebar = ({
           px: "10px",
           pb: "5px",
 
-          borderTop:
-            "1px solid #edf1f0",
+          borderTop: "1px solid",
+          borderColor: "divider",
         }}
       >
-
         <Box
           sx={{
             display: "flex",
@@ -705,57 +746,14 @@ const Sidebar = ({
 
             gap: "9px",
 
-            "&:hover .footer-logo": {
-              transform:
-                "rotate(-6deg) scale(1.08)",
-
-              boxShadow:
-                "0 5px 12px rgba(10,159,125,0.18)",
-            },
-
             "&:hover .footer-name": {
-              color: "#0a9f7d",
+              color: "primary.main",
 
               transform:
                 "translateX(1px)",
             },
           }}
         >
-
-          {/* LOGO */}
-
-          <Box
-            className="footer-logo"
-            sx={{
-              width: 31,
-              height: 31,
-
-              display: "flex",
-
-              alignItems: "center",
-              justifyContent: "center",
-
-              flexShrink: 0,
-
-              borderRadius: "8px",
-
-              backgroundColor:
-                "#0a9f7d",
-
-              color: "#ffffff",
-
-              transition:
-                "transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s ease",
-            }}
-          >
-            <Favorite
-              sx={{
-                fontSize: 18,
-              }}
-            />
-          </Box>
-
-
           {/* BRAND */}
 
           <Typography
@@ -765,7 +763,7 @@ const Sidebar = ({
 
               fontWeight: 700,
 
-              color: "#275d53",
+              color: "text.primary",
 
               transition:
                 "color 0.25s ease, transform 0.25s ease",
@@ -773,33 +771,26 @@ const Sidebar = ({
           >
             Jeevan Dev
           </Typography>
-
         </Box>
-
 
         <Typography
           sx={{
             mt: "7px",
 
-            ml: "40px",
-
             fontSize: "9px",
 
-            color: "#9aa5a2",
+            color: "text.disabled",
           }}
         >
           © 2025 All rights reserved.
         </Typography>
-
       </Box>
-
     </Box>
   );
 
-
-  /* =========================================================
-     MOBILE DRAWER
-  ========================================================= */
+  // =========================================================
+  // MOBILE DRAWER
+  // =========================================================
 
   return isMobile ? (
     <Drawer
@@ -815,6 +806,9 @@ const Sidebar = ({
 
           width: drawerWidth,
 
+          bgcolor:
+            "background.paper",
+
           border: "none",
         },
       }}
@@ -822,10 +816,9 @@ const Sidebar = ({
       {sidebarContent}
     </Drawer>
   ) : (
-
-    /* =======================================================
-       DESKTOP DRAWER
-    ======================================================== */
+    // =======================================================
+    // DESKTOP DRAWER
+    // =======================================================
 
     <Drawer
       variant="permanent"
@@ -843,10 +836,14 @@ const Sidebar = ({
 
           top: 0,
 
+          bgcolor:
+            "background.paper",
+
           border: "none",
 
-          borderRight:
-            "1px solid #e6ecea",
+          borderRight: "1px solid",
+
+          borderColor: "divider",
         },
       }}
     >

@@ -6,7 +6,8 @@ export const mapDoctors = (doctors = []) => {
     registrationId: item.registrationId,
 
     // Basic info
-    name: item.fullName || item.username || "Doctor",
+    fullName: item.full_name || "Doctor",
+    username: item.username || "Doctor",
     username: item.username || "",
     gender: item.gender || "N/A",
 
@@ -15,6 +16,7 @@ export const mapDoctors = (doctors = []) => {
     specialization: item.specialization || "N/A",
     experience: item.experience ?? 0,
     consultationFee: item.consultationFee ?? 0,
+    age: item.age || "N/A",
 
     // Rating
     rating: item.avgRating ?? "0.0",

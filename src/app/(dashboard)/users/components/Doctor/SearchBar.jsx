@@ -23,9 +23,6 @@ import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 
 import api from "../../../../../utils/axiosInstance";
 
-const PRIMARY = "#0a9f7d";
-const PRIMARY_DARK = "#07876a";
-
 export default function SearchBar({
   onSearch,
   onFilterClick,
@@ -33,7 +30,8 @@ export default function SearchBar({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] =
+    useState(false);
   const [loading, setLoading] = useState(false);
 
   const debounceRef = useRef(null);
@@ -187,31 +185,24 @@ export default function SearchBar({
         position: "relative",
       }}
     >
-      {/* ===============================
-          TITLE
-      =============================== */}
-
-
-      {/* ===============================
-          SEARCH ROW
-      =============================== */}
-
       <Box
         component="form"
         onSubmit={handleSearch}
         sx={{
           display: "flex",
           alignItems: "center",
+
           gap: {
-            xs: "7px",
-            sm: "10px",
+            xs: "6px",
+            sm: "8px",
           },
+
           width: "100%",
         }}
       >
-        {/* ===========================
-            INPUT
-        =========================== */}
+        {/* =====================================
+            SEARCH INPUT
+        ====================================== */}
 
         <Box
           sx={{
@@ -226,57 +217,53 @@ export default function SearchBar({
               width: "100%",
 
               height: {
-                xs: "48px",
-                sm: "56px",
+                xs: "44px",
+                sm: "46px",
               },
 
               display: "flex",
               alignItems: "center",
 
               px: {
-                xs: "13px",
-                sm: "18px",
+                xs: "12px",
+                sm: "14px",
               },
 
-              bgcolor: "#ffffff",
+              // GLOBAL THEME
+              bgcolor: "background.paper",
 
-              border: "1px solid #d9e4e1",
+              border: "1px solid",
+              borderColor: "divider",
 
-              borderRadius: {
-                xs: "11px",
-                sm: "13px",
-              },
+              borderRadius: 1,
 
               boxShadow:
-                "0 2px 8px rgba(15,23,42,0.03)",
+                "0 1px 3px rgba(15, 23, 42, 0.03)",
 
-              transition: "all .2s ease",
+              transition: "all 0.2s ease",
 
               "&:hover": {
-                borderColor: "#b9cec8",
+                borderColor: "primary.light",
               },
 
               "&:focus-within": {
-                borderColor: PRIMARY,
+                borderColor: "primary.main",
 
                 boxShadow:
-                  "0 0 0 3px rgba(10,159,125,0.08)",
+                  "0 0 0 3px rgba(63, 166, 90, 0.10)",
               },
             }}
           >
             <SearchIcon
               sx={{
-                color: "#8795a8",
+                color: "text.disabled",
 
                 fontSize: {
-                  xs: "20px",
-                  sm: "22px",
+                  xs: "19px",
+                  sm: "20px",
                 },
 
-                mr: {
-                  xs: 1,
-                  sm: 1.5,
-                },
+                mr: 1,
 
                 flexShrink: 0,
               }}
@@ -298,15 +285,15 @@ export default function SearchBar({
                 flex: 1,
                 minWidth: 0,
 
-                color: "#27364b",
+                color: "text.primary",
 
                 fontSize: {
                   xs: "12px",
-                  sm: "14px",
+                  sm: "13px",
                 },
 
                 "& input::placeholder": {
-                  color: "#929caf",
+                  color: "text.disabled",
                   opacity: 1,
                 },
               }}
@@ -314,19 +301,19 @@ export default function SearchBar({
 
             {loading && (
               <CircularProgress
-                size={18}
+                size={16}
                 thickness={4}
+                color="primary"
                 sx={{
-                  color: PRIMARY,
                   ml: 1,
                 }}
               />
             )}
           </Paper>
 
-          {/* ===========================
+          {/* =====================================
               SUGGESTIONS
-          =========================== */}
+          ====================================== */}
 
           {showSuggestions &&
             suggestions.length > 0 && (
@@ -340,21 +327,21 @@ export default function SearchBar({
                   sx={{
                     position: "absolute",
 
-                    top: "calc(100% + 6px)",
+                    top: "calc(100% + 5px)",
                     left: 0,
                     right: 0,
 
-                    bgcolor: "#fff",
+                    bgcolor: "background.paper",
 
-                    border:
-                      "1px solid #e1e8e6",
+                    border: "1px solid",
+                    borderColor: "divider",
 
-                    borderRadius: "11px",
+                    borderRadius: 1,
 
                     overflow: "hidden",
 
                     boxShadow:
-                      "0 12px 30px rgba(15,23,42,0.12)",
+                      "0 10px 25px rgba(15, 23, 42, 0.10)",
 
                     zIndex: 1500,
                   }}
@@ -364,47 +351,55 @@ export default function SearchBar({
                       <Box
                         key={`${item}-${index}`}
                         onClick={() =>
-                          handleSuggestionClick(
-                            item
-                          )
+                          handleSuggestionClick(item)
                         }
                         sx={{
-                          height: "46px",
+                          minHeight: "42px",
 
-                          px: 2,
+                          px: 1.6,
 
                           display: "flex",
                           alignItems: "center",
 
-                          gap: 1.3,
+                          gap: 1,
 
                           cursor: "pointer",
 
                           borderBottom:
                             index !==
-                            suggestions.length -
-                              1
-                              ? "1px solid #f0f3f2"
+                            suggestions.length - 1
+                              ? "1px solid"
                               : "none",
+
+                          borderColor:
+                            "divider",
+
+                          transition:
+                            "background-color 0.15s ease",
 
                           "&:hover": {
                             bgcolor:
-                              "#f0faf7",
+                              "secondary.light",
                           },
                         }}
                       >
                         <SearchIcon
                           sx={{
-                            fontSize: "18px",
-                            color: "#8795a5",
+                            fontSize: "17px",
+
+                            color:
+                              "text.disabled",
                           }}
                         />
 
                         <Typography
                           sx={{
-                            fontSize: "13px",
+                            fontSize: "12.5px",
+
                             fontWeight: 500,
-                            color: "#263238",
+
+                            color:
+                              "text.primary",
                           }}
                         >
                           {item}
@@ -417,59 +412,75 @@ export default function SearchBar({
             )}
         </Box>
 
-        {/* ===========================
-            SEARCH
-        =========================== */}
+        {/* =====================================
+            SEARCH BUTTON
+        ====================================== */}
 
         <Button
           type="submit"
-          disableElevation
-          variant="contained"
+          startIcon={
+            <SearchIcon
+              sx={{
+                fontSize: "17px !important",
+              }}
+            />
+          }
           sx={{
             height: {
-              xs: "48px",
-              sm: "56px",
+              xs: "44px",
+              sm: "46px",
             },
 
             minWidth: {
-              xs: "74px",
-              sm: "112px",
+              xs: "44px",
+              sm: "92px",
             },
 
             px: {
-              xs: 1.5,
-              sm: 2.5,
+              xs: 0,
+              sm: 1.7,
             },
 
-            bgcolor: PRIMARY,
+            // IMPORTANT:
+            // DIRECTLY GLOBAL THEME PRIMARY
+            bgcolor: "primary.main",
+            color: "primary.contrastText",
 
-            color: "#fff",
+            borderRadius: 1,
 
-            borderRadius: {
-              xs: "11px",
-              sm: "13px",
-            },
+            fontSize: "12.5px",
+            fontWeight: 600,
 
-            fontSize: {
-              xs: "11px",
-              sm: "13px",
-            },
-
-            fontWeight: 700,
-
-            textTransform: "none",
+            whiteSpace: "nowrap",
 
             "&:hover": {
-              bgcolor: PRIMARY_DARK,
+              bgcolor: "primary.dark",
+            },
+
+            "& .MuiButton-startIcon": {
+              margin: {
+                xs: 0,
+                sm: "0 6px 0 0",
+              },
             },
           }}
         >
-          Search
+          <Box
+            component="span"
+            sx={{
+              display: {
+                xs: "none",
+                sm: "inline",
+              },
+            }}
+          >
+            Search
+          </Box>
         </Button>
 
-        {/* ===========================
-            FILTER
-        =========================== */}
+        {/* =====================================
+            FILTER BUTTON
+        ====================================== */}
 
         <Button
           type="button"
@@ -477,52 +488,56 @@ export default function SearchBar({
           startIcon={
             <TuneIcon
               sx={{
-                fontSize: "19px !important",
+                fontSize: "18px !important",
               }}
             />
           }
           sx={{
             height: {
-              xs: "48px",
-              sm: "56px",
+              xs: "44px",
+              sm: "46px",
             },
 
             minWidth: {
-              xs: "48px",
-              sm: "112px",
+              xs: "44px",
+              sm: "88px",
             },
 
             px: {
               xs: 0,
-              sm: 2,
+              sm: 1.5,
             },
 
-            bgcolor: "#f0faf7",
+            // GLOBAL THEME
+            bgcolor: "secondary.light",
 
-            color: "#087d64",
+            color: "primary.main",
 
-            border:
-              "1px solid #c6e8df",
+            border: "1px solid",
 
-            borderRadius: {
-              xs: "11px",
-              sm: "13px",
-            },
+            borderColor: "primary.light",
 
-            fontSize: "13px",
-            fontWeight: 700,
+            borderRadius: 1,
 
-            textTransform: "none",
+            fontSize: "12.5px",
+
+            fontWeight: 600,
+
+            whiteSpace: "nowrap",
 
             "&:hover": {
-              bgcolor: "#e5f7f2",
-              borderColor: "#9edaca",
+              bgcolor: "secondary.light",
+
+              borderColor:
+                "primary.main",
+
+              color: "primary.dark",
             },
 
             "& .MuiButton-startIcon": {
               margin: {
                 xs: 0,
-                sm: "0 7px 0 0",
+                sm: "0 6px 0 0",
               },
             },
           }}
@@ -540,9 +555,9 @@ export default function SearchBar({
           </Box>
         </Button>
 
-        {/* ===========================
-            NEARBY
-        =========================== */}
+        {/* =====================================
+            NEARBY BUTTON
+        ====================================== */}
 
         <Button
           type="button"
@@ -550,52 +565,56 @@ export default function SearchBar({
           startIcon={
             <LocationOnOutlinedIcon
               sx={{
-                fontSize: "20px !important",
+                fontSize: "19px !important",
               }}
             />
           }
           sx={{
             height: {
-              xs: "48px",
-              sm: "56px",
+              xs: "44px",
+              sm: "46px",
             },
 
             minWidth: {
-              xs: "48px",
-              sm: "112px",
+              xs: "44px",
+              sm: "92px",
             },
 
             px: {
               xs: 0,
-              sm: 2,
+              sm: 1.5,
             },
 
-            bgcolor: "#ffffff",
+            // GLOBAL THEME
+            bgcolor: "background.paper",
 
-            color: PRIMARY,
+            color: "primary.main",
 
-            border:
-              "1px solid #bde3da",
+            border: "1px solid",
 
-            borderRadius: {
-              xs: "11px",
-              sm: "13px",
-            },
+            borderColor: "primary.main",
 
-            fontSize: "13px",
-            fontWeight: 700,
+            borderRadius: 1,
 
-            textTransform: "none",
+            fontSize: "12.5px",
+
+            fontWeight: 600,
+
+            whiteSpace: "nowrap",
 
             "&:hover": {
-              bgcolor: "#f0faf7",
-              borderColor: PRIMARY,
+              bgcolor: "secondary.light",
+
+              borderColor:
+                "primary.dark",
+
+              color: "primary.dark",
             },
 
             "& .MuiButton-startIcon": {
               margin: {
                 xs: 0,
-                sm: "0 7px 0 0",
+                sm: "0 6px 0 0",
               },
             },
           }}

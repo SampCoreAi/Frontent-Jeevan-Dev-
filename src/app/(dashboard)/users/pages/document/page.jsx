@@ -35,11 +35,12 @@ export default function DocumentPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
-const [uploading, setUploading] = useState(false);
-const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-const [fileToDelete, setFileToDelete] = useState(null);
-const [deleting, setDeleting] = useState(false);
-const [uploadSuccess, setUploadSuccess] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState("");
   const [folders, setFolders] = useState([
     {
       id: "root",
@@ -118,7 +119,7 @@ const [uploadSuccess, setUploadSuccess] = useState("");
             let foundFolder = currentParent.children.find(child => child.type === 'folder' && child.name.toLowerCase() === part.toLowerCase());
 
             if (!foundFolder) {
-              const newFolderId = `folder_${part}_${Math.random().toString(36).substr(2, 9)}`;
+            const newFolderId = `${currentParentId}/${part}`;
               foundFolder = {
                 id: newFolderId,
                 name: part,
@@ -136,64 +137,64 @@ const [uploadSuccess, setUploadSuccess] = useState("");
         };
 
         const mappedFiles = filesData.map((file) => {
-  let dbFolder = file.folderName || "";
+          let dbFolder = file.folderName || "";
 
-  dbFolder = dbFolder.replace(/\\/g, "/");
+          dbFolder = dbFolder.replace(/\\/g, "/");
 
-  const parts = dbFolder.split("/").filter(Boolean);
+          const parts = dbFolder.split("/").filter(Boolean);
 
-  // "Document" root already frontend me bana hua hai
-  if (parts[0]?.toLowerCase() === "document") {
-    parts.shift();
-  }
+          // "Document" root already frontend me bana hua hai
+          if (parts[0]?.toLowerCase() === "document") {
+            parts.shift();
+          }
 
-  const targetFolderId = findOrCreatePath(parts, "root");
-const fileKey = file.fileUrl?.split("?")[0];
+          const targetFolderId = findOrCreatePath(parts, "root");
+          const fileKey = file.fileUrl?.split("?")[0];
 
-const extension = fileKey
-  ?.split(".")
-  .pop()
-  ?.toLowerCase();
+          const extension = fileKey
+            ?.split(".")
+            .pop()
+            ?.toLowerCase();
 
-const S3_BUCKET_URL = process.env.NEXT_PUBLIC_S3_BUCKET_URL;
+          const S3_BUCKET_URL = process.env.NEXT_PUBLIC_S3_BUCKET_URL;
 
-const fileObj = {
-  id: file.id,
+          const fileObj = {
+            id: file.id,
 
-  name: file.originalName || "Unknown file",
+            name: file.originalName || "Unknown file",
 
-  size: file.fileSize || "0 MB",
+            size: file.fileSize || "0 MB",
 
-  type:
-    extension === "pdf"
-      ? "application/pdf"
-      : ["jpg", "jpeg", "png", "webp"].includes(extension)
-        ? "image"
-        : "file",
+            type:
+              extension === "pdf"
+                ? "application/pdf"
+                : ["jpg", "jpeg", "png", "webp"].includes(extension)
+                  ? "image"
+                  : "file",
 
-  fileType: extension,
+            fileType: extension,
 
-  folderId: targetFolderId,
+            folderId: targetFolderId,
 
-  url: `${S3_BUCKET_URL}${file.fileUrl}`,
+            url: `${S3_BUCKET_URL}${file.fileUrl}`,
 
-  date: file.createdAt || "-",
-};
+            date: file.createdAt || "-",
+          };
 
 
 
-  if (foldersMap[targetFolderId]) {
-    foldersMap[targetFolderId].children.push({
-      id: fileObj.id,
-      name: fileObj.name,
-      type: "file",
-      fileType: fileObj.fileType,
-      folderId: targetFolderId,
-    });
-  }
+          if (foldersMap[targetFolderId]) {
+            foldersMap[targetFolderId].children.push({
+              id: fileObj.id,
+              name: fileObj.name,
+              type: "file",
+              fileType: fileObj.fileType,
+              folderId: targetFolderId,
+            });
+          }
 
-  return fileObj;
-});
+          return fileObj;
+        });
 
 
         setFolders([rootFolder]);
@@ -407,50 +408,71 @@ const processFiles = async (files) => {
     return;
   }
 
+  // Jis folder me abhi user hai
+  const uploadFolderId = selectedFolder;
+
   try {
     setUploading(true);
+    setUploadProgress(0);
     setUploadSuccess("");
-const folderNameParam = getFolderPath(selectedFolder);
 
-    for (const file of files) {
+    const folderNameParam = getFolderPath(uploadFolderId);
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
       const formData = new FormData();
       formData.append("file", file);
 
-     await axios.post(
-  `${API_BASE_URL}/licenseFile/upload?folder=${folderNameParam}`,
-  formData,
-  {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }
-);
+      await axios.post(
+        `${API_BASE_URL}/licenseFile/upload?folder=${folderNameParam}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+
+          onUploadProgress: (progressEvent) => {
+            if (!progressEvent.total) return;
+
+            const fileProgress =
+              progressEvent.loaded / progressEvent.total;
+
+            const overallProgress = Math.round(
+              ((i + fileProgress) / files.length) * 100
+            );
+
+            setUploadProgress(overallProgress);
+          },
+        }
+      );
     }
 
-    // ✅ IMPORTANT:
-    // backend se fresh files lao
-    // exactly wahi data milega jo refresh ke baad milta tha
+    setUploadProgress(100);
+
+    // Fresh data
     await fetchFiles();
+
+    // SAME FOLDER SELECT RAHEGA
+    setSelectedFolder(uploadFolderId);
+
+    setUploading(false);
 
     setUploadSuccess(
       files.length === 1
         ? "File uploaded successfully!"
         : `${files.length} files uploaded successfully!`
     );
-
-    setTimeout(() => {
-      setOpenUpload(false);
-      setUploadSuccess("");
-    }, 1200);
   } catch (error) {
     console.error("Upload error:", error);
+
+    setUploading(false);
+    setUploadProgress(0);
 
     alert(
       error.response?.data?.message ||
         "File upload failed. Please try again."
     );
-  } finally {
-    setUploading(false);
   }
 };
 
@@ -473,87 +495,87 @@ const folderNameParam = getFolderPath(selectedFolder);
   const handleDragLeave = () => {
     setIsDragging(false);
   };
-const removeFile = (fileId) => {
-  setFileToDelete(fileId);
-  setDeleteDialogOpen(true);
-};
-const confirmDeleteFile = async () => {
-  if (!fileToDelete) return;
+  const removeFile = (fileId) => {
+    setFileToDelete(fileId);
+    setDeleteDialogOpen(true);
+  };
+  const confirmDeleteFile = async () => {
+    if (!fileToDelete) return;
 
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
-  if (!token) {
-    alert("Authentication token missing. Please log in.");
-    return;
-  }
+    if (!token) {
+      alert("Authentication token missing. Please log in.");
+      return;
+    }
 
-  try {
-    setDeleting(true);
+    try {
+      setDeleting(true);
 
-    const response = await axios.delete(
-      `${API_BASE_URL}/licenseFile/deleteFiles/${fileToDelete}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    if (response.data?.success) {
-      setAllFiles((prev) =>
-        prev.filter((file) => file.id !== fileToDelete)
+      const response = await axios.delete(
+        `${API_BASE_URL}/licenseFile/deleteFiles/${fileToDelete}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
-      setFolders((prev) => {
-        const removeFromTree = (nodes) =>
-          nodes
-            .map((node) => {
-              if (
-                node.type === "file" &&
-                node.id === fileToDelete
-              ) {
-                return null;
-              }
+      if (response.data?.success) {
+        setAllFiles((prev) =>
+          prev.filter((file) => file.id !== fileToDelete)
+        );
 
-              if (node.children) {
-                return {
-                  ...node,
-                  children: removeFromTree(
-                    node.children
-                  ).filter(Boolean),
-                };
-              }
+        setFolders((prev) => {
+          const removeFromTree = (nodes) =>
+            nodes
+              .map((node) => {
+                if (
+                  node.type === "file" &&
+                  node.id === fileToDelete
+                ) {
+                  return null;
+                }
 
-              return node;
-            })
-            .filter(Boolean);
+                if (node.children) {
+                  return {
+                    ...node,
+                    children: removeFromTree(
+                      node.children
+                    ).filter(Boolean),
+                  };
+                }
 
-        return removeFromTree(prev);
-      });
+                return node;
+              })
+              .filter(Boolean);
 
-      if (selectedFile?.id === fileToDelete) {
-        setSelectedFile(null);
-        setOpenPdfViewer(false);
-        setOpenImageViewer(false);
+          return removeFromTree(prev);
+        });
+
+        if (selectedFile?.id === fileToDelete) {
+          setSelectedFile(null);
+          setOpenPdfViewer(false);
+          setOpenImageViewer(false);
+        }
+
+        setDeleteDialogOpen(false);
+        setFileToDelete(null);
       }
+    } catch (error) {
+      console.error(
+        "Delete error:",
+        error?.response?.data || error
+      );
 
-      setDeleteDialogOpen(false);
-      setFileToDelete(null);
-    }
-  } catch (error) {
-    console.error(
-      "Delete error:",
-      error?.response?.data || error
-    );
-
-    alert(
-      error?.response?.data?.message ||
+      alert(
+        error?.response?.data?.message ||
         "Failed to delete file."
-    );
-  } finally {
-    setDeleting(false);
-  }
-};
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
   const handleFileClick = (file) => {
     const fileType = (file.fileType || "").toLowerCase();
 
@@ -569,38 +591,38 @@ const confirmDeleteFile = async () => {
     }
   };
 
-const handleDownload = async (file) => {
-  try {
-    const response = await fetch(file.url, {
-      method: "GET",
-      mode: "cors",
-    });
+  const handleDownload = async (file) => {
+    try {
+      const response = await fetch(file.url, {
+        method: "GET",
+        mode: "cors",
+      });
 
-    if (!response.ok) {
-      throw new Error(`Download failed: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name || "download";
+      a.style.display = "none";
+
+      document.body.appendChild(a);
+      a.click();
+
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+    } catch (error) {
+      console.error("Download error:", error);
+
     }
-
-    const blob = await response.blob();
-
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = file.name || "download";
-    a.style.display = "none";
-
-    document.body.appendChild(a);
-    a.click();
-
-    setTimeout(() => {
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    }, 100);
-  } catch (error) {
-    console.error("Download error:", error);
-    
-  }
-};
+  };
 
   const getFilesForCurrentFolder = () => {
     return allFiles.filter(
@@ -611,13 +633,13 @@ const handleDownload = async (file) => {
   const currentFolderName = getFolderNameById(selectedFolder);
 
   return (
-   <Box
+    <Box
       sx={{
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
-        mt: 8,
+        mt: 9,
         mx: 1,
-        height:"90vh",
+        height: "90vh",
         width: "98.5%",
         mb: 2,
         boxShadow: "0 4px 12px #0f7468",
@@ -638,7 +660,7 @@ const handleDownload = async (file) => {
             height: "100%",
             display: "flex",
             borderRadius: 0,
-           
+
             overflow: "hidden",
             boxSizing: "border-box",
           }}
@@ -779,8 +801,8 @@ const handleDownload = async (file) => {
           </Box>
         </Paper>
 
-     <UploadDialog
-  openUpload={openUpload}
+        <UploadDialog
+           openUpload={openUpload}
   setOpenUpload={setOpenUpload}
   uploadFiles={uploadFiles}
   handleDrop={handleDrop}
@@ -788,10 +810,11 @@ const handleDownload = async (file) => {
   handleDragLeave={handleDragLeave}
   isDragging={isDragging}
   uploading={uploading}
+  uploadProgress={uploadProgress}
   uploadSuccess={uploadSuccess}
   currentFolderName={currentFolderName}
   isMobile={isMobile}
-/>
+        />
 
         <PdfViewerModal
           openPdfViewer={openPdfViewer}
@@ -813,79 +836,79 @@ const handleDownload = async (file) => {
           isTablet={isTablet}
         />
         <Dialog
-  open={deleteDialogOpen}
-  onClose={() => {
-    if (!deleting) {
-      setDeleteDialogOpen(false);
-      setFileToDelete(null);
-    }
-  }}
-  PaperProps={{
-    sx: {
-      borderRadius: 3,
-      width: "100%",
-      maxWidth: 400,
-      mx: 2,
-    },
-  }}
->
-  <DialogTitle
-    sx={{
-      fontWeight: 700,
-      fontSize: "1.1rem",
-      pb: 1,
-    }}
-  >
-    Delete File?
-  </DialogTitle>
+          open={deleteDialogOpen}
+          onClose={() => {
+            if (!deleting) {
+              setDeleteDialogOpen(false);
+              setFileToDelete(null);
+            }
+          }}
+          PaperProps={{
+            sx: {
+              borderRadius: 3,
+              width: "100%",
+              maxWidth: 400,
+              mx: 2,
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              fontWeight: 700,
+              fontSize: "1.1rem",
+              pb: 1,
+            }}
+          >
+            Delete File?
+          </DialogTitle>
 
-  <DialogContent>
-    <DialogContentText
-      sx={{
-        fontSize: "0.9rem",
-        color: "#6b7280",
-      }}
-    >
-      Are you sure you want to delete this file? This action
-      cannot be undone.
-    </DialogContentText>
-  </DialogContent>
+          <DialogContent>
+            <DialogContentText
+              sx={{
+                fontSize: "0.9rem",
+                color: "#6b7280",
+              }}
+            >
+              Are you sure you want to delete this file? This action
+              cannot be undone.
+            </DialogContentText>
+          </DialogContent>
 
-  <DialogActions sx={{ px: 3, pb: 2.5 }}>
-    <Button
-      disabled={deleting}
-      onClick={() => {
-        setDeleteDialogOpen(false);
-        setFileToDelete(null);
-      }}
-      sx={{
-        color: "#4b5563",
-        textTransform: "none",
-        fontWeight: 600,
-      }}
-    >
-      Cancel
-    </Button>
+          <DialogActions sx={{ px: 3, pb: 2.5 }}>
+            <Button
+              disabled={deleting}
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setFileToDelete(null);
+              }}
+              sx={{
+                color: "#4b5563",
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
+              Cancel
+            </Button>
 
-    <Button
-      variant="contained"
-      disabled={deleting}
-      onClick={confirmDeleteFile}
-      sx={{
-        bgcolor: "#dc2626",
-        textTransform: "none",
-        fontWeight: 600,
-        borderRadius: 2,
+            <Button
+              variant="contained"
+              disabled={deleting}
+              onClick={confirmDeleteFile}
+              sx={{
+                bgcolor: "#dc2626",
+                textTransform: "none",
+                fontWeight: 600,
+                borderRadius: 2,
 
-        "&:hover": {
-          bgcolor: "#b91c1c",
-        },
-      }}
-    >
-      {deleting ? "Deleting..." : "Delete"}
-    </Button>
-  </DialogActions>
-</Dialog>
+                "&:hover": {
+                  bgcolor: "#b91c1c",
+                },
+              }}
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Box>
   );

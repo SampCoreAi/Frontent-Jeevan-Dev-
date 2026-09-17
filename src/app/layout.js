@@ -1,6 +1,7 @@
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import ThemeRegistry from "../app/theme/globalTheme";
+import AppThemeProvider from "../app/styles/theme";
 import { Providers } from "./providers";
 
 const geistSans = Inter({
@@ -58,7 +59,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <Providers>
-          <ThemeRegistry>{children}</ThemeRegistry>
+          <AppThemeProvider>
+            {children}
+          </AppThemeProvider>
         </Providers>
       </body>
     </html>
