@@ -52,7 +52,82 @@ export default function SearchPage() {
     feeRange: [],
     gender: [],
   });
+const applyFilters = async (pageNo = 1) => {
+  try {
+    setLoading(true);
+    setError("");
+    setResultMode("filter");
 
+    const params = {
+      page: pageNo,
+      limit: itemsPerPage,
+    };
+
+    if (searchQuery.trim()) {
+      params.search = searchQuery.trim();
+    }
+
+    if (selectedFilters.specialization.length > 0) {
+      params.specialization =
+        selectedFilters.specialization.join(",");
+    }
+
+    if (selectedFilters.experience.length > 0) {
+      params.experience =
+        selectedFilters.experience.join(",");
+    }
+
+    if (selectedFilters.rating.length > 0) {
+      params.rating =
+        selectedFilters.rating.join(",");
+    }
+
+    if (selectedFilters.availability.length > 0) {
+      params.availability =
+        selectedFilters.availability.join(",");
+    }
+
+    if (selectedFilters.consultationType.length > 0) {
+      params.consultationType =
+        selectedFilters.consultationType.join(",");
+    }
+
+    if (selectedFilters.feeRange.length > 0) {
+      params.feeRange =
+        selectedFilters.feeRange.join(",");
+    }
+
+    if (selectedFilters.gender.length > 0) {
+      params.gender =
+        selectedFilters.gender.join(",");
+    }
+
+    const res = await api.get(
+      "/api/doctors/doctor/search",
+      { params }
+    );
+
+    setResults(mapDoctors(res?.data?.data || []));
+    setTotalDoctors(res?.data?.count || 0);
+    setPage(pageNo);
+  } catch (err) {
+    console.error("Filter doctors error:", err);
+
+    if (err?.response?.status === 404) {
+      setResults([]);
+      setTotalDoctors(0);
+      setError("");
+      return;
+    }
+
+    setError(
+      err?.response?.data?.message ||
+        "Unable to filter doctors."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
   const [isMobile, setIsMobile] = useState(false);
   const [isLaptopUp, setIsLaptopUp] = useState(false);
 
@@ -271,22 +346,24 @@ export default function SearchPage() {
   // -----------------------------------------
   // Pagination
   // -----------------------------------------
-  const handlePageChange = (newPage) => {
-    setPage(newPage);
+const handlePageChange = (newPage) => {
+  setPage(newPage);
 
-    if (resultMode === "nearby") {
-      searchDoctorsByCity(newPage);
-    } else if (resultMode === "all") {
-      loadAllDoctors(newPage);
-    } else if (resultMode === "search") {
-      searchDoctors(searchQuery, newPage);
-    }
+  if (resultMode === "nearby") {
+    searchDoctorsByCity(newPage);
+  } else if (resultMode === "all") {
+    loadAllDoctors(newPage);
+  } else if (resultMode === "search") {
+    searchDoctors(searchQuery, newPage);
+  } else if (resultMode === "filter") {
+    applyFilters(newPage);
+  }
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  };
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+};
 
   // -----------------------------------------
   // Navigation
@@ -304,11 +381,7 @@ export default function SearchPage() {
   // -----------------------------------------
   // Filtered data
   // -----------------------------------------
-  const filteredResults = filterDoctors({
-    results,
-    selectedDoctorId,
-    selectedFilters,
-  });
+const filteredResults = results;  
 
   const pageCount = Math.ceil(totalDoctors / itemsPerPage);
   const styles = {
@@ -316,10 +389,8 @@ export default function SearchPage() {
       backgroundColor: "white",
       boxShadow: "0 4px 12px #0f7468",
       borderRadius: "1px",
-      marginTop: "74px",
-      marginBottom: "8px",
-      marginLeft: "8px",
-      marginRight: "8px",
+      marginTop: "68px",
+   
 
       padding: isMobile ? "16px" : "32px",
 
@@ -388,7 +459,6 @@ export default function SearchPage() {
       background:
         "linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)",
       backgroundSize: "200% 100%",
-      animation: "shimmer 1.5s infinite",
       borderRadius: "4px",
     },
 
@@ -559,18 +629,19 @@ export default function SearchPage() {
   return (
     <div style={styles.container}>
       {/* Search + Filter */}
-      {/* Search + Filter + Nearby */}
+  
       <div
         style={{
           width: "100%",
           marginBottom: isMobile ? "24px" : "36px",
         }}
       >
-        <SearchBar
-          onSearch={searchDoctors}
-          onFilterClick={() => setFilterOpen(true)}
-          onNearbyClick={() => searchDoctorsByCity(1)}
-        />
+      <SearchBar
+  onSearch={searchDoctors}
+  onFilterClick={() => setFilterOpen(true)}
+  onNearbyClick={() => searchDoctorsByCity(1)}
+  onEmergencyClick={() => searchDoctors("emergency", 1)}
+/>
       </div>
 
       {renderContent()}
@@ -594,11 +665,15 @@ export default function SearchPage() {
           },
         }}
       >
-        <FiltersSidebar
-          selectedFilters={selectedFilters}
-          setSelectedFilters={setSelectedFilters}
-          onClose={() => setFilterOpen(false)}
-        />
+       <FiltersSidebar
+  selectedFilters={selectedFilters}
+  setSelectedFilters={setSelectedFilters}
+  onClose={() => setFilterOpen(false)}
+  onApply={() => {
+    setFilterOpen(false);
+    applyFilters(1);
+  }}
+/>
       </Drawer>
 
       <style jsx>{`

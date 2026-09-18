@@ -785,17 +785,7 @@ function InfoBox({
     <div
       className="info-box"
       style={{
-        "--info-primary": theme.palette.primary.main,
-        "--info-primary-dark": theme.palette.primary.dark,
-
-        "--info-background": theme.palette.background.default,
-
-        "--info-text-primary": theme.palette.text.primary,
-        "--info-text-secondary": theme.palette.text.secondary,
-
-        "--info-divider": theme.palette.divider,
-
-        "--info-warning": theme.palette.warning.main,
+    
       }}
     >
       <div className="info-label">

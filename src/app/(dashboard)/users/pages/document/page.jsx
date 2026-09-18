@@ -228,12 +228,20 @@ export default function DocumentPage() {
       [folderId]: !prev[folderId],
     }));
   };
+const createFolder = () => {
+  const parentId = selectedFolder || "root";
 
-  const createFolder = () => {
-    setCreatingFolder(true);
-    setNewFolderName("");
-    setParentForNewFolder(selectedFolder);
-  };
+  // Parent folder automatically open karo
+  setExpandedFolders((prev) => ({
+    ...prev,
+    [parentId]: true,
+  }));
+
+  // Create folder input show karo
+  setParentForNewFolder(parentId);
+  setNewFolderName("");
+  setCreatingFolder(true);
+};
 
   const saveNewFolder = () => {
     if (!newFolderName.trim()) {
@@ -637,11 +645,10 @@ const processFiles = async (files) => {
       sx={{
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
-        mt: 9,
-        mx: 1,
-        height: "90vh",
-        width: "98.5%",
-        mb: 2,
+        mt: 8,
+       
+        height: "91vh",
+        width: "100%",
         boxShadow: "0 4px 12px #0f7468",
       }}
     >

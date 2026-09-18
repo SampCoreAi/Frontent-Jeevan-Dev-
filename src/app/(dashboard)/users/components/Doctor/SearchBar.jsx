@@ -20,23 +20,53 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import TuneIcon from "@mui/icons-material/Tune";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
-
+import SearchActions from "../../../../Home/components/SearchPage/components/SearchActions";
 import api from "../../../../../utils/axiosInstance";
 
 export default function SearchBar({
   onSearch,
   onFilterClick,
   onNearbyClick,
+  onEmergencyClick, // add this
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] =
-    useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // ==========================================
+  // ANIMATED PLACEHOLDER
+  // ==========================================
+const placeholderTexts = [
+  "Find the right doctor for your health needs",
+  "Search doctors by name, specialty or hospital",
+  "Find experienced doctors and book your appointment",
+  "Search for trusted doctors and hospitals near you",
+  "Find specialists for the care you need",
+];
+
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
   const debounceRef = useRef(null);
   const isFetching = useRef(false);
   const lastQueryRef = useRef("");
+
+  // ==========================================
+  // PLACEHOLDER ROTATION
+  // ==========================================
+
+  useEffect(() => {
+    // User type kar raha hai to animation ki zarurat nahi
+    if (searchQuery.trim()) return;
+
+    const interval = setInterval(() => {
+      setPlaceholderIndex(
+        (prev) => (prev + 1) % placeholderTexts.length
+      );
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [searchQuery]);
 
   // ==========================================
   // FETCH SUGGESTIONS
@@ -229,11 +259,10 @@ export default function SearchBar({
                 sm: "14px",
               },
 
-              // GLOBAL THEME
               bgcolor: "background.paper",
 
               border: "1px solid",
-              borderColor: "divider",
+              borderColor: "#c6c6c6",
 
               borderRadius: 1,
 
@@ -254,6 +283,8 @@ export default function SearchBar({
               },
             }}
           >
+            {/* SEARCH ICON */}
+
             <SearchIcon
               sx={{
                 color: "text.disabled",
@@ -269,35 +300,110 @@ export default function SearchBar({
               }}
             />
 
-            <InputBase
-              placeholder="Doctor, specialization or hospital"
-              value={searchQuery}
-              onChange={handleQueryChange}
-              onFocus={() => {
-                if (suggestions.length > 0) {
-                  setShowSuggestions(true);
-                }
-              }}
-              inputProps={{
-                maxLength: 100,
-              }}
+            {/* =====================================
+                INPUT + ANIMATED PLACEHOLDER
+            ====================================== */}
+
+            <Box
               sx={{
                 flex: 1,
                 minWidth: 0,
 
-                color: "text.primary",
+                height: "100%",
 
-                fontSize: {
-                  xs: "12px",
-                  sm: "13px",
-                },
+                position: "relative",
 
-                "& input::placeholder": {
-                  color: "text.disabled",
-                  opacity: 1,
-                },
+                display: "flex",
+                alignItems: "center",
+
+                overflow: "hidden",
               }}
-            />
+            >
+              {/* ANIMATED PLACEHOLDER */}
+
+              {!searchQuery && (
+                <Box
+                  key={placeholderIndex}
+                  sx={{
+                    position: "absolute",
+
+                    left: 0,
+                    right: 0,
+
+                    display: "flex",
+                    alignItems: "center",
+
+                    color: "text.disabled",
+
+                    fontSize: {
+                      xs: "12px",
+                      sm: "13px",
+                    },
+
+                    whiteSpace: "nowrap",
+
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+
+                    pointerEvents: "none",
+
+                    animation:
+                      "placeholderSlide 0.5s ease",
+
+                    "@keyframes placeholderSlide": {
+                      "0%": {
+                        opacity: 0,
+                        transform: "translateY(22px)",
+                      },
+
+                      "100%": {
+                        opacity: 1,
+                        transform: "translateY(0)",
+                      },
+                    },
+                  }}
+                >
+                  {placeholderTexts[placeholderIndex]}
+                </Box>
+              )}
+
+              {/* REAL INPUT */}
+
+              <InputBase
+                value={searchQuery}
+                onChange={handleQueryChange}
+                onFocus={() => {
+                  if (suggestions.length > 0) {
+                    setShowSuggestions(true);
+                  }
+                }}
+                inputProps={{
+                  maxLength: 100,
+                  "aria-label":
+                    "Search doctors and hospitals",
+                }}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+
+                  position: "relative",
+                  zIndex: 1,
+
+                  color: "text.primary",
+
+                  fontSize: {
+                    xs: "12px",
+                    sm: "13px",
+                  },
+
+                  "& input": {
+                    padding: 0,
+                  },
+                }}
+              />
+            </Box>
+
+            {/* LOADING */}
 
             {loading && (
               <CircularProgress
@@ -371,8 +477,7 @@ export default function SearchBar({
                               ? "1px solid"
                               : "none",
 
-                          borderColor:
-                            "divider",
+                          borderColor: "divider",
 
                           transition:
                             "background-color 0.15s ease",
@@ -441,8 +546,6 @@ export default function SearchBar({
               sm: 1.7,
             },
 
-            // IMPORTANT:
-            // DIRECTLY GLOBAL THEME PRIMARY
             bgcolor: "primary.main",
             color: "primary.contrastText",
 
@@ -478,159 +581,11 @@ export default function SearchBar({
           </Box>
         </Button>
 
-        {/* =====================================
-            FILTER BUTTON
-        ====================================== */}
-
-        <Button
-          type="button"
-          onClick={onFilterClick}
-          startIcon={
-            <TuneIcon
-              sx={{
-                fontSize: "18px !important",
-              }}
-            />
-          }
-          sx={{
-            height: {
-              xs: "44px",
-              sm: "46px",
-            },
-
-            minWidth: {
-              xs: "44px",
-              sm: "88px",
-            },
-
-            px: {
-              xs: 0,
-              sm: 1.5,
-            },
-
-            // GLOBAL THEME
-            bgcolor: "secondary.light",
-
-            color: "primary.main",
-
-            border: "1px solid",
-
-            borderColor: "primary.light",
-
-            borderRadius: 1,
-
-            fontSize: "12.5px",
-
-            fontWeight: 600,
-
-            whiteSpace: "nowrap",
-
-            "&:hover": {
-              bgcolor: "secondary.light",
-
-              borderColor:
-                "primary.main",
-
-              color: "primary.dark",
-            },
-
-            "& .MuiButton-startIcon": {
-              margin: {
-                xs: 0,
-                sm: "0 6px 0 0",
-              },
-            },
-          }}
-        >
-          <Box
-            component="span"
-            sx={{
-              display: {
-                xs: "none",
-                sm: "inline",
-              },
-            }}
-          >
-            Filters
-          </Box>
-        </Button>
-
-        {/* =====================================
-            NEARBY BUTTON
-        ====================================== */}
-
-        <Button
-          type="button"
-          onClick={handleNearby}
-          startIcon={
-            <LocationOnOutlinedIcon
-              sx={{
-                fontSize: "19px !important",
-              }}
-            />
-          }
-          sx={{
-            height: {
-              xs: "44px",
-              sm: "46px",
-            },
-
-            minWidth: {
-              xs: "44px",
-              sm: "92px",
-            },
-
-            px: {
-              xs: 0,
-              sm: 1.5,
-            },
-
-            // GLOBAL THEME
-            bgcolor: "background.paper",
-
-            color: "primary.main",
-
-            border: "1px solid",
-
-            borderColor: "primary.main",
-
-            borderRadius: 1,
-
-            fontSize: "12.5px",
-
-            fontWeight: 600,
-
-            whiteSpace: "nowrap",
-
-            "&:hover": {
-              bgcolor: "secondary.light",
-
-              borderColor:
-                "primary.dark",
-
-              color: "primary.dark",
-            },
-
-            "& .MuiButton-startIcon": {
-              margin: {
-                xs: 0,
-                sm: "0 6px 0 0",
-              },
-            },
-          }}
-        >
-          <Box
-            component="span"
-            sx={{
-              display: {
-                xs: "none",
-                sm: "inline",
-              },
-            }}
-          >
-            Nearby
-          </Box>
-        </Button>
+        <SearchActions
+  onFilterClick={onFilterClick}
+  onNearbyClick={handleNearby}
+  onEmergencyClick={onEmergencyClick}
+/>
       </Box>
     </Box>
   );

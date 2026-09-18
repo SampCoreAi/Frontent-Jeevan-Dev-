@@ -96,7 +96,7 @@ const matchesSearch =
     <Box
       p={4}
       sx={{
-        backgroundColor: "red",
+        backgroundColor: "white",
         boxShadow: "0 4px 12px #0f7468",
         mt: 8.5,
         mx: 1,
