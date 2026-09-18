@@ -52,6 +52,7 @@ export default function DashboardLayout({ children }) {
             display: "flex",
             flexDirection: "column",
             flexGrow: 1,
+            minWidth: 0,     
             minHeight: "100vh",
           }}
         >
@@ -66,7 +67,10 @@ export default function DashboardLayout({ children }) {
             component="main"
             sx={{
               flexGrow: 1,
-              overflowY: "auto",
+      minWidth: 0,        // ✅ ADD — yeh sabse important hai
+      width: "100%",
+      overflowX: "hidden", // ✅ ADD — page-level horizontal scroll block, andar wala scroll table sambhalega
+      overflowY: "auto",
             }}
           >
             {children}

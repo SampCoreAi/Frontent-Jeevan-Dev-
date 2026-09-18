@@ -1,48 +1,74 @@
-export const mapDoctors = (doctors = []) => {
-  return doctors.map((item) => ({
-    // IDs
-    id: item.userId,
-    userId: item.userId,
-    registrationId: item.registrationId,
+const IMAGE_BASE_URL =
+  process.env.NEXT_PUBLIC_S3_BUCKET_URL || "";
 
-    // Basic info
-    fullName: item.full_name || "Doctor",
-    username: item.username || "Doctor",
-    username: item.username || "",
-    gender: item.gender || "N/A",
+const getProfileImageUrl = (profileImage) => {
+  if (!profileImage) return "";
 
-    // Professional info
-    qualification: item.qualification || "N/A",
-    specialization: item.specialization || "N/A",
-    experience: item.experience ?? 0,
-    consultationFee: item.consultationFee ?? 0,
-    age: item.age || "N/A",
+  // Agar backend already full URL bhej raha hai
+  if (
+    profileImage.startsWith("http://") ||
+    profileImage.startsWith("https://")
+  ) {
+    return profileImage;
+  }
 
-    // Rating
-    rating: item.avgRating ?? "0.0",
-    avgRating: item.avgRating ?? "0.0",
-    totalFeedbacks: item.totalFeedbacks ?? 0,
+  // Remove extra slash
+  const baseUrl = IMAGE_BASE_URL.replace(/\/$/, "");
+  const imagePath = profileImage.replace(/^\//, "");
 
-    // Image
-    photo: item.profileImage || null,
-    profileImage: item.profileImage || null,
-
-    // Hospital
-    hospitalDetail: item.hospitalDetail || [],
-    hospitalName:
-      item.hospitalDetail?.[0]?.hospitalName ||
-      "Hospital not available",
-
-    city:
-      item.hospitalDetail?.[0]?.city ||
-      "",
-
-    area:
-      item.hospitalDetail?.[0]?.areaLocality ||
-      "",
-  }));
+  return `${baseUrl}/${imagePath}`;
 };
-// Browser permission status check
+
+export const mapDoctors = (doctors = []) => {
+  return doctors.map((item) => {
+    const hospital = item.hospitalDetail?.[0] || null;
+
+    const profileImageUrl = getProfileImageUrl(
+      item.profileImage
+    );
+
+    return {
+      // IDs
+      id: item.userId,
+      userId: item.userId,
+      registrationId: item.registrationId,
+
+      // Basic info
+      fullName: item.fullName || "Doctor",
+      username: item.username || "",
+      gender: item.gender || "N/A",
+      age: item.age ?? "N/A",
+
+      // Professional info
+      qualification: item.qualification || "N/A",
+      specialization: item.specialization || "N/A",
+      experience: item.experience ?? 0,
+      consultationFee: item.consultationFee ?? 0,
+
+      // Rating
+      rating: item.avgRating ?? "0.0",
+      avgRating: item.avgRating ?? "0.0",
+      totalFeedbacks: item.totalFeedbacks ?? 0,
+
+      // Image
+      photo: profileImageUrl,
+      profileImage: profileImageUrl,
+
+      // Hospital
+      hospitalDetail: item.hospitalDetail || [],
+      hospitalName:
+        hospital?.hospitalName || "Hospital not available",
+
+      city: hospital?.city || "",
+      area: hospital?.areaLocality || "",
+    };
+  });
+};
+
+// ======================================================
+// LOCATION
+// ======================================================
+
 export const checkLocationPermission = async () => {
   try {
     if (!navigator.permissions) {
@@ -54,16 +80,12 @@ export const checkLocationPermission = async () => {
     });
 
     return permission.state;
-    // granted | prompt | denied
   } catch (error) {
     console.log("Permission API error:", error);
     return "prompt";
   }
 };
 
-// Current city get karega
-// Agar permission "prompt" hai to getCurrentPosition()
-// automatically browser popup open karega.
 export const getCurrentCity = () => {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -78,9 +100,6 @@ export const getCurrentCity = () => {
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
-
-          console.log("Latitude:", latitude);
-          console.log("Longitude:", longitude);
 
           const response = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
@@ -107,8 +126,6 @@ export const getCurrentCity = () => {
             throw new Error("City not found.");
           }
 
-          console.log("Detected City:", city);
-
           resolve(city);
         } catch (error) {
           reject(error);
@@ -117,7 +134,6 @@ export const getCurrentCity = () => {
 
       (error) => {
         console.log("Geolocation error:", error);
-
         reject(error);
       },
 
@@ -130,12 +146,17 @@ export const getCurrentCity = () => {
   });
 };
 
+// ======================================================
+// FILTER DOCTORS
+// ======================================================
+
 export const filterDoctors = ({
   results = [],
   selectedDoctorId,
   selectedFilters,
 }) => {
   return results.filter((doctor) => {
+    // Doctor ID
     if (
       selectedDoctorId &&
       String(doctor.id) !== String(selectedDoctorId)
@@ -143,10 +164,11 @@ export const filterDoctors = ({
       return false;
     }
 
+    // Specialization
     if (
       selectedFilters.specialization?.length > 0 &&
       !selectedFilters.specialization.some((specialization) =>
-        doctor.speciality
+        doctor.specialization
           ?.toLowerCase()
           .includes(specialization.toLowerCase())
       )
@@ -154,38 +176,63 @@ export const filterDoctors = ({
       return false;
     }
 
+    // Experience
     if (selectedFilters.experience?.length > 0) {
-      const experienceMatch = selectedFilters.experience.some((item) => {
-        const exp = Number(doctor.experience);
+      const experienceMatch =
+        selectedFilters.experience.some((item) => {
+          const exp = Number(doctor.experience);
 
-        if (item === "0-5") return exp >= 0 && exp <= 5;
-        if (item === "5-10") return exp > 5 && exp <= 10;
-        if (item === "10+") return exp > 10;
+          if (item === "0-5") {
+            return exp >= 0 && exp <= 5;
+          }
 
-        return true;
-      });
+          if (item === "5-10") {
+            return exp > 5 && exp <= 10;
+          }
+
+          if (item === "10+") {
+            return exp > 10;
+          }
+
+          return true;
+        });
 
       if (!experienceMatch) return false;
     }
 
+    // Rating
     if (selectedFilters.rating?.length > 0) {
-      const ratingMatch = selectedFilters.rating.some((rating) => {
-        return Number(doctor.rating) >= Number(rating);
-      });
+      const ratingMatch =
+        selectedFilters.rating.some(
+          (rating) =>
+            Number(doctor.rating) >= Number(rating)
+        );
 
       if (!ratingMatch) return false;
     }
 
+    // Fee
     if (selectedFilters.feeRange?.length > 0) {
-      const feeMatch = selectedFilters.feeRange.some((range) => {
-        const fee = Number(doctor.fee);
+      const feeMatch =
+        selectedFilters.feeRange.some((range) => {
+          const fee = Number(
+            doctor.consultationFee
+          );
 
-        if (range === "0-500") return fee <= 500;
-        if (range === "500-1000") return fee > 500 && fee <= 1000;
-        if (range === "1000+") return fee > 1000;
+          if (range === "0-500") {
+            return fee <= 500;
+          }
 
-        return true;
-      });
+          if (range === "500-1000") {
+            return fee > 500 && fee <= 1000;
+          }
+
+          if (range === "1000+") {
+            return fee > 1000;
+          }
+
+          return true;
+        });
 
       if (!feeMatch) return false;
     }

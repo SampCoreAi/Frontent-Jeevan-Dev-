@@ -79,23 +79,54 @@ export default function DoctorCard({
       <div className="doctor-top">
         {/* IMAGE */}
 
-        <div className="doctor-avatar">
-          {doctor.photo ? (
-            <img
-              src={doctor.photo}
-              alt={doctor.name || doctor.username || "Doctor"}
-            />
-          ) : (
-            <span>
-              {(doctor.name || doctor.username || "D")
-                .replace("Dr.", "")
-                .trim()
-                .charAt(0)
-                .toUpperCase()}
-            </span>
-          )}
-        </div>
+       <div
+  style={{
+    width: "74px",
+    height: "74px",
+    borderRadius: "10px",
+    overflow: "hidden",
+    flexShrink: 0,
+    backgroundColor: "#e4eceb",
+    border: "1px solid #dbdbdb",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  }}
+>
+  {doctor.photo ? (
+    <img
+      src={doctor.photo}
+      alt={doctor.fullName || "Doctor"}
+      onError={(e) => {
+        e.currentTarget.style.display = "none";
+        e.currentTarget.nextElementSibling.style.display = "flex";
+      }}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        objectPosition: "center",
+        display: "block",
+      }}
+    />
+  ) : null}
 
+  <div
+    style={{
+      width: "100%",
+      height: "100%",
+      display: doctor.photo ? "none" : "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "25px",
+      fontWeight: "700",
+      color: "#1e6658",
+      textTransform: "uppercase",
+    }}
+  >
+    {doctor.fullName?.charAt(0) || "D"}
+  </div>
+</div>
         {/* ================= MAIN INFORMATION ================= */}
 
         <div className="doctor-main-info">
