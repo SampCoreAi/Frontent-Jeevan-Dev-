@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 console.log("API_URL:", process.env.NEXT_PUBLIC_API_URL);
 
 const api = axios.create({
@@ -40,10 +40,14 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const responseMessage = error.response?.data?.message;
+    const isExpiredToken =
+      error.response?.status === 401 ||
+      (error.response?.status === 403 && responseMessage === "Invalid or expired token");
 
     // ✅ CRITICAL: Refresh endpoint ko skip karo (infinite loop prevent)
     if (
-  error.response?.status === 401 &&
+  isExpiredToken &&
   !originalRequest._retry &&
   !originalRequest.url.includes("/refresh") &&
   !originalRequest.url.includes("/register") &&

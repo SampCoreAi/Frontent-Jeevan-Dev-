@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-
+import React, { useEffect, useState } from "react";
 import {
   Drawer,
   Avatar,
@@ -14,12 +13,7 @@ import {
 } from "@mui/material";
 
 import Link from "next/link";
-
-import {
-  Share,
-  ChevronRight,
-} from "@mui/icons-material";
-
+import { Share, ChevronRight } from "@mui/icons-material";
 import { useTheme, alpha } from "@mui/material/styles";
 import { usePathname } from "next/navigation";
 
@@ -40,51 +34,73 @@ const Sidebar = ({
   const [roleId, setRoleId] = useState(0);
   const [profileImage, setProfileImage] = useState("");
   const [userName, setUserName] = useState("Dr. User");
-
-  const [qualification, setQualification] = useState(
-    "MBBL, FCPS I MD (Medicine), MCPS"
-  );
-
+  const [qualification, setQualification] = useState("");
   const [specialization, setSpecialization] = useState("");
 
   // =========================================================
-  // THEME
+  // HOOKS
   // =========================================================
 
   const theme = useTheme();
-
-  const isMobile = useMediaQuery("(max-width:900px)");
-
   const pathname = usePathname();
 
+  const isMobile = useMediaQuery(
+    theme.breakpoints.down("md")
+  );
+
   // =========================================================
-  // GET USER
+  // USER DATA
   // =========================================================
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window === "undefined") return;
+
+    try {
       const userData = localStorage.getItem("user");
 
-      if (userData) {
-        const user = JSON.parse(userData);
-
-        setRoleId(user.role_id || 0);
-        setUserName(user.full_name || "Not Provided");
-
-        setQualification(
-          user.qualification || "Not Provided"
-        );
-
-        setSpecialization(
-          user.specialization || "Not Provided"
-        );
-
-        setProfileImage(user.image || "");
-      } else {
+      if (!userData) {
+        setRoleId(0);
         setUserName("Not Provided");
         setQualification("Not Provided");
-        setSpecialization("Not Provided");
+        setSpecialization("");
+        setProfileImage("");
+        return;
       }
+
+      const user = JSON.parse(userData);
+
+      setRoleId(Number(user?.role_id) || 0);
+
+      setUserName(
+        user?.full_name ||
+          user?.name ||
+          "Not Provided"
+      );
+
+      setQualification(
+        user?.qualification || "Not Provided"
+      );
+
+      setSpecialization(
+        user?.specialization || ""
+      );
+
+      setProfileImage(
+        user?.image ||
+          user?.profileImage ||
+          ""
+      );
+    } catch (error) {
+      console.error(
+        "Sidebar user parse error:",
+        error
+      );
+
+      setRoleId(0);
+      setUserName("Not Provided");
+      setQualification("Not Provided");
+      setSpecialization("");
+      setProfileImage("");
     }
   }, []);
 
@@ -93,51 +109,106 @@ const Sidebar = ({
   // =========================================================
 
   const S3_BUCKET_URL =
-    process.env.NEXT_PUBLIC_S3_BUCKET_URL;
+    process.env.NEXT_PUBLIC_S3_BUCKET_URL || "";
 
-  const avatarSrc = profileImage
-    ? `${S3_BUCKET_URL}/${profileImage}`
-    : roleId === 1
-    ? "/img/IconPatient.png"
-    : "/img/IconDoctor.png";
+  const getAvatarUrl = () => {
+    if (!profileImage) {
+      return Number(roleId) === 1
+        ? "/img/IconPatient.png"
+        : "/img/IconDoctor.png";
+    }
+
+    if (
+      profileImage.startsWith("http://") ||
+      profileImage.startsWith("https://")
+    ) {
+      return profileImage;
+    }
+
+    const baseUrl = S3_BUCKET_URL.replace(
+      /\/$/,
+      ""
+    );
+
+    const imagePath = profileImage.replace(
+      /^\//,
+      ""
+    );
+
+    if (!baseUrl) {
+      return `/${imagePath}`;
+    }
+
+    return `${baseUrl}/${imagePath}`;
+  };
+
+  const avatarSrc = getAvatarUrl();
 
   // =========================================================
-  // MENU ITEMS
+  // MENU
   // =========================================================
 
-  const currentMenuItems = menuItems[roleId] || [];
+  const currentMenuItems =
+    menuItems?.[roleId] || [];
+
+  /*
+    Rajiv Lab integration ke incoming code me
+    role 1-5 ke liye Lab styling condition thi.
+    Isko preserve kiya hai.
+  */
+  const isLab =
+    Number(roleId) >= 1 &&
+    Number(roleId) <= 5;
+
+  const canShareProfile =
+    Number(roleId) === 2;
 
   // =========================================================
-  // ACTIVE ROUTE
+  // ACTIVE MENU
   // =========================================================
 
   useEffect(() => {
-    // Prescription / Report Patient pages
+    if (!pathname) return;
+
+    // Doctor patient pages
     if (
-      pathname.includes("/doctor/pages/prescription") ||
-      pathname.includes("/doctor/pages/reportPatient")
+      pathname.includes(
+        "/doctor/pages/prescription"
+      ) ||
+      pathname.includes(
+        "/doctor/pages/reportPatient"
+      )
     ) {
-      setActiveButton("Patient");
+      setActiveButton?.("Patient");
       return;
     }
 
-    // Appointment page should keep Doctor selected
+    // User appointment
     if (
-      pathname.startsWith("/users/pages/Appointment")
+      pathname.startsWith(
+        "/users/pages/Appointment"
+      )
     ) {
-      setActiveButton("Doctor");
+      setActiveButton?.("Doctor");
       return;
     }
 
-    // Normal menu routes
-    const currentItem = currentMenuItems.find(
-      (item) =>
-        pathname === item.route ||
-        pathname.startsWith(`${item.route}/`)
-    );
+    const currentItem =
+      currentMenuItems.find((item) => {
+        if (!item?.route) return false;
+
+        return (
+          pathname === item.route ||
+          pathname.startsWith(
+            `${item.route}/`
+          )
+        );
+      });
 
     if (currentItem) {
-      setActiveButton(currentItem.label);
+      setActiveButton?.(
+        currentItem.label
+      );
     }
   }, [
     pathname,
@@ -150,11 +221,31 @@ const Sidebar = ({
   // =========================================================
 
   const handleNavigation = (item) => {
-    setActiveButton(item.label);
+    setActiveButton?.(item.label);
 
     if (isMobile) {
-      onClose();
+      onClose?.();
     }
+  };
+
+  // =========================================================
+  // PROFILE SUB TITLE
+  // =========================================================
+
+  const getProfileSubtitle = () => {
+    if (Number(roleId) === 1) {
+      return "Patient Account";
+    }
+
+    if (specialization) {
+      return specialization;
+    }
+
+    if (qualification) {
+      return qualification;
+    }
+
+    return "Account";
   };
 
   // =========================================================
@@ -170,23 +261,28 @@ const Sidebar = ({
         display: "flex",
         flexDirection: "column",
 
-        // GLOBAL THEME
-        bgcolor: "background.paper",
+        bgcolor: isLab
+          ? "#f4f9fc"
+          : "background.paper",
 
         borderRight: "1px solid",
         borderColor: "divider",
 
         px: {
-          xs: "14px",
-          sm: "16px",
+          xs: "12px",
+          sm: isOpen
+            ? "14px"
+            : "9px",
         },
 
         py: {
           xs: "14px",
-          sm: "16px",
+          sm: "14px",
         },
 
         overflow: "hidden",
+
+        boxSizing: "border-box",
       }}
     >
       {/* =====================================================
@@ -195,86 +291,113 @@ const Sidebar = ({
 
       <Box
         sx={{
-          p: "16px",
+          width: "100%",
 
-          // #EDF7F2
-          bgcolor: "secondary.light",
+          display: "flex",
+
+          flexDirection:
+            isOpen || isMobile
+              ? "row"
+              : "column",
+
+          alignItems: "center",
+
+          justifyContent:
+            isOpen || isMobile
+              ? "flex-start"
+              : "center",
+
+          gap:
+            isOpen || isMobile
+              ? "10px"
+              : "6px",
+
+          bgcolor: isLab
+            ? "#eaf5fb"
+            : "background.third",
 
           border: "1px solid",
-          borderColor: "divider",
 
-          borderRadius: "14px",
+          borderColor: isLab
+            ? "#cfe3ef"
+            : "divider",
+
+          borderRadius: isLab
+            ? "6px"
+            : "12px",
+
+          p:
+            isOpen || isMobile
+              ? "11px"
+              : "7px",
 
           flexShrink: 0,
 
           transition:
-            "border-color 0.3s ease, box-shadow 0.35s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1)",
+            "all 0.3s cubic-bezier(0.22,1,0.36,1)",
 
           "&:hover": {
-            // #8DDBC7
-            borderColor: "primary.light",
+            transform:
+              "translateY(-2px)",
 
-            transform: "translateY(-2px)",
+            borderColor: isLab
+              ? "#b6d8e9"
+              : "primary.light",
 
-            boxShadow: `0 8px 24px ${alpha(
+            boxShadow: `0 6px 18px ${alpha(
               theme.palette.primary.main,
               0.1
             )}`,
 
             "& .profile-avatar": {
-              transform: "scale(1.06)",
-
-              boxShadow: `0 5px 14px ${alpha(
-                theme.palette.primary.main,
-                0.16
-              )}`,
+              transform:
+                "scale(1.05)",
             },
           },
         }}
       >
-        {/* =================================================
-            PROFILE TOP
-        ================================================= */}
+        {/* AVATAR */}
 
-        <Box
+        <Avatar
+          className="profile-avatar"
+          src={avatarSrc}
+          alt={userName}
           sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
+            width:
+              isOpen || isMobile
+                ? 48
+                : 42,
+
+            height:
+              isOpen || isMobile
+                ? 48
+                : 42,
+
+            flexShrink: 0,
+
+            bgcolor: "background.paper",
+
+            border: "1.5px solid",
+
+            borderColor: isLab
+              ? "#9fcade"
+              : "primary.light",
+
+            color: "primary.main",
+
+            boxShadow: `0 2px 6px ${alpha(
+              theme.palette.primary.main,
+              0.1
+            )}`,
+
+            transition:
+              "transform 0.3s ease",
           }}
-        >
-          {/* AVATAR */}
+        />
 
-          <Avatar
-            className="profile-avatar"
-            src={avatarSrc}
-            alt={userName}
-            sx={{
-              width: 54,
-              height: 54,
+        {/* PROFILE INFO */}
 
-              flexShrink: 0,
-
-              bgcolor: "background.paper",
-
-              border: "1.5px solid",
-              borderColor: "primary.light",
-
-              // #3FA65A
-              color: "primary.main",
-
-              boxShadow: `0 2px 6px ${alpha(
-                theme.palette.primary.main,
-                0.1
-              )}`,
-
-              transition:
-                "transform 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s ease",
-            }}
-          />
-
-          {/* USER DETAILS */}
-
+        {(isOpen || isMobile) && (
           <Box
             sx={{
               minWidth: 0,
@@ -283,17 +406,22 @@ const Sidebar = ({
           >
             <Typography
               sx={{
-                fontSize: "16px",
+                fontSize: "14px",
 
                 lineHeight: 1.2,
 
                 fontWeight: 700,
 
-                color: "text.primary",
+                color: isLab
+                  ? "#123f66"
+                  : "text.primary",
 
                 whiteSpace: "nowrap",
+
                 overflow: "hidden",
-                textOverflow: "ellipsis",
+
+                textOverflow:
+                  "ellipsis",
               }}
             >
               {userName}
@@ -303,20 +431,23 @@ const Sidebar = ({
               sx={{
                 mt: "3px",
 
-                fontSize: "11px",
+                fontSize: "10.5px",
 
                 lineHeight: 1.3,
 
-                color: "text.secondary",
+                color: isLab
+                  ? "#54748d"
+                  : "text.secondary",
 
                 whiteSpace: "nowrap",
+
                 overflow: "hidden",
-                textOverflow: "ellipsis",
+
+                textOverflow:
+                  "ellipsis",
               }}
             >
-              {roleId === 1
-                ? "Patient Account"
-                : specialization || qualification}
+              {getProfileSubtitle()}
             </Typography>
 
             {/* ACTIVE STATUS */}
@@ -326,6 +457,7 @@ const Sidebar = ({
                 mt: "5px",
 
                 display: "flex",
+
                 alignItems: "center",
 
                 gap: "5px",
@@ -334,95 +466,92 @@ const Sidebar = ({
               <Box
                 sx={{
                   width: "6px",
+
                   height: "6px",
 
                   borderRadius: "50%",
 
-                  bgcolor: "success.main",
-
-                  boxShadow: `0 0 0 3px ${theme.palette.success.light}`,
+                  bgcolor:
+                    "success.main",
                 }}
               />
 
               <Typography
                 sx={{
-                  fontSize: "10px",
+                  fontSize: "9.5px",
 
                   fontWeight: 600,
 
-                  color: "success.dark",
+                  color:
+                    "success.dark",
                 }}
               >
                 Active
               </Typography>
             </Box>
           </Box>
-        </Box>
-
-        {/* =================================================
-            SHARE PROFILE
-        ================================================= */}
-
-        <Button
-          fullWidth
-          startIcon={
-            <Share
-              sx={{
-                fontSize: "17px !important",
-              }}
-            />
-          }
-          sx={{
-            height: "40px",
-
-            mt: "14px",
-
-            borderRadius: "9px",
-
-            // EXACT THEME PRIMARY
-            bgcolor: "primary.main",
-            color: "primary.contrastText",
-
-            fontSize: "12px",
-            fontWeight: 650,
-
-            textTransform: "none",
-
-            boxShadow: "none",
-
-            transition:
-              "background-color 0.3s ease, transform 0.3s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s ease",
-
-            "& .MuiButton-startIcon": {
-              transition:
-                "transform 0.35s cubic-bezier(0.22,1,0.36,1)",
-            },
-
-            "&:hover": {
-              bgcolor: "primary.dark",
-
-              transform: "translateY(-2px)",
-
-              boxShadow: `0 7px 18px ${alpha(
-                theme.palette.primary.main,
-                0.22
-              )}`,
-
-              "& .MuiButton-startIcon": {
-                transform:
-                  "rotate(-12deg) scale(1.1)",
-              },
-            },
-
-            "&:active": {
-              transform:
-                "translateY(0) scale(0.99)",
-            },
-          }}
-        >
-          Share Profile
-        </Button>
+        )}
       </Box>
+
+      {/* =====================================================
+          SHARE PROFILE
+      ====================================================== */}
+
+      {canShareProfile &&
+        (isOpen || isMobile) && (
+          <Button
+            startIcon={
+              <Share
+                sx={{
+                  fontSize:
+                    "16px !important",
+                }}
+              />
+            }
+            sx={{
+              width: "100%",
+
+              height: "38px",
+
+              mt: "10px",
+
+              borderRadius: "9px",
+
+              bgcolor:
+                "primary.main",
+
+              color:
+                "primary.contrastText",
+
+              fontSize: "11.5px",
+
+              fontWeight: 650,
+
+              textTransform: "none",
+
+              boxShadow: "none",
+
+              transition:
+                "all 0.25s ease",
+
+              "&:hover": {
+                bgcolor:
+                  "primary.dark",
+
+                transform:
+                  "translateY(-1px)",
+
+                boxShadow: `0 5px 15px ${alpha(
+                  theme.palette
+                    .primary.main,
+                  0.2
+                )}`,
+              },
+            }}
+          >
+            Share Profile
+          </Button>
+        )}
 
       {/* =====================================================
           DIVIDER
@@ -430,32 +559,34 @@ const Sidebar = ({
 
       <Divider
         sx={{
-          my: "18px",
+          my: "14px",
           borderColor: "divider",
         }}
       />
 
       {/* =====================================================
-          MAIN MENU
+          MENU TITLE
       ====================================================== */}
 
-      <Typography
-        sx={{
-          ml: "10px",
+      {(isOpen || isMobile) && (
+        <Typography
+          sx={{
+            ml: "10px",
 
-          mb: "7px",
+            mb: "7px",
 
-          fontSize: "9px",
+            fontSize: "9px",
 
-          fontWeight: 700,
+            fontWeight: 700,
 
-          letterSpacing: "1px",
+            letterSpacing: "1px",
 
-          color: "text.disabled",
-        }}
-      >
-        MAIN MENU
-      </Typography>
+            color: "text.disabled",
+          }}
+        >
+          MENU
+        </Typography>
+      )}
 
       {/* =====================================================
           MENU ITEMS
@@ -464,11 +595,18 @@ const Sidebar = ({
       <Box
         sx={{
           display: "flex",
+
           flexDirection: "column",
 
           gap: "3px",
 
+          flex: 1,
+
+          minHeight: 0,
+
           overflowY: "auto",
+
+          overflowX: "hidden",
 
           scrollbarWidth: "none",
 
@@ -480,13 +618,20 @@ const Sidebar = ({
         {currentMenuItems.map(
           (item, index) => {
             const isActive =
-              activeButton === item.label;
+              activeButton ===
+              item.label;
+
+            const showLabel =
+              isOpen || isMobile;
 
             return (
               <Tooltip
-                key={index}
+                key={
+                  item?.route ||
+                  `${item?.label}-${index}`
+                }
                 title={
-                  !isOpen && !isMobile
+                  !showLabel
                     ? item.label
                     : ""
                 }
@@ -494,203 +639,246 @@ const Sidebar = ({
                 arrow
               >
                 <Link
-                  href={item.route}
+                  href={
+                    item?.route || "#"
+                  }
                   style={{
                     width: "100%",
-                    textDecoration: "none",
+
+                    textDecoration:
+                      "none",
                   }}
-                  passHref
                 >
                   <Button
                     onClick={() =>
-                      handleNavigation(item)
+                      handleNavigation(
+                        item
+                      )
                     }
                     disableRipple
                     sx={{
-                      position: "relative",
+                      position:
+                        "relative",
 
                       width: "100%",
 
-                      height: "46px",
-                      minHeight: "46px",
+                      minWidth: 0,
 
-                      px: "11px",
+                      height: "44px",
+
+                      minHeight:
+                        "44px",
+
+                      px: showLabel
+                        ? "11px"
+                        : "8px",
 
                       display: "flex",
 
                       justifyContent:
-                        "flex-start",
+                        showLabel
+                          ? "flex-start"
+                          : "center",
 
-                      alignItems: "center",
+                      alignItems:
+                        "center",
 
-                      gap: "11px",
+                      gap: showLabel
+                        ? "10px"
+                        : 0,
 
-                      borderRadius: "10px",
+                      borderRadius:
+                        isLab
+                          ? "6px"
+                          : "10px",
 
-                      // ACTIVE TEXT
                       color: isActive
-                        ? "primary.main"
+                        ? isLab
+                          ? "#0b5c8e"
+                          : "primary.main"
+                        : isLab
+                        ? "#54748d"
                         : "text.secondary",
 
-                      // ACTIVE BACKGROUND
                       bgcolor: isActive
-                        ? "secondary.light"
+                        ? isLab
+                          ? "#dceff8"
+                          : "secondary.light"
                         : "transparent",
 
-                      textTransform: "none",
+                      textTransform:
+                        "none",
 
-                      overflow: "hidden",
+                      overflow:
+                        "hidden",
 
                       transition:
-                        "background-color 0.3s cubic-bezier(0.22,1,0.36,1), color 0.3s cubic-bezier(0.22,1,0.36,1), transform 0.3s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s cubic-bezier(0.22,1,0.36,1)",
+                        "all 0.25s ease",
 
-                      // =========================
-                      // LEFT ACTIVE LINE
-                      // =========================
+                      // ACTIVE LEFT LINE
 
-                      "&::before": isActive
-                        ? {
-                            content: '""',
+                      "&::before":
+                        isActive
+                          ? {
+                              content:
+                                '""',
 
-                            position:
-                              "absolute",
+                              position:
+                                "absolute",
 
-                            left: 0,
-                            top: "11px",
+                              left: 0,
 
-                            width: "3px",
-                            height: "24px",
+                              top: "10px",
 
-                            borderRadius:
-                              "0 4px 4px 0",
+                              width:
+                                "3px",
 
-                            // #3FA65A
-                            bgcolor:
-                              "primary.main",
+                              height:
+                                "24px",
 
-                            transition:
-                              "height 0.3s ease, top 0.3s ease",
-                          }
-                        : {},
+                              borderRadius:
+                                "0 4px 4px 0",
 
-                      // =========================
+                              bgcolor:
+                                isLab
+                                  ? "#0b5c8e"
+                                  : "primary.main",
+                            }
+                          : {},
+
                       // ICON
-                      // =========================
 
-                      "& .menu-icon": {
-                        width: "24px",
-                        minWidth: "24px",
+                      "& .menu-icon":
+                        {
+                          width:
+                            "24px",
 
-                        display: "flex",
+                          minWidth:
+                            "24px",
 
-                        alignItems: "center",
+                          display:
+                            "flex",
 
-                        justifyContent:
-                          "center",
+                          alignItems:
+                            "center",
 
-                        color: isActive
-                          ? "primary.main"
-                          : "text.secondary",
+                          justifyContent:
+                            "center",
 
-                        transition:
-                          "color 0.3s ease, transform 0.3s cubic-bezier(0.22,1,0.36,1)",
+                          flexShrink: 0,
 
-                        "& svg": {
-                          fontSize: "20px",
+                          color:
+                            isActive
+                              ? isLab
+                                ? "#0b5c8e"
+                                : "primary.main"
+                              : isLab
+                              ? "#54748d"
+                              : "text.secondary",
+
+                          transition:
+                            "all 0.25s ease",
+
+                          "& svg":
+                            {
+                              fontSize:
+                                "20px",
+                            },
                         },
-                      },
 
-                      // =========================
                       // LABEL
-                      // =========================
 
-                      "& .menu-label": {
-                        flex: 1,
+                      "& .menu-label":
+                        {
+                          flex: 1,
 
-                        textAlign: "left",
+                          minWidth: 0,
 
-                        fontSize: "12.5px",
+                          textAlign:
+                            "left",
 
-                        fontWeight:
-                          isActive
-                            ? 700
-                            : 600,
+                          fontSize:
+                            "12.5px",
 
-                        letterSpacing:
-                          "0.15px",
+                          fontWeight:
+                            isActive
+                              ? 700
+                              : 600,
 
-                        transition:
-                          "transform 0.3s cubic-bezier(0.22,1,0.36,1)",
-                      },
+                          letterSpacing:
+                            "0.15px",
 
-                      // =========================
+                          whiteSpace:
+                            "nowrap",
+
+                          overflow:
+                            "hidden",
+
+                          textOverflow:
+                            "ellipsis",
+                        },
+
                       // ARROW
-                      // =========================
 
-                      "& .menu-arrow": {
-                        fontSize: "17px",
+                      "& .menu-arrow":
+                        {
+                          fontSize:
+                            "17px",
 
-                        color:
-                          "primary.main",
+                          flexShrink: 0,
 
-                        opacity: isActive
-                          ? 1
-                          : 0,
+                          color: isLab
+                            ? "#0b5c8e"
+                            : "primary.main",
 
-                        transform: isActive
-                          ? "translateX(0)"
-                          : "translateX(-7px)",
+                          opacity:
+                            isActive
+                              ? 1
+                              : 0,
 
-                        transition:
-                          "opacity 0.25s ease, transform 0.3s cubic-bezier(0.22,1,0.36,1)",
-                      },
+                          transform:
+                            isActive
+                              ? "translateX(0)"
+                              : "translateX(-5px)",
 
-                      // =========================
+                          transition:
+                            "all 0.25s ease",
+                        },
+
                       // HOVER
-                      // =========================
 
                       "&:hover": {
-                        bgcolor:
-                          "secondary.light",
+                        bgcolor: isLab
+                          ? "#e5f2f8"
+                          : "secondary.light",
 
-                        color:
-                          "primary.main",
+                        color: isLab
+                          ? "#0b5c8e"
+                          : "primary.main",
 
                         transform:
-                          "translateX(3px)",
+                          showLabel
+                            ? "translateX(2px)"
+                            : "none",
 
-                        boxShadow: `0 4px 14px ${alpha(
-                          theme.palette.primary
-                            .main,
-                          0.08
-                        )}`,
+                        "& .menu-icon":
+                          {
+                            color:
+                              isLab
+                                ? "#0b5c8e"
+                                : "primary.main",
 
-                        "& .menu-icon": {
-                          color:
-                            "primary.main",
-
-                          transform:
-                            "translateX(2px) scale(1.06)",
-                        },
-
-                        "& .menu-label": {
-                          transform:
-                            "translateX(2px)",
-                        },
-
-                        "& .menu-arrow": {
-                          opacity: 1,
-
-                          transform:
-                            "translateX(0)",
-                        },
-
-                        ...(isActive && {
-                          "&::before": {
-                            height: "28px",
-                            top: "9px",
+                            transform:
+                              "scale(1.05)",
                           },
-                        }),
+
+                        "& .menu-arrow":
+                          {
+                            opacity: 1,
+
+                            transform:
+                              "translateX(0)",
+                          },
                       },
                     }}
                   >
@@ -702,7 +890,7 @@ const Sidebar = ({
 
                     {/* LABEL */}
 
-                    {(isOpen || isMobile) && (
+                    {showLabel && (
                       <>
                         <Typography
                           component="span"
@@ -726,65 +914,53 @@ const Sidebar = ({
           FOOTER
       ====================================================== */}
 
-      <Box
-        sx={{
-          mt: "auto",
-
-          pt: "15px",
-          px: "10px",
-          pb: "5px",
-
-          borderTop: "1px solid",
-          borderColor: "divider",
-        }}
-      >
+      {(isOpen || isMobile) && (
         <Box
           sx={{
-            display: "flex",
+            mt: "auto",
 
-            alignItems: "center",
+            pt: "12px",
 
-            gap: "9px",
+            px: "8px",
 
-            "&:hover .footer-name": {
-              color: "primary.main",
+            pb: "3px",
 
-              transform:
-                "translateX(1px)",
-            },
+            borderTop:
+              "1px solid",
+
+            borderColor:
+              "divider",
+
+            flexShrink: 0,
           }}
         >
-          {/* BRAND */}
-
           <Typography
-            className="footer-name"
             sx={{
-              fontSize: "11.5px",
+              fontSize: "11px",
 
               fontWeight: 700,
 
-              color: "text.primary",
-
-              transition:
-                "color 0.25s ease, transform 0.25s ease",
+              color:
+                "text.primary",
             }}
           >
             Jeevan Dev
           </Typography>
+
+          <Typography
+            sx={{
+              mt: "4px",
+
+              fontSize: "9px",
+
+              color:
+                "text.disabled",
+            }}
+          >
+            © 2025 All rights reserved.
+          </Typography>
         </Box>
-
-        <Typography
-          sx={{
-            mt: "7px",
-
-            fontSize: "9px",
-
-            color: "text.disabled",
-          }}
-        >
-          © 2025 All rights reserved.
-        </Typography>
-      </Box>
+      )}
     </Box>
   );
 
@@ -792,34 +968,46 @@ const Sidebar = ({
   // MOBILE DRAWER
   // =========================================================
 
-  return isMobile ? (
-    <Drawer
-      anchor="left"
-      open={isMobileOpen}
-      onClose={onClose}
-      ModalProps={{
-        keepMounted: true,
-      }}
-      sx={{
-        "& .MuiDrawer-paper": {
-          boxSizing: "border-box",
+  if (isMobile) {
+    return (
+      <Drawer
+        anchor="left"
+        open={Boolean(
+          isMobileOpen
+        )}
+        onClose={onClose}
+        ModalProps={{
+          keepMounted: true,
+        }}
+        sx={{
+          "& .MuiDrawer-paper":
+            {
+              boxSizing:
+                "border-box",
 
-          width: drawerWidth,
+              width:
+                drawerWidth,
 
-          bgcolor:
-            "background.paper",
+              bgcolor:
+                "background.paper",
 
-          border: "none",
-        },
-      }}
-    >
-      {sidebarContent}
-    </Drawer>
-  ) : (
-    // =======================================================
-    // DESKTOP DRAWER
-    // =======================================================
+              border: "none",
 
+              overflowX:
+                "hidden",
+            },
+        }}
+      >
+        {sidebarContent}
+      </Drawer>
+    );
+  }
+
+  // =========================================================
+  // DESKTOP DRAWER
+  // =========================================================
+
+  return (
     <Drawer
       variant="permanent"
       sx={{
@@ -841,9 +1029,13 @@ const Sidebar = ({
 
           border: "none",
 
-          borderRight: "1px solid",
+          borderRight:
+            "1px solid",
 
           borderColor: "divider",
+
+          transition:
+            "width 0.3s ease",
         },
       }}
     >

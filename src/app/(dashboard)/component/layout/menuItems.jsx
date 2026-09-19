@@ -15,6 +15,8 @@ import {
   ManageAccountsOutlined,
   EventAvailableOutlined,
   QrCode2Outlined,
+  ScienceOutlined,
+  AssignmentOutlined,
 } from "@mui/icons-material";
 
 export const menuItems = {
@@ -36,6 +38,16 @@ export const menuItems = {
       route: "/users/pages/history",
     },
     {
+      label: "Lab Requests",
+      icon: <AssignmentOutlined />,
+      route: "/users/pages/lab/requests",
+    },
+    {
+      label: "Lab Reports",
+      icon: <DescriptionOutlined />,
+      route: "/users/pages/lab/reports",
+    },
+    {
       label: "Profile",
       icon: <PersonOutlined />,
       route: "/users/pages/profile",
@@ -53,6 +65,21 @@ export const menuItems = {
       label: "Dashboard",
       icon: <DashboardOutlined />,
       route: "/doctor/pages/dashboard",
+    },
+    {
+      label: "Connections",
+      icon: <GroupOutlined />,
+      route: "/doctor/pages/lab/connections",
+    },
+    {
+      label: "Test Requests",
+      icon: <AssignmentOutlined />,
+      route: "/doctor/pages/lab/requests",
+    },
+    {
+      label: "Reports",
+      icon: <DescriptionOutlined />,
+      route: "/doctor/pages/lab/reports",
     },
     {
       label: "Assistants",
@@ -125,8 +152,42 @@ export const menuItems = {
     },
   ],
 
-  // Admin
+  // Lab user
   4: [
+    {
+      label: "Dashboard",
+      icon: <DashboardOutlined />,
+      route: "/lab/pages/dashboard",
+    },
+    {
+      label: "Connections",
+      icon: <GroupOutlined />,
+      route: "/lab/pages/connections",
+    },
+    {
+      label: "Test Requests",
+      icon: <AssignmentOutlined />,
+      route: "/lab/pages/requests",
+    },
+    {
+      label: "Reports",
+      icon: <DescriptionOutlined />,
+      route: "/lab/pages/reports",
+    },
+    {
+      label: "Profile",
+      icon: <PersonOutlined />,
+      route: "/lab/pages/profile",
+    },
+    {
+      label: "Setting",
+      icon: <SettingsOutlined />,
+      route: "/lab/pages/setting",
+    },
+  ],
+
+  // Admin
+  5: [
     {
       label: "Dashboard",
       icon: <DashboardOutlined />,
@@ -151,6 +212,11 @@ export const menuItems = {
       label: "Doctor Assistants",
       icon: <GroupOutlined />,
       route: "/admin/pages/Assistant",
+    },
+    {
+      label: "Labs",
+      icon: <ScienceOutlined />,
+      route: "/admin/pages/labs",
     },
     {
       label: "Patient",

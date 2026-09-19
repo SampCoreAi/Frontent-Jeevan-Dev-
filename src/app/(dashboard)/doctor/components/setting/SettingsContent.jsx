@@ -25,6 +25,7 @@ import Alert from "@mui/material/Alert";
   import DevicesIcon from "@mui/icons-material/Devices";
   import PaletteIcon from "@mui/icons-material/Palette";
   import LocalPharmacyIcon from "@mui/icons-material/LocalPharmacy";
+  import LockResetOutlinedIcon from "@mui/icons-material/LockResetOutlined";
   import { styled } from "@mui/material/styles";
 
  const OutlineFancyButton = styled(Button)(({ active }) => ({
@@ -90,6 +91,12 @@ const [snackbarSeverity, setSnackbarSeverity] = useState("error");
     }
   }, []);
 
+  const handleClosePasswordDialog = () => {
+    setOpenChangePassword(false);
+    setOldPassword("");
+    setNewPassword("");
+  };
+
   const handleChangePassword = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -107,18 +114,14 @@ const [snackbarSeverity, setSnackbarSeverity] = useState("error");
         }
       );
 
-      setOpenChangePassword(false);
+      handleClosePasswordDialog();
       setOpenSuccessDialog(true);
-
-      setOldPassword("");
-      setNewPassword("");
-
     } catch (error) {
-  showSnackbar(
-    error?.response?.data?.message || "Failed to change password",
-    "error"
-  );
-}
+      showSnackbar(
+        error?.response?.data?.message || "Failed to change password",
+        "error"
+      );
+    }
   };
   
 
@@ -127,23 +130,7 @@ const [snackbarSeverity, setSnackbarSeverity] = useState("error");
         case "account":
           return (
             <>
-              <Typography
-                variant="h5"
-                sx={{
-                  backgroundColor: "#e6f6ed",
-                  px: 2,
-                  py: 1,
-                  borderRadius: 1,
-                  fontWeight: 600,
-                }}
-                gutterBottom
-              >
-                Account Settings
-              </Typography>
-              <Divider sx={{ mb: 3 }} />
-
               <Grid container spacing={3}>
-                {/* Change Password */}
                 <Grid size={{ xs: 12 }}>
                   <Card
                     sx={{
@@ -160,6 +147,8 @@ const [snackbarSeverity, setSnackbarSeverity] = useState("error");
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 2,
                       }}
                     >
                       <Box>
@@ -181,189 +170,213 @@ const [snackbarSeverity, setSnackbarSeverity] = useState("error");
                       >
                         Change
                       </Button>
+
                       <Dialog
-    open={openChangePassword}
-    onClose={() => setOpenChangePassword(false)}
-    maxWidth="sm"
-    fullWidth
-  >
-    <DialogTitle>Change Password</DialogTitle>
+                        open={openChangePassword}
+                        onClose={handleClosePasswordDialog}
+                        maxWidth="xs"
+                        fullWidth
+                        PaperProps={{
+                          sx: {
+                            borderRadius: 3,
+                            overflow: "hidden",
+                            boxShadow: "0 12px 28px rgba(0,0,0,0.08)",
+                            width: "100%",
+                            maxWidth: 360,
+                          },
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            background: "#f5f7f7",
+                            color: "#1f2937",
+                            px: 2.5,
+                            py: 2,
+                            borderBottom: "1px solid #e5e7eb",
+                          }}
+                        >
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                            <Box
+                              sx={{
+                                width: 34,
+                                height: 34,
+                                borderRadius: "50%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                backgroundColor: "#ecfdf5",
+                                color: "#0f7468",
+                              }}
+                            >
+                              <LockResetOutlinedIcon sx={{ fontSize: 18 }} />
+                            </Box>
+                            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.05rem" }}>
+                              Change Password
+                            </Typography>
+                          </Box>
+                        </Box>
 
-    <DialogContent>
-      <TextField
-    fullWidth
-    label="Email"
-    value={userEmail}
-    disabled
-    margin="normal"
-    sx={{
-      "& .MuiInputLabel-root": {
-        color: "#0f7468",
-      },
-      "& .MuiInputLabel-root.Mui-focused": {
-        color: "#0f7468",
-      },
-      "& .MuiOutlinedInput-root": {
-        "& fieldset": {
-          borderColor: "#0f7468",
-        },
-        "&:hover fieldset": {
-          borderColor: "#0f7468",
-        },
-        "&.Mui-focused fieldset": {
-          borderColor: "#0f7468",
-        },
-      },
-      "& .MuiInputBase-input.Mui-disabled": {
-        WebkitTextFillColor: "#000",
-      },
-    }}
-  />
+                        <DialogContent sx={{ px: 2.5, py: 2.5 }}>
+                          <Box sx={{ display: "grid", gap: 1.8 }}>
+                            <TextField
+                              fullWidth
+                              label="Email"
+                              value={userEmail}
+                              disabled
+                              margin="dense"
+                              size="small"
+                              sx={{
+                                "& .MuiInputLabel-root": { color: "#0f7468" },
+                                "& .MuiInputLabel-root.Mui-focused": { color: "#0f7468" },
+                                "& .MuiOutlinedInput-root": {
+                                  "& fieldset": { borderColor: "rgba(15,116,104,0.25)" },
+                                  "&:hover fieldset": { borderColor: "#0f7468" },
+                                  "&.Mui-focused fieldset": { borderColor: "#0f7468" },
+                                },
+                                "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#000" },
+                                "& .MuiInputBase-root": { height: 42 },
+                              }}
+                            />
 
-  <TextField
-    fullWidth
-    label="Old Password"
-    type="password"
-    value={oldPassword}
-    onChange={(e) => setOldPassword(e.target.value)}
-    margin="normal"
-    sx={{
-      "& .MuiInputLabel-root": {
-        color: "#0f7468",
-      },
-      "& .MuiInputLabel-root.Mui-focused": {
-        color: "#0f7468",
-      },
-      "& .MuiOutlinedInput-root": {
-        "& fieldset": {
-          borderColor: "#0f7468",
-        },
-        "&:hover fieldset": {
-          borderColor: "#0f7468",
-        },
-        "&.Mui-focused fieldset": {
-          borderColor: "#0f7468",
-        },
-      },
-      "& .MuiInputBase-input": {
-        color: "#000",
-      },
-    }}
-  />
+                            <TextField
+                              fullWidth
+                              label="Old Password"
+                              type="password"
+                              value={oldPassword}
+                              onChange={(e) => setOldPassword(e.target.value)}
+                              margin="dense"
+                              size="small"
+                              sx={{
+                                "& .MuiInputLabel-root": { color: "#0f7468" },
+                                "& .MuiInputLabel-root.Mui-focused": { color: "#0f7468" },
+                                "& .MuiOutlinedInput-root": {
+                                  "& fieldset": { borderColor: "rgba(15,116,104,0.25)" },
+                                  "&:hover fieldset": { borderColor: "#0f7468" },
+                                  "&.Mui-focused fieldset": { borderColor: "#0f7468" },
+                                },
+                                "& .MuiInputBase-input": { color: "#000" },
+                                "& .MuiInputBase-root": { height: 42 },
+                              }}
+                            />
 
-  <TextField
-    fullWidth
-    label="New Password"
-    type="password"
-    value={newPassword}
-    onChange={(e) => setNewPassword(e.target.value)}
-    margin="normal"
-    sx={{
-      "& .MuiInputLabel-root": {
-        color: "#0f7468",
-      },
-      "& .MuiInputLabel-root.Mui-focused": {
-        color: "#0f7468",
-      },
-      "& .MuiOutlinedInput-root": {
-        "& fieldset": {
-          borderColor: "#0f7468",
-        },
-        "&:hover fieldset": {
-          borderColor: "#0f7468",
-        },
-        "&.Mui-focused fieldset": {
-          borderColor: "#0f7468",
-        },
-      },
-      "& .MuiInputBase-input": {
-        color: "#000",
-      },
-    }}
-  />
-    </DialogContent>
+                            <TextField
+                              fullWidth
+                              label="New Password"
+                              type="password"
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              margin="dense"
+                              size="small"
+                              sx={{
+                                "& .MuiInputLabel-root": { color: "#0f7468" },
+                                "& .MuiInputLabel-root.Mui-focused": { color: "#0f7468" },
+                                "& .MuiOutlinedInput-root": {
+                                  "& fieldset": { borderColor: "rgba(15,116,104,0.25)" },
+                                  "&:hover fieldset": { borderColor: "#0f7468" },
+                                  "&.Mui-focused fieldset": { borderColor: "#0f7468" },
+                                },
+                                "& .MuiInputBase-input": { color: "#000" },
+                                "& .MuiInputBase-root": { height: 42 },
+                              }}
+                            />
+                          </Box>
+                        </DialogContent>
 
-    <DialogActions>
-      <Button onClick={() => setOpenChangePassword(false)} sx={{color:"black"}}>
-        Cancel
-      </Button>
+                        <DialogActions sx={{ px: 2.5, pb: 2.5, pt: 0, justifyContent: "flex-end", gap: 1 }}>
+                          <Button
+                            onClick={handleClosePasswordDialog}
+                            variant="text"
+                            sx={{
+                              color: "#374151",
+                              borderRadius: 2,
+                              px: 1.5,
+                              textTransform: "none",
+                            }}
+                          >
+                            Cancel
+                          </Button>
 
-      <Button
-        variant="contained"
-        sx={{ bgcolor: "#0f7468" }}
-        onClick={handleChangePassword}
-      >
-        Change Password
-      </Button>
-    </DialogActions>
-  </Dialog>
-  <Dialog
-    open={openSuccessDialog}
-    onClose={() => setOpenSuccessDialog(false)}
-    maxWidth="xs"
-    fullWidth
-  >
-    <DialogTitle
-      sx={{
-        textAlign: "center",
-        color: "#0f7468",
-        fontWeight: 700,
-      }}
-    >
-      Password Changed Successfully
-    </DialogTitle>
+                          <Button
+                            variant="contained"
+                            sx={{
+                              bgcolor: "#0f7468",
+                              borderRadius: 2,
+                              px: 2,
+                              textTransform: "none",
+                              boxShadow: "none",
+                              "&:hover": { bgcolor: "#0d665e", boxShadow: "none" },
+                            }}
+                            onClick={handleChangePassword}
+                          >
+                            Save
+                          </Button>
+                        </DialogActions>
+                      </Dialog>
 
-    <DialogContent>
-      <DialogContentText
-        sx={{
-          textAlign: "center",
-          color: "#000",
-        }}
-      >
-        Your password has been updated successfully.
-        Please login again with your new password.
-      </DialogContentText>
-    </DialogContent>
+                      <Dialog
+                        open={openSuccessDialog}
+                        onClose={() => setOpenSuccessDialog(false)}
+                        maxWidth="xs"
+                        fullWidth
+                      >
+                        <DialogTitle
+                          sx={{
+                            textAlign: "center",
+                            color: "#0f7468",
+                            fontWeight: 700,
+                          }}
+                        >
+                          Password Changed Successfully
+                        </DialogTitle>
 
-    <DialogActions
-      sx={{
-        justifyContent: "center",
-        pb: 3,
-        gap: 2,
-      }}
-    >
-      <Button
-  variant="outlined"
-  sx={{
-    borderColor: "#0f7468",
-    color: "#0f7468",
-  }}
-  onClick={() => {
-    setOpenSuccessDialog(false);
-  }}
->
-  Close
-</Button>
+                        <DialogContent>
+                          <DialogContentText
+                            sx={{
+                              textAlign: "center",
+                              color: "#000",
+                            }}
+                          >
+                            Your password has been updated successfully.
+                            Please login again with your new password.
+                          </DialogContentText>
+                        </DialogContent>
 
-      <Button
-        variant="contained"
-        sx={{
-          bgcolor: "#0f7468",
-        }}
-        onClick={() => {
-          localStorage.clear();
-          window.location.href = "/Home/pages/Login";
-        }}
-      >
-        Login
-      </Button>
-    </DialogActions>
-  </Dialog>
+                        <DialogActions
+                          sx={{
+                            justifyContent: "center",
+                            pb: 3,
+                            gap: 2,
+                          }}
+                        >
+                          <Button
+                            variant="outlined"
+                            sx={{
+                              borderColor: "#0f7468",
+                              color: "#0f7468",
+                            }}
+                            onClick={() => {
+                              setOpenSuccessDialog(false);
+                            }}
+                          >
+                            Close
+                          </Button>
+
+                          <Button
+                            variant="contained"
+                            sx={{ bgcolor: "#0f7468" }}
+                            onClick={() => {
+                              localStorage.clear();
+                              window.location.href = "/Home/pages/Register";
+                            }}
+                          >
+                            Login
+                          </Button>
+                        </DialogActions>
+                      </Dialog>
                     </CardContent>
                   </Card>
                 </Grid>
 
-                {/* Logout */}
                 <Grid size={{ xs: 12 }}>
                   <Card
                     sx={{
@@ -381,14 +394,12 @@ const [snackbarSeverity, setSnackbarSeverity] = useState("error");
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 2,
                       }}
                     >
                       <Box>
-                        <Typography
-                          variant="h6"
-                          fontWeight={600}
-                          color="error"
-                        >
+                        <Typography variant="h6" fontWeight={600} color="error">
                           Logout
                         </Typography>
 
@@ -411,7 +422,113 @@ const [snackbarSeverity, setSnackbarSeverity] = useState("error");
             </>
           );
 
-        // ... (no changes in other cases)
+        case "privacy":
+          return (
+            <>
+              <Card sx={{ border: "1px solid #e2e8f0", borderRadius: 1 }}>
+                <CardContent>
+                  <Typography variant="h6" sx={{ color: "#123d36", fontWeight: 600 }}>
+                    Account security
+                  </Typography>
+                  <Typography sx={{ color: "#64748b", mb: 2 }}>
+                    Your password is protected by the backend authentication service.
+                  </Typography>
+                  <Button variant="contained" onClick={() => setOpenChangePassword(true)}>
+                    Change Password
+                  </Button>
+                </CardContent>
+              </Card>
+            </>
+          );
+
+        case "help":
+          return (
+            <>
+              <Card sx={{ border: "1px solid #e2e8f0", borderRadius: 1 }}>
+                <CardContent>
+                  <Typography variant="h6" sx={{ color: "#123d36", fontWeight: 600 }}>
+                    Need assistance?
+                  </Typography>
+                  <Typography sx={{ color: "#64748b", mb: 2 }}>
+                    Contact the Jeevan support team for account, request or report issues.
+                  </Typography>
+                  <Button variant="outlined" href="mailto:support@jeevan.com">
+                    Email Support
+                  </Button>
+                </CardContent>
+              </Card>
+            </>
+          );
+
+        case "device":
+          return (
+            <>
+              <Card sx={{ border: "1px solid #e2e8f0", borderRadius: 1 }}>
+                <CardContent>
+                  <Typography variant="h6" sx={{ color: "#123d36", fontWeight: 600 }}>
+                    Current session
+                  </Typography>
+                  <Typography sx={{ color: "#64748b", mt: 1 }}>This device</Typography>
+                  <Typography sx={{ color: "#1f2937", wordBreak: "break-word", mt: 1 }}>
+                    {typeof navigator !== "undefined" ? navigator.userAgent : "Current browser"}
+                  </Typography>
+                  <Button sx={{ mt: 2 }} variant="outlined" color="error" onClick={() => setOpenLogoutDialog(true)}>
+                    Log out this device
+                  </Button>
+                </CardContent>
+              </Card>
+            </>
+          );
+
+        case "theme":
+          return (
+            <>
+              <Card sx={{ border: "1px solid #e2e8f0", borderRadius: 1 }}>
+                <CardContent>
+                  <Typography variant="h6" sx={{ color: "#123d36", fontWeight: 600 }}>
+                    Appearance
+                  </Typography>
+                  <Typography sx={{ color: "#64748b", mb: 2 }}>
+                    Choose the theme preference for this browser.
+                  </Typography>
+                  <Button variant="contained" onClick={() => {
+                    localStorage.setItem("theme", "light");
+                    document.documentElement.dataset.theme = "light";
+                  }}>
+                    Light
+                  </Button>
+                  <Button variant="outlined" sx={{ ml: 1 }} onClick={() => {
+                    localStorage.setItem("theme", "dark");
+                    document.documentElement.dataset.theme = "dark";
+                  }}>
+                    Dark
+                  </Button>
+                </CardContent>
+              </Card>
+            </>
+          );
+
+        case "prescription":
+          return (
+            <>
+              <Card sx={{ border: "1px solid #e2e8f0", borderRadius: 1 }}>
+                <CardContent>
+                  <Typography variant="h6" sx={{ color: "#123d36", fontWeight: 600 }}>
+                    Prescription access
+                  </Typography>
+                  <Typography sx={{ color: "#64748b", mb: 2 }}>
+                    Prescription management is available for doctors and patients. Lab users can manage test requests and reports here.
+                  </Typography>
+                  <Button variant="outlined" onClick={() => {
+                    window.location.href = "/doctor/pages/prescription";
+                  }}>
+                    Open Prescription
+                  </Button>
+                </CardContent>
+              </Card>
+            </>
+          );
+
         default:
           return null;
       }
@@ -424,38 +541,74 @@ const [snackbarSeverity, setSnackbarSeverity] = useState("error");
           open={openLogoutDialog}
           onClose={() => setOpenLogoutDialog(false)}
           aria-labelledby="logout-dialog-title"
+          maxWidth="xs"
+          fullWidth
           PaperProps={{
-            sx: { borderRadius: 2, p: 1.5 },
+            sx: {
+              borderRadius: 2,
+              p: 1,
+              width: { xs: "92%", sm: "auto" },
+              minWidth: { xs: 280, sm: 320 },
+              boxShadow: "0 10px 30px rgba(15, 23, 42, 0.12)",
+              border: "1px solid rgba(15, 23, 42, 0.08)",
+            },
           }}
         >
-          <DialogTitle id="logout-dialog-title" sx={{ fontWeight: 600, textAlign: "center" }}>
-            Confirm Logout
+          <DialogTitle
+            id="logout-dialog-title"
+            sx={{
+              px: 2,
+              pt: 1.5,
+              pb: 1,
+              textAlign: "center",
+              fontSize: 18,
+              fontWeight: 700,
+              color: "text.primary",
+            }}
+          >
+            Logout
           </DialogTitle>
-          <DialogContent>
-            <DialogContentText sx={{ textAlign: "center", color: "#000000" }}>
+          <DialogContent sx={{ px: 2, pb: 0.5 }}>
+            <DialogContentText sx={{ textAlign: "center", color: "text.secondary", m: 0, fontSize: 14, lineHeight: 1.6 }}>
               Are you sure you want to log out?
-              All your session data will be cleared.
             </DialogContentText>
           </DialogContent>
-          <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
+          <DialogActions sx={{ justifyContent: "center", gap: 1, px: 2, pb: 2, pt: 0 }}>
             <Button
               onClick={() => setOpenLogoutDialog(false)}
               variant="outlined"
-              color="inherit"
+              sx={{
+                minWidth: 96,
+                borderRadius: 1.5,
+                textTransform: "none",
+                fontWeight: 600,
+                px: 1.5,
+                py: 0.75,
+                fontSize: 13,
+              }}
             >
               Cancel
             </Button>
             <Button
               onClick={handleLogoutConfirm}
               variant="contained"
-              sx={{ backgroundColor: "red" }}
+              color="error"
+              sx={{
+                minWidth: 96,
+                borderRadius: 1.5,
+                textTransform: "none",
+                fontWeight: 600,
+                px: 1.5,
+                py: 0.75,
+                fontSize: 13,
+              }}
             >
               Log Out
             </Button>
           </DialogActions>
         </Dialog>
 
-        <Grid sx={{ flex: 1, display: "flex", flexDirection: "column", padding: 1, mt: { xs: 7.5, md: 7.5 }, }}>
+        <Grid sx={{ flex: 1, display: "flex", flexDirection: "column", padding: 1, mt: { xs: 7.5, md: 7.5 } }}>
           <Grid
             container
             spacing={2}
@@ -470,64 +623,51 @@ const [snackbarSeverity, setSnackbarSeverity] = useState("error");
               pt: { xs: 5, md: 5 },
             }}
           >
-            {/* LEFT MENU */}
-            <Grid
-              size={{ xs: 12, md: 3 }}
-              sx={{
-                borderRight: { xs: "none", md: "2px solid #0f7468" },
-                borderBottom: { xs: "2px solid #0f7468", md: "none" },
-                display: "flex",
-                flexDirection: "column",
-                gap: 1,
-              }}
-            >
-              <Box sx={{ display: { xs: "block", md: "none" }, px: 1, mb: 1 }}>
-                <TextField
-                  select
-                  fullWidth
-                  size="small"
-                  variant="outlined"
-                  value={active}
-                  onChange={(e) => setActive(e.target.value)}
-                  SelectProps={{ native: true }}
-                >
-                  {menuItems.map((item) => (
-                    <option key={item.key} value={item.key}>
-                      {item.label}
-                    </option>
-                  ))}
-                </TextField>
-              </Box>
-
+            <Grid size={{ xs: 12 }}>
               <Box
                 sx={{
-                  display: { xs: "none", md: "flex" },
-                  flexDirection: "column",
-                  gap: 1,
-                  alignItems: "flex-start",
-                  px: 1,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 0,
+                  mb: 2,
+                  borderBottom: "1px solid #dbe7e3",
+                  overflowX: "auto",
                 }}
               >
-                {menuItems.map((button, index) => (
-                 <OutlineFancyButton
-  fullWidth
-  active={active === button.key ? 1 : 0}
-  onClick={() => setActive(button.key)}
-  startIcon={button.icon}
->
-  {button.label}
-</OutlineFancyButton>
+                {menuItems.map((button) => (
+                  <Button
+                    key={button.key}
+                    onClick={() => setActive(button.key)}
+                    startIcon={button.icon}
+                    sx={{
+                      whiteSpace: "nowrap",
+                      color: active === button.key ? "#0f7468" : "#4b5563",
+                      fontWeight: active === button.key ? 700 : 500,
+                      borderRadius: 0,
+                      borderBottom: active === button.key ? "3px solid #0f7468" : "3px solid transparent",
+                      minWidth: { xs: "auto", sm: 160 },
+                      px: 2,
+                      py: 1,
+                      background: "transparent",
+                      "&:hover": {
+                        background: "transparent",
+                        color: "#0f7468",
+                      },
+                    }}
+                  >
+                    {button.label}
+                  </Button>
                 ))}
               </Box>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 9 }}>
+            <Grid size={{ xs: 12 }}>
               <Box
                 sx={{
                   bgcolor: "#fff",
-                  height: "100%",
+                  minHeight: 320,
                   overflowY: "auto",
-                  pr: 2,
+                  pr: { xs: 0, md: 1 },
                 }}
               >
                 {renderContent()}

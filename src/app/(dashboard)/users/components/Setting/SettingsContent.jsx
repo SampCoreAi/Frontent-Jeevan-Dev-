@@ -143,7 +143,7 @@ const SettingsContent = () => {
   };
 
 
-  const renderContent = () => {
+   const renderContent = () => {
     switch (active) {
       case "account":
         return (
@@ -161,6 +161,7 @@ const SettingsContent = () => {
             >
               Account Settings
             </Typography>
+
             <Divider sx={{ mb: 3 }} />
 
             <Grid container spacing={3}>
@@ -187,6 +188,7 @@ const SettingsContent = () => {
                       <Typography variant="h6" fontWeight={600}>
                         Change Password
                       </Typography>
+
                       <Typography color="black">
                         Update your account password
                       </Typography>
@@ -202,13 +204,17 @@ const SettingsContent = () => {
                     >
                       Change
                     </Button>
+
+                    {/* CHANGE PASSWORD DIALOG */}
                     <Dialog
                       open={openChangePassword}
                       onClose={() => setOpenChangePassword(false)}
                       maxWidth="sm"
                       fullWidth
                     >
-                      <DialogTitle>Change Password</DialogTitle>
+                      <DialogTitle>
+                        Change Password
+                      </DialogTitle>
 
                       <DialogContent>
                         <TextField
@@ -246,7 +252,9 @@ const SettingsContent = () => {
                           label="Old Password"
                           type="password"
                           value={oldPassword}
-                          onChange={(e) => setOldPassword(e.target.value)}
+                          onChange={(e) =>
+                            setOldPassword(e.target.value)
+                          }
                           margin="normal"
                           sx={{
                             "& .MuiInputLabel-root": {
@@ -275,19 +283,36 @@ const SettingsContent = () => {
                         <TextField
                           fullWidth
                           label="New Password"
-                          type={showNewPassword ? "text" : "password"}
+                          type={
+                            showNewPassword
+                              ? "text"
+                              : "password"
+                          }
                           value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
+                          onChange={(e) =>
+                            setNewPassword(e.target.value)
+                          }
                           margin="normal"
-                          error={confirmPassword !== "" && newPassword !== confirmPassword}
+                          error={
+                            confirmPassword !== "" &&
+                            newPassword !== confirmPassword
+                          }
                           InputProps={{
                             endAdornment: (
                               <InputAdornment position="end">
                                 <IconButton
-                                  onClick={() => setShowNewPassword(!showNewPassword)}
+                                  onClick={() =>
+                                    setShowNewPassword(
+                                      !showNewPassword
+                                    )
+                                  }
                                   edge="end"
                                 >
-                                  {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                                  {showNewPassword ? (
+                                    <VisibilityOff />
+                                  ) : (
+                                    <Visibility />
+                                  )}
                                 </IconButton>
                               </InputAdornment>
                             ),
@@ -316,13 +341,23 @@ const SettingsContent = () => {
                         <TextField
                           fullWidth
                           label="Confirm Password"
-                          type={showConfirmPassword ? "text" : "password"}
+                          type={
+                            showConfirmPassword
+                              ? "text"
+                              : "password"
+                          }
                           value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          onChange={(e) =>
+                            setConfirmPassword(e.target.value)
+                          }
                           margin="normal"
-                          error={confirmPassword !== "" && newPassword !== confirmPassword}
+                          error={
+                            confirmPassword !== "" &&
+                            newPassword !== confirmPassword
+                          }
                           helperText={
-                            confirmPassword !== "" && newPassword !== confirmPassword
+                            confirmPassword !== "" &&
+                            newPassword !== confirmPassword
                               ? "Passwords do not match"
                               : ""
                           }
@@ -331,11 +366,17 @@ const SettingsContent = () => {
                               <InputAdornment position="end">
                                 <IconButton
                                   onClick={() =>
-                                    setShowConfirmPassword(!showConfirmPassword)
+                                    setShowConfirmPassword(
+                                      !showConfirmPassword
+                                    )
                                   }
                                   edge="end"
                                 >
-                                  {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                                  {showConfirmPassword ? (
+                                    <VisibilityOff />
+                                  ) : (
+                                    <Visibility />
+                                  )}
                                 </IconButton>
                               </InputAdornment>
                             ),
@@ -363,42 +404,54 @@ const SettingsContent = () => {
                       </DialogContent>
 
                       <DialogActions>
-                        <Button onClick={() => setOpenChangePassword(false)} sx={{ color: "black" }}>
+                        <Button
+                          onClick={() =>
+                            setOpenChangePassword(false)
+                          }
+                          sx={{ color: "black" }}
+                        >
                           Cancel
                         </Button>
 
-                      <Button
-  variant="contained"
-  sx={{
-    bgcolor: "#0f7468",
-    minWidth: "160px",
-  }}
-  onClick={handleChangePassword}
-  disabled={
-    changePasswordLoading ||
-    !oldPassword ||
-    !newPassword ||
-    !confirmPassword ||
-    newPassword !== confirmPassword
-  }
->
-  {changePasswordLoading ? (
-    <>
-      <CircularProgress
-        size={18}
-        sx={{ mr: 1, color: "white" }}
-      />
-      Changing...
-    </>
-  ) : (
-    "Change Password"
-  )}
-</Button>
+                        <Button
+                          variant="contained"
+                          sx={{
+                            bgcolor: "#0f7468",
+                            minWidth: "160px",
+                          }}
+                          onClick={handleChangePassword}
+                          disabled={
+                            changePasswordLoading ||
+                            !oldPassword ||
+                            !newPassword ||
+                            !confirmPassword ||
+                            newPassword !== confirmPassword
+                          }
+                        >
+                          {changePasswordLoading ? (
+                            <>
+                              <CircularProgress
+                                size={18}
+                                sx={{
+                                  mr: 1,
+                                  color: "white",
+                                }}
+                              />
+                              Changing...
+                            </>
+                          ) : (
+                            "Change Password"
+                          )}
+                        </Button>
                       </DialogActions>
                     </Dialog>
+
+                    {/* SUCCESS DIALOG */}
                     <Dialog
                       open={openSuccessDialog}
-                      onClose={() => setOpenSuccessDialog(false)}
+                      onClose={() =>
+                        setOpenSuccessDialog(false)
+                      }
                       maxWidth="xs"
                       fullWidth
                     >
@@ -419,8 +472,9 @@ const SettingsContent = () => {
                             color: "#000",
                           }}
                         >
-                          Your password has been updated successfully.
-                          Please login again with your new password.
+                          Your password has been updated
+                          successfully. Please login again with
+                          your new password.
                         </DialogContentText>
                       </DialogContent>
 
@@ -444,39 +498,42 @@ const SettingsContent = () => {
                           Close
                         </Button>
 
-                       <Button
-  variant="contained"
-  disabled={loginRedirectLoading}
-  sx={{
-    bgcolor: "#0f7468",
-    minWidth: "110px",
-  }}
-  onClick={() => {
-    setLoginRedirectLoading(true);
+                        <Button
+                          variant="contained"
+                          disabled={loginRedirectLoading}
+                          sx={{
+                            bgcolor: "#0f7468",
+                            minWidth: "110px",
+                          }}
+                          onClick={() => {
+                            setLoginRedirectLoading(true);
 
-    localStorage.clear();
-    window.location.href = "/Home/pages/Login";
-  }}
->
-  {loginRedirectLoading ? (
-    <>
-      <CircularProgress
-        size={17}
-        sx={{ color: "white", mr: 1 }}
-      />
-      Loading...
-    </>
-  ) : (
-    "Login"
-  )}
-</Button>
+                            localStorage.clear();
+
+                            window.location.href =
+                              "/Home/pages/Login";
+                          }}
+                        >
+                          {loginRedirectLoading ? (
+                            <>
+                              <CircularProgress
+                                size={17}
+                                sx={{
+                                  color: "white",
+                                  mr: 1,
+                                }}
+                              />
+                              Loading...
+                            </>
+                          ) : (
+                            "Login"
+                          )}
+                        </Button>
                       </DialogActions>
                     </Dialog>
                   </CardContent>
                 </Card>
               </Grid>
-
-
 
               {/* Logout */}
               <Grid size={{ xs: 12 }}>
@@ -515,7 +572,9 @@ const SettingsContent = () => {
                     <Button
                       variant="contained"
                       color="error"
-                      onClick={() => setOpenLogoutDialog(true)}
+                      onClick={() =>
+                        setOpenLogoutDialog(true)
+                      }
                     >
                       Logout
                     </Button>
@@ -526,7 +585,6 @@ const SettingsContent = () => {
           </>
         );
 
-      // ... (no changes in other cases)
       default:
         return null;
     }
@@ -534,43 +592,80 @@ const SettingsContent = () => {
 
   return (
     <>
-      {/* ✅ Custom styled logout dialog */}
+      {/* LOGOUT DIALOG */}
       <Dialog
         open={openLogoutDialog}
         onClose={() => setOpenLogoutDialog(false)}
         aria-labelledby="logout-dialog-title"
         PaperProps={{
-          sx: { borderRadius: 2, p: 1.5 },
+          sx: {
+            borderRadius: 2,
+            p: 1.5,
+          },
         }}
       >
-        <DialogTitle id="logout-dialog-title" sx={{ fontWeight: 600, textAlign: "center" }}>
+        <DialogTitle
+          id="logout-dialog-title"
+          sx={{
+            fontWeight: 600,
+            textAlign: "center",
+          }}
+        >
           Confirm Logout
         </DialogTitle>
+
         <DialogContent>
-          <DialogContentText sx={{ textAlign: "center", color: "#000000" }}>
+          <DialogContentText
+            sx={{
+              textAlign: "center",
+              color: "#000000",
+            }}
+          >
             Are you sure you want to log out?
             All your session data will be cleared.
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
+
+        <DialogActions
+          sx={{
+            justifyContent: "center",
+            pb: 2,
+          }}
+        >
           <Button
-            onClick={() => setOpenLogoutDialog(false)}
+            onClick={() =>
+              setOpenLogoutDialog(false)
+            }
             variant="outlined"
             color="inherit"
           >
             Cancel
           </Button>
+
           <Button
             onClick={handleLogoutConfirm}
             variant="contained"
-            sx={{ backgroundColor: "red" }}
+            sx={{
+              backgroundColor: "red",
+            }}
           >
             Log Out
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Grid sx={{ flex: 1, display: "flex", flexDirection: "column", padding: 1, mt: { xs: 7.5, md: 7.5 }, }}>
+      <Grid
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          padding: 1,
+          mt: {
+            xs: 7.5,
+            md: 7.5,
+          },
+        }}
+      >
         <Grid
           container
           spacing={2}
@@ -578,45 +673,81 @@ const SettingsContent = () => {
           sx={{
             backgroundColor: "white",
             borderRadius: 0.5,
-            minHeight: { xs: "auto", md: "570px" },
+            minHeight: {
+              xs: "auto",
+              md: "570px",
+            },
             boxShadow: "0 4px 12px #0f7468",
             overflow: "hidden",
             p: 2,
-            pt: { xs: 5, md: 5 },
+            pt: {
+              xs: 5,
+              md: 5,
+            },
           }}
         >
           {/* LEFT MENU */}
           <Grid
-            size={{ xs: 12, md: 3 }}
+            size={{
+              xs: 12,
+              md: 3,
+            }}
             sx={{
-              borderRight: { xs: "none", md: "2px solid #0f7468" },
-              borderBottom: { xs: "2px solid #0f7468", md: "none" },
+              borderRight: {
+                xs: "none",
+                md: "2px solid #0f7468",
+              },
+              borderBottom: {
+                xs: "2px solid #0f7468",
+                md: "none",
+              },
               display: "flex",
               flexDirection: "column",
               gap: 1,
             }}
           >
-            <Box sx={{ display: { xs: "block", md: "none" }, px: 1, mb: 1 }}>
+            {/* MOBILE SELECT */}
+            <Box
+              sx={{
+                display: {
+                  xs: "block",
+                  md: "none",
+                },
+                px: 1,
+                mb: 1,
+              }}
+            >
               <TextField
                 select
                 fullWidth
                 size="small"
                 variant="outlined"
                 value={active}
-                onChange={(e) => setActive(e.target.value)}
-                SelectProps={{ native: true }}
+                onChange={(e) =>
+                  setActive(e.target.value)
+                }
+                SelectProps={{
+                  native: true,
+                }}
               >
                 {menuItems.map((item) => (
-                  <option key={item.key} value={item.key}>
+                  <option
+                    key={item.key}
+                    value={item.key}
+                  >
                     {item.label}
                   </option>
                 ))}
               </TextField>
             </Box>
 
+            {/* DESKTOP MENU */}
             <Box
               sx={{
-                display: { xs: "none", md: "flex" },
+                display: {
+                  xs: "none",
+                  md: "flex",
+                },
                 flexDirection: "column",
                 gap: 1,
                 alignItems: "flex-start",
@@ -627,9 +758,17 @@ const SettingsContent = () => {
                 <OutlineFancyButton
                   key={index}
                   fullWidth
-                  active={active === button.key ? 1 : 0}
-                  sx={{ width: 250, marginRight: 3, marginLeft: 2 }}
-                  onClick={() => setActive(button.key)}
+                  active={
+                    active === button.key ? 1 : 0
+                  }
+                  sx={{
+                    width: 250,
+                    marginRight: 3,
+                    marginLeft: 2,
+                  }}
+                  onClick={() =>
+                    setActive(button.key)
+                  }
                   startIcon={button.icon}
                 >
                   {button.label}
@@ -638,7 +777,13 @@ const SettingsContent = () => {
             </Box>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 9 }}>
+          {/* RIGHT CONTENT */}
+          <Grid
+            size={{
+              xs: 12,
+              md: 9,
+            }}
+          >
             <Box
               sx={{
                 bgcolor: "#fff",
@@ -652,17 +797,27 @@ const SettingsContent = () => {
           </Grid>
         </Grid>
       </Grid>
+
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={4000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        onClose={() =>
+          setSnackbarOpen(false)
+        }
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
       >
         <Alert
-          onClose={() => setSnackbarOpen(false)}
+          onClose={() =>
+            setSnackbarOpen(false)
+          }
           severity={snackbarSeverity}
           variant="filled"
-          sx={{ width: "100%" }}
+          sx={{
+            width: "100%",
+          }}
         >
           {snackbarMessage}
         </Alert>

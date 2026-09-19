@@ -152,18 +152,12 @@ export default function LoginForm({
 
       setTimeout(() => {
         const role = resData.user.role_id;
-
-        if (role === 1) {
-          router.push("/users/pages/doctor");
-        } else if (role === 2) {
-          router.push("/doctor/pages/dashboard");
-        } else if (role === 3) {
-          router.push("/doctor/pages/dashboard");
-        } else if (role === 4) {
-          router.push("/admin/pages/dashboard");
-        } else {
-          router.push("/Home/pages/Register");
-        }
+        if (role === 1) router.push("/users/pages/doctor");
+        else if (role === 2) router.push("/doctor/pages/dashboard");
+        else if (role === 3) router.push("/doctor/pages/dashboard");
+        else if (role === 4) router.push("/lab/pages/dashboard");
+        else if (role === 5) router.push("/admin/pages/dashboard");
+        else router.push("/Home/pages/Register");
       }, 1500);
     } catch (error) {
       if (
