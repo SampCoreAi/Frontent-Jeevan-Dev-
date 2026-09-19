@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import {
   Button,
   TextField,
@@ -9,7 +10,16 @@ import {
   CircularProgress,
   Box,
 } from "@mui/material";
-import { Visibility, VisibilityOff, Person, Phone, Email, Lock } from "@mui/icons-material";
+
+import {
+  Visibility,
+  VisibilityOff,
+  Person,
+  Phone,
+  Email,
+  Lock,
+} from "@mui/icons-material";
+
 import axios from "../../../../utils/axiosInstance";
 
 export default function RegisterForm({ showMessage }) {
@@ -19,10 +29,58 @@ export default function RegisterForm({ showMessage }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const sanitize = (str) => str.replace(/[<>]/g, "");
 
+  // =========================
+  // COMMON INPUT STYLE
+  // =========================
+  const inputSx = {
+    mb: 2.5,
+
+    "& .MuiOutlinedInput-root": {
+      borderRadius: "8px",
+      backgroundColor: "background.default",
+
+      "&:hover": {
+        backgroundColor: "secondary.light",
+      },
+
+      "&.Mui-focused": {
+        backgroundColor: "background.paper",
+      },
+
+      "& .MuiOutlinedInput-notchedOutline": {
+        borderColor: "divider",
+      },
+
+      "&:hover .MuiOutlinedInput-notchedOutline": {
+        borderColor: "primary.main",
+      },
+
+      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+        borderColor: "primary.main",
+        borderWidth: "2px",
+      },
+    },
+
+    "& .MuiInputBase-input": {
+      padding: "14px 14px",
+      fontSize: "0.95rem",
+      color: "text.primary",
+
+      "&::placeholder": {
+        color: "text.secondary",
+        opacity: 1,
+      },
+    },
+  };
+
+  // =========================
+  // REGISTER
+  // =========================
   const handleRegister = async () => {
     const nameValue = sanitize(fullName);
     const emailValue = sanitize(email).trim().toLowerCase();
@@ -33,24 +91,30 @@ export default function RegisterForm({ showMessage }) {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!emailRegex.test(email)) {
       showMessage("Please enter a valid email address!", "error");
       return;
     }
 
     const mobileRegex = /^[0-9]{10}$/;
+
     if (!mobileRegex.test(mobileNumber.replace(/\D/g, ""))) {
       showMessage("Please enter a valid mobile number!", "error");
       return;
     }
 
     if (password.length < 6) {
-      showMessage("Password should be at least 6 characters long!", "warning");
+      showMessage(
+        "Password should be at least 6 characters long!",
+        "warning"
+      );
       return;
     }
 
     try {
       setLoading(true);
+
       await axios.post(`${API_URL}/api/auth/register`, {
         full_name: nameValue,
         email: emailValue,
@@ -69,11 +133,16 @@ export default function RegisterForm({ showMessage }) {
       setEmail("");
       setPassword("");
     } catch (error) {
-      console.error("Registration failed:", error.response?.data || error.message);
+      console.error(
+        "Registration failed:",
+        error.response?.data || error.message
+      );
+
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.error ||
         "Registration failed! Please try again.";
+
       showMessage(errorMessage, "error");
     } finally {
       setLoading(false);
@@ -82,124 +151,87 @@ export default function RegisterForm({ showMessage }) {
 
   return (
     <Box sx={{ width: "100%" }}>
+      {/* =========================
+          FULL NAME
+      ========================= */}
       <TextField
         fullWidth
         placeholder="Full Name"
         value={fullName}
         onChange={(e) => setFullName(e.target.value)}
-        sx={{
-          mb: 2.5,
-          "& .MuiOutlinedInput-root": {
-            backgroundColor: "#f8f9fa",
-            borderRadius: "12px",
-            "&:hover": {
-              backgroundColor: "#f1f3f5",
-            },
-            "&.Mui-focused": {
-              backgroundColor: "#ffffff",
-              "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#1e6658",
-                borderWidth: "2px",
-              },
-            },
-            "& .MuiOutlinedInput-notchedOutline": {
-              borderColor: "#e0e0e0",
-            },
-          },
-          "& .MuiInputBase-input": {
-            padding: "14px 14px",
-            fontSize: "0.95rem",
-          },
-        }}
+        sx={inputSx}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <Person sx={{ color: "#1e6658", fontSize: "1.2rem" }} />
+              <Person
+                sx={{
+                  color: "primary.main",
+                  fontSize: "1.2rem",
+                }}
+              />
             </InputAdornment>
           ),
         }}
       />
-      
+
+      {/* =========================
+          MOBILE NUMBER
+      ========================= */}
       <TextField
         fullWidth
         placeholder="Mobile Number"
         value={mobileNumber}
         onChange={(e) => {
           const value = e.target.value.replace(/\D/g, "");
-          if (value.length <= 10) setMobileNumber(value);
+
+          if (value.length <= 10) {
+            setMobileNumber(value);
+          }
         }}
-        inputProps={{ maxLength: 10 }}
-        sx={{
-          mb: 2.5,
-          "& .MuiOutlinedInput-root": {
-            backgroundColor: "#f8f9fa",
-            borderRadius: "12px",
-            "&:hover": {
-              backgroundColor: "#f1f3f5",
-            },
-            "&.Mui-focused": {
-              backgroundColor: "#ffffff",
-              "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#1e6658",
-                borderWidth: "2px",
-              },
-            },
-            "& .MuiOutlinedInput-notchedOutline": {
-              borderColor: "#e0e0e0",
-            },
-          },
-          "& .MuiInputBase-input": {
-            padding: "14px 14px",
-            fontSize: "0.95rem",
-          },
+        inputProps={{
+          maxLength: 10,
         }}
+        sx={inputSx}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <Phone sx={{ color: "#1e6658", fontSize: "1.2rem" }} />
+              <Phone
+                sx={{
+                  color: "primary.main",
+                  fontSize: "1.2rem",
+                }}
+              />
             </InputAdornment>
           ),
         }}
       />
-      
+
+      {/* =========================
+          EMAIL
+      ========================= */}
       <TextField
         fullWidth
         placeholder="Email Address"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        sx={{
-          mb: 2.5,
-          "& .MuiOutlinedInput-root": {
-            backgroundColor: "#f8f9fa",
-            borderRadius: "12px",
-            "&:hover": {
-              backgroundColor: "#f1f3f5",
-            },
-            "&.Mui-focused": {
-              backgroundColor: "#ffffff",
-              "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#1e6658",
-                borderWidth: "2px",
-              },
-            },
-            "& .MuiOutlinedInput-notchedOutline": {
-              borderColor: "#e0e0e0",
-            },
-          },
-          "& .MuiInputBase-input": {
-            padding: "14px 14px",
-            fontSize: "0.95rem",
-          },
-        }}
+        sx={inputSx}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <Email sx={{ color: "#1e6658", fontSize: "1.2rem" }} />
+              <Email
+                sx={{
+                  color: "primary.main",
+                  fontSize: "1.2rem",
+                }}
+              />
             </InputAdornment>
           ),
         }}
       />
-      
+
+      {/* =========================
+          PASSWORD
+      ========================= */}
       <TextField
         fullWidth
         type={showPassword ? "text" : "password"}
@@ -207,44 +239,32 @@ export default function RegisterForm({ showMessage }) {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         sx={{
+          ...inputSx,
           mb: 4,
-          "& .MuiOutlinedInput-root": {
-            backgroundColor: "#f8f9fa",
-            borderRadius: "12px",
-            "&:hover": {
-              backgroundColor: "#f1f3f5",
-            },
-            "&.Mui-focused": {
-              backgroundColor: "#ffffff",
-              "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#1e6658",
-                borderWidth: "2px",
-              },
-            },
-            "& .MuiOutlinedInput-notchedOutline": {
-              borderColor: "#e0e0e0",
-            },
-          },
-          "& .MuiInputBase-input": {
-            padding: "14px 14px",
-            fontSize: "0.95rem",
-          },
         }}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <Lock sx={{ color: "#1e6658", fontSize: "1.2rem" }} />
+              <Lock
+                sx={{
+                  color: "primary.main",
+                  fontSize: "1.2rem",
+                }}
+              />
             </InputAdornment>
           ),
+
           endAdornment: (
             <InputAdornment position="end">
               <IconButton
                 onClick={() => setShowPassword(!showPassword)}
                 edge="end"
                 sx={{
-                  color: "#1e6658",
+                  color: "text.secondary",
+
                   "&:hover": {
-                    backgroundColor: "rgba(30, 102, 88, 0.08)",
+                    color: "primary.main",
+                    backgroundColor: "secondary.light",
                   },
                 }}
               >
@@ -255,38 +275,55 @@ export default function RegisterForm({ showMessage }) {
         }}
       />
 
+      {/* =========================
+          SIGN UP BUTTON
+      ========================= */}
       <Button
         fullWidth
         variant="contained"
+        color="primary"
         size="large"
         disabled={loading}
         onClick={handleRegister}
         sx={{
-          borderRadius: "12px",
+          borderRadius: "8px",
           py: 1.8,
           fontSize: "1.1rem",
           fontWeight: 600,
           textTransform: "none",
-          backgroundColor: "#1e6658",
-          color: "#ffffff",
-          boxShadow: "0 4px 14px rgba(30, 102, 88, 0.35)",
+
+          // Tumhare theme ka primary
+          backgroundColor: "primary.main",
+          color: "primary.contrastText",
+
+          boxShadow: "none",
+
           "&:hover": {
-            backgroundColor: "#165244",
-            boxShadow: "0 6px 20px rgba(30, 102, 88, 0.4)",
-            transform: "translateY(-2px)",
+            backgroundColor: "primary.dark",
+            boxShadow: "none",
           },
-          "&:active": {
-            transform: "translateY(0)",
-          },
+
           "&.Mui-disabled": {
-            backgroundColor: "#8fb0a8",
-            color: "#ffffff",
+            backgroundColor: "primary.light",
+            color: "primary.contrastText",
           },
         }}
       >
         {loading ? (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <CircularProgress size={24} sx={{ color: "#ffffff" }} />
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            <CircularProgress
+              size={24}
+              sx={{
+                color: "primary.contrastText",
+              }}
+            />
+
             Registering...
           </Box>
         ) : (

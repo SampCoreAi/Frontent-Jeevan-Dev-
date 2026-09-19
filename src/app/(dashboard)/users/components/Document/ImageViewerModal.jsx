@@ -56,9 +56,16 @@ export function ImageViewerModal({
           </Typography>
           <Typography
             variant="body2"
-            sx={{ color: "text.secondary", mt: 0.25 }}
-          >
-            {currentFolderName} • {selectedFile.size}
+            sx={{ color: "black", mt: 0.25 }}
+          >{currentFolderName} • {selectedFile.size} •{" "}
+{new Date(selectedFile.date).toLocaleString("en-IN", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: true,
+})}
           </Typography>
         </Box>
         

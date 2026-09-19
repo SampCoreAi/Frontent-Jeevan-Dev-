@@ -16,14 +16,14 @@ const Page = () => {
     const user = localStorage.getItem("user");
 
     if (!token) {
-      router.push("/Home/pages/Register");
+      router.push("/Home/pages/Login");
       return;
     }
 
     if (user) {
       const parsedUser = JSON.parse(user);
       if (parsedUser.role_id !== 1) {
-        router.push("/Home/pages/Register");
+        router.push("/Home/pages/Login");
       }
       setRoleId(parsedUser.role_id);
     }

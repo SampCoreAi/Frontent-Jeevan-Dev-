@@ -352,7 +352,7 @@ const [snackbarSeverity, setSnackbarSeverity] = useState("error");
         }}
         onClick={() => {
           localStorage.clear();
-          window.location.href = "/Home/pages/Register";
+          window.location.href = "/Home/pages/Login";
         }}
       >
         Login

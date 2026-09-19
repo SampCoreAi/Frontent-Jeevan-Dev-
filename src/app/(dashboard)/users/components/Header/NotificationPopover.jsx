@@ -63,7 +63,6 @@ const NotificationPopover = () => {
 
       const result = await response.json();
 
-      console.log("🔔 Notification Response:", result);
 
       if (!response.ok) {
         throw new Error(
@@ -84,13 +83,6 @@ const NotificationPopover = () => {
     }
   };
 
-  // ============================
-  // FETCH ON PAGE LOAD
-  // ============================
-
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
 
   // ============================
   // OPEN
@@ -172,32 +164,97 @@ const NotificationPopover = () => {
       ============================ */}
 
       <Tooltip title="Notifications">
-        <IconButton
-          onClick={handleOpen}
-          sx={{
-            width: 42,
-            height: 42,
-            borderRadius: "12px",
+        {/* MOBILE */}
+<Box
+  onClick={handleOpen}
+  sx={{
+    display: { xs: "flex", sm: "none" },
+    alignItems: "center",
+    minHeight: 52,
+    px: 1.5,
+    mb: 1.5,
+    border: "1px solid",
+    borderColor: "divider",
+    borderRadius: 2,
+    color: "background.primary",
+    cursor: "pointer",
+  }}
+>
+  <Badge
+    badgeContent={unreadCount}
+    color="error"
+    max={99}
+    invisible={unreadCount === 0}
+  >
+    <NotificationsIcon sx={{ fontSize: 24 }} />
+  </Badge>
 
-            "&:hover": {
-              backgroundColor: "#f1f5f9",
-            },
-          }}
-        >
-          <Badge
-            badgeContent={unreadCount}
-            color="error"
-            max={99}
-            invisible={unreadCount === 0}
-          >
-            <NotificationsIcon
-              sx={{
-                fontSize: 27,
-                color: "#111827",
-              }}
-            />
-          </Badge>
-        </IconButton>
+  <Typography
+    sx={{
+      ml: 1,
+      fontWeight: 600,
+    }}
+  >
+    Notifications
+  </Typography>
+</Box>
+
+{/* DESKTOP */}
+{/* DESKTOP */}
+<Tooltip title="Notifications">
+  <Box
+    onClick={handleOpen}
+    sx={{
+      display: { xs: "none", sm: "flex" },
+      alignItems: "center",
+      gap: 0.8,
+
+      height: 40,
+      px: 1.4,
+
+      borderRadius: "8px",
+      border: "1px solid #d5eee7",
+
+      backgroundColor: "#f0faf7",
+      color: "#586762",
+
+      cursor: "pointer",
+      userSelect: "none",
+
+      transition: "all 0.2s ease",
+
+      "&:hover": {
+        backgroundColor: "#e5f7f1",
+        borderColor: "#b9e5d9",
+        color: "#0a9f7d",
+      },
+    }}
+  >
+    <Badge
+      badgeContent={unreadCount}
+      color="error"
+      max={99}
+      invisible={unreadCount === 0}
+    >
+      <NotificationsIcon
+        sx={{
+          fontSize: 20,
+        }}
+      />
+    </Badge>
+
+    <Typography
+      component="span"
+      sx={{
+        fontSize: "12px",
+        fontWeight: 600,
+        color: "inherit",
+      }}
+    >
+      Notifications
+    </Typography>
+  </Box>
+</Tooltip>
       </Tooltip>
 
       {/* ============================
@@ -216,30 +273,40 @@ const NotificationPopover = () => {
           vertical: "top",
           horizontal: "right",
         }}
-        PaperProps={{
-          sx: {
-            mt: 1.5,
+      PaperProps={{
+  sx: {
+    mt: { xs: 1, sm: 1.5 },
 
-            width: {
-              xs: "92vw",
-              sm: 420,
-            },
+    // Mobile responsive
+    width: {
+      xs: "calc(100vw - 32px)",
+      sm: 420,
+    },
 
-            maxWidth: 420,
-            maxHeight: 550,
+    maxWidth: {
+      xs: "calc(100vw - 32px)",
+      sm: 420,
+    },
 
-            backgroundColor: "#ffffff",
-            color: "#111827",
+    maxHeight: {
+      xs: "70vh",
+      sm: 550,
+    },
 
-            borderRadius: "16px",
-            overflow: "hidden",
+    backgroundColor: "#ffffff",
+    color: "#111827",
 
-            border: "1px solid #e5e7eb",
+    borderRadius: {
+      xs: "12px",
+      sm: "16px",
+    },
 
-            boxShadow:
-              "0 20px 50px rgba(15, 23, 42, 0.15)",
-          },
-        }}
+    overflow: "hidden",
+    border: "1px solid #e5e7eb",
+
+    boxShadow: "0 20px 50px rgba(15, 23, 42, 0.15)",
+  },
+}}
       >
         {/* ============================
             HEADER
@@ -247,42 +314,29 @@ const NotificationPopover = () => {
 
         <Box
           sx={{
-            px: 2.5,
-            py: 2,
+  px: { xs: 2, sm: 2.5 },
+  py: { xs: 1.5, sm: 2 },
 
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
 
-            backgroundColor: "#ffffff",
-
-            borderBottom: "1px solid #e5e7eb",
-          }}
+  backgroundColor: "#ffffff",
+  borderBottom: "1px solid #e5e7eb",
+}}
         >
           <Box>
-            <Typography
-              sx={{
-                fontSize: 20,
-                fontWeight: 700,
-                color: "#111827",
-              }}
-            >
-              Notifications
-            </Typography>
+          <Typography
+  sx={{
+    fontSize: { xs: 17, sm: 20 },
+    fontWeight: 700,
+    color: "#111827",
+  }}
+>
+  Notifications
+</Typography>
 
-            <Typography
-              sx={{
-                fontSize: 12,
-                color: "#6b7280",
-                mt: 0.3,
-              }}
-            >
-              {unreadCount > 0
-                ? `${unreadCount} unread notification${
-                    unreadCount > 1 ? "s" : ""
-                  }`
-                : "You're all caught up"}
-            </Typography>
+          
           </Box>
 
           <Badge

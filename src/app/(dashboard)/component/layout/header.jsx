@@ -22,11 +22,11 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import NotificationPopover from "../../users/components/Header/NotificationPopover";
-import TrackAppointment from "../../users/components/TrackAppointment/TrackAppointment";
+import EmergencyOutlinedIcon from "@mui/icons-material/EmergencyOutlined";
 import {
   Search as SearchIcon,
   Menu as MenuIcon,
-  TrackChanges as TrackChangesIcon,
+  MedicalServicesOutlined as MedicalServicesOutlinedIcon,
 } from "@mui/icons-material";
 
 import { navbarItems } from "./navbarItems";
@@ -48,7 +48,6 @@ const Navbar = ({
   const [emergencyOpen, setEmergencyOpen] = useState(false);
   const soundIntervalRef = useRef(null);
   const router = useRouter();
-  const [trackAppointmentOpen, setTrackAppointmentOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [openCalendar, setOpenCalendar] = useState(false);
   const isMobile = useMediaQuery("(max-width:600px)");
@@ -219,21 +218,37 @@ const Navbar = ({
       <Grid
         container
         sx={{
-          backgroundColor: "background.paper",
-          minHeight: 60,
+          backgroundColor: "#ffffff",
+
+          minHeight: 68,
+
           position: "fixed",
           top: 0,
-          left: { xs: 0, sm: sidebarOpen ? `${drawerWidth}px` : 0 },
+
+          left: {
+            xs: 0,
+            sm: sidebarOpen ? `${drawerWidth}px` : 0,
+          },
+
           width: {
             xs: "100%",
             sm: `calc(100% - ${sidebarOpen ? drawerWidth : 0}px)`,
           },
+
           zIndex: 1201,
+
           alignItems: "center",
-          px: { xs: 2, sm: 3, md: 4 },
-          borderBottom: 1,
-          borderColor: "border.light",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+
+          px: {
+            xs: 2,
+            sm: 3,
+            md: 4,
+          },
+
+          borderBottom: "1px solid #e6ecea",
+
+          boxShadow:
+            "0 2px 10px rgba(15, 23, 42, 0.04)",
         }}
       >
         <Box sx={{ display: (isMobile || isTablet) ? "flex" : "none", mr: 2 }}>
@@ -249,19 +264,66 @@ const Navbar = ({
             <MenuIcon sx={{ color: "background.paper" }} />
           </Button>
         </Box>
-
-        <Typography
-          variant="h5"
-          fontWeight={700}
+        <Box
           sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: { xs: 0, sm: 1.3 },
             position: { xs: "absolute", sm: "static" },
             left: { xs: "50%", sm: "auto" },
             transform: { xs: "translateX(-50%)", sm: "none" },
-            color: "text.third",
           }}
         >
-          {title}
-        </Typography>
+          {/* Doctor Icon */}
+          <Box
+            sx={{
+              display: { xs: "none", sm: "flex" },
+              width: 40,
+              height: 40,
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "10px",
+              backgroundColor: "#ecf9f5",
+              border: "1px solid #d5eee7",
+              color: "#0a9f7d",
+              flexShrink: 0,
+            }}
+          >
+            <MedicalServicesOutlinedIcon sx={{ fontSize: 21 }} />
+          </Box>
+
+          {/* Title + Description */}
+          <Box>
+            <Typography
+              sx={{
+                fontSize: { xs: "18px", sm: "19px" },
+                fontWeight: 700,
+                lineHeight: 1.2,
+                color: "#155f51",
+                letterSpacing: "-0.3px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {title}
+            </Typography>
+
+            <Typography
+              sx={{
+                display: { xs: "none", sm: "block" },
+                mt: "2px",
+                fontSize: "11px",
+                fontWeight: 400,
+                lineHeight: 1.2,
+                color: "#84928e",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {title === "Doctor"
+                ? "Find doctors & book appointments"
+                : "Manage your healthcare dashboard"}
+            </Typography>
+          </Box>
+        </Box>
 
         <Box sx={{ display: isMobile ? "flex" : "none", marginLeft: "auto" }}>
           <Button
@@ -281,58 +343,141 @@ const Navbar = ({
           sx={{
             display: { xs: "none", sm: "flex" },
             alignItems: "center",
-            gap: 2,
+            gap: 1,
             marginLeft: "auto",
           }}
         >
+          {/* ================= EMERGENCY ================= */}
           <Tooltip title="Emergency Assistance">
             <Button
               id="emergency-btn"
               variant="contained"
               onClick={handleEmergencyClick}
-              sx={{ backgroundColor: "red" }}
+              startIcon={
+                <EmergencyOutlinedIcon
+                  sx={{
+                    fontSize: "18px !important",
+                  }}
+                />
+              }
+              sx={{
+                height: 40,
+                px: 1.8,
+
+                borderRadius: "8px",
+
+                backgroundColor: "#ef233c",
+                color: "#ffffff",
+
+                fontSize: "11px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+
+                boxShadow: "0 3px 8px rgba(239,35,60,0.16)",
+
+                "& .MuiButton-startIcon": {
+                  marginRight: "6px",
+                  marginLeft: 0,
+                },
+
+                "&:hover": {
+                  backgroundColor: "#d91e36",
+                  boxShadow: "0 5px 12px rgba(239,35,60,0.20)",
+                },
+              }}
             >
               Emergency
             </Button>
           </Tooltip>
 
+          {/* Divider */}
 
           <Box
             sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
+              width: "1px",
+              height: 28,
+              backgroundColor: "#e3e9e7",
+              mx: 0.5,
             }}
-          >
-            {/* 🔔 Notification */}
+          />
+
+          {/* ================= NOTIFICATION ================= */}
+
+            {/* Tumhara existing notification component */}
             <NotificationPopover />
 
-            {/* Existing Navbar Icons */}
-            {roleNavbar.map((item, index) => (
-              <Tooltip key={index} title={item.label}>
-                <IconButton
-                  onClick={(event) => {
-                    if (item.label === "Calendar") {
-                      setAnchorEl(event.currentTarget);
-                    } else if (
-                      item.label === "Track Appointment"
-                    ) {
-                      setTrackAppointmentOpen(true);
-                    } else {
-                      item.onClick?.();
-                    }
+          
+
+          <Box
+            sx={{
+              width: "1px",
+              height: 28,
+              backgroundColor: "#e3e9e7",
+              mx: 0.5,
+            }}
+          />
+          {/* ================= CALENDAR / NAVBAR ITEMS ================= */}
+
+          {roleNavbar.map((item, index) => (
+            <Tooltip key={index} title={item.label}>
+              <Button
+                onClick={(event) => {
+                  // SAME OLD LOGIC
+                  if (item.label === "Calendar") {
+                    setAnchorEl(event.currentTarget);
+                  } else {
+                    item.onClick?.();
+                  }
+                }}
+                sx={{
+                  minWidth: "auto",
+                  height: 40,
+
+                  px: 1.4,
+
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.8,
+ backgroundColor: "#f0faf7",
+                    borderColor: "#d5eee7",
+
+                  borderRadius: "8px",
+                  border: "1px solid transparent",
+
+                  color: "#586762",
+
+                  textTransform: "none",
+
+                  transition: "all 0.2s ease",
+
+                  "&:hover": {
+                    backgroundColor: "#f0faf7",
+                    borderColor: "#d5eee7",
+                    color: "#0a9f7d",
+                  },
+                }}
+              >
+                <Badge
+                  badgeContent={item.badge}
+                  color="error"
+                >
+                  <item.icon sx={{ fontSize: 20 }} />
+                </Badge>
+
+                {/* Calendar name */}
+                <Typography
+                  component="span"
+                  sx={{
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: "inherit",
                   }}
                 >
-                  <Badge
-                    badgeContent={item.badge}
-                    color="error"
-                  >
-                    <item.icon />
-                  </Badge>
-                </IconButton>
-              </Tooltip>
-            ))}
-          </Box>
+                  {item.label}
+                </Typography>
+              </Button>
+            </Tooltip>
+          ))}
         </Box>
       </Grid>
       <Popover
@@ -363,74 +508,66 @@ const Navbar = ({
         }}
       >
         <Box sx={{ p: 2, width: "250px" }}>
-          {/* 🔍 Search Bar */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              px: 2,
-              height: 42,
-              borderRadius: 1,
-              backgroundColor: "background.third",
-              borderColor: "border.third",
-              border: 1,
-              mb: 2,
-            }}
-          >
-            <SearchIcon sx={{ color: "text.fourth", mr: 1 }} />
-            <InputBase
-              placeholder="Search..."
+          <NotificationPopover />
+
+          {/* Calendar */}
+          {roleNavbar.map((item, index) => (
+            <Button
+              key={index}
               fullWidth
-              value={searchQuery}
-              onChange={handleSearch}
-            />
-          </Box>
-
-          {/* 📌 Icons with Name (Column) */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {roleNavbar.map((item, index) => (
-              <Button
-                key={index}
-                onClick={() => {
-                  if (item.label === "Schedule") {
-                    router.push("/doctor/components/Header/Calender");
-                  } else {
-                    item.onClick?.();
-                  }
-                }}
-                startIcon={
-                  <Badge badgeContent={item.badge} color="error">
-                    <item.icon />
-                  </Badge>
+              onClick={(event) => {
+                if (item.label === "Calendar") {
+                  setAnchorEl(event.currentTarget);
+                } else {
+                  item.onClick?.();
                 }
-                sx={{
-                  justifyContent: "flex-start",
-                  color: "background.primary",
-                  textTransform: "none",
-                }}
-              >
-                {item.label}
-              </Button>
-            ))}
-          </Box>
+              }}
+              startIcon={
+                <Badge badgeContent={item.badge} color="error">
+                  <item.icon />
+                </Badge>
+              }
+              sx={{
+                minHeight: 52,
+                justifyContent: "flex-start",
+                px: 1.5,
+                mb: 1.5,
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 2,
+                color: "background.primary",
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
+              {item.label}
+            </Button>
+          ))}
 
-          {/* 🚨 Emergency Button */}
+          {/* Emergency */}
           <Button
             id="emergency-btn-mobile"
-            variant="contained"
+            fullWidth
+            variant="outlined"
+            color="error"
             onClick={handleEmergencyClick}
-            sx={{ backgroundColor: "red" }}
+            sx={{
+              minHeight: 52,
+              justifyContent: "flex-start",
+              px: 1.5,
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 700,
+            }}
           >
-            Emergency
+            🚨 &nbsp; Emergency
           </Button>
+
         </Box>
       </Drawer>
 
       <audio ref={alertAudioRef} src="/sound/alert.mp3" preload="auto" />
-      <TrackAppointment
-        open={trackAppointmentOpen}
-        onClose={() => setTrackAppointmentOpen(false)}
-      />
+
       <Dialog
         open={emergencyOpen}
         onClose={handleCloseEmergency}

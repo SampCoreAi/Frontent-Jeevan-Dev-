@@ -3,29 +3,44 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../../../../../config/api";
-import { Typography, Box, Paper, Drawer, IconButton } from "@mui/material";
+
+import {
+  Dialog,
+  Typography, Box, Paper, Drawer, IconButton,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useTheme, useMediaQuery } from "@mui/material";
-import { DocumentExplorer } from "../../components/document/DocumentExplorer";
-import { FileGridItem } from "../../components/document/FileGridItem";
-import { FileListItem } from "../../components/document/FileListItem";
-import { UploadDialog } from "../../components/document/UploadDialog";
-import { PdfViewerModal } from "../../components/document/PdfViewerModal";
-import { ImageViewerModal } from "../../components/document/ImageViewerModal";
-import { EmptyState } from "../../components/document/EmptyState";
-import { Header } from "../../components/document/Header";
-import { FileView } from "../../components/document/FileView";
+import { DocumentExplorer } from "../../components/Document/DocumentExplorer";
+import { FileGridItem } from "../../components/Document/FileGridItem";
+import { FileListItem } from "../../components/Document/FileListItem";
+import { UploadDialog } from "../../components/Document/UploadDialog";
+import { PdfViewerModal } from "../../components/Document/PdfViewerModal";
+import { ImageViewerModal } from "../../components/Document/ImageViewerModal";
+import { EmptyState } from "../../components/Document/EmptyState";
+import { Header } from "../../components/Document/Header";
+import { FileView } from "../../components/Document/FileView";
+
 import {
   getFileIcon,
   getSmallFileIcon,
-} from "../../components/document/FileIcons";
+} from "../../components/Document/FileIcons";
 
 export default function DocumentPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
-
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState("");
   const [folders, setFolders] = useState([
     {
       id: "root",
@@ -104,7 +119,7 @@ export default function DocumentPage() {
             let foundFolder = currentParent.children.find(child => child.type === 'folder' && child.name.toLowerCase() === part.toLowerCase());
 
             if (!foundFolder) {
-              const newFolderId = `folder_${part}_${Math.random().toString(36).substr(2, 9)}`;
+            const newFolderId = `${currentParentId}/${part}`;
               foundFolder = {
                 id: newFolderId,
                 name: part,
@@ -122,26 +137,33 @@ export default function DocumentPage() {
         };
 
         const mappedFiles = filesData.map((file) => {
-          let dbFolder = file.folder_name || "";
+          let dbFolder = file.folderName || "";
+
           dbFolder = dbFolder.replace(/\\/g, "/");
 
           const parts = dbFolder.split("/").filter(Boolean);
 
+          // "Document" root already frontend me bana hua hai
           if (parts[0]?.toLowerCase() === "document") {
             parts.shift();
           }
 
           const targetFolderId = findOrCreatePath(parts, "root");
+          const fileKey = file.fileUrl?.split("?")[0];
 
-          const baseUrl = process.env.NEXT_PUBLIC_S3_BUCKET_URL;
+          const extension = fileKey
+            ?.split(".")
+            .pop()
+            ?.toLowerCase();
 
-          const fileKey = file.file_key;
-          const extension = fileKey.split(".").pop()?.toLowerCase();
+          const S3_BUCKET_URL = process.env.NEXT_PUBLIC_S3_BUCKET_URL;
 
           const fileObj = {
-            id: file.id || file.file_key,
-            name: fileKey.split("/").pop(),
-            size: "0 MB",
+            id: file.id,
+
+            name: file.originalName || "Unknown file",
+
+            size: file.fileSize || "0 MB",
 
             type:
               extension === "pdf"
@@ -149,11 +171,17 @@ export default function DocumentPage() {
                 : ["jpg", "jpeg", "png", "webp"].includes(extension)
                   ? "image"
                   : "file",
-            fileType: fileKey.split(".").pop()?.toLowerCase(),
+
+            fileType: extension,
+
             folderId: targetFolderId,
-            url: `${baseUrl}/${fileKey}`,
-            date: new Date(file.created_at).toLocaleDateString(),
+
+            url: `${S3_BUCKET_URL}${file.fileUrl}`,
+
+            date: file.createdAt || "-",
           };
+
+
 
           if (foldersMap[targetFolderId]) {
             foldersMap[targetFolderId].children.push({
@@ -200,12 +228,20 @@ export default function DocumentPage() {
       [folderId]: !prev[folderId],
     }));
   };
+const createFolder = () => {
+  const parentId = selectedFolder || "root";
 
-  const createFolder = () => {
-    setCreatingFolder(true);
-    setNewFolderName("");
-    setParentForNewFolder(selectedFolder);
-  };
+  // Parent folder automatically open karo
+  setExpandedFolders((prev) => ({
+    ...prev,
+    [parentId]: true,
+  }));
+
+  // Create folder input show karo
+  setParentForNewFolder(parentId);
+  setNewFolderName("");
+  setCreatingFolder(true);
+};
 
   const saveNewFolder = () => {
     if (!newFolderName.trim()) {
@@ -370,111 +406,83 @@ export default function DocumentPage() {
     setSelectedFolder("root");
   };
 
-  const processFiles = async (files) => {
-    const token = localStorage.getItem("token");
+const processFiles = async (files) => {
+  if (!files || files.length === 0) return;
 
-    if (!token) {
-      alert("Authentication token missing. Please log in.");
-      return;
-    }
+  const token = localStorage.getItem("token");
 
-    // Determine folder name to send to API
-  let folderNameParam = getFolderPath(selectedFolder);
+  if (!token) {
+    alert("Authentication token missing. Please log in.");
+    return;
+  }
 
-if (selectedFolder === "root") {
-  folderNameParam = "user-documents/adi";
-} else {
-  folderNameParam = folderNameParam
-    .replace(/^Document\/?/, "user-documents/");
-}
-    for (const file of files) {
+  // Jis folder me abhi user hai
+  const uploadFolderId = selectedFolder;
+
+  try {
+    setUploading(true);
+    setUploadProgress(0);
+    setUploadSuccess("");
+
+    const folderNameParam = getFolderPath(uploadFolderId);
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
       const formData = new FormData();
       formData.append("file", file);
 
-      try {
-        const response = await axios.post(
-          `${API_BASE_URL}/licenseFile/upload?folder=${folderNameParam}`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+      await axios.post(
+        `${API_BASE_URL}/licenseFile/upload?folder=${folderNameParam}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
 
-        if (response.data.success) {
-          const apiData = response.data.data;
-          const fileId = apiData.fileKey || `file_${Date.now()}_${Math.random()}`;
+          onUploadProgress: (progressEvent) => {
+            if (!progressEvent.total) return;
 
-          const newFile = {
-            id: fileId,
-            name: file.name,
-            size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-            type: file.type,
-            fileType: file.name.split(".").pop().toLowerCase(),
-            folderId: selectedFolder,
-            url: apiData.fileUrl,
-            date: new Date().toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            }),
+            const fileProgress =
+              progressEvent.loaded / progressEvent.total;
 
-          };
+            const overallProgress = Math.round(
+              ((i + fileProgress) / files.length) * 100
+            );
 
-          // Update Folders Tree
-          setFolders((prev) => {
-            const addFileToTree = (nodes) => {
-              return nodes.map((node) => {
-                if (node.id === selectedFolder) {
-                  return {
-                    ...node,
-                    children: [
-                      ...(node.children || []),
-                      {
-                        id: newFile.id,
-                        name: newFile.name,
-                        type: "file",
-                        fileType: newFile.fileType,
-                        folderId: selectedFolder,
-                      },
-                    ],
-                  };
-                }
-                if (node.children) {
-                  return {
-                    ...node,
-                    children: addFileToTree(node.children),
-                  };
-                }
-                return node;
-              });
-            };
-            return addFileToTree(prev);
-          });
-
-          setAllFiles((prev) => [...prev, newFile]);
-
-        } else {
-          console.error("Upload failed for file " + file.name, response.data);
-          alert(`Upload failed for ${file.name}: ${response.data.message || "Unknown error"}`);
+            setUploadProgress(overallProgress);
+          },
         }
-
-      } catch (error) {
-        console.error("Error uploading file " + file.name, error);
-        alert(`Error uploading ${file.name}. Check console.`);
-      }
+      );
     }
 
-    if (selectedFolder) {
-      setExpandedFolders((prev) => ({
-        ...prev,
-        [selectedFolder]: true,
-      }));
-    }
+    setUploadProgress(100);
 
-    setOpenUpload(false);
-  };
+    // Fresh data
+    await fetchFiles();
+
+    // SAME FOLDER SELECT RAHEGA
+    setSelectedFolder(uploadFolderId);
+
+    setUploading(false);
+
+    setUploadSuccess(
+      files.length === 1
+        ? "File uploaded successfully!"
+        : `${files.length} files uploaded successfully!`
+    );
+  } catch (error) {
+    console.error("Upload error:", error);
+
+    setUploading(false);
+    setUploadProgress(0);
+
+    alert(
+      error.response?.data?.message ||
+        "File upload failed. Please try again."
+    );
+  }
+};
 
   const uploadFiles = (e) => {
     processFiles(Array.from(e.target.files));
@@ -495,46 +503,85 @@ if (selectedFolder === "root") {
   const handleDragLeave = () => {
     setIsDragging(false);
   };
-
   const removeFile = (fileId) => {
-    if (!window.confirm("Are you sure you want to delete this file?")) {
+    setFileToDelete(fileId);
+    setDeleteDialogOpen(true);
+  };
+  const confirmDeleteFile = async () => {
+    if (!fileToDelete) return;
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("Authentication token missing. Please log in.");
       return;
     }
 
+    try {
+      setDeleting(true);
 
+      const response = await axios.delete(
+        `${API_BASE_URL}/licenseFile/deleteFiles/${fileToDelete}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    setAllFiles((prev) => prev.filter((file) => file.id !== fileId));
+      if (response.data?.success) {
+        setAllFiles((prev) =>
+          prev.filter((file) => file.id !== fileToDelete)
+        );
 
-    setFolders((prev) => {
-      const removeFileFromTree = (nodes) => {
-        return nodes
-          .map((node) => {
-            if (node.type === "file" && node.id === fileId) {
-              return null;
-            }
+        setFolders((prev) => {
+          const removeFromTree = (nodes) =>
+            nodes
+              .map((node) => {
+                if (
+                  node.type === "file" &&
+                  node.id === fileToDelete
+                ) {
+                  return null;
+                }
 
-            if (node.children) {
-              const filteredChildren = removeFileFromTree(node.children).filter(
-                Boolean
-              );
-              return {
-                ...node,
-                children:
-                  filteredChildren.length > 0 ? filteredChildren : undefined,
-              };
-            }
+                if (node.children) {
+                  return {
+                    ...node,
+                    children: removeFromTree(
+                      node.children
+                    ).filter(Boolean),
+                  };
+                }
 
-            return node;
-          })
-          .filter(Boolean);
-      };
-      return removeFileFromTree(prev);
-    });
+                return node;
+              })
+              .filter(Boolean);
 
-    if (selectedFile?.id === fileId) {
-      setSelectedFile(null);
-      setOpenPdfViewer(false);
-      setOpenImageViewer(false);
+          return removeFromTree(prev);
+        });
+
+        if (selectedFile?.id === fileToDelete) {
+          setSelectedFile(null);
+          setOpenPdfViewer(false);
+          setOpenImageViewer(false);
+        }
+
+        setDeleteDialogOpen(false);
+        setFileToDelete(null);
+      }
+    } catch (error) {
+      console.error(
+        "Delete error:",
+        error?.response?.data || error
+      );
+
+      alert(
+        error?.response?.data?.message ||
+        "Failed to delete file."
+      );
+    } finally {
+      setDeleting(false);
     }
   };
   const handleFileClick = (file) => {
@@ -552,15 +599,38 @@ if (selectedFolder === "root") {
     }
   };
 
-  const handleDownload = (file) => {
-    const link = document.createElement("a");
-    link.href = file.url;
-    link.download = file.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const handleDownload = async (file) => {
+    try {
+      const response = await fetch(file.url, {
+        method: "GET",
+        mode: "cors",
+      });
 
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name || "download";
+      a.style.display = "none";
+
+      document.body.appendChild(a);
+      a.click();
+
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+    } catch (error) {
+      console.error("Download error:", error);
+
+    }
+  };
 
   const getFilesForCurrentFolder = () => {
     return allFiles.filter(
@@ -571,15 +641,14 @@ if (selectedFolder === "root") {
   const currentFolderName = getFolderNameById(selectedFolder);
 
   return (
-   <Box
+    <Box
       sx={{
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
         mt: 8,
-        mx: 1,
-        height:"90vh",
-        width: "98.5%",
-        mb: 2,
+       
+        height: "91vh",
+        width: "100%",
         boxShadow: "0 4px 12px #0f7468",
       }}
     >
@@ -598,7 +667,7 @@ if (selectedFolder === "root") {
             height: "100%",
             display: "flex",
             borderRadius: 0,
-           
+
             overflow: "hidden",
             boxSizing: "border-box",
           }}
@@ -740,15 +809,18 @@ if (selectedFolder === "root") {
         </Paper>
 
         <UploadDialog
-          openUpload={openUpload}
-          setOpenUpload={setOpenUpload}
-          isMobile={isMobile}
-          handleDrop={handleDrop}
-          handleDragOver={handleDragOver}
-          handleDragLeave={handleDragLeave}
-          isDragging={isDragging}
-          uploadFiles={uploadFiles}
-          currentFolderName={currentFolderName}
+           openUpload={openUpload}
+  setOpenUpload={setOpenUpload}
+  uploadFiles={uploadFiles}
+  handleDrop={handleDrop}
+  handleDragOver={handleDragOver}
+  handleDragLeave={handleDragLeave}
+  isDragging={isDragging}
+  uploading={uploading}
+  uploadProgress={uploadProgress}
+  uploadSuccess={uploadSuccess}
+  currentFolderName={currentFolderName}
+  isMobile={isMobile}
         />
 
         <PdfViewerModal
@@ -770,6 +842,80 @@ if (selectedFolder === "root") {
           isMobile={isMobile}
           isTablet={isTablet}
         />
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={() => {
+            if (!deleting) {
+              setDeleteDialogOpen(false);
+              setFileToDelete(null);
+            }
+          }}
+          PaperProps={{
+            sx: {
+              borderRadius: 3,
+              width: "100%",
+              maxWidth: 400,
+              mx: 2,
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              fontWeight: 700,
+              fontSize: "1.1rem",
+              pb: 1,
+            }}
+          >
+            Delete File?
+          </DialogTitle>
+
+          <DialogContent>
+            <DialogContentText
+              sx={{
+                fontSize: "0.9rem",
+                color: "#6b7280",
+              }}
+            >
+              Are you sure you want to delete this file? This action
+              cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+
+          <DialogActions sx={{ px: 3, pb: 2.5 }}>
+            <Button
+              disabled={deleting}
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setFileToDelete(null);
+              }}
+              sx={{
+                color: "#4b5563",
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              variant="contained"
+              disabled={deleting}
+              onClick={confirmDeleteFile}
+              sx={{
+                bgcolor: "#dc2626",
+                textTransform: "none",
+                fontWeight: 600,
+                borderRadius: 2,
+
+                "&:hover": {
+                  bgcolor: "#b91c1c",
+                },
+              }}
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Box>
   );

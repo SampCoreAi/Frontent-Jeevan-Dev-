@@ -386,7 +386,7 @@ const filteredResults = [...results].sort(
   (a, b) =>
     Number(b.isCurrentlyAvailable) -
     Number(a.isCurrentlyAvailable)
-); 
+);
 
   const pageCount = Math.ceil(totalDoctors / itemsPerPage);
   const styles = {

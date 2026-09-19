@@ -103,7 +103,7 @@ if (!emailRegex.test(forgotEmail)) {
           }}
         >
           {forgotLoading ? (
-            <CircularProgress size={22} color="inherit" />
+            <CircularProgress size={22} color="white" />
           ) : (
             "Send Link"
           )}

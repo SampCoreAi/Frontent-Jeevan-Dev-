@@ -3,13 +3,12 @@ import { API_ENDPOINTS, HTTP_STATUS, ERROR_MESSAGES } from '../constants';
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
-
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {

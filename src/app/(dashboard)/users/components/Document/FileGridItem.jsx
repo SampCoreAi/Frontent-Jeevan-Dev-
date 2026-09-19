@@ -11,12 +11,13 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  Tooltip,
 } from "@mui/material";
+
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import DownloadIcon from "@mui/icons-material/Download";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-
 
 export const FileGridItem = ({
   file,
@@ -29,9 +30,11 @@ export const FileGridItem = ({
   hoveredFile,
   setHoveredFile,
 }) => {
-  const [showFullName, setShowFullName] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+
   const open = Boolean(anchorEl);
+
+  // ================= MENU =================
 
   const handleMenuClick = (event) => {
     event.stopPropagation();
@@ -39,83 +42,123 @@ export const FileGridItem = ({
   };
 
   const handleMenuClose = (event) => {
-    if (event) event.stopPropagation();
+    if (event) {
+      event.stopPropagation();
+    }
+
     setAnchorEl(null);
   };
 
   const handleDownloadClick = (event) => {
     event.stopPropagation();
+
     handleDownload(file);
-    handleMenuClose();
+
+    setAnchorEl(null);
   };
 
   const handleOpenClick = (event) => {
     event.stopPropagation();
+
     handleFileClick(file);
-    handleMenuClose();
+
+    setAnchorEl(null);
   };
 
   const handleDeleteClick = (event) => {
     event.stopPropagation();
-    handleMenuClose();
-    setTimeout(() => removeFile(file.id), 100);
+
+    setAnchorEl(null);
+
+    setTimeout(() => {
+      removeFile(file.id);
+    }, 100);
   };
+
+  // ================= DATE =================
+
+  const formattedDate = file.date
+    ? new Date(file.date).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : "-";
+
+  // ================= UI =================
 
   return (
     <Paper
       elevation={0}
+      onClick={() => handleFileClick(file)}
+      onMouseEnter={() => setHoveredFile?.(file.id)}
+      onMouseLeave={() => setHoveredFile?.(null)}
       sx={{
-        border: "1px solid #e0e0e0",
-        borderRadius: 2,
-        p: isMobile ? 1 : isTablet ? 1.5 : 2,
-        cursor: "pointer",
-        textAlign: "center",
+        width: "100%",
+        height: isMobile ? 140 : isTablet ? 150 : 165,
+
+        p: isMobile ? 1 : isTablet ? 1.25 : 1.5,
+
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "space-between",
+
         position: "relative",
-        height: isMobile ? 140 : isTablet ? 160 : 180,
-        width: "100%",
-        maxWidth: "100%",
         boxSizing: "border-box",
-        transition: "all 0.2s ease",
+
+        cursor: "pointer",
+
+        bgcolor: "#fff",
+
+        border: "1px solid #e5e7eb",
+        borderRadius: 2,
+
+        transition: "all 0.18s ease",
+
         "&:hover": {
-          borderColor: "#0f4f3f",
-          bgcolor: "#fafafa",
-          boxShadow: "0 2px 8px rgba(15, 79, 63, 0.1)",
+          bgcolor: "#f8fbfa",
+          borderColor: "#b8d5ce",
+          boxShadow: "0 4px 12px rgba(15, 79, 63, 0.08)",
+          transform: "translateY(-2px)",
         },
       }}
-      onClick={() => handleFileClick(file)}
-      onMouseEnter={() => setHoveredFile(file.id)}
-      onMouseLeave={() => setHoveredFile(null)}
     >
+      {/* ================= 3 DOT MENU ================= */}
+
       <IconButton
         size="small"
         onClick={handleMenuClick}
-        sx={{
-          position: "absolute",
-          top: 4,
-          right: 4,
-          color: "#666",
-          bgcolor: "rgba(255, 255, 255, 0.9)",
-          "&:hover": {
-            bgcolor: "rgba(255, 255, 255, 1)",
-            color: "#0f4f3f",
-          },
-          padding: "4px",
-          minWidth: "auto",
-          width: 28,
-          height: 28,
-          zIndex: 2,
-        }}
         aria-label="file options"
         aria-controls={open ? `file-menu-${file.id}` : undefined}
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
+        sx={{
+          position: "absolute",
+
+          top: 6,
+          right: 6,
+
+          width: 30,
+          height: 30,
+
+          color: "#6b7280",
+
+          zIndex: 2,
+
+          "&:hover": {
+            bgcolor: "#edf5f2",
+            color: "#0f4f3f",
+          },
+        }}
       >
-        <MoreVertIcon sx={{ fontSize: isMobile ? 16 : 18 }} />
+        <MoreVertIcon
+          sx={{
+            fontSize: isMobile ? 18 : 20,
+          }}
+        />
       </IconButton>
+
+      {/* ================= MENU ================= */}
 
       <Menu
         id={`file-menu-${file.id}`}
@@ -124,163 +167,212 @@ export const FileGridItem = ({
         onClose={handleMenuClose}
         onClick={(e) => e.stopPropagation()}
         MenuListProps={{
-          "aria-labelledby": `file-button-${file.id}`,
           dense: true,
         }}
-        transformOrigin={{
-          horizontal: isMobile ? "center" : "right",
-          vertical: "top",
-        }}
         anchorOrigin={{
-          horizontal: isMobile ? "center" : "right",
+          horizontal: "right",
           vertical: "bottom",
+        }}
+        transformOrigin={{
+          horizontal: "right",
+          vertical: "top",
         }}
         sx={{
           "& .MuiPaper-root": {
-            mt: 1,
-            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
+            mt: 0.5,
+
+            minWidth: 180,
+
             borderRadius: 2,
-            minWidth: isMobile ? 180 : 200,
-            maxWidth: isMobile ? "calc(100vw - 32px)" : "none",
-            position: isMobile ? "fixed" : "absolute",
-            left: isMobile ? "50%" : "auto",
-            transform: isMobile ? "translateX(-50%)" : "none",
-            top: isMobile ? "auto" : undefined,
-            bottom: isMobile ? "80px" : undefined,
+
+            border: "1px solid #e5e7eb",
+
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
           },
         }}
-        disableScrollLock={false}
       >
+        {/* OPEN */}
+
         <MenuItem
           onClick={handleOpenClick}
           sx={{
             py: 1,
-            fontSize: isMobile ? "0.875rem" : "0.875rem",
           }}
         >
           <ListItemIcon>
-            <OpenInNewIcon fontSize="small" />
+            <OpenInNewIcon
+              fontSize="small"
+              sx={{
+                color: "#0f4f3f",
+              }}
+            />
           </ListItemIcon>
-          <ListItemText
-            primary="Open"
-            sx={{ fontSize: isMobile ? "0.875rem" : "0.875rem" }}
-          />
+
+          <ListItemText primary="Open" />
         </MenuItem>
+
+        {/* DOWNLOAD */}
+
         <MenuItem
           onClick={handleDownloadClick}
           sx={{
             py: 1,
-            fontSize: isMobile ? "0.875rem" : "0.875rem",
           }}
         >
           <ListItemIcon>
-            <DownloadIcon fontSize="small" />
+            <DownloadIcon
+              fontSize="small"
+              sx={{
+                color: "#0f4f3f",
+              }}
+            />
           </ListItemIcon>
-          <ListItemText
-            primary="Download"
-            sx={{ fontSize: isMobile ? "0.875rem" : "0.875rem" }}
-          />
+
+          <ListItemText primary="Download" />
         </MenuItem>
+
         <Divider />
+
+        {/* DELETE */}
+
         <MenuItem
           onClick={handleDeleteClick}
           sx={{
             py: 1,
-            fontSize: isMobile ? "0.875rem" : "0.875rem",
           }}
         >
           <ListItemIcon>
-            <DeleteOutlineIcon fontSize="small" sx={{ color: "#d32f2f" }} />
+            <DeleteOutlineIcon
+              fontSize="small"
+              sx={{
+                color: "#dc2626",
+              }}
+            />
           </ListItemIcon>
+
           <ListItemText
             primary="Delete"
             sx={{
-              color: "#d32f2f",
-              fontSize: isMobile ? "0.875rem" : "0.875rem",
+              color: "#dc2626",
             }}
           />
         </MenuItem>
       </Menu>
 
+      {/* ================= FILE ICON ================= */}
+
       <Box
         sx={{
+          width: isMobile ? 54 : isTablet ? 60 : 64,
+          height: isMobile ? 54 : isTablet ? 60 : 64,
+
+          mt: isMobile ? 0.8 : 1,
+          mb: 0.7,
+
+          borderRadius: 2,
+
+          bgcolor: "#f2f8f6",
+
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          height: isMobile ? 60 : isTablet ? 70 : 80,
-          width: "100%",
-          mb: 1,
-          mt: 1,
+
+          flexShrink: 0,
         }}
       >
         {getFileIcon(file)}
       </Box>
 
+      {/* ================= FILE NAME ================= */}
+
       <Box
         sx={{
-          position: "relative",
           width: "100%",
+          minWidth: 0,
+
           flex: 1,
+
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-        }}
-        onMouseEnter={() => setShowFullName(true)}
-        onMouseLeave={() => setShowFullName(false)}
-      >
-        <Typography
-          variant="body2"
-          sx={{
-            fontWeight: 500,
-            textAlign: "center",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            width: "100%",
-            fontSize: isMobile ? "0.7rem" : isTablet ? "0.8rem" : "0.875rem",
-            lineHeight: 1.3,
-            maxHeight: "2.6em",
-            wordBreak: "break-word",
-          }}
-          title={file.name}
-        >
-          {file.name}
-        </Typography>
 
-        {showFullName && !isMobile && (
-          <Box
+          px: 0.5,
+        }}
+      >
+        <Tooltip
+          title={file.name || ""}
+          arrow
+          placement="top"
+          disableHoverListener={isMobile}
+        >
+          <Typography
+            variant="body2"
             sx={{
-              position: "absolute",
-              top: "100%",
-              left: 0,
-              right: 0,
-              mt: 0.5,
-              bgcolor: "rgba(0, 0, 0, 0.8)",
-              color: "white",
-              p: 1,
-              borderRadius: 1,
-              fontSize: "0.75rem",
-              zIndex: 3,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              width: "100%",
+
+              fontWeight: 600,
+
+              color: "#1f2937",
+
+              textAlign: "center",
+
+              fontSize: isMobile
+                ? "0.72rem"
+                : isTablet
+                  ? "0.8rem"
+                  : "0.85rem",
+
+              lineHeight: 1.3,
+
+              overflow: "hidden",
+
+              textOverflow: "ellipsis",
+
+              display: "-webkit-box",
+
+              WebkitLineClamp: 2,
+
+              WebkitBoxOrient: "vertical",
+
+              wordBreak: "break-word",
             }}
           >
-            {file.name}
-          </Box>
-        )}
+            {file.name || "Unknown file"}
+          </Typography>
+        </Tooltip>
       </Box>
+
+      {/* ================= SIZE + DATE ================= */}
 
       <Typography
         variant="caption"
-        color="text.secondary"
         sx={{
-          fontSize: isMobile ? "0.6rem" : isTablet ? "0.7rem" : "0.75rem",
-          mt: 0.5,
-          color:"black"
+          mt: 0.4,
+
+          width: "100%",
+
+          textAlign: "center",
+
+          color: "#8a9491",
+
+          fontWeight: 400,
+
+          fontSize: isMobile
+            ? "0.62rem"
+            : isTablet
+              ? "0.68rem"
+              : "0.72rem",
+
+          lineHeight: 1.3,
+
+          whiteSpace: "nowrap",
+
+          overflow: "hidden",
+
+          textOverflow: "ellipsis",
         }}
       >
-        {file.size} • {file.date}
+        {file.size || "0 MB"} • {formattedDate}
       </Typography>
     </Paper>
   );

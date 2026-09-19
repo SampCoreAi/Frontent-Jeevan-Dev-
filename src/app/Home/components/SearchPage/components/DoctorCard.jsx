@@ -496,6 +496,7 @@ export default function DoctorCard({
           flex-shrink: 0;
         }
 
+<<<<<<< HEAD
       .available-badge.is-unavailable,
 .mobile-available-badge.is-unavailable {
   background: #fef2f2;
@@ -507,6 +508,8 @@ export default function DoctorCard({
 .mobile-available-badge.is-unavailable .available-dot {
   background: #dc2626;
 }
+=======
+>>>>>>> origin/main
         .hospital-section {
           display: flex;
           align-items: center;
@@ -834,7 +837,7 @@ function InfoBox({
     <div
       className="info-box"
       style={{
-
+        
       }}
     >
       <div className="info-label">

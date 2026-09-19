@@ -124,10 +124,10 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
 
   const calculateNodePosition = useCallback((index, total) => {
     const angle = ((index / total) * 360 + rotationAngle) % 360;
-    
+
     // Responsive radius
-    const radius = isMobile ? 140 : 220;
-    
+    const radius = isMobile ? 125 : 220;
+
     const radian = (angle * Math.PI) / 180;
 
     const x = radius * Math.cos(radian) + centerOffset.x;
@@ -272,12 +272,25 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
   const nodeSize = isMobile ? 36 : 48;
   const iconSize = isMobile ? 16 : 20;
   const centralHubSize = isMobile ? 48 : 80;
+  const centralHubInnerSize = Math.round(centralHubSize / 2.5); // roughly matches old w-{size/5}
+  const pingRing1Size = centralHubSize + 20; // roughly matches old w-{size/2+10}
+  const pingRing2Size = centralHubSize + 40; // roughly matches old w-{size/2+20}
   const orbitSize = isMobile ? 320 : 440;
   const titleFontSize = isMobile ? "text-3xl" : "text-6xl";
 
   return (
     <div
-      className="w-full h-screen flex flex-col items-center justify-center overflow-hidden relative select-none"
+      className="
+        w-full
+        h-auto
+        md:h-screen
+        flex flex-col
+        items-center
+        justify-start md:justify-center
+        overflow-hidden
+        relative
+        select-none
+      "
       ref={containerRef}
       onClick={handleContainerClick}
       onMouseDown={handleMouseDown}
@@ -332,7 +345,18 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-4">
+      <div
+        className="
+          relative z-10
+          w-full
+          h-auto md:h-full
+          flex flex-col
+          items-center
+          justify-start md:justify-center
+          px-3 md:px-4
+          py-6 md:py-0
+        "
+      >
 
         <div className="mb-2 flex justify-center w-full max-w-2xl">
           <div className="w-32 md:w-74 h-1 bg-[#1e6658] rounded-full animate-pulse"></div>
@@ -343,9 +367,9 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
             <span className="text-[#1e6658]">OUR</span>
             <span
               className="text-transparent"
-              style={{ 
+              style={{
                 WebkitTextStroke: isMobile ? '1.5px #1e6658' : '2px #1e6658',
-                marginLeft: isMobile ? 4 : 10 
+                marginLeft: isMobile ? 4 : 10
               }}
             >
               FEATURE
@@ -355,8 +379,20 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
         <div className="w-full mb-4 flex justify-center">
           <div className="w-1/2 md:w-[30%] h-1 bg-[#1e6658] rounded-full animate-pulse"></div>
         </div>
-        
-        <div className="relative w-full max-w-5xl h-full flex items-center justify-center">
+
+        <div
+          className="
+            relative
+            w-full
+            max-w-5xl
+            h-[420px]
+            sm:h-[480px]
+            md:h-full
+            flex
+            items-center
+            justify-center
+          "
+        >
           <div
             className="absolute w-full h-full flex items-center justify-center"
             ref={orbitRef}
@@ -384,17 +420,35 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
             </svg>
 
             {/* Central Hub */}
-            <div className={`absolute w-${centralHubSize/4} h-${centralHubSize/4} rounded-full bg-gradient-to-br from-[#063e2a] via-[#0a5c3f] to-[#063e2a] shadow-2xl flex items-center justify-center z-20 animate-pulse`}>
-              <div className={`absolute w-${centralHubSize/2 + 10} h-${centralHubSize/2 + 10} rounded-full border-2 border-[#063e2a]/20 animate-ping`}></div>
-              <div className={`absolute w-${centralHubSize/2 + 20} h-${centralHubSize/2 + 20} rounded-full border border-[#063e2a]/10 animate-ping`} style={{ animationDelay: "0.5s" }}></div>
-              <div className={`w-${centralHubSize/5} h-${centralHubSize/5} rounded-full bg-white shadow-inner flex items-center justify-center`}>
+            <div
+              className="absolute rounded-full bg-gradient-to-br from-[#063e2a] via-[#0a5c3f] to-[#063e2a] shadow-2xl flex items-center justify-center z-20 animate-pulse"
+              style={{ width: centralHubSize, height: centralHubSize }}
+            >
+              <div
+                className="absolute rounded-full border-2 border-[#063e2a]/20 animate-ping"
+                style={{ width: pingRing1Size, height: pingRing1Size }}
+              ></div>
+              <div
+                className="absolute rounded-full border border-[#063e2a]/10 animate-ping"
+                style={{ width: pingRing2Size, height: pingRing2Size, animationDelay: "0.5s" }}
+              ></div>
+              <div
+                className="rounded-full bg-white shadow-inner flex items-center justify-center"
+                style={{ width: centralHubInnerSize, height: centralHubInnerSize }}
+              >
                 <Zap size={isMobile ? 16 : 20} className="text-[#063e2a]" />
               </div>
             </div>
 
             {/* Orbit Ring */}
-            <div className={`absolute w-[${orbitSize}px] h-[${orbitSize}px] rounded-full border-2 border-dashed border-[#063e2a]/20 animate-[spin_60s_linear_infinite]`}></div>
-            <div className={`absolute w-[${orbitSize}px] h-[${orbitSize}px] rounded-full border border-[#063e2a]/10`}></div>
+            <div
+              className="absolute rounded-full border-2 border-dashed border-[#063e2a]/20 animate-[spin_60s_linear_infinite]"
+              style={{ width: orbitSize, height: orbitSize }}
+            ></div>
+            <div
+              className="absolute rounded-full border border-[#063e2a]/10"
+              style={{ width: orbitSize, height: orbitSize }}
+            ></div>
 
             {/* Timeline Nodes */}
             {timelineData.map((item, index) => {
@@ -547,7 +601,7 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
           </div>
         </div>
 
-        
+
       </div>
     </div>
   );

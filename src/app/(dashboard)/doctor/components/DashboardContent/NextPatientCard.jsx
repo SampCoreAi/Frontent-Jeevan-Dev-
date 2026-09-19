@@ -1,8 +1,8 @@
+
 // components/DashboardContent/NextPatientCard.jsx
 "use client";
 
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -11,16 +11,19 @@ import {
   Avatar,
   Stack,
   Box,
-  Chip,
   Button,
   CircularProgress,
 } from "@mui/material";
 
-
 const NextPatientCard = ({ patient, loading }) => {
- 
-const router = useRouter();
+  const router = useRouter();
 
+  // Show "Not provided" for null, undefined, or empty values
+  const displayValue = (value) => {
+    return value !== null && value !== undefined && value !== ""
+      ? value
+      : "Not provided";
+  };
 
   if (loading) {
     return (
@@ -77,7 +80,7 @@ const router = useRouter();
           fontWeight: 700,
         }}
       >
-        Next Patient Details
+        Patient Details
       </Typography>
 
       <Divider sx={{ my: 2 }} />
@@ -98,7 +101,7 @@ const router = useRouter();
             fontWeight: 700,
           }}
         >
-          {patient.patient_name?.charAt(0) || "?"}
+          {patient.patient_name?.charAt(0)?.toUpperCase() || "?"}
         </Avatar>
 
         <Box sx={{ minWidth: 0 }}>
@@ -111,7 +114,7 @@ const router = useRouter();
               },
             }}
           >
-            {patient.patient_name}
+            {displayValue(patient.patient_name)}
           </Typography>
 
           <Typography
@@ -124,7 +127,7 @@ const router = useRouter();
               },
             }}
           >
-            {patient.reason_for_visit}
+            {displayValue(patient.reason_for_visit)}
           </Typography>
         </Box>
       </Stack>
@@ -141,93 +144,108 @@ const router = useRouter();
           gap: 2,
         }}
       >
+        {/* Patient ID */}
         <Box>
           <Typography variant="body2">Patient ID</Typography>
           <Typography fontWeight={600}>
-            {patient.patient_id}
+            {displayValue(patient.patient_id)}
           </Typography>
         </Box>
 
+        {/* Age */}
         <Box>
           <Typography variant="body2">Age</Typography>
           <Typography fontWeight={600}>
-            {patient.age}
+            {displayValue(patient.age)}
           </Typography>
         </Box>
 
+        {/* Sex */}
         <Box>
           <Typography variant="body2">Sex</Typography>
           <Typography fontWeight={600}>
-            {patient.gender}
+            {displayValue(patient.gender)}
           </Typography>
         </Box>
 
+        {/* Weight */}
         <Box>
           <Typography variant="body2">Weight</Typography>
           <Typography fontWeight={600}>
-            {patient.weight} kg
+            {patient.weight !== null &&
+            patient.weight !== undefined &&
+            patient.weight !== ""
+              ? `${patient.weight} kg`
+              : "Not provided"}
           </Typography>
         </Box>
 
+        {/* Height */}
         <Box>
           <Typography variant="body2">Height</Typography>
           <Typography fontWeight={600}>
-            {patient.height} cm
+            {patient.height !== null &&
+            patient.height !== undefined &&
+            patient.height !== ""
+              ? `${patient.height} cm`
+              : "Not provided"}
           </Typography>
         </Box>
 
+        {/* Blood Group */}
         <Box>
           <Typography variant="body2">Blood Group</Typography>
           <Typography fontWeight={600}>
-            {patient.blood_group}
+            {displayValue(patient.blood_group)}
           </Typography>
         </Box>
 
+        {/* Language */}
         <Box>
           <Typography variant="body2">Language</Typography>
           <Typography fontWeight={600}>
-            {patient.language}
+            {displayValue(patient.language)}
           </Typography>
         </Box>
+
+        {/* Phone Number */}
         <Box>
           <Typography variant="body2">Phone Number</Typography>
           <Typography fontWeight={600}>
-            {patient.phone_number}
+            {displayValue(patient.phone_number)}
           </Typography>
         </Box>
-
       </Box>
 
-        <Divider sx={{ my: 3 }} />
-    
+      <Divider sx={{ my: 3 }} />
 
-     
+      {/* VIEW PATIENT BUTTON */}
       <Box
-  sx={{
-    mt: 4,
-    display: "flex",
-    justifyContent: "flex-end",
-  }}
->
-<Button
-  variant="contained"
-  fullWidth
-  onClick={() =>
-    router.push(
-      `/doctor/pages/patient?appointment_id=${patient.appointment_id}&verify=true`
-    )
-  }
-  sx={{
-    bgcolor: "#439f8e",
-    py: 1.2,
-    "&:hover": {
-      bgcolor: "#357d70",
-    },
-  }}
->
-  View Patient
-</Button>
-</Box>
+        sx={{
+          mt: 4,
+          display: "flex",
+          justifyContent: "flex-end",
+        }}
+      >
+        <Button
+          variant="contained"
+          fullWidth
+          onClick={() =>
+            router.push(
+              `/doctor/pages/patient?appointment_id=${patient.appointment_id}&verify=true`
+            )
+          }
+          sx={{
+            bgcolor: "#439f8e",
+            py: 1.2,
+            "&:hover": {
+              bgcolor: "#357d70",
+            },
+          }}
+        >
+          View Patient
+        </Button>
+      </Box>
     </Card>
   );
 };

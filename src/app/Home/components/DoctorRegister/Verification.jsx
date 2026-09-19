@@ -169,10 +169,7 @@ export default function Verification({
 
       setOtp(EMPTY_OTP);
 
-      setSuccessMessage(
-        `OTP sent successfully to ${email}`
-      );
-
+     
       setTimeout(() => {
         otpRefs.current[0]?.focus();
       }, 100);

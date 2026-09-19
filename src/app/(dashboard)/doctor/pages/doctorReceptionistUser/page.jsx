@@ -217,13 +217,21 @@ export default function UsersPage() {
       });
 
       setErrors({});
-    } catch (err) {
-      alert("Failed to create user");
-      console.error(err);
-      alert(
-        err.response?.data?.message || "Failed to register assistant"
-      );
-    } finally {
+   } catch (err) {
+  console.error("Create assistant error:", err);
+
+  const message =
+    err.response?.data?.message || "Failed to create user";
+
+  if (message.toLowerCase().includes("email")) {
+    setErrors((prev) => ({
+      ...prev,
+      email: message,
+    }));
+  } else {
+    alert(message);
+  }
+}finally {
       setLoading(false);
     }
   };
@@ -296,40 +304,9 @@ export default function UsersPage() {
   return (
     <Box
       sx={{
-        width: {
-          xs: "42%",
-          sm: "100%",
-          md: "60%",
-          lg: "100%",
-          xl: "100%",
-
-          "@media (min-width: 375px)": {
-            width: "49%",
-          },
-
-          "@media (min-width: 425px)": {
-            width: "56%",
-          },
-
-          "@media (min-width: 600px)": {
-            width: "97%",
-          },
-
-          "@media (min-width: 900px)": {
-            width: "60%",
-          },
-
-          "@media (min-width: 1024px)": {
-            width: "94%",
-          },
-
-          "@media (min-width: 1140px)": {
-            width: "100%",
-          },
-        },
+        
         minHeight: "100vh",
         mt: { xs: 6, sm: 7.5 },
-        p: { xs: 1, sm: 2, md: 1 },
         bgcolor: "#f5f7f9",
 
       }}

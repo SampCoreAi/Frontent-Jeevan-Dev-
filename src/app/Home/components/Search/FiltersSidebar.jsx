@@ -7,52 +7,71 @@ import {
   Chip,
   Button,
   Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  FormControlLabel,
-  Checkbox,
-  FormGroup,
-  Fade,
-  Slide,
-  Zoom,
+  IconButton,
 } from "@mui/material";
+
 import {
-  ExpandMore,
-  LocalHospital,
+  Close,
+  LocalHospitalOutlined,
   WorkOutline,
-  Star,
+  StarOutline,
   AccessTime,
-  VideoCall,
-  AttachMoney,
-  FilterList,
-  Refresh,
+  VideoCallOutlined,
+  CurrencyRupee,
+  PersonOutline,
+  Check,
+  Tune,
 } from "@mui/icons-material";
-import { useState, useEffect } from "react";
 
 export default function FiltersSidebar({
   selectedFilters,
   setSelectedFilters,
   onClose,
+  onApply,
 }) {
-  const [mounted, setMounted] = useState(false);
-  const [expandedPanels, setExpandedPanels] = useState(["specialization"]);
+  // ============================================
+  // COLORS
+  // ============================================
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const colors = {
+    primary: "#0A8F73",
+    primaryDark: "#08735D",
+    primaryLight: "#EAF7F3",
+    primaryBorder: "#B9E3D8",
+
+    text: "#172033",
+    textSecondary: "#64748B",
+
+    border: "#E2E8F0",
+    background: "#FFFFFF",
+    sectionBackground: "#F8FBFA",
+  };
+
+  // ============================================
+  // TOGGLE FILTER
+  // ============================================
 
   const toggleFilter = (key, value) => {
-  const filterValue =
-    typeof value === "string" ? value.toLowerCase() : value;
+    const normalizedValue =
+      typeof value === "string" ? value.toLowerCase() : value;
 
-  setSelectedFilters((prev) => ({
-    ...prev,
-    [key]: prev[key].includes(filterValue)
-      ? prev[key].filter((v) => v !== filterValue)
-      : [...prev[key], filterValue],
-  }));
-};
+    setSelectedFilters((prev) => {
+      const currentValues = prev[key] || [];
+
+      const exists = currentValues.includes(normalizedValue);
+
+      return {
+        ...prev,
+        [key]: exists
+          ? currentValues.filter((item) => item !== normalizedValue)
+          : [...currentValues, normalizedValue],
+      };
+    });
+  };
+
+  // ============================================
+  // CLEAR ALL
+  // ============================================
 
   const clearAllFilters = () => {
     setSelectedFilters({
@@ -66,470 +85,610 @@ export default function FiltersSidebar({
     });
   };
 
-  const handleAccordionChange = (panel) => (event, isExpanded) => {
-    setExpandedPanels((prev) =>
-      isExpanded ? [...prev, panel] : prev.filter((p) => p !== panel)
-    );
-  };
+  // ============================================
+  // FILTER COUNT
+  // ============================================
+
+  const activeFilterCount = Object.values(selectedFilters || {}).reduce(
+    (total, values) => total + (Array.isArray(values) ? values.length : 0),
+    0
+  );
+
+  // ============================================
+  // FILTER DATA
+  // ============================================
 
   const filterSections = [
     {
       id: "specialization",
       title: "Specialization",
-      icon: <LocalHospital sx={{ fontSize: 22 }} />,
-      items: [
+      icon: LocalHospitalOutlined,
+      options: [
         "Cardiology",
         "Dermatology",
         "Neurology",
         "Orthopedics",
         "Pediatrics",
         "Gynecologist",
-
         "Ophthalmology",
         "Psychiatry",
         "Oncology",
       ],
-      type: "chips",
     },
+
     {
       id: "experience",
       title: "Experience",
-      icon: <WorkOutline sx={{ fontSize: 22 }} />,
-      items: ["0-5 years", "5-10 years", "10-15 years", "15+ years"],
-      type: "chips",
+      icon: WorkOutline,
+      options: [
+        "0-5 years",
+        "5-10 years",
+        "10-15 years",
+        "15+ years",
+      ],
     },
+
     {
       id: "rating",
       title: "Rating",
-      icon: <Star sx={{ fontSize: 22 }} />,
-      items: [
-        { label: "4+ Stars", value: "4" },
-        { label: "3+ Stars", value: "3" },
-        { label: "2+ Stars", value: "2" },
+      icon: StarOutline,
+      options: [
+        {
+          label: "4+ Stars",
+          value: "4",
+        },
+        {
+          label: "3+ Stars",
+          value: "3",
+        },
+        {
+          label: "2+ Stars",
+          value: "2",
+        },
       ],
-      type: "checkbox",
     },
+
     {
       id: "availability",
       title: "Availability",
-      icon: <AccessTime sx={{ fontSize: 22 }} />,
-      items: ["Available Today", "Available Tomorrow", "This Week"],
-      type: "chips",
+      icon: AccessTime,
+      options: [
+        "Available Today",
+        "Available Tomorrow",
+        "This Week",
+      ],
     },
+
     {
       id: "consultationType",
       title: "Consultation Type",
-      icon: <VideoCall sx={{ fontSize: 22 }} />,
-      items: ["In-Person", "Video Consult", "Chat"],
-      type: "chips",
+      icon: VideoCallOutlined,
+      options: [
+        "In-Person",
+        "Video Consult",
+        "Chat",
+      ],
     },
+
     {
       id: "feeRange",
-      title: "Fee Range",
-      icon: <AttachMoney sx={{ fontSize: 22 }} />,
-      items: ["0-500", "500-1000", "1000-2000", "2000+"],
-      type: "chips",
+      title: "Consultation Fee",
+      icon: CurrencyRupee,
       prefix: "₹",
+      options: [
+        "0-500",
+        "500-1000",
+        "1000-2000",
+        "2000+",
+      ],
+    },
+
+    {
+      id: "gender",
+      title: "Gender",
+      icon: PersonOutline,
+      options: [
+        "Male",
+        "Female",
+        "Other",
+      ],
     },
   ];
 
-  const getActiveFiltersCount = () => {
-    return Object.values(selectedFilters).flat().length;
+  // ============================================
+  // FILTER SECTION
+  // ============================================
+
+  const FilterSection = ({ section }) => {
+    const Icon = section.icon;
+
+    return (
+      <Box
+        sx={{
+          py: 2.3,
+        }}
+      >
+        {/* SECTION TITLE */}
+
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={1}
+          sx={{
+            mb: 1.5,
+          }}
+        >
+          <Box
+            sx={{
+              width: 32,
+              height: 32,
+              borderRadius: "8px",
+              backgroundColor: colors.primaryLight,
+
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+
+              flexShrink: 0,
+            }}
+          >
+            <Icon
+              sx={{
+                fontSize: 18,
+                color: colors.primary,
+              }}
+            />
+          </Box>
+
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: 700,
+              color: colors.text,
+            }}
+          >
+            {section.title}
+          </Typography>
+
+          {/* SELECTED COUNT */}
+
+          {(selectedFilters?.[section.id]?.length || 0) > 0 && (
+            <Box
+              sx={{
+                minWidth: 20,
+                height: 20,
+
+                px: 0.6,
+
+                borderRadius: "20px",
+
+                backgroundColor: colors.primary,
+
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+
+                fontSize: "11px",
+                fontWeight: 700,
+                color: "#FFFFFF",
+              }}
+            >
+              {selectedFilters[section.id].length}
+            </Box>
+          )}
+        </Stack>
+
+        {/* OPTIONS */}
+
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "8px",
+          }}
+        >
+          {section.options.map((option) => {
+            const value =
+              typeof option === "object"
+                ? option.value
+                : option;
+
+            const label =
+              typeof option === "object"
+                ? option.label
+                : option;
+
+            const normalizedValue =
+              typeof value === "string"
+                ? value.toLowerCase()
+                : value;
+
+            const selected =
+              selectedFilters?.[section.id]?.includes(
+                normalizedValue
+              );
+
+            return (
+              <Chip
+                key={`${section.id}-${value}`}
+
+                label={`${section.prefix || ""}${label}`}
+
+                onClick={() =>
+                  toggleFilter(section.id, value)
+                }
+
+                icon={
+                  selected ? (
+                    <Check
+                      sx={{
+                        fontSize: "15px !important",
+                      }}
+                    />
+                  ) : undefined
+                }
+
+                sx={{
+                  height: 36,
+
+                  borderRadius: "8px",
+
+                  fontSize: "12.5px",
+
+                  fontWeight: selected ? 600 : 500,
+
+                  color: selected
+                    ? "#FFFFFF"
+                    : colors.text,
+
+                  backgroundColor: selected
+                    ? colors.primary
+                    : "#FFFFFF",
+
+                  border: selected
+                    ? `1px solid ${colors.primary}`
+                    : `1px solid ${colors.border}`,
+
+                  cursor: "pointer",
+
+                  transition: "all 0.18s ease",
+
+                  "& .MuiChip-icon": {
+                    color: selected
+                      ? "#FFFFFF"
+                      : colors.primary,
+                  },
+
+                  "&:hover": {
+                    backgroundColor: selected
+                      ? colors.primaryDark
+                      : colors.primaryLight,
+
+                    borderColor: selected
+                      ? colors.primaryDark
+                      : colors.primaryBorder,
+                  },
+
+                  "&:active": {
+                    transform: "scale(0.97)",
+                  },
+                }}
+              />
+            );
+          })}
+        </Box>
+      </Box>
+    );
   };
+
+  // ============================================
+  // UI
+  // ============================================
 
   return (
     <Box
       sx={{
-        height: { xs: "100vh", md: "100%" }, // mobile full screen
+        width: "100%",
+        height: "100vh",
+
         display: "flex",
         flexDirection: "column",
-        background: "linear-gradient(180deg, #fafbfc 0%, #f5f7fa 100%)",
-        position: "relative",
-        border: { xs: "none", md: "1px solid #a9cdc9" }, // mobile clean
-        borderRadius: { xs: 0, md: 2 },
-        overflow: "hidden",
-        maxWidth: { xs: "100%", md: 350 },
-        mx: "auto",
 
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: "200px",
-          background:
-            "linear-gradient(135deg, rgba(30, 102, 88, 0.05) 0%, rgba(22, 58, 74, 0.02) 100%)",
-          pointerEvents: "none",
-        },
+        backgroundColor: colors.background,
       }}
     >
-      {/* Header */}
+      {/* ==========================================
+          HEADER
+      ========================================== */}
+
       <Box
         sx={{
-          p: { xs: 2, md: 3 },
-          pb: { xs: 1, md: 2 },
-          gap: { xs: 1, md: 0 },
+          px: {
+            xs: 2,
+            sm: 2.5,
+          },
 
-          position: "relative",
-          zIndex: 1,
+          py: 2,
+
+          borderBottom: `1px solid ${colors.border}`,
+
+          backgroundColor: "#FFFFFF",
+
+          flexShrink: 0,
         }}
       >
-        <Slide
-          direction="down"
-          in={mounted}
-          timeout={600}
-          style={{ transitionDelay: "100ms" }}
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
         >
           <Stack
             direction="row"
-            justifyContent="space-between"
+            spacing={1.2}
             alignItems="center"
           >
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <Box
+            {/* ICON */}
+
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+
+                borderRadius: "10px",
+
+                backgroundColor: colors.primaryLight,
+
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Tune
                 sx={{
-                  p: 1,
-                  borderRadius: 2,
-                  background: "linear-gradient(135deg, #1e6658 0%, #163a4a 100%)",
-                  boxShadow: "0 4px 15px rgba(30, 102, 88, 0.3)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  fontSize: 21,
+                  color: colors.primary,
                 }}
+              />
+            </Box>
+
+            {/* TITLE */}
+
+            <Box>
+              <Stack
+                direction="row"
+                spacing={0.8}
+                alignItems="center"
               >
-                <FilterList sx={{ color: "white", fontSize: 20 }} />
-              </Box>
-              <Box>
                 <Typography
-                  variant="h6"
                   sx={{
+                    fontSize: "18px",
                     fontWeight: 700,
-                    background: "linear-gradient(135deg, #1e6658 0%, #163a4a 100%)",
-                    backgroundClip: "text",
-                    textFillColor: "transparent",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
+                    color: colors.text,
                   }}
                 >
                   Filters
                 </Typography>
 
-              </Box>
-            </Stack>
+                {activeFilterCount > 0 && (
+                  <Box
+                    sx={{
+                      minWidth: 21,
+                      height: 21,
 
-            {getActiveFiltersCount() > 0 && (
-              <Zoom in={true}>
-                <Button
-                  size="small"
-                  startIcon={<Refresh sx={{ fontSize: 16 }} />}
-                  onClick={clearAllFilters}
-                  sx={{
-                    color: "#1e6658",
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    textTransform: "none",
-                    "&:hover": {
-                      backgroundColor: "rgba(30, 102, 88, 0.08)",
-                    },
-                  }}
-                >
-                  Clear All
-                </Button>
-              </Zoom>
-            )}
+                      px: 0.6,
+
+                      borderRadius: "20px",
+
+                      backgroundColor: colors.primary,
+
+                      color: "#FFFFFF",
+
+                      fontSize: "11px",
+                      fontWeight: 700,
+
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {activeFilterCount}
+                  </Box>
+                )}
+              </Stack>
+
+              <Typography
+                sx={{
+                  mt: 0.2,
+                  fontSize: "11.5px",
+                  color: colors.textSecondary,
+                }}
+              >
+                Refine your doctor search
+              </Typography>
+            </Box>
           </Stack>
-        </Slide>
+
+          {/* CLOSE */}
+
+          <IconButton
+            onClick={onClose}
+            sx={{
+              width: 36,
+              height: 36,
+
+              borderRadius: "8px",
+
+              color: colors.textSecondary,
+
+              border: `1px solid ${colors.border}`,
+
+              "&:hover": {
+                color: colors.primary,
+                backgroundColor: colors.primaryLight,
+                borderColor: colors.primaryBorder,
+              },
+            }}
+          >
+            <Close
+              sx={{
+                fontSize: 19,
+              }}
+            />
+          </IconButton>
+        </Stack>
       </Box>
 
-      {/* Filter Sections */}
+      {/* ==========================================
+          CONTENT
+      ========================================== */}
+
       <Box
         sx={{
           flex: 1,
+
           overflowY: "auto",
-          px: { xs: 1.5, md: 2 },
-          pb: { xs: 1, md: 2 },
+
+          px: {
+            xs: 2,
+            sm: 2.5,
+          },
+
           "&::-webkit-scrollbar": {
-            width: "6px",
+            width: "5px",
           },
+
           "&::-webkit-scrollbar-track": {
-            background: "transparent",
+            backgroundColor: "#F8FAFC",
           },
+
           "&::-webkit-scrollbar-thumb": {
-            background: "rgba(30, 102, 88, 0.2)",
-            borderRadius: "10px",
+            backgroundColor: "#C9DDD8",
+            borderRadius: "20px",
+          },
+
+          "&::-webkit-scrollbar-thumb:hover": {
+            backgroundColor: colors.primaryBorder,
           },
         }}
       >
         {filterSections.map((section, index) => (
-          <Fade
-            key={section.id}
-            in={mounted}
-            timeout={800}
-            style={{ transitionDelay: `${200 + index * 100}ms` }}
-          >
-            <Accordion
-              expanded={expandedPanels.includes(section.id)}
-              onChange={handleAccordionChange(section.id)}
-              elevation={0}
-              sx={{
-                mb: { xs: 1, md: 1.5 },
-                borderRadius: "16px !important",
-                overflow: "hidden",
-                background: "rgba(255, 255, 255, 0.7)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255, 255, 255, 0.5)",
-                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.03)",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                "&:hover": {
-                  boxShadow: "0 8px 30px rgba(0, 0, 0, 0.06)",
-                  transform: "translateY(-2px)",
-                },
-                "&::before": {
-                  display: "none",
-                },
-                "&.Mui-expanded": {
-                  margin: "0 0 12px 0",
-                  boxShadow: "0 12px 40px rgba(30, 102, 88, 0.1)",
-                },
-              }}
-            >
-              <AccordionSummary
-                expandIcon={
-                  <ExpandMore
-                    sx={{
-                      color: "#1e6658",
-                      transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      transform: expandedPanels.includes(section.id)
-                        ? "rotate(180deg)"
-                        : "rotate(0deg)",
-                    }}
-                  />
-                }
+          <Box key={section.id}>
+            <FilterSection section={section} />
+
+            {index !== filterSections.length - 1 && (
+              <Divider
                 sx={{
-                  px: { xs: 1.5, md: 2.5 },
-                  py: { xs: 1, md: 1.5 },
-                  minHeight: { xs: "48px", md: "56px" },
-                  "& .MuiAccordionSummary-content": {
-                    margin: "8px 0",
-                  },
-                  background:
-                    expandedPanels.includes(section.id)
-                      ? "linear-gradient(135deg, rgba(30, 102, 88, 0.08) 0%, rgba(22, 58, 74, 0.04) 100%)"
-                      : "transparent",
-                  transition: "background 0.3s ease",
+                  borderColor: "#EEF2F5",
                 }}
-              >
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                  <Box
-                    sx={{
-                      color: "#1e6658",
-                      display: "flex",
-                      alignItems: "center",
-                      transition: "transform 0.3s ease",
-                      transform: expandedPanels.includes(section.id)
-                        ? "scale(1.1)"
-                        : "scale(1)",
-                    }}
-                  >
-                    {section.icon}
-                  </Box>
-                  <Typography
-                    fontWeight={600}
-                    sx={{
-                      color: expandedPanels.includes(section.id)
-                        ? "#1e6658"
-                        : "text.primary",
-                      transition: "color 0.3s ease",
-                    }}
-                  >
-                    {section.title}
-                  </Typography>
-                  {selectedFilters[section.id]?.length > 0 && (
-                    <Zoom in={true}>
-                      <Box
-                        sx={{
-                          ml: 1,
-                          px: 1,
-                          py: 0.25,
-                          borderRadius: "10px",
-                          background: "linear-gradient(135deg, #1e6658 0%, #163a4a 100%)",
-                          color: "white",
-                          fontSize: "0.7rem",
-                          fontWeight: 700,
-                          minWidth: "20px",
-                          textAlign: "center",
-                        }}
-                      >
-                        {selectedFilters[section.id].length}
-                      </Box>
-                    </Zoom>
-                  )}
-                </Stack>
-              </AccordionSummary>
-
-              <AccordionDetails
-                sx={{
-                  px: 2.5,
-                  pb: 2.5,
-                  pt: 1,
-                }}
-              >
-                {section.type === "chips" ? (
-                  <Stack
-                    direction="row"
-                    flexWrap="wrap"
-                    gap={{ xs: 0.5, md: 1 }}
-                    sx={{
-                      animation: expandedPanels.includes(section.id)
-                        ? "fadeInUp 0.4s ease forwards"
-                        : "none",
-                      "@keyframes fadeInUp": {
-                        from: {
-                          opacity: 0,
-                          transform: "translateY(10px)",
-                        },
-                        to: {
-                          opacity: 1,
-                          transform: "translateY(0)",
-                        },
-                      },
-                    }}
-                  >
-                    {section.items.map((item, itemIndex) => {
-                      const value = typeof item === "object" ? item.value : item;
-                      const label = typeof item === "object" ? item.label : item;
-                      const isSelected = selectedFilters[section.id].includes(
-                        value
-                      );
-
-                      return (
-                        <Zoom
-                          key={value}
-                          in={expandedPanels.includes(section.id)}
-                          timeout={300}
-                          style={{
-                            transitionDelay: `${itemIndex * 50}ms`,
-                          }}
-                        >
-                          <Chip
-                            label={`${section.prefix || ""}${label}`}
-                            onClick={() => toggleFilter(section.id, value)}
-                            size="small"
-                            sx={{
-                              borderRadius: "12px",
-                              px: 1,
-
-                              fontWeight: 500,
-                              fontSize: { xs: "0.75rem", md: "0.85rem" },
-                              py: { xs: 2, md: 2.5 },
-                              cursor: "pointer",
-                              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                              background: isSelected
-                                ? "linear-gradient(135deg, #1e6658 0%, #163a4a 100%)"
-                                : "rgba(255, 255, 255, 0.8)",
-                              color: isSelected ? "white" : "#555",
-                              border: isSelected
-                                ? "none"
-                                : "1px solid rgba(0, 0, 0, 0.08)",
-                              boxShadow: isSelected
-                                ? "0 4px 15px rgba(30, 102, 88, 0.3)"
-                                : "0 2px 8px rgba(0, 0, 0, 0.04)",
-                              "&:hover": {
-                                transform: "translateY(-2px) scale(1.02)",
-                                boxShadow: isSelected
-                                  ? "0 6px 20px rgba(30, 102, 88, 0.4)"
-                                  : "0 4px 12px rgba(0, 0, 0, 0.08)",
-                                background: isSelected
-                                  ? "linear-gradient(135deg, #163a4a 0%, #1e6658 100%)"
-                                  : "rgba(255, 255, 255, 1)",
-                              },
-                              "&:active": {
-                                transform: "scale(0.95)",
-                              },
-                            }}
-                          />
-                        </Zoom>
-                      );
-                    })}
-                  </Stack>
-                ) : (
-                  <FormGroup
-                    sx={{
-                      animation: expandedPanels.includes(section.id)
-                        ? "fadeInUp 0.4s ease forwards"
-                        : "none",
-                    }}
-                  >
-                    {section.items.map((item, itemIndex) => {
-                      const isSelected = selectedFilters[section.id].includes(
-                        item.value
-                      );
-
-                      return (
-                        <Zoom
-                          key={item.value}
-                          in={expandedPanels.includes(section.id)}
-                          timeout={300}
-                          style={{
-                            transitionDelay: `${itemIndex * 50}ms`,
-                          }}
-                        >
-                          <FormControlLabel
-                            control={
-                              <Checkbox
-                                checked={isSelected}
-                                onChange={() =>
-                                  toggleFilter(section.id, item.value)
-                                }
-                                sx={{
-                                  color: "rgba(30, 102, 88, 0.3)",
-                                  "&.Mui-checked": {
-                                    color: "#1e6658",
-                                  },
-                                  "& .MuiSvgIcon-root": {
-                                    fontSize: 22,
-                                    transition: "transform 0.2s ease",
-                                  },
-                                  "&:hover .MuiSvgIcon-root": {
-                                    transform: "scale(1.1)",
-                                  },
-                                }}
-                              />
-                            }
-                            label={
-                              <Typography
-                                sx={{
-                                  fontWeight: isSelected ? 600 : 400,
-                                  color: isSelected ? "#1e6658" : "text.primary",
-                                  transition: "all 0.2s ease",
-                                }}
-                              >
-                                {item.label}
-                              </Typography>
-                            }
-                            sx={{
-                              mb: 1,
-                              borderRadius: 2,
-                              p: 0.5,
-                              transition: "all 0.2s ease",
-                              "&:hover": {
-                                backgroundColor: "rgba(30, 102, 88, 0.04)",
-                              },
-                            }}
-                          />
-                        </Zoom>
-                      );
-                    })}
-                  </FormGroup>
-                )}
-              </AccordionDetails>
-            </Accordion>
-          </Fade>
+              />
+            )}
+          </Box>
         ))}
+
+        <Box sx={{ height: 20 }} />
       </Box>
 
-     
+      {/* ==========================================
+          BOTTOM BUTTONS
+      ========================================== */}
+
+      <Box
+        sx={{
+          p: {
+            xs: 2,
+            sm: 2.5,
+          },
+
+          borderTop: `1px solid ${colors.border}`,
+
+          backgroundColor: "#FFFFFF",
+
+          boxShadow:
+            "0 -6px 20px rgba(15, 23, 42, 0.04)",
+
+          flexShrink: 0,
+        }}
+      >
+        {/* ACTIVE FILTER TEXT */}
+
+        {activeFilterCount > 0 && (
+          <Typography
+            sx={{
+              mb: 1.2,
+              fontSize: "11.5px",
+              color: colors.textSecondary,
+            }}
+          >
+            {activeFilterCount}{" "}
+            {activeFilterCount === 1
+              ? "filter selected"
+              : "filters selected"}
+          </Typography>
+        )}
+
+        <Stack
+          direction="row"
+          spacing={1.2}
+        >
+          {/* CLEAR */}
+
+          <Button
+            fullWidth
+            variant="outlined"
+            onClick={clearAllFilters}
+            disabled={activeFilterCount === 0}
+            sx={{
+              height: 44,
+
+              borderRadius: "9px",
+
+              textTransform: "none",
+
+              fontWeight: 600,
+              fontSize: "13px",
+
+              color: colors.primary,
+
+              borderColor: colors.primaryBorder,
+
+              "&:hover": {
+                borderColor: colors.primary,
+                backgroundColor: colors.primaryLight,
+              },
+
+              "&.Mui-disabled": {
+                borderColor: "#E2E8F0",
+                color: "#94A3B8",
+              },
+            }}
+          >
+            Clear All
+          </Button>
+
+          {/* APPLY */}
+
+          <Button
+  fullWidth
+  variant="contained"
+  onClick={onApply}
+  disableElevation
+  sx={{
+    height: 44,
+    borderRadius: "9px",
+    textTransform: "none",
+    fontWeight: 600,
+    fontSize: "13px",
+    backgroundColor: colors.primary,
+
+    "&:hover": {
+      backgroundColor: colors.primaryDark,
+    },
+  }}
+>
+  Show Doctors
+</Button>
+        </Stack>
+      </Box>
     </Box>
   );
 }
