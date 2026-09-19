@@ -141,31 +141,67 @@ const SettingsContent = () => {
         open={openLogoutDialog}
         onClose={() => setOpenLogoutDialog(false)}
         aria-labelledby="logout-dialog-title"
+        maxWidth="xs"
+        fullWidth
         PaperProps={{
-          sx: { borderRadius: 2, p: 1.5 },
+          sx: {
+            borderRadius: 2,
+            p: 1,
+            width: { xs: "92%", sm: "auto" },
+            minWidth: { xs: 280, sm: 320 },
+            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.12)",
+            border: "1px solid rgba(15, 23, 42, 0.08)",
+          },
         }}
       >
-        <DialogTitle id="logout-dialog-title" sx={{ fontWeight: 600, textAlign: "center" }}>
-          Confirm Logout
+        <DialogTitle
+          id="logout-dialog-title"
+          sx={{
+            px: 2,
+            pt: 1.5,
+            pb: 1,
+            textAlign: "center",
+            fontSize: 18,
+            fontWeight: 700,
+            color: "text.primary",
+          }}
+        >
+          Logout
         </DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ textAlign: "center", color: "#000000" }}>
+        <DialogContent sx={{ px: 2, pb: 0.5 }}>
+          <DialogContentText sx={{ textAlign: "center", color: "text.secondary", m: 0, fontSize: 14, lineHeight: 1.6 }}>
             Are you sure you want to log out?
-            All your session data will be cleared.
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
+        <DialogActions sx={{ justifyContent: "center", gap: 1, px: 2, pb: 2, pt: 0 }}>
           <Button
             onClick={() => setOpenLogoutDialog(false)}
             variant="outlined"
-            color="inherit"
+            sx={{
+              minWidth: 96,
+              borderRadius: 1.5,
+              textTransform: "none",
+              fontWeight: 600,
+              px: 1.5,
+              py: 0.75,
+              fontSize: 13,
+            }}
           >
             Cancel
           </Button>
           <Button
             onClick={handleLogoutConfirm}
             variant="contained"
-            sx={{ backgroundColor: "red" }}
+            color="error"
+            sx={{
+              minWidth: 96,
+              borderRadius: 1.5,
+              textTransform: "none",
+              fontWeight: 600,
+              px: 1.5,
+              py: 0.75,
+              fontSize: 13,
+            }}
           >
             Log Out
           </Button>

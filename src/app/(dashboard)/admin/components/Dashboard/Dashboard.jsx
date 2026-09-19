@@ -73,7 +73,7 @@ useEffect(() => {
 
     if (user) {
       const parsedUser = JSON.parse(user);
-      if (parsedUser.role_id !== 4) {
+      if (parsedUser.role_id !== 5) {
         router.push("/Home/pages/Register");
       }
       setRoleId(parsedUser.role_id);

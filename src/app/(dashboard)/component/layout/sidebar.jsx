@@ -24,22 +24,45 @@ import { menuItems } from "./menuItems";
 const OutlineFancyButton = styled(Button)(({ theme }) => ({
   border: "none",
   width: "100%",
-  padding: 10,
+  minWidth: 0,
+  padding: "10px 12px",
   borderRadius: "5px",
-  fontWeight: "bold",
-  letterSpacing: "2px",
+  fontWeight: 700,
+  letterSpacing: "0.06em",
   textTransform: "uppercase",
   cursor: "pointer",
   color: theme.palette.text.primary,
-  transition: "all 1000ms",
-  fontSize: { xs: "13px", sm: "14px", md: "15px" },
+  transition: "all 300ms ease",
+  fontSize: "13px",
   position: "relative",
   overflow: "hidden",
   justifyContent: "flex-start",
-  minHeight: { xs: "50px", sm: "56px", md: "60px" },
+  alignItems: "center",
+  minHeight: "48px",
+  display: "flex",
+  gap: 1,
+  whiteSpace: "nowrap",
+  "& .MuiButton-startIcon": {
+    margin: 0,
+    minWidth: 20,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    "& svg": {
+      fontSize: 18,
+    },
+  },
+  "& .MuiButton-label": {
+    display: "flex",
+    alignItems: "center",
+    minWidth: 0,
+    flex: 1,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
   "&:hover": {
-    transform: "scale(1.02)",
-    outline: `3px solid ${theme.palette.border.third}`,
+    transform: "scale(1.01)",
+    outline: `2px solid ${theme.palette.border.third}`,
   },
   "&::before": {
     content: '""',
@@ -108,6 +131,8 @@ const Sidebar = ({
       ? "/img/IconPatient.png"
       : "/img/IconDoctor.png";
   const currentMenuItems = menuItems[roleId] || [];
+  const isLab = Number(roleId) >= 1 && Number(roleId) <= 5;
+  const canShareProfile = Number(roleId) === 2;
 
 
 useEffect(() => {
@@ -150,7 +175,7 @@ useEffect(() => {
       sx={{
         width: "100%",
         height: "100vh",
-        backgroundColor: "background.paper",
+        backgroundColor: isLab ? "#f4f9fc" : "background.paper",
         display: "flex",
         flexDirection: "column",
         top: { xs: "60px", md: 0 },
@@ -162,20 +187,21 @@ useEffect(() => {
       {/* Profile */}
       <Grid
         sx={{
-          width: { xs: "85%", sm: 200 },
-          backgroundColor: "background.third",
+          width: { xs: "85%", sm: isLab ? 204 : 200 },
+          backgroundColor: isLab ? "#eaf5fb" : "background.third",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          borderRadius: 1,
+          borderRadius: isLab ? "4px" : 1,
+          border: isLab ? "1px solid #cfe3ef" : "none",
           padding: { xs: 1.5, sm: 2 },
-          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+          boxShadow: isLab ? "0 4px 14px rgba(14, 76, 112, 0.06)" : "0 4px 12px rgba(0,0,0,0.1)",
           marginBottom: { xs: 2, sm: 3 },
           flexShrink: 0,
         }}
       >
         <Avatar
-          sx={{ width: 80, height: 80, mb: 1.5 }}
+          sx={{ width: isLab ? 58 : 80, height: isLab ? 58 : 80, mb: 1.5, border: isLab ? "2px solid #fff" : "none" }}
           src={avatarSrc}
         />
         <Typography
@@ -183,7 +209,7 @@ useEffect(() => {
             fontSize: 17,
             fontWeight: 700,
             marginBottom: 1,
-            color: "text.third",
+            color: isLab ? "#123f66" : "text.third",
             textAlign: "center",
           }}
         >
@@ -191,7 +217,7 @@ useEffect(() => {
         </Typography>
 
 
-        <Button
+        {canShareProfile && <Button
           startIcon={<Share sx={{ width: 16, height: 16 }} />}
           sx={{
             color: "text.secondary",
@@ -208,7 +234,7 @@ useEffect(() => {
           }}
         >
           Share Profile
-        </Button>
+        </Button>}
       </Grid>
 
       {/* Menu */}
@@ -227,40 +253,67 @@ useEffect(() => {
           "&::-webkit-scrollbar": { display: "none" },
         }}
       >
-        {currentMenuItems.map((item, index) => (
-          <Tooltip
-            key={index}
-            title={!isOpen && !isMobile ? item.label : ""}
-            placement="right"
-            arrow
-          >
-            <Link
-              href={item.route}
-              style={{ width: "100%", textDecoration: "none" }}
-              passHref
+        {currentMenuItems.map((item, index) => {
+          const showLabel = isOpen || isMobile;
+
+          return (
+            <Tooltip
+              key={index}
+              title={!showLabel ? item.label : ""}
+              placement="right"
+              arrow
             >
-              <OutlineFancyButton
-                onClick={() => handleNavigation(item)}
-                startIcon={item.icon}
-                sx={{
-                  backgroundColor:
-                    activeButton === item.label
-                      ? "background.third"
-                      : "transparent",
-                  outline: activeButton === item.label ? "2px solid" : "none",
-                  outlineColor:
-                    activeButton === item.label
-                      ? "border.third"
-                      : "transparent",
-                  width: "100%",
-                  justifyContent: "flex-start",
-                }}
+              <Link
+                href={item.route}
+                style={{ width: "100%", textDecoration: "none" }}
+                passHref
               >
-                {(isOpen || isMobile) && <span>{item.label}</span>}
-              </OutlineFancyButton>
-            </Link>
-          </Tooltip>
-        ))}
+                <OutlineFancyButton
+                  onClick={() => handleNavigation(item)}
+                  startIcon={item.icon}
+                  sx={{
+                    backgroundColor:
+                      activeButton === item.label
+                        ? isLab ? "#dceff8" : "background.third"
+                        : "transparent",
+                    outline: isLab ? "none" : activeButton === item.label ? "2px solid" : "none",
+                    outlineColor:
+                      activeButton === item.label
+                        ? isLab ? "transparent" : "border.third"
+                        : "transparent",
+                    borderLeft: isLab && activeButton === item.label ? "3px solid #0b5c8e" : "3px solid transparent",
+                    color: isLab ? "#234e70" : undefined,
+                    textTransform: isLab ? "none" : undefined,
+                    letterSpacing: isLab ? "0.02em" : undefined,
+                    borderRadius: isLab ? "4px" : undefined,
+                    minHeight: isLab ? 44 : undefined,
+                    width: "100%",
+                    justifyContent: "flex-start",
+                    padding: "10px 12px",
+                    gap: 1,
+                    ".MuiButton-startIcon": {
+                      marginRight: showLabel ? 1 : 0,
+                    },
+                  }}
+                >
+                  {(showLabel) && (
+                    <span
+                      style={{
+                        display: "inline-block",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {item.label}
+                    </span>
+                  )}
+                </OutlineFancyButton>
+              </Link>
+            </Tooltip>
+          );
+        })}
 
         <Divider sx={{ width: "80%", my: 2, borderColor: "border.light" }} />
         <Typography
