@@ -14,7 +14,6 @@ import PatientProfileSidebar from "../../components/Profile/patientprofilesideba
 import PatientProfileForm from "../../components/Profile/patientprofileform";
 import { useUserProfile } from "../../../../../store/userProfileHooks";
 import { useAppDispatch } from "../../../../../store/hooks";
-import { setUserProfile } from "../../../../../store/slices/userProfileSlice";
 import { API_BASE_URL, API_ENDPOINTS } from "../../../../../config/api";
 
 export default function PatientProfilePage() {
@@ -211,25 +210,20 @@ const handleSave = async () => {
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
         mt: 8,
-        mx: 1,
-        width: "98.5%",
-        mb: 2,
-        boxShadow: "0 4px 12px #0f7468",
+
+        width: "100%",
       }}
     >
       <PatientProfileSidebar
         userProfile={userProfile}
         formData={formData}
-        editable={editable}         // ← add karo
-        handleChange={handleChange} // ← add karo
-      />
+        editable={editable}         
+        handleChange={handleChange}       />
 
       <Divider orientation="vertical" flexItem />
 
       <Box sx={{ flex: 1, px: 3, py: 2, backgroundColor: "white" }}>
-        <Typography sx={{ fontSize: "1.5rem", fontWeight: 700, mb: 2 }}>
-          Patient Profile
-        </Typography>
+       
 
         <PatientProfileForm
           formData={formData}
@@ -237,12 +231,12 @@ const handleSave = async () => {
           handleChange={handleChange}
         />
 
-        <Divider sx={{ my: 3 }} />
+        <Divider sx={{ my: 1 }} />
 
         <Button
           onClick={handleProfileAction}
           sx={{
-            backgroundColor: "#15b8a7",
+            backgroundColor: "#07876a",
             color: "white",
           }}
         >

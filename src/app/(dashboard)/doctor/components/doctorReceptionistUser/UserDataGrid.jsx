@@ -1,7 +1,11 @@
 import { Box } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
-export default function UserDataGrid({ users, columns }) {
+export default function UserDataGrid({
+  users = [],
+  columns = [],
+  loading = false,
+}) {
   return (
     <Box
       sx={{
@@ -11,7 +15,7 @@ export default function UserDataGrid({ users, columns }) {
     >
       <Box
         sx={{
-        width: "100%",
+          width: "100%",
           height: {
             xs: 400,
             sm: 500,
@@ -21,7 +25,8 @@ export default function UserDataGrid({ users, columns }) {
         <DataGrid
           rows={users}
           columns={columns}
-          pageSizeOptions={[5, 10]}
+          loading={loading}
+          pageSizeOptions={[5, 8, 10]}
           initialState={{
             pagination: {
               paginationModel: {
@@ -33,41 +38,137 @@ export default function UserDataGrid({ users, columns }) {
           disableRowSelectionOnClick
           getRowId={(row) => row.id || row._id}
           sx={{
-            backgroundColor: "#fff",
-            borderRadius: 2,
-            border: "1px solid #e0e0e0",
+            width: "100%",
+            bgcolor: "background.paper",
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 1,
+            overflow: "hidden",
 
+            // =========================
+            // COLUMN HEADER
+            // =========================
             "& .MuiDataGrid-columnHeaders": {
-              backgroundColor: "#1e6658",
-              color: "#1e6658",
-              fontWeight: "bold",
+              bgcolor: "background.default",
+              color: "text.primary",
+              borderBottom: "1px solid",
+              borderColor: "divider",
+              minHeight: "42px !important",
+              maxHeight: "42px !important",
+            },
+
+            "& .MuiDataGrid-columnHeader": {
+              fontSize: "12.5px",
+              fontWeight: 700,
+
+              "&:focus": {
+                outline: "none",
+              },
+
+              "&:focus-within": {
+                outline: "none",
+              },
             },
 
             "& .MuiDataGrid-columnHeaderTitle": {
-              fontWeight: "bold",
+              fontSize: "12.5px",
+              fontWeight: 700,
+            },
+
+            // =========================
+            // ROW
+            // =========================
+            "& .MuiDataGrid-row": {
+              bgcolor: "background.paper",
+
+              "&:hover": {
+                bgcolor: "secondary.light",
+              },
             },
 
             "& .MuiDataGrid-row:nth-of-type(odd)": {
-              backgroundColor: "#f7fdfa",
-            },
+              bgcolor: "background.default",
 
-            "& .MuiDataGrid-row:hover": {
-              backgroundColor: "#e8f9f5",
-            },
-  width: {
-  xs: "100%",
-  sm: "100%",
-  md: "100%",
-  lg: "100%",
-  xl: "100%",
-
-},
-
-            "& .MuiDataGrid-cell": {
-              fontSize: {
-                xs: "0.75rem",
-                sm: "0.9rem",
+              "&:hover": {
+                bgcolor: "secondary.light",
               },
+            },
+
+            // =========================
+            // CELL
+            // =========================
+            "& .MuiDataGrid-cell": {
+              fontSize: "12.5px",
+              color: "text.primary",
+              borderColor: "divider",
+
+              "&:focus": {
+                outline: "none",
+              },
+
+              "&:focus-within": {
+                outline: "none",
+              },
+            },
+
+            // =========================
+            // FOOTER
+            // =========================
+            "& .MuiDataGrid-footerContainer": {
+              minHeight: "44px",
+              borderTop: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.paper",
+            },
+
+            "& .MuiTablePagination-root": {
+              color: "text.secondary",
+            },
+
+            "& .MuiTablePagination-toolbar": {
+              minHeight: "44px",
+            },
+
+            "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows":
+              {
+                fontSize: "12.5px",
+              },
+
+            "& .MuiTablePagination-select": {
+              fontSize: "12.5px",
+            },
+
+            // =========================
+            // ICONS
+            // =========================
+            "& .MuiDataGrid-iconButtonContainer .MuiSvgIcon-root": {
+              fontSize: "17px",
+              color: "text.secondary",
+            },
+
+            "& .MuiDataGrid-menuIcon .MuiSvgIcon-root": {
+              fontSize: "17px",
+              color: "text.secondary",
+            },
+
+            // =========================
+            // LOADING
+            // =========================
+            "& .MuiDataGrid-overlayWrapper": {
+              bgcolor: "background.paper",
+            },
+
+            // =========================
+            // SCROLLBAR
+            // =========================
+            "& ::-webkit-scrollbar": {
+              width: "6px",
+              height: "6px",
+            },
+
+            "& ::-webkit-scrollbar-thumb": {
+              bgcolor: "divider",
+              borderRadius: "10px",
             },
           }}
         />

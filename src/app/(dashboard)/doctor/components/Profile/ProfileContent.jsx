@@ -49,9 +49,8 @@ const ProfileContent = ({
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        mt: 4,
-        padding: { xs: 1, sm: 2, md: 1 },
-        marginTop: 7.5,
+        
+        marginTop: 8,
       }}
     >
       {/* Snackbar for notifications */}

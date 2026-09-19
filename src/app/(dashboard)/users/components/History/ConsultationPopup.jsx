@@ -1,105 +1,196 @@
 "use client";
 
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
   Box,
-  IconButton,
-  CircularProgress,
-  Paper,
   Chip,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Divider,
+  IconButton,
+  Paper,
+  Typography,
 } from "@mui/material";
-import { useState } from "react"
+
 import CloseIcon from "@mui/icons-material/Close";
-import DownloadIcon from "@mui/icons-material/Download";
-import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
+import LocalHospitalOutlinedIcon from "@mui/icons-material/LocalHospitalOutlined";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import Prescription from "../../../doctor/components/prescription"
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+
+import Prescription from "../../../doctor/components/prescription";
 
 export default function ConsultationPopup({
   open,
   handleClose,
   selectedConsultation,
-  handleGeneratePdf,
-  generatingPdf,
   pdfRef,
-  handleCancelAppointment,
 }) {
-  const getStatusStyle = (status) => {
-    switch (status?.toLowerCase()) {
-      case "complete":
+  // =====================================================
+  // STATUS
+  // =====================================================
+
+  const getStatusStyle = (status, theme) => {
+    switch ((status || "").toUpperCase()) {
+      case "COMPLETE":
+      case "COMPLETED":
         return {
-          bg: "#dff5e8",
-          color: "#1b5e20",
+          bg: theme.palette.success.main + "12",
+          color: theme.palette.success.main,
         };
 
-      case "upcoming":
+      case "UPCOMING":
         return {
-          bg: "#e3f2fd",
-          color: "#1565c0",
+          bg: theme.palette.info.main + "12",
+          color: theme.palette.info.main,
         };
 
+      case "CANCELLED":
+        return {
+          bg: theme.palette.error.main + "12",
+          color: theme.palette.error.main,
+        };
+
+      case "IN_PROGRESS":
+        return {
+          bg: theme.palette.info.main + "12",
+          color: theme.palette.info.main,
+        };
+
+      case "PENDING":
       default:
         return {
-          bg: "#fff4de",
-          color: "#b26a00",
+          bg: theme.palette.warning.main + "12",
+          color: theme.palette.warning.main,
         };
     }
   };
 
-  const statusStyle = getStatusStyle(selectedConsultation?.status);
+  // =====================================================
+  // COMMON STYLES
+  // =====================================================
+
+  const labelSx = {
+    fontSize: "10.5px",
+    fontWeight: 500,
+    color: "text.secondary",
+    lineHeight: 1.25,
+    mb: 0.25,
+  };
+
+  const valueSx = {
+    fontSize: "12px",
+    fontWeight: 600,
+    color: "text.primary",
+    lineHeight: 1.4,
+    overflowWrap: "anywhere",
+  };
+
+  const iconSx = {
+    fontSize: 16,
+    color: "primary.main",
+    mt: "1px",
+    flexShrink: 0,
+  };
+
+  const infoItemSx = {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 0.8,
+    minWidth: 0,
+  };
 
   return (
     <Dialog
       open={open}
       onClose={handleClose}
-      maxWidth="sm"
+      maxWidth={false}
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: "2",
-          overflow: "hidden",
-          width: "95%",
+          width: {
+            xs: "calc(100% - 20px)",
+            sm: "94%",
+            lg: "90%",
+          },
+
           maxWidth: "1400px",
-          background: "#fff",
-          boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+
+          height: {
+            xs: "92vh",
+            md: "86vh",
+          },
+
+          m: {
+            xs: 1,
+            sm: 2,
+          },
+
+          borderRadius: 2,
+
+          bgcolor: "background.paper",
+
+          border: "1px solid",
+          borderColor: "divider",
+
+          boxShadow: (theme) => theme.shadows[8],
+
+          overflow: "hidden",
         },
       }}
     >
-      {/* Header */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
       <DialogTitle
         sx={{
-          color: "#fff",
-          px: 3,
-          py: 2.2,
+          minHeight: 48,
+
+          px: {
+            xs: 1.5,
+            sm: 2,
+          },
+
+          py: 0.9,
+
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          borderBottom:"2px solid black"
+
+          bgcolor: "background.paper",
+
+          borderBottom: "1px solid",
+          borderColor: "divider",
         }}
       >
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
-            gap: 1.2,
+            gap: 0.7,
           }}
         >
-          <LocalHospitalIcon sx={{ fontSize: 22 }} />
+          <LocalHospitalOutlinedIcon
+            sx={{
+              fontSize: 18,
+              color: "primary.main",
+            }}
+          />
 
           <Typography
             sx={{
-              fontWeight: 700,
-              fontSize: "22px",
-              color:"black"
+              fontSize: {
+                xs: "12.5px",
+                sm: "13.5px",
+              },
+
+              fontWeight: 600,
+
+              color: "text.primary",
+
+              lineHeight: 1.3,
             }}
           >
             Consultation Details
@@ -107,40 +198,94 @@ export default function ConsultationPopup({
         </Box>
 
         <IconButton
+          size="small"
           onClick={handleClose}
+          aria-label="Close consultation details"
           sx={{
-            color: "black",
+            width: 29,
+            height: 29,
+
+            color: "text.secondary",
 
             "&:hover": {
-              background: "rgba(255,255,255,0.12)",
+              bgcolor: "action.hover",
+              color: "text.primary",
             },
           }}
         >
-          <CloseIcon />
+          <CloseIcon
+            sx={{
+              fontSize: 17,
+            }}
+          />
         </IconButton>
       </DialogTitle>
 
-      {/* Content */}
+      {/* =====================================================
+          CONTENT
+      ===================================================== */}
+
       <DialogContent
         sx={{
-          background: "#f8fbfa",
-          p: 3,
-          mt: 2,
+          p: {
+            xs: 1,
+            sm: 1.5,
+          },
+
+          bgcolor: "background.default",
+
+          overflow: "hidden",
         }}
       >
         <Box
           sx={{
-            display: "flex",
-            gap: 3,
-            alignItems: "stretch",
-            height: "70vh",
+            height: "100%",
+
+            display: "grid",
+
+            gridTemplateColumns: {
+              xs: "1fr",
+              md: "minmax(290px, 0.72fr) minmax(0, 1.28fr)",
+            },
+
+            gap: {
+              xs: 1,
+              sm: 1.5,
+            },
+
+            overflow: {
+              xs: "auto",
+              md: "hidden",
+            },
           }}
         >
-          {/* Left Side */}
+          {/* =================================================
+              LEFT - CONSULTATION DETAILS
+          ================================================= */}
+
           <Box
             sx={{
-              flex: 1,
-              overflowY: "auto",
+              minWidth: 0,
+
+              overflowY: {
+                xs: "visible",
+                md: "auto",
+              },
+
+              pr: {
+                md: 0.3,
+              },
+
+              scrollbarWidth: "thin",
+
+              "&::-webkit-scrollbar": {
+                width: 4,
+              },
+
+              "&::-webkit-scrollbar-thumb": {
+                bgcolor: "divider",
+                borderRadius: 10,
+              },
             }}
           >
             {selectedConsultation && (
@@ -148,288 +293,340 @@ export default function ConsultationPopup({
                 <Paper
                   elevation={0}
                   sx={{
-                    borderRadius: "20px",
                     overflow: "hidden",
-                    border: "1px solid #d7e7e2",
-                    background: "#fff",
+
+                    borderRadius: 1.5,
+
+                    bgcolor: "background.paper",
+
+                    border: "1px solid",
+                    borderColor: "divider",
                   }}
                 >
-                  {/* Top Section */}
+                  {/* =========================================
+                      TOKEN + STATUS
+                  ========================================= */}
+
                   <Box
                     sx={{
-                      background: "#eef7f5",
-                      px: 3,
-                      py: 2.5,
+                      px: {
+                        xs: 1.2,
+                        sm: 1.5,
+                      },
+
+                      py: 1.1,
+
                       display: "flex",
-                      justifyContent: "space-between",
                       alignItems: "center",
+                      justifyContent: "space-between",
+
                       flexWrap: "wrap",
-                      gap: 2,
+
+                      gap: 1,
+
+                      bgcolor: "action.hover",
+
+                      borderBottom: "1px solid",
+                      borderColor: "divider",
                     }}
                   >
-                    {/* Left */}
+                    {/* TOKEN */}
+
                     <Box>
                       <Typography
                         sx={{
-                          color: "#1e6658",
-                          fontSize: "13px",
-                          fontWeight: 700,
-                          mb: 1,
+                          fontSize: "10px",
+
+                          fontWeight: 500,
+
+                          color: "text.secondary",
+
+                          lineHeight: 1.2,
+
+                          mb: 0.5,
                         }}
                       >
                         Token Number
                       </Typography>
 
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Chip
-                          icon={<CheckCircleIcon sx={{ color: "#fff !important" }} />}
-                          label={selectedConsultation.token}
-                          sx={{
-                            background: "#1e6658",
-                            color: "#fff",
-                            fontWeight: 700,
-                            borderRadius: "10px",
-                          }}
-                        />
+                      <Chip
+                        size="small"
+                        icon={
+                          <CheckCircleOutlineIcon />
+                        }
+                        label={
+                          selectedConsultation.token ||
+                          "-"
+                        }
+                        sx={{
+                          height: 25,
 
+                          bgcolor: "primary.main",
 
-                      </Box>
+                          color:
+                            "primary.contrastText",
+
+                          fontSize: "10.5px",
+
+                          fontWeight: 600,
+
+                          borderRadius: 1,
+
+                          "& .MuiChip-label": {
+                            px: 0.8,
+                          },
+
+                          "& .MuiChip-icon": {
+                            fontSize: 14,
+
+                            ml: 0.6,
+
+                            color:
+                              "primary.contrastText",
+                          },
+                        }}
+                      />
                     </Box>
 
-                    {/* Right */}
-                    <Chip
-                      label={selectedConsultation.status}
-                      sx={{
-                        background: statusStyle.bg,
-                        color: statusStyle.color,
-                        fontWeight: 700,
-                        borderRadius: "10px",
-                        px: 1,
+                    {/* STATUS */}
+
+                    <Box
+                      sx={(theme) => {
+                        const status =
+                          getStatusStyle(
+                            selectedConsultation.status,
+                            theme
+                          );
+
+                        return {
+                          display: "inline-flex",
+
+                          alignItems: "center",
+
+                          gap: 0.6,
+
+                          px: 0.9,
+                          py: 0.45,
+
+                          borderRadius: 1,
+
+                          bgcolor: status.bg,
+
+                          color: status.color,
+
+                          fontSize: "10.5px",
+
+                          fontWeight: 600,
+
+                          lineHeight: 1.2,
+                        };
                       }}
-                    />
+                    >
+                      <Box
+                        sx={(theme) => ({
+                          width: 6,
+                          height: 6,
+
+                          borderRadius: "50%",
+
+                          bgcolor: getStatusStyle(
+                            selectedConsultation.status,
+                            theme
+                          ).color,
+                        })}
+                      />
+
+                      {selectedConsultation.status ||
+                        "-"}
+                    </Box>
                   </Box>
 
-                  {/* Details */}
-                  <Box sx={{ p: 3 }}>
-                    {/* Grid */}
+                  {/* =========================================
+                      DETAILS
+                  ========================================= */}
+
+                  <Box
+                    sx={{
+                      p: {
+                        xs: 1.2,
+                        sm: 1.5,
+                      },
+                    }}
+                  >
+                    {/* DOCTOR + DEPARTMENT */}
+
                     <Box
                       sx={{
                         display: "grid",
+
                         gridTemplateColumns: {
                           xs: "1fr",
-                          sm: "1fr 1fr",
+                          sm: "repeat(2, minmax(0, 1fr))",
                         },
-                        gap: 3,
+
+                        gap: {
+                          xs: 1.2,
+                          sm: 1.5,
+                        },
                       }}
                     >
-                      <Box>
-                        <Typography
-                          sx={{
-                            fontSize: "12px",
-                            color: "#6b7280",
-                            fontWeight: 600,
-                            mb: 0.5,
-                          }}
-                        >
-                          Doctor Name
-                        </Typography>
-
-                        <Typography
-                          sx={{
-                            fontWeight: 700,
-                            color: "#111827",
-                            fontSize: "15px",
-                          }}
-                        >
-                          {selectedConsultation.doctor}
-                        </Typography>
-                      </Box>
-
-                      <Box>
-                        <Typography
-                          sx={{
-                            fontSize: "12px",
-                            color: "#6b7280",
-                            fontWeight: 600,
-                            mb: 0.5,
-                          }}
-                        >
-                          Department
-                        </Typography>
-
-                        <Typography
-                          sx={{
-                            fontWeight: 700,
-                            color: "#111827",
-                            fontSize: "15px",
-                          }}
-                        >
-                          {selectedConsultation.department}
-                        </Typography>
-                      </Box>
+                      {/* DOCTOR */}
 
                       <Box
                         sx={{
+                          minWidth: 0,
+                        }}
+                      >
+                        <Typography sx={labelSx}>
+                          Doctor Name
+                        </Typography>
+
+                        <Typography sx={valueSx}>
+                          {selectedConsultation.doctor ||
+                            "-"}
+                        </Typography>
+                      </Box>
+
+                      {/* DEPARTMENT */}
+
+                      <Box
+                        sx={{
+                          minWidth: 0,
+                        }}
+                      >
+                        <Typography sx={labelSx}>
+                          Department
+                        </Typography>
+
+                        <Typography sx={valueSx}>
+                          {selectedConsultation.department ||
+                            "-"}
+                        </Typography>
+                      </Box>
+
+                      {/* REASON */}
+
+                      <Box
+                        sx={{
+                          minWidth: 0,
+
                           gridColumn: {
                             xs: "auto",
                             sm: "1 / -1",
                           },
                         }}
                       >
-                        <Typography
-                          sx={{
-                            fontSize: "12px",
-                            color: "#6b7280",
-                            fontWeight: 600,
-                            mb: 0.5,
-                          }}
-                        >
+                        <Typography sx={labelSx}>
                           Reason For Visit
                         </Typography>
 
-                        <Typography
-                          sx={{
-                            fontWeight: 700,
-                            color: "#111827",
-                            fontSize: "15px",
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {selectedConsultation.title}
+                        <Typography sx={valueSx}>
+                          {selectedConsultation.title ||
+                            "-"}
                         </Typography>
                       </Box>
                     </Box>
 
                     <Divider
                       sx={{
-                        my: 3,
-                        borderColor: "#e5e7eb",
+                        my: 1.4,
+                        borderColor: "divider",
                       }}
                     />
 
-                    {/* Bottom Info */}
+                    {/* =========================================
+                        DATE + TIME + ADDRESS
+                    ========================================= */}
+
                     <Box
                       sx={{
                         display: "grid",
+
                         gridTemplateColumns: {
                           xs: "1fr",
-                          sm: "1fr 1fr",
+                          sm: "repeat(2, minmax(0, 1fr))",
                         },
-                        gap: 3,
+
+                        gap: {
+                          xs: 1.2,
+                          sm: 1.5,
+                        },
                       }}
                     >
-                      {/* Date */}
-                      <Box
-                        sx={{
-                          display: "flex",
-                          gap: 1.5,
-                        }}
-                      >
+                      {/* DATE */}
+
+                      <Box sx={infoItemSx}>
                         <CalendarTodayOutlinedIcon
-                          sx={{
-                            color: "#1e6658",
-                            fontSize: 20,
-                            mt: "2px",
-                          }}
+                          sx={iconSx}
                         />
 
-                        <Box>
-                          <Typography
-                            sx={{
-                              fontSize: "11px",
-                              color: "#6b7280",
-                            }}
-                          >
+                        <Box
+                          sx={{
+                            minWidth: 0,
+                          }}
+                        >
+                          <Typography sx={labelSx}>
                             Date
                           </Typography>
 
-                          <Typography
-                            sx={{
-                              fontWeight: 700,
-                              color: "#111827",
-                              fontSize: "14px",
-                            }}
-                          >
-                            {selectedConsultation.date}
+                          <Typography sx={valueSx}>
+                            {selectedConsultation.date ||
+                              "-"}
                           </Typography>
                         </Box>
                       </Box>
 
-                      {/* Time */}
-                      <Box
-                        sx={{
-                          display: "flex",
-                          gap: 1.5,
-                        }}
-                      >
+                      {/* TIME */}
+
+                      <Box sx={infoItemSx}>
                         <AccessTimeOutlinedIcon
-                          sx={{
-                            color: "#1e6658",
-                            fontSize: 20,
-                            mt: "2px",
-                          }}
+                          sx={iconSx}
                         />
 
-                        <Box>
-                          <Typography
-                            sx={{
-                              fontSize: "11px",
-                              color: "#6b7280",
-                            }}
-                          >
+                        <Box
+                          sx={{
+                            minWidth: 0,
+                          }}
+                        >
+                          <Typography sx={labelSx}>
                             Time
                           </Typography>
 
-                          <Typography
-                            sx={{
-                              fontWeight: 700,
-                              color: "#111827",
-                              fontSize: "14px",
-                            }}
-                          >
-                            {selectedConsultation.time}
+                          <Typography sx={valueSx}>
+                            {selectedConsultation.time ||
+                              "-"}
                           </Typography>
                         </Box>
                       </Box>
 
-                      {/* Address */}
+                      {/* ADDRESS */}
+
                       <Box
                         sx={{
+                          ...infoItemSx,
+
                           gridColumn: {
                             xs: "auto",
                             sm: "1 / -1",
                           },
-                          display: "flex",
-                          gap: 1.5,
                         }}
                       >
                         <LocationOnOutlinedIcon
-                          sx={{
-                            color: "#1e6658",
-                            fontSize: 20,
-                            mt: "2px",
-                          }}
+                          sx={iconSx}
                         />
 
-                        <Box>
-                          <Typography
-                            sx={{
-                              fontSize: "11px",
-                              color: "#6b7280",
-                            }}
-                          >
+                        <Box
+                          sx={{
+                            minWidth: 0,
+                          }}
+                        >
+                          <Typography sx={labelSx}>
                             Address
                           </Typography>
 
-                          <Typography
-                            sx={{
-                              fontWeight: 700,
-                              color: "#111827",
-                              fontSize: "14px",
-                              lineHeight: 1.6,
-                            }}
-                          >
-                            {selectedConsultation.address}
+                          <Typography sx={valueSx}>
+                            {selectedConsultation.address ||
+                              "-"}
                           </Typography>
                         </Box>
                       </Box>
@@ -439,26 +636,54 @@ export default function ConsultationPopup({
               </Box>
             )}
           </Box>
+
+          {/* =================================================
+              RIGHT - PRESCRIPTION
+          ================================================= */}
+
           <Box
             sx={{
-              flex: 1,
-              bgcolor: "#fff",
-              borderRadius: "20px",
-              border: "1px solid #d7e7e2",
+              minWidth: 0,
+
+              height: "100%",
+
               overflowY: "auto",
-              p: 2,
+
+              p: {
+                xs: 0.8,
+                sm: 1.2,
+              },
+
+              bgcolor: "background.paper",
+
+              border: "1px solid",
+              borderColor: "divider",
+
+              borderRadius: 1.5,
+
+              scrollbarWidth: "thin",
+
+              "&::-webkit-scrollbar": {
+                width: 4,
+              },
+
+              "&::-webkit-scrollbar-thumb": {
+                bgcolor: "divider",
+                borderRadius: 10,
+              },
             }}
           >
-         <Prescription
-  consultation={selectedConsultation}
-  appointmentId={selectedConsultation?.id}
-/>
+            <Prescription
+              consultation={
+                selectedConsultation
+              }
+              appointmentId={
+                selectedConsultation?.id
+              }
+            />
           </Box>
         </Box>
       </DialogContent>
-
-
-
     </Dialog>
   );
 }

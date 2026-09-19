@@ -754,15 +754,17 @@ const processFiles = async (files) => {
             }}
           >
             <Header
-              isMobile={isMobile}
-              isTablet={isTablet}
-              drawerOpen={drawerOpen}
-              setDrawerOpen={setDrawerOpen}
-              currentFolderName={currentFolderName}
-              setOpenUpload={setOpenUpload}
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-            />
+  isMobile={isMobile}
+  isTablet={isTablet}
+  drawerOpen={drawerOpen}
+  setDrawerOpen={setDrawerOpen}
+  currentFolderName={currentFolderName}
+  setOpenUpload={setOpenUpload}
+  setUploadSuccess={setUploadSuccess}
+  setUploadProgress={setUploadProgress}
+  viewMode={viewMode}
+  setViewMode={setViewMode}
+/>
 
             <FileView
               viewMode={viewMode}

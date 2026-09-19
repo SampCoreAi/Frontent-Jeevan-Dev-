@@ -1,675 +1,1240 @@
-  "use client";
+"use client";
 
-  import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-  export default function MedicineTable({
-    rows = [],
-    editable,
-    isDownloading,
-    addRow,
-    removeRow,
-    setRows,
-    optionsMap = {},
-  }) {
-    const visibleRows = isDownloading
-      ? rows.filter(
-          (row) =>
-            row.name ||
-            row.dose ||
-            row.unit ||
-            row.freq ||
-            row.instr
-        )
-      : rows;
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 
-    const getOptions = (type) => {
-      const options = optionsMap[type];
+export default function MedicineTable({
+  rows = [],
+  editable = true,
+  isDownloading = false,
+  addRow,
+  removeRow,
+  setRows,
+  optionsMap = {},
+}) {
+  const medicineInputRef = useRef(null);
 
-      if (!Array.isArray(options)) {
-        return [];
-      }
+  const [medicineSearchOpen, setMedicineSearchOpen] = useState(false);
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
 
-      return options;
-    };
+  // ============================================================
+  // OPTIONS
+  // ============================================================
 
-    const updateRow = (idx, field, value) => {
-      const updatedRows = [...rows];
+  const getOptions = (type) => {
+    const options = optionsMap?.[type];
+
+    if (!Array.isArray(options)) {
+      return [];
+    }
+
+    return options
+      .filter(
+        (item) =>
+          item !== null &&
+          item !== undefined &&
+          String(item).trim() !== ""
+      )
+      .map((item) => String(item));
+  };
+
+  // ============================================================
+  // CHECK ROW
+  // ============================================================
+
+  const isRowFilled = (row) => {
+    if (!row) return false;
+
+    return Boolean(
+      String(row?.name || "").trim() ||
+        String(row?.dose || "").trim() ||
+        String(row?.unit || "").trim() ||
+        String(row?.freq || "").trim() ||
+        String(row?.instr || "").trim() ||
+        String(row?.duration || "").trim()
+    );
+  };
+
+  // ============================================================
+  // CURRENT ROW
+  // Last row = editor
+  // Previous rows = added medicines
+  // ============================================================
+
+  const currentRowIndex =
+    rows.length > 0 ? rows.length - 1 : -1;
+
+  const currentRow =
+    currentRowIndex >= 0
+      ? rows[currentRowIndex]
+      : null;
+
+  const committedRows =
+    rows.length > 1
+      ? rows.slice(0, -1).filter(isRowFilled)
+      : [];
+
+const downloadRows = rows.filter(
+  (row) => row?.name?.trim()
+);
+
+  // ============================================================
+  // UPDATE ROW
+  // ============================================================
+
+  const updateRow = (idx, field, value) => {
+    if (idx < 0) return;
+
+    setRows((previousRows) => {
+      const updatedRows = [...previousRows];
 
       updatedRows[idx] = {
         ...updatedRows[idx],
         [field]: value,
       };
 
-      setRows(updatedRows);
-    };
+      return updatedRows;
+    });
+  };
 
-    // =====================================================
-    // NORMAL INPUT
-    // =====================================================
+  // ============================================================
+  // MEDICINE OPTIONS / SEARCH
+  // ============================================================
 
-    const renderInput = ({
-      idx,
-      field,
-      value,
-      placeholder,
-      type,
-    }) => {
-      const listId = `medicine-${type}-options`;
+  const medicineOptions = getOptions("name");
 
-      return (
-        <>
-          <input
-            type="text"
-            value={value || ""}
-            onChange={(e) =>
-              updateRow(idx, field, e.target.value)
-            }
-            disabled={!editable}
-            placeholder={placeholder}
-            list={listId}
-            className="
-              w-full
-              min-w-0
-              h-[46px]
-              rounded-md
-              border
-              border-gray-300
-              bg-white
-              px-3
-              py-2
-              text-sm
-              leading-[28px]
-              text-gray-800
-              outline-none
-              transition
-              placeholder:text-gray-400
-              focus:border-[#1e6658]
-              focus:ring-1
-              focus:ring-[#1e6658]
-              disabled:cursor-not-allowed
-              disabled:bg-gray-100
-              disabled:text-gray-500
-            "
-          />
+  const medicineQuery = String(
+    currentRow?.name || ""
+  ).trim();
 
-          <datalist id={listId}>
-            {getOptions(type).map((option, index) => (
-              <option
-                key={`${type}-${index}`}
-                value={option}
-              />
-            ))}
-          </datalist>
-        </>
+  const filteredMedicineOptions =
+    medicineQuery.length > 0
+      ? medicineOptions
+          .filter((option) =>
+            option
+              .toLowerCase()
+              .includes(medicineQuery.toLowerCase())
+          )
+          .slice(0, 8)
+      : medicineOptions.slice(0, 8);
+
+  // ============================================================
+  // SELECT MEDICINE
+  // ============================================================
+
+  const selectMedicine = (medicine) => {
+    if (currentRowIndex < 0) return;
+
+    updateRow(
+      currentRowIndex,
+      "name",
+      medicine
+    );
+
+    setMedicineSearchOpen(false);
+    setActiveSuggestion(-1);
+
+    requestAnimationFrame(() => {
+      medicineInputRef.current?.focus();
+    });
+  };
+
+  // ============================================================
+  // MEDICINE KEYBOARD
+  // ============================================================
+
+  const handleMedicineKeyDown = (event) => {
+    if (
+      !medicineSearchOpen ||
+      filteredMedicineOptions.length === 0
+    ) {
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+
+      setActiveSuggestion((prev) => {
+        if (
+          prev >=
+          filteredMedicineOptions.length - 1
+        ) {
+          return 0;
+        }
+
+        return prev + 1;
+      });
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+
+      setActiveSuggestion((prev) => {
+        if (prev <= 0) {
+          return (
+            filteredMedicineOptions.length - 1
+          );
+        }
+
+        return prev - 1;
+      });
+    }
+
+    if (
+      event.key === "Enter" &&
+      activeSuggestion >= 0
+    ) {
+      event.preventDefault();
+
+      selectMedicine(
+        filteredMedicineOptions[
+          activeSuggestion
+        ]
       );
-    };
+    }
 
-    // =====================================================
-    // SELECT DROPDOWN
-    // =====================================================
+    if (event.key === "Escape") {
+      setMedicineSearchOpen(false);
+      setActiveSuggestion(-1);
+    }
+  };
 
-    const renderSelect = ({
-      idx,
-      field,
-      value,
-      placeholder,
-      type,
-    }) => {
-      const options = getOptions(type);
+  // ============================================================
+  // ADD MEDICINE
+  // ============================================================
 
-      return (
-        <select
-          value={value || ""}
-          onChange={(e) =>
-            updateRow(idx, field, e.target.value)
-          }
-          disabled={!editable}
+  const handleAddMedicine = () => {
+    if (!currentRow) {
+      if (typeof addRow === "function") {
+        addRow();
+      }
+
+      return;
+    }
+
+    const medicineName = String(
+      currentRow?.name || ""
+    ).trim();
+
+    if (!medicineName) {
+      medicineInputRef.current?.focus();
+      return;
+    }
+
+    setMedicineSearchOpen(false);
+    setActiveSuggestion(-1);
+
+    if (typeof addRow === "function") {
+      addRow();
+    }
+  };
+
+  // ============================================================
+  // AUTO FOCUS AFTER NEW ROW
+  // ============================================================
+
+  const previousRowsLengthRef = useRef(
+    rows.length
+  );
+
+  useEffect(() => {
+    if (
+      rows.length >
+      previousRowsLengthRef.current
+    ) {
+      requestAnimationFrame(() => {
+        medicineInputRef.current?.focus();
+      });
+    }
+
+    previousRowsLengthRef.current =
+      rows.length;
+  }, [rows.length]);
+
+  // ============================================================
+  // REMOVE
+  // ============================================================
+
+  const handleRemove = (index) => {
+    if (typeof removeRow === "function") {
+      removeRow(index);
+      return;
+    }
+
+    setRows((previousRows) =>
+      previousRows.filter(
+        (_, idx) => idx !== index
+      )
+    );
+  };
+
+  // ============================================================
+  // NORMAL INPUT
+  //
+  // IMPORTANT:
+  // This is a render function, not a nested React component.
+  // Therefore typing won't remount the input.
+  // ============================================================
+
+  const renderInput = ({
+    label,
+    field,
+    value,
+    placeholder,
+    type = "text",
+  }) => {
+    return (
+      <div className="min-w-0">
+        <label
           className="
+            mb-1.5
+            block
+            text-[12px]
+            font-medium
+            text-gray-600
+          "
+        >
+          {label}
+        </label>
+
+        <input
+          type="text"
+          value={value || ""}
+          onChange={(event) =>
+            updateRow(
+              currentRowIndex,
+              field,
+              event.target.value
+            )
+          }
+          placeholder={placeholder}
+          disabled={!editable}
+          autoComplete="off"
+          className="
+            h-[40px]
             w-full
             min-w-0
-            h-[46px]
-            appearance-auto
             rounded-md
             border
             border-gray-300
             bg-white
             px-3
-            py-2
-            text-sm
-            leading-[28px]
+            text-[13px]
             text-gray-800
             outline-none
-            transition
-            focus:border-[#1e6658]
-            focus:ring-1
-            focus:ring-[#1e6658]
+            transition-colors
+            placeholder:text-gray-400
+            hover:border-gray-400
+            focus:border-[#07876A]
+            focus:ring-2
+            focus:ring-[#07876A]/10
             disabled:cursor-not-allowed
-            disabled:bg-gray-100
+            disabled:bg-gray-50
             disabled:text-gray-500
           "
-        >
-          <option value="">
-            {placeholder}
-          </option>
+        />
+      </div>
+    );
+  };
 
-          {options.map((option, index) => (
-            <option
-              key={`${type}-${index}`}
-              value={option}
-            >
-              {option}
-            </option>
-          ))}
-        </select>
-      );
-    };
+  // ============================================================
+  // MEDICINE AUTOCOMPLETE
+  // ============================================================
 
+  const renderMedicineInput = () => {
     return (
-      <div className="w-full min-w-0">
+      <div className="relative min-w-0">
+        <label
+          className="
+            mb-1.5
+            block
+            text-[12px]
+            font-medium
+            text-gray-600
+          "
+        >
+          Medicine Name
+          <span className="ml-0.5 text-red-500">
+            *
+          </span>
+        </label>
 
-        {/* =====================================================
-            DESKTOP TABLE
-        ===================================================== */}
-<div
-  className={
-    isDownloading
-      ? "block w-full"
-      : "hidden w-full md:block"
-  }
->
-          <div className="w-full">
-        <table
-    className="w-full table-fixed border-collapse border border-gray-300"
-  >
+        <div className="relative">
+          <input
+            ref={medicineInputRef}
+            type="text"
+            value={currentRow?.name || ""}
+            onChange={(event) => {
+              updateRow(
+                currentRowIndex,
+                "name",
+                event.target.value
+              );
 
-              <thead>
-                <tr className="bg-[#e8f1ef]">
+              setMedicineSearchOpen(true);
+              setActiveSuggestion(-1);
+            }}
+            onFocus={() => {
+              if (
+                medicineOptions.length > 0
+              ) {
+                setMedicineSearchOpen(true);
+              }
+            }}
+            onKeyDown={
+              handleMedicineKeyDown
+            }
+            onBlur={() => {
+              // Small delay allows mouse click
+              // on a suggestion before closing.
+              setTimeout(() => {
+                setMedicineSearchOpen(false);
+                setActiveSuggestion(-1);
+              }, 150);
+            }}
+            placeholder="Enter medicine name"
+            disabled={!editable}
+            autoComplete="off"
+            className="
+              h-[40px]
+              w-full
+              rounded-md
+              border
+              border-gray-300
+              bg-white
+              px-3
+              pr-9
+              text-[13px]
+              text-gray-800
+              outline-none
+              transition-colors
+              placeholder:text-gray-400
+              hover:border-gray-400
+              focus:border-[#07876A]
+              focus:ring-2
+              focus:ring-[#07876A]/10
+              disabled:bg-gray-50
+            "
+          />
 
-          <th className="w-[7%] border border-gray-300 px-2 py-3 text-center text-sm font-semibold text-gray-700">
-    S.No
-  </th>
-  <th className="w-[23%] border border-gray-300 px-2 py-3 text-left text-sm font-semibold text-gray-700">
-    Medicine Name
-  </th>
+          {/* dropdown arrow */}
 
-                <th className="w-[12%] border border-gray-300 px-2 py-3 text-left text-sm font-semibold text-gray-700">
-    Dose
-  </th>
-                <th className="w-[13%] border border-gray-300 px-2 py-3 text-left text-sm font-semibold text-gray-700">
-    Unit
-  </th>
+          {medicineOptions.length > 0 && (
+            <button
+              type="button"
+              tabIndex={-1}
+              onMouseDown={(event) => {
+                event.preventDefault();
 
-                <th className="w-[18%] border border-gray-300 px-2 py-3 text-left text-sm font-semibold text-gray-700">
-    Frequency
-  </th>
-
-                <th className="w-[27%] border border-gray-300 px-2 py-3 text-left text-sm font-semibold text-gray-700">
-    Instructions
-  </th>
-
-                  {editable && !isDownloading && (
-                    <th className="w-[60px] border border-gray-300 px-2 py-3 text-center text-sm font-semibold text-gray-700">
-                      -
-                    </th>
-                  )}
-
-                </tr>
-              </thead>
-
-              <tbody>
-
-                {visibleRows.length > 0 ? (
-                  visibleRows.map((row, idx) => {
-
-                    const actualIndex = rows.indexOf(row);
-
-                    return (
-                      <tr
-                        key={
-                          row.id ||
-                          `medicine-${actualIndex}`
-                        }
-                        className="align-middle"
-                      >
-
-                        {/* S.NO */}
-
-                        <td className="border border-gray-300 px-3 py-3 text-center text-sm text-gray-700">
-                          {idx + 1}
-                        </td>
-
-                        {/* MEDICINE */}
-
-                        <td className="border border-gray-300 p-2 align-middle">
-                          {renderInput({
-                            idx: actualIndex,
-                            field: "name",
-                            value: row.name,
-                            placeholder: "Medicine name",
-                            type: "name",
-                          })}
-                        </td>
-
-                        {/* DOSE */}
-
-                        <td className="border border-gray-300 p-2 align-middle">
-                          {renderInput({
-                            idx: actualIndex,
-                            field: "dose",
-                            value: row.dose,
-                            placeholder: "Dose",
-                            type: "dose",
-                          })}
-                        </td>
-
-                        {/* UNIT */}
-
-                        <td className="border border-gray-300 p-2 align-middle">
-                          {renderSelect({
-                            idx: actualIndex,
-                            field: "unit",
-                            value: row.unit,
-                            placeholder: "Select unit",
-                            type: "unit",
-                          })}
-                        </td>
-
-                        {/* FREQUENCY */}
-
-                        <td className="border border-gray-300 p-2 align-middle">
-                          {renderSelect({
-                            idx: actualIndex,
-                            field: "freq",
-                            value: row.freq,
-                            placeholder: "Select frequency",
-                            type: "freq",
-                          })}
-                        </td>
-
-                        {/* INSTRUCTIONS */}
-
-                        <td className="border border-gray-300 p-2 align-middle">
-                          {renderSelect({
-                            idx: actualIndex,
-                            field: "instr",
-                            value: row.instr,
-                            placeholder: "Select instruction",
-                            type: "instr",
-                          })}
-                        </td>
-
-                        {/* REMOVE */}
-
-                        {editable && !isDownloading && (
-                          <td className="border border-gray-300 p-2 text-center align-middle">
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                removeRow(actualIndex)
-                              }
-                              className="
-                                inline-flex
-                                h-8
-                                w-8
-                                items-center
-                                justify-center
-                                rounded-md
-                                text-xl
-                                font-semibold
-                                text-red-500
-                                hover:bg-red-50
-                              "
-                            >
-                              ×
-                            </button>
-
-                          </td>
-                        )}
-
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-
-                    <td
-                      colSpan={
-                        editable && !isDownloading
-                          ? 7
-                          : 6
-                      }
-                      className="
-                        border
-                        border-gray-300
-                        px-4
-                        py-8
-                        text-center
-                        text-sm
-                        text-gray-500
-                      "
-                    >
-                      No medicine found
-                    </td>
-
-                  </tr>
-                )}
-
-              </tbody>
-
-            </table>
-          </div>
+                setMedicineSearchOpen(
+                  (prev) => !prev
+                );
+              }}
+              className="
+                absolute
+                right-0
+                top-0
+                flex
+                h-full
+                w-9
+                items-center
+                justify-center
+                text-gray-400
+                hover:text-gray-600
+              "
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+          )}
         </div>
 
-        {/* =====================================================
-            MOBILE CARDS
-        ===================================================== */}
+        {/* SUGGESTIONS */}
 
-     <div
-  className={
-    isDownloading
-      ? "hidden"
-      : "block w-full md:hidden"
-  }
->
-
-          {visibleRows.length > 0 ? (
-
-            <div className="space-y-4">
-
-              {visibleRows.map((row, idx) => {
-
-                const actualIndex = rows.indexOf(row);
-
-                return (
-                  <div
-                    key={
-                      row.id ||
-                      `mobile-medicine-${actualIndex}`
-                    }
-                    className="
-                      w-full
-                      min-w-0
-                      rounded-xl
-                      border
-                      border-gray-200
-                      bg-white
-                      p-4
-                      shadow-sm
-                    "
-                  >
-
-                    {/* CARD HEADER */}
-
-                    <div
-                      className="
-                        mb-4
-                        flex
-                        items-center
-                        justify-between
-                        border-b
-                        border-gray-200
-                        pb-3
-                      "
-                    >
-
-                      <div className="flex items-center gap-2">
-
-                        <div
-                          className="
-                            flex
-                            h-8
-                            w-8
-                            items-center
-                            justify-center
-                            rounded-full
-                            bg-[#1e6658]
-                            text-sm
-                            font-semibold
-                            text-white
-                          "
-                        >
-                          {idx + 1}
-                        </div>
-
-                        <span
-                          className="
-                            text-sm
-                            font-semibold
-                            text-gray-800
-                          "
-                        >
-                          Medicine {idx + 1}
-                        </span>
-
-                      </div>
-
-                      {editable && !isDownloading && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            removeRow(actualIndex)
-                          }
-                          className="
-                            flex
-                            h-8
-                            w-8
-                            items-center
-                            justify-center
-                            rounded-md
-                            text-xl
-                            font-semibold
-                            text-red-500
-                            hover:bg-red-50
-                          "
-                        >
-                          ×
-                        </button>
-                      )}
-
-                    </div>
-
-                    {/* MEDICINE NAME */}
-
-                    <div className="mb-3 w-full">
-
-                      <label
-                        className="
-                          mb-1
-                          block
-                          text-xs
-                          font-medium
-                          text-gray-600
-                        "
-                      >
-                        Medicine Name
-                      </label>
-
-                      {renderInput({
-                        idx: actualIndex,
-                        field: "name",
-                        value: row.name,
-                        placeholder: "Enter medicine name",
-                        type: "name",
-                      })}
-
-                    </div>
-
-                    {/* DOSE + UNIT */}
-
-                    <div
-                      className="
-                        mb-3
-                        grid
-                        w-full
-                        grid-cols-2
-                        gap-3
-                      "
-                    >
-
-                      {/* DOSE */}
-
-                      <div className="min-w-0">
-
-                        <label
-                          className="
-                            mb-1
-                            block
-                            text-xs
-                            font-medium
-                            text-gray-600
-                          "
-                        >
-                          Dose
-                        </label>
-
-                        {renderInput({
-                          idx: actualIndex,
-                          field: "dose",
-                          value: row.dose,
-                          placeholder: "Dose",
-                          type: "dose",
-                        })}
-
-                      </div>
-
-                      {/* UNIT */}
-
-                      <div className="min-w-0">
-
-                        <label
-                          className="
-                            mb-1
-                            block
-                            text-xs
-                            font-medium
-                            text-gray-600
-                          "
-                        >
-                          Unit
-                        </label>
-
-                        {renderSelect({
-                          idx: actualIndex,
-                          field: "unit",
-                          value: row.unit,
-                          placeholder: "Select unit",
-                          type: "unit",
-                        })}
-
-                      </div>
-
-                    </div>
-
-                    {/* FREQUENCY */}
-
-                    <div className="mb-3 w-full">
-
-                      <label
-                        className="
-                          mb-1
-                          block
-                          text-xs
-                          font-medium
-                          text-gray-600
-                        "
-                      >
-                        Frequency
-                      </label>
-
-                      {renderSelect({
-                        idx: actualIndex,
-                        field: "freq",
-                        value: row.freq,
-                        placeholder: "Select frequency",
-                        type: "freq",
-                      })}
-
-                    </div>
-
-                    {/* INSTRUCTIONS */}
-
-                    <div className="w-full">
-
-                      <label
-                        className="
-                          mb-1
-                          block
-                          text-xs
-                          font-medium
-                          text-gray-600
-                        "
-                      >
-                        Instructions
-                      </label>
-
-                      {renderSelect({
-                        idx: actualIndex,
-                        field: "instr",
-                        value: row.instr,
-                        placeholder: "Select instruction",
-                        type: "instr",
-                      })}
-
-                    </div>
-
-                  </div>
-                );
-              })}
-
-            </div>
-
-          ) : (
-
+        {medicineSearchOpen &&
+          medicineOptions.length > 0 && (
             <div
               className="
-                rounded-xl
+                absolute
+                left-0
+                right-0
+                top-full
+                z-50
+                mt-1
+                max-h-[220px]
+                overflow-y-auto
+                rounded-md
                 border
                 border-gray-200
                 bg-white
-                px-4
-                py-8
-                text-center
-                text-sm
+                py-1
+                shadow-lg
+              "
+            >
+              {filteredMedicineOptions.length >
+              0 ? (
+                filteredMedicineOptions.map(
+                  (option, index) => {
+                    const selected =
+                      option ===
+                      currentRow?.name;
+
+                    const active =
+                      index ===
+                      activeSuggestion;
+
+                    return (
+                      <button
+                        key={`${option}-${index}`}
+                        type="button"
+                        onMouseDown={(
+                          event
+                        ) => {
+                          event.preventDefault();
+
+                          selectMedicine(
+                            option
+                          );
+                        }}
+                        className={`
+                          flex
+                          w-full
+                          items-center
+                          justify-between
+                          px-3
+                          py-2
+                          text-left
+                          text-[13px]
+                          transition-colors
+
+                          ${
+                            active
+                              ? "bg-[#EDF7F2] text-[#07876A]"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }
+                        `}
+                      >
+                        <span className="truncate">
+                          {option}
+                        </span>
+
+                        {selected && (
+                          <span
+                            className="
+                              ml-2
+                              shrink-0
+                              text-[#07876A]
+                            "
+                          >
+                            ✓
+                          </span>
+                        )}
+                      </button>
+                    );
+                  }
+                )
+              ) : (
+                <div
+                  className="
+                    px-3
+                    py-3
+                    text-center
+                    text-[12px]
+                    text-gray-400
+                  "
+                >
+                  No matching medicine
+                </div>
+              )}
+            </div>
+          )}
+      </div>
+    );
+  };
+
+  // ============================================================
+  // SELECT
+  // ============================================================
+
+  const renderSelect = ({
+    label,
+    field,
+    value,
+    placeholder,
+    type,
+  }) => {
+    const options = getOptions(type);
+
+    const hasValue =
+      String(value || "").trim() !== "";
+
+    return (
+      <div className="min-w-0">
+        <label
+          className="
+            mb-1.5
+            block
+            text-[12px]
+            font-medium
+            text-gray-600
+          "
+        >
+          {label}
+        </label>
+
+        <div className="relative">
+          <select
+            value={value || ""}
+            onChange={(event) =>
+              updateRow(
+                currentRowIndex,
+                field,
+                event.target.value
+              )
+            }
+            disabled={!editable}
+            className={`
+              h-[40px]
+              w-full
+              min-w-0
+              appearance-none
+              rounded-md
+              border
+              border-gray-300
+              bg-white
+              px-3
+              pr-9
+              text-[13px]
+              outline-none
+              transition-colors
+
+              hover:border-gray-400
+
+              focus:border-[#07876A]
+              focus:ring-2
+              focus:ring-[#07876A]/10
+
+              disabled:cursor-not-allowed
+              disabled:bg-gray-50
+
+              ${
+                hasValue
+                  ? "text-gray-800"
+                  : "text-gray-400"
+              }
+            `}
+          >
+            {/* PLACEHOLDER */}
+
+            <option
+              value=""
+              disabled
+              hidden
+            >
+              {placeholder}
+            </option>
+
+            {/* OPTIONS */}
+
+            {options.map(
+              (option, index) => (
+                <option
+                  key={`${type}-${option}-${index}`}
+                  value={option}
+                  className="text-gray-800"
+                >
+                  {option}
+                </option>
+              )
+            )}
+          </select>
+
+          {/* CUSTOM ARROW */}
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              right-3
+              top-1/2
+              -translate-y-1/2
+              text-gray-400
+            "
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ============================================================
+  // MEDICINE DISPLAY
+  // ============================================================
+
+  const renderMedicineDisplay = ({
+    row,
+    index,
+    actualIndex = index,
+    showRemove = false,
+  }) => {
+    const medicineTitle = [
+      row?.name,
+      row?.dose,
+      row?.unit,
+    ]
+      .filter(
+        (value) =>
+          String(value || "").trim() !== ""
+      )
+      .join(" ");
+
+    const instructions = [
+      row?.freq,
+      row?.instr,
+      row?.duration,
+    ]
+      .filter(
+        (value) =>
+          String(value || "").trim() !== ""
+      )
+      .join(" • ");
+
+    return (
+      <div
+        key={
+          row?.id ||
+          `medicine-display-${actualIndex}`
+        }
+        className="
+          flex
+          w-full
+          items-start
+          gap-2.5
+          border-b
+          border-gray-100
+          py-2.5
+          last:border-b-0
+        "
+      >
+        {/* NUMBER */}
+
+        <div
+          className="
+            flex
+            h-5
+            min-w-[20px]
+            items-center
+            pt-[1px]
+            text-[13px]
+            font-medium
+            text-gray-500
+          "
+        >
+          {index + 1}.
+        </div>
+
+        {/* CONTENT */}
+
+        <div
+          className="
+            min-w-0
+            flex-1
+          "
+        >
+          <div
+            className="
+              text-[14px]
+              font-semibold
+              leading-5
+              text-gray-800
+            "
+          >
+            {medicineTitle}
+          </div>
+
+          {instructions && (
+            <div
+              className="
+                mt-0.5
+                text-[12px]
+                leading-5
                 text-gray-500
               "
             >
-              No medicine found
+              {instructions}
             </div>
-
           )}
-
         </div>
 
-        {/* =====================================================
-            ADD MEDICINE
-        ===================================================== */}
+        {/* REMOVE */}
 
-        {editable && !isDownloading && (
-          <div className="mt-4 flex justify-end">
-
+        {showRemove &&
+          editable &&
+          !isDownloading && (
             <button
               type="button"
-              onClick={addRow}
+              title="Remove medicine"
+              aria-label={`Remove medicine ${
+                index + 1
+              }`}
+              onClick={() =>
+                handleRemove(actualIndex)
+              }
               className="
+                flex
+                h-7
+                w-7
+                shrink-0
+                items-center
+                justify-center
                 rounded-md
-                bg-[#1e6658]
-                px-4
-                py-2
-                text-sm
-                font-medium
-                text-white
-                transition
-                hover:bg-[#155044]
-                active:scale-[0.98]
+                text-lg
+                leading-none
+                text-red-400
+                transition-colors
+                hover:bg-red-50
+                hover:text-red-600
               "
             >
-              + Add Medicine
+              ×
             </button>
+          )}
+      </div>
+    );
+  };
 
-          </div>
-        )}
+  // ============================================================
+  // PDF / DOWNLOAD
+  // ============================================================
 
+  if (isDownloading) {
+    if (downloadRows.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="w-full">
+        {/* HEADING */}
+
+        <div
+          className="
+            mb-1
+            flex
+            items-center
+            gap-2
+          "
+        >
+          <span
+            className="
+              font-serif
+              text-[22px]
+              italic
+              leading-none
+              text-[#5B2AA8]
+            "
+          >
+            ℞
+          </span>
+
+          <span
+            className="
+              text-[11px]
+              font-semibold
+              uppercase
+              tracking-[0.08em]
+              text-gray-400
+            "
+          >
+            Prescription
+          </span>
+        </div>
+
+        {/* MEDICINES */}
+
+        <div>
+          {downloadRows.map(
+            (row, index) =>
+              renderMedicineDisplay({
+                row,
+                index,
+                actualIndex: index,
+                showRemove: false,
+              })
+          )}
+        </div>
       </div>
     );
   }
+
+  // ============================================================
+  // NORMAL VIEW
+  // ============================================================
+
+  return (
+    <div className="w-full min-w-0">
+      {/* ======================================================
+          ADDED MEDICINES
+      ====================================================== */}
+
+      {committedRows.length > 0 && (
+        <div className="mb-4">
+          {/* TITLE */}
+
+          <div
+            className="
+              mb-1
+              flex
+              items-center
+              gap-2
+            "
+          >
+            <span
+              className="
+                font-serif
+                text-[22px]
+                italic
+                leading-none
+                text-[#5B2AA8]
+              "
+            >
+              ℞
+            </span>
+
+            <span
+              className="
+                text-[11px]
+                font-semibold
+                uppercase
+                tracking-[0.08em]
+                text-gray-400
+              "
+            >
+              Prescription
+            </span>
+          </div>
+
+          {/* LIST */}
+
+          <div
+            className="
+              rounded-lg
+              border
+              border-gray-200
+              bg-white
+              px-3
+            "
+          >
+            {committedRows.map(
+              (row, index) =>
+                renderMedicineDisplay({
+                  row,
+                  index,
+                  actualIndex: index,
+                  showRemove: true,
+                })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================
+          CURRENT MEDICINE FORM
+      ====================================================== */}
+
+      {currentRow ? (
+        <div
+          className="
+            overflow-visible
+            rounded-lg
+            border
+            border-gray-200
+            bg-white
+          "
+        >
+          {/* HEADER */}
+
+          <div
+            className="
+              flex
+              items-center
+              justify-between
+              rounded-t-lg
+              border-b
+              border-gray-200
+              bg-[#EDF7F2]
+              px-3
+              py-2
+            "
+          >
+            <div
+              className="
+                flex
+                items-center
+                gap-2
+              "
+            >
+              <div
+                className="
+                  flex
+                  h-6
+                  w-6
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-[#07876A]
+                  text-[11px]
+                  font-semibold
+                  text-white
+                "
+              >
+                {committedRows.length + 1}
+              </div>
+
+              <span
+                className="
+                  text-[13px]
+                  font-semibold
+                  text-gray-800
+                "
+              >
+                Medicine Details
+              </span>
+            </div>
+
+            <span
+              className="
+                text-[11px]
+                text-gray-500
+              "
+            >
+              #{committedRows.length + 1}
+            </span>
+          </div>
+
+          {/* ==================================================
+              DESKTOP FORM
+          ================================================== */}
+
+          <div className="hidden p-3 md:block">
+            <div
+              className="
+                grid
+                grid-cols-[2fr_0.85fr_0.9fr_1.25fr_1.4fr_1fr]
+                gap-2.5
+              "
+            >
+              {/* MEDICINE */}
+
+              {renderMedicineInput()}
+
+              {/* DOSE */}
+
+              {renderInput({
+                label: "Dose",
+                field: "dose",
+                value: currentRow?.dose,
+                placeholder: "650",
+              })}
+
+              {/* UNIT */}
+
+              {renderSelect({
+                label: "Unit",
+                field: "unit",
+                value: currentRow?.unit,
+                placeholder: "Select",
+                type: "unit",
+              })}
+
+              {/* FREQUENCY */}
+
+              {renderSelect({
+                label: "Frequency",
+                field: "freq",
+                value: currentRow?.freq,
+                placeholder: "Select frequency",
+                type: "freq",
+              })}
+
+              {/* INSTRUCTION */}
+
+              {renderSelect({
+                label: "Instruction",
+                field: "instr",
+                value: currentRow?.instr,
+                placeholder: "Select instruction",
+                type: "instr",
+              })}
+
+              {/* DURATION */}
+
+              {renderInput({
+                label: "Duration",
+                field: "duration",
+                value: currentRow?.duration,
+                placeholder: "3 days",
+              })}
+            </div>
+          </div>
+
+          {/* ==================================================
+              MOBILE FORM
+          ================================================== */}
+
+          <div className="p-3 md:hidden">
+            <div className="space-y-3">
+              {/* MEDICINE */}
+
+              {renderMedicineInput()}
+
+              {/* DOSE + UNIT */}
+
+              <div
+                className="
+                  grid
+                  grid-cols-2
+                  gap-2.5
+                "
+              >
+                {renderInput({
+                  label: "Dose",
+                  field: "dose",
+                  value: currentRow?.dose,
+                  placeholder: "650",
+                })}
+
+                {renderSelect({
+                  label: "Unit",
+                  field: "unit",
+                  value: currentRow?.unit,
+                  placeholder: "Select unit",
+                  type: "unit",
+                })}
+              </div>
+
+              {/* FREQUENCY */}
+
+              {renderSelect({
+                label: "Frequency",
+                field: "freq",
+                value: currentRow?.freq,
+                placeholder: "Select frequency",
+                type: "freq",
+              })}
+
+              {/* INSTRUCTION */}
+
+              {renderSelect({
+                label: "Instruction",
+                field: "instr",
+                value: currentRow?.instr,
+                placeholder: "Select instruction",
+                type: "instr",
+              })}
+
+              {/* DURATION */}
+
+              {renderInput({
+                label: "Duration",
+                field: "duration",
+                value: currentRow?.duration,
+                placeholder: "e.g. 3 days",
+              })}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div
+          className="
+            rounded-lg
+            border
+            border-dashed
+            border-gray-300
+            bg-gray-50
+            px-4
+            py-5
+            text-center
+            text-[13px]
+            text-gray-500
+          "
+        >
+          No medicine entry available.
+        </div>
+      )}
+
+      {/* ======================================================
+          ADD MEDICINE BUTTON
+      ====================================================== */}
+
+      {editable && (
+        <div
+          className="
+            mt-3
+            flex
+            justify-end
+          "
+        >
+          <button
+            type="button"
+            onClick={handleAddMedicine}
+            disabled={
+              currentRow
+                ? !String(
+                    currentRow?.name || ""
+                  ).trim()
+                : false
+            }
+            className="
+              inline-flex
+              h-[38px]
+              items-center
+              justify-center
+              gap-1.5
+              rounded-md
+              bg-[#07876A]
+              px-4
+              text-[13px]
+              font-semibold
+              text-white
+              shadow-sm
+              transition-all
+              hover:bg-[#06755C]
+              active:scale-[0.98]
+              disabled:cursor-not-allowed
+              disabled:bg-gray-300
+              disabled:text-gray-500
+              disabled:shadow-none
+            "
+          >
+            <span className="text-[17px] font-normal leading-none">
+              +
+            </span>
+
+            Add Medicine
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

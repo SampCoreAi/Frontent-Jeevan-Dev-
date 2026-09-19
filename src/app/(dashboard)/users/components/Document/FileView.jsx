@@ -17,32 +17,98 @@ export const FileView = ({
     <Box
       sx={{
         flex: 1,
-        p: isMobile ? 1.5 : isTablet ? 2 : 3,
+
+        p: {
+          xs: 1.2,
+          sm: 1.5,
+          md: 2,
+        },
+
         overflowY: "auto",
         overflowX: "hidden",
-        display: viewMode === "grid" ? "grid" : "block",
+
+        bgcolor: "background.default",
+
+        // ===============================
+        // GRID / LIST
+        // ===============================
+
+        display:
+          viewMode === "grid"
+            ? "grid"
+            : "block",
+
         gridTemplateColumns:
           viewMode === "grid"
-            ? isMobile
-              ? "repeat(auto-fill, minmax(120px, 1fr))"
-              : isTablet
-              ? "repeat(auto-fill, minmax(140px, 1fr))"
-              : "repeat(auto-fill, minmax(160px, 1fr))"
+            ? {
+                xs: "repeat(2, minmax(0, 1fr))",
+
+                sm: "repeat(auto-fill, minmax(145px, 1fr))",
+
+                md: "repeat(auto-fill, minmax(155px, 180px))",
+              }
             : "none",
-        gap: isMobile ? 1 : isTablet ? 1.5 : 2,
+
+        gap:
+          viewMode === "grid"
+            ? {
+                xs: 1,
+                sm: 1.2,
+                md: 1.5,
+              }
+            : 0,
+
         alignContent: "flex-start",
+
+        justifyContent:
+          viewMode === "grid"
+            ? "start"
+            : "stretch",
+
+        // ===============================
+        // SCROLLBAR
+        // ===============================
+
+        scrollbarWidth: "thin",
+
+        "&::-webkit-scrollbar": {
+          width: 5,
+        },
+
+        "&::-webkit-scrollbar-track": {
+          bgcolor: "transparent",
+        },
+
+        "&::-webkit-scrollbar-thumb": {
+          bgcolor: "divider",
+          borderRadius: 10,
+        },
       }}
     >
       {currentFiles.length === 0 ? (
         <EmptyState {...emptyStateProps} />
       ) : viewMode === "grid" ? (
         currentFiles.map((file) => (
-          <GridFileItem key={file.id} file={file} />
+          <GridFileItem
+            key={file.id}
+            file={file}
+          />
         ))
       ) : (
-        <Box sx={{ width: "100%" }}>
+        <Box
+          sx={{
+            width: "100%",
+
+            maxWidth: "100%",
+
+            mx: "auto",
+          }}
+        >
           {currentFiles.map((file) => (
-            <ListFileItem key={file.id} file={file} />
+            <ListFileItem
+              key={file.id}
+              file={file}
+            />
           ))}
         </Box>
       )}

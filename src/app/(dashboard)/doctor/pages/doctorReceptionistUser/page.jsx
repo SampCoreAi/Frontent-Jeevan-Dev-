@@ -12,46 +12,40 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  CircularProgress,
+  Snackbar,
+  Alert,
 } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
-import CircularProgress from "@mui/material/CircularProgress";
-import DashboardCard from "../../components/doctorReceptionistUser/NumberCard";
-import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { useRouter } from "next/navigation";
+
+import DashboardCard from "../../components/doctorReceptionistUser/NumberCard";
 import AssistantProfileDialog from "../../components/doctorReceptionistUser/AssistantProfileDialog";
 import UserDataGrid from "../../components/doctorReceptionistUser/UserDataGrid";
-export default function UsersPage() {
-  // -------------------- Styles --------------------
-  const inputStyles = {
-    "& .MuiOutlinedInput-notchedOutline": {
-      borderColor: "#1e6658",
-    },
-    "&:hover .MuiOutlinedInput-notchedOutline": {
-      borderColor: "#14503e",
-    },
-    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-      borderColor: "#1e6658",
-    },
-  };
 
-  const labelStyles = {
-    sx: {
-      color: "#1e6658",
-      "&.Mui-focused": { color: "#1e6658" },
-      "&.MuiInputLabel-shrink": { color: "#1e6658" },
-    },
-  };
-  const router = useRouter();
-  // -------------------- State --------------------
+export default function UsersPage() {
+  // =====================================================
+  // STATE
+  // =====================================================
+
   const [users, setUsers] = useState([]);
+
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [userCount, setUserCount] = useState(0);
+
+  // Add Assistant loading
   const [loading, setLoading] = useState(false);
+
+  // Table loading
+  const [usersLoading, setUsersLoading] = useState(false);
+
   const [viewOpen, setViewOpen] = useState(false);
   const [selectedAssistant, setSelectedAssistant] = useState(null);
-  const [successOpen, setSuccessOpen] = useState(false);
+
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -60,9 +54,35 @@ export default function UsersPage() {
 
   const [errors, setErrors] = useState({});
 
-  // -------------------- API --------------------
+  // =====================================================
+  // SNACKBAR
+  // =====================================================
+
+  const showSnackbar = (message, severity = "success") => {
+    setSnackbar({
+      open: true,
+      message,
+      severity,
+    });
+  };
+
+  const handleSnackbarClose = (_, reason) => {
+    if (reason === "clickaway") return;
+
+    setSnackbar((prev) => ({
+      ...prev,
+      open: false,
+    }));
+  };
+
+  // =====================================================
+  // FETCH ASSISTANTS
+  // =====================================================
+
   const fetchUsers = async () => {
     try {
+      setUsersLoading(true);
+
       const token = localStorage.getItem("token");
 
       const res = await axios.get(
@@ -74,27 +94,33 @@ export default function UsersPage() {
         }
       );
 
-
-      const userArray = res.data.data || [];
+      const userArray = res?.data?.data || [];
 
       const formattedUsers = userArray.map((u, index) => ({
         id: u.id,
         sr: index + 1,
-        name: u.full_name,
-        email: u.email,
-        mobile: u.phone_number,
-        gender: u.gender,
-        age: u.age,
-        department: u.department,
-        education: u.education,
-        experience: u.experience,
-        bio: u.bio,
-        image: u.image,
+        name: u.full_name || "-",
+        email: u.email || "-",
+        mobile: u.phone_number || "-",
+        gender: u.gender || "-",
+        age: u.age || "-",
+        department: u.department || "-",
+        education: u.education || "-",
+        experience: u.experience || "-",
+        bio: u.bio || "-",
+        image: u.image || "",
       }));
 
       setUsers(formattedUsers);
     } catch (err) {
-      console.error("Error fetching users:", err.message);
+      console.error("Error fetching assistants:", err);
+
+      showSnackbar(
+        err?.response?.data?.message || "Failed to fetch assistants",
+        "error"
+      );
+    } finally {
+      setUsersLoading(false);
     }
   };
 
@@ -102,29 +128,37 @@ export default function UsersPage() {
     fetchUsers();
   }, []);
 
-  // -------------------- Validation --------------------
+  // =====================================================
+  // VALIDATION
+  // =====================================================
+
   const validateField = (name, value) => {
     let error = "";
 
     switch (name) {
-     case "name":
-  if (!value.trim()) {
-    error = "Name is required";
-  } else if (!/^[A-Za-z0-9_\-\s]+$/.test(value)) {
-    error = "Only letters, numbers, spaces, _ and - are allowed";
-  }
-  break;
+      case "name":
+        if (!value.trim()) {
+          error = "Name is required";
+        } else if (!/^[A-Za-z0-9_\-\s]+$/.test(value)) {
+          error =
+            "Only letters, numbers, spaces, _ and - are allowed";
+        }
+        break;
 
       case "email":
-        if (!value.trim()) error = "Email is required";
-        else if (!/^\S+@\S+\.\S+$/.test(value))
+        if (!value.trim()) {
+          error = "Email is required";
+        } else if (!/^\S+@\S+\.\S+$/.test(value)) {
           error = "Invalid email";
+        }
         break;
 
       case "mobile":
-        if (!value.trim()) error = "Mobile number required";
-        else if (!/^\d{10}$/.test(value))
+        if (!value.trim()) {
+          error = "Mobile number required";
+        } else if (!/^\d{10}$/.test(value)) {
           error = "Enter 10 digit mobile number";
+        }
         break;
 
       default:
@@ -150,7 +184,10 @@ export default function UsersPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // -------------------- Handlers --------------------
+  // =====================================================
+  // INPUT CHANGE
+  // =====================================================
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -159,32 +196,37 @@ export default function UsersPage() {
         ? value.replace(/\b\w/g, (char) => char.toUpperCase())
         : value.trimStart();
 
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       [name]: formattedValue,
-    });
+    }));
 
-    setErrors({
-      ...errors,
+    setErrors((prev) => ({
+      ...prev,
       [name]: validateField(name, formattedValue),
-    });
+    }));
   };
 
   const handleBlur = (e) => {
     const { name, value } = e.target;
 
-    setErrors({
-      ...errors,
+    setErrors((prev) => ({
+      ...prev,
       [name]: validateField(name, value),
-    });
+    }));
   };
+
+  // =====================================================
+  // ADD ASSISTANT
+  // =====================================================
+
   const handleAddUser = async () => {
     if (!validateForm()) return;
 
     const payload = {
-      full_name: form.name,
-      email: form.email,
-      phone_number: form.mobile,
+      full_name: form.name.trim(),
+      email: form.email.trim(),
+      phone_number: form.mobile.trim(),
       role_id: 3,
     };
 
@@ -205,8 +247,7 @@ export default function UsersPage() {
 
       await fetchUsers();
 
-      setSuccessOpen(true);
-
+      showSnackbar("Assistant created successfully", "success");
 
       setDialogOpen(false);
 
@@ -217,24 +258,30 @@ export default function UsersPage() {
       });
 
       setErrors({});
-   } catch (err) {
-  console.error("Create assistant error:", err);
+    } catch (err) {
+      console.error("Create assistant error:", err);
 
-  const message =
-    err.response?.data?.message || "Failed to create user";
+      const message =
+        err?.response?.data?.message ||
+        "Failed to create assistant";
 
-  if (message.toLowerCase().includes("email")) {
-    setErrors((prev) => ({
-      ...prev,
-      email: message,
-    }));
-  } else {
-    alert(message);
-  }
-}finally {
+      if (message.toLowerCase().includes("email")) {
+        setErrors((prev) => ({
+          ...prev,
+          email: message,
+        }));
+      } else {
+        showSnackbar(message, "error");
+      }
+    } finally {
       setLoading(false);
     }
   };
+
+  // =====================================================
+  // CANCEL
+  // =====================================================
+
   const handleCancel = () => {
     setDialogOpen(false);
 
@@ -247,13 +294,16 @@ export default function UsersPage() {
     setErrors({});
   };
 
-  // -------------------- DataGrid Columns --------------------
+  // =====================================================
+  // DATAGRID COLUMNS
+  // =====================================================
+
   const columns = [
     {
       field: "sr",
       headerName: "SR",
-      minWidth: 70,
-      flex: 0.4,
+      minWidth: 60,
+      flex: 0.35,
     },
     {
       field: "name",
@@ -264,34 +314,40 @@ export default function UsersPage() {
     {
       field: "email",
       headerName: "Email",
-      minWidth: 220,
-      flex: 1.5,
+      minWidth: 210,
+      flex: 1.4,
     },
     {
       field: "mobile",
       headerName: "Mobile",
-      minWidth: 140,
-      flex: 1,
+      minWidth: 130,
+      flex: 0.9,
     },
     {
       field: "action",
       headerName: "Action",
-      minWidth: 140,
+      minWidth: 120,
       sortable: false,
+      filterable: false,
+
       renderCell: (params) => (
         <Button
           variant="contained"
           size="small"
-          startIcon={<VisibilityIcon />}
-          sx={{
-            bgcolor: "#1e6658",
-            "&:hover": {
-              bgcolor: "#14503e",
-            },
-          }}
+          startIcon={
+            <VisibilityIcon
+              sx={{
+                fontSize: "15px !important",
+              }}
+            />
+          }
           onClick={() => {
             setSelectedAssistant(params.row);
             setViewOpen(true);
+          }}
+          sx={{
+            minWidth: 78,
+            px: 1.4,
           }}
         >
           View
@@ -300,64 +356,76 @@ export default function UsersPage() {
     },
   ];
 
-  // -------------------- UI --------------------
+  // =====================================================
+  // UI
+  // =====================================================
+
   return (
     <Box
       sx={{
-        
         minHeight: "100vh",
         mt: { xs: 6, sm: 7.5 },
-        bgcolor: "#f5f7f9",
-
+        bgcolor: "background.default",
       }}
     >
       <Box
         sx={{
-          p: { xs: 1.5, sm: 2.5 },
-          backgroundColor: "#fff",
-          borderRadius: 0.5,
-          boxShadow: "0 4px 12px #0f7468",
-
+          p: { xs: 1.5, sm: 3},
+          bgcolor: "background.paper",
+          borderRadius: 1,
+          border: "1px solid",
+          borderColor: "divider",
+          boxShadow: "0 2px 8px rgba(15, 23, 42, 0.05)",
         }}
       >
-        {/* Header */}
+        {/* =================================================
+            HEADER
+        ================================================= */}
+
         <Box
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: { xs: "stretch", sm: "center" },
-            flexDirection: { xs: "column", sm: "row" },
-            gap: 2,
-            mb: 3,
+            alignItems: {
+              xs: "stretch",
+              sm: "center",
+            },
+            flexDirection: {
+              xs: "column",
+              sm: "row",
+            },
+            gap: 1.5,
+            my: 1,
+            mx: 2,
           }}
         >
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 700,
-              color: "#1e6658",
-              fontSize: {
-                xs: "1.3rem",
-                sm: "1.6rem",
-              },
-            }}
-          >
-            User Management
-          </Typography>
+          <Box>
+            <Typography
+              variant="h5"
+              sx={{
+                color: "text.primary",
+                fontWeight: 700,
+              }}
+            >
+              User Management
+            </Typography>
+
+            <Typography
+              variant="body2"
+              sx={{
+                mt: 0.25,
+                color: "text.secondary",
+              }}
+            >
+              Manage your assistants
+            </Typography>
+          </Box>
 
           <Button
             variant="contained"
             onClick={() => setDialogOpen(true)}
-            fullWidth={false}
             sx={{
-              bgcolor: "#1e6658",
-              "&:hover": {
-                bgcolor: "#14503e",
-              },
-              px: 3,
-              py: 1,
-              fontWeight: 600,
-              borderRadius: 2,
+              px: 2,
               width: {
                 xs: "100%",
                 sm: "auto",
@@ -368,58 +436,226 @@ export default function UsersPage() {
           </Button>
         </Box>
 
-        {/* Cards */}
-        <Box sx={{ mb: 3 }}>
+        {/* =================================================
+            DASHBOARD CARD
+        ================================================= */}
+
+        <Box sx={{ my: 4 }}>
           <DashboardCard />
         </Box>
 
-        <UserDataGrid
-          users={users}
-          columns={columns}
-        />
+        {/* =================================================
+            USER TABLE
+        ================================================= */}
 
-        {/* Dialog */}
+        <Box
+          sx={{
+            width: "100%",
+            position: "relative",
+          }}
+        >
+          {usersLoading ? (
+            <Box
+              sx={{
+                minHeight: 260,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 1,
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 1,
+                bgcolor: "background.paper",
+              }}
+            >
+              <CircularProgress size={24} />
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+              >
+                Loading assistants...
+              </Typography>
+            </Box>
+          ) : users.length === 0 ? (
+            <Box
+              sx={{
+                minHeight: 260,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                textAlign: "center",
+                px: 2,
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 1,
+                bgcolor: "background.paper",
+              }}
+            >
+              <Box
+                sx={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: "50%",
+                  bgcolor: "secondary.light",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mb: 1.2,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: "22px",
+                  }}
+                >
+                  👤
+                </Typography>
+              </Box>
+
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  color: "text.primary",
+                  fontWeight: 700,
+                }}
+              >
+                No assistants found
+              </Typography>
+
+              <Typography
+                variant="body2"
+                sx={{
+                  mt: 0.4,
+                  color: "text.secondary",
+                }}
+              >
+                Add your first assistant to get started.
+              </Typography>
+
+              <Button
+                variant="contained"
+                size="small"
+                onClick={() => setDialogOpen(true)}
+                sx={{
+                  mt: 1.5,
+                }}
+              >
+                + Add Assistant
+              </Button>
+            </Box>
+          ) : (
+            <UserDataGrid
+              users={users}
+              columns={columns}
+              loading={usersLoading}
+            />
+          )}
+        </Box>
+
+        {/* =================================================
+            ADD ASSISTANT DIALOG
+        ================================================= */}
+
         <Dialog
           open={dialogOpen}
-          onClose={handleCancel}
+          onClose={loading ? undefined : handleCancel}
           fullWidth
-          maxWidth="sm"
+          maxWidth="xs"
+          PaperProps={{
+            sx: {
+              m: { xs: 1.5, sm: 2 },
+              width: {
+                xs: "calc(100% - 24px)",
+                sm: "100%",
+              },
+            },
+          }}
         >
-          <DialogTitle>Add Assistant</DialogTitle>
+          <DialogTitle
+            sx={{
+              borderBottom: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            Add Assistant
+          </DialogTitle>
 
           <DialogContent>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              {["name", "email", "mobile"].map((field) => (
-                <Grid key={field} size={{ xs: 12 }}>
-                  <TextField
-                    label={field.charAt(0).toUpperCase() + field.slice(1)}
-                    name={field}
-                    value={form[field]}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    fullWidth
-                    error={!!errors[field]}
-                    helperText={errors[field]}
-                    InputLabelProps={labelStyles}
-                    InputProps={{
-                      sx: inputStyles,
-                    }}
-                  />
-                </Grid>
+            <Grid
+              container
+              spacing={1.5}
+              sx={{
+                mt: 0.5,
+              }}
+            >
+              {/* NAME */}
 
-              ))}
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  label="Name"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  fullWidth
+                  error={!!errors.name}
+                  helperText={errors.name}
+                  autoComplete="name"
+                />
+              </Grid>
 
+              {/* EMAIL */}
+
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  fullWidth
+                  error={!!errors.email}
+                  helperText={errors.email}
+                  autoComplete="email"
+                />
+              </Grid>
+
+              {/* MOBILE */}
+
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  label="Mobile"
+                  name="mobile"
+                  value={form.mobile}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  fullWidth
+                  error={!!errors.mobile}
+                  helperText={errors.mobile}
+                  inputProps={{
+                    maxLength: 10,
+                    inputMode: "numeric",
+                  }}
+                  autoComplete="tel"
+                />
+              </Grid>
             </Grid>
           </DialogContent>
 
-          <DialogActions sx={{ p: 2 }}>
+          <DialogActions
+            sx={{
+              borderTop: "1px solid",
+              borderColor: "divider",
+            }}
+          >
             <Button
               onClick={handleCancel}
               variant="outlined"
-              sx={{
-                borderColor: "#1e6658",
-                color: "#1e6658",
-              }}
+              disabled={loading}
             >
               Cancel
             </Button>
@@ -429,34 +665,56 @@ export default function UsersPage() {
               disabled={loading}
               variant="contained"
               sx={{
-                bgcolor: "#1e6658",
-                "&:hover": {
-                  bgcolor: "#14503e",
-                },
+                minWidth: 75,
               }}
             >
               {loading ? (
-                <CircularProgress size={20} color="white" />
+                <CircularProgress
+                  size={16}
+                  sx={{
+                    color: "primary.contrastText",
+                  }}
+                />
               ) : (
                 "Add"
               )}
             </Button>
           </DialogActions>
         </Dialog>
-
       </Box>
+
+      {/* =================================================
+          PROFILE DIALOG
+      ================================================= */}
+
       <AssistantProfileDialog
         open={viewOpen}
-        onClose={() => setViewOpen(false)}
+        onClose={() => {
+          setViewOpen(false);
+          setSelectedAssistant(null);
+        }}
         assistant={selectedAssistant}
       />
+
+      {/* =================================================
+          SNACKBAR
+      ================================================= */}
+
       <Snackbar
-        open={successOpen}
+        open={snackbar.open}
         autoHideDuration={3000}
-        onClose={() => setSuccessOpen(false)}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
       >
-        <Alert severity="success" variant="filled">
-          User created successfully
+        <Alert
+          severity={snackbar.severity}
+          variant="filled"
+          onClose={handleSnackbarClose}
+        >
+          {snackbar.message}
         </Alert>
       </Snackbar>
     </Box>

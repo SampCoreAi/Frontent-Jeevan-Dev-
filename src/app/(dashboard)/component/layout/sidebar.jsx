@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -44,9 +45,7 @@ const Sidebar = ({
   const theme = useTheme();
   const pathname = usePathname();
 
-  const isMobile = useMediaQuery(
-    theme.breakpoints.down("md")
-  );
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   // =========================================================
   // USER DATA
@@ -91,10 +90,7 @@ const Sidebar = ({
           ""
       );
     } catch (error) {
-      console.error(
-        "Sidebar user parse error:",
-        error
-      );
+      console.error("Sidebar user parse error:", error);
 
       setRoleId(0);
       setUserName("Not Provided");
@@ -125,15 +121,8 @@ const Sidebar = ({
       return profileImage;
     }
 
-    const baseUrl = S3_BUCKET_URL.replace(
-      /\/$/,
-      ""
-    );
-
-    const imagePath = profileImage.replace(
-      /^\//,
-      ""
-    );
+    const baseUrl = S3_BUCKET_URL.replace(/\/$/, "");
+    const imagePath = profileImage.replace(/^\//, "");
 
     if (!baseUrl) {
       return `/${imagePath}`;
@@ -148,20 +137,9 @@ const Sidebar = ({
   // MENU
   // =========================================================
 
-  const currentMenuItems =
-    menuItems?.[roleId] || [];
+  const currentMenuItems = menuItems?.[roleId] || [];
 
-  /*
-    Rajiv Lab integration ke incoming code me
-    role 1-5 ke liye Lab styling condition thi.
-    Isko preserve kiya hai.
-  */
-  const isLab =
-    Number(roleId) >= 1 &&
-    Number(roleId) <= 5;
-
-  const canShareProfile =
-    Number(roleId) === 2;
+  const canShareProfile = Number(roleId) === 2;
 
   // =========================================================
   // ACTIVE MENU
@@ -172,12 +150,8 @@ const Sidebar = ({
 
     // Doctor patient pages
     if (
-      pathname.includes(
-        "/doctor/pages/prescription"
-      ) ||
-      pathname.includes(
-        "/doctor/pages/reportPatient"
-      )
+      pathname.includes("/doctor/pages/prescription") ||
+      pathname.includes("/doctor/pages/reportPatient")
     ) {
       setActiveButton?.("Patient");
       return;
@@ -185,30 +159,23 @@ const Sidebar = ({
 
     // User appointment
     if (
-      pathname.startsWith(
-        "/users/pages/Appointment"
-      )
+      pathname.startsWith("/users/pages/Appointment")
     ) {
       setActiveButton?.("Doctor");
       return;
     }
 
-    const currentItem =
-      currentMenuItems.find((item) => {
-        if (!item?.route) return false;
+    const currentItem = currentMenuItems.find((item) => {
+      if (!item?.route) return false;
 
-        return (
-          pathname === item.route ||
-          pathname.startsWith(
-            `${item.route}/`
-          )
-        );
-      });
+      return (
+        pathname === item.route ||
+        pathname.startsWith(`${item.route}/`)
+      );
+    });
 
     if (currentItem) {
-      setActiveButton?.(
-        currentItem.label
-      );
+      setActiveButton?.(currentItem.label);
     }
   }, [
     pathname,
@@ -229,7 +196,7 @@ const Sidebar = ({
   };
 
   // =========================================================
-  // PROFILE SUB TITLE
+  // PROFILE SUBTITLE
   // =========================================================
 
   const getProfileSubtitle = () => {
@@ -261,18 +228,14 @@ const Sidebar = ({
         display: "flex",
         flexDirection: "column",
 
-        bgcolor: isLab
-          ? "#f4f9fc"
-          : "background.paper",
+        bgcolor: "background.paper",
 
         borderRight: "1px solid",
         borderColor: "divider",
 
         px: {
           xs: "12px",
-          sm: isOpen
-            ? "14px"
-            : "9px",
+          sm: isOpen ? "14px" : "9px",
         },
 
         py: {
@@ -281,7 +244,6 @@ const Sidebar = ({
         },
 
         overflow: "hidden",
-
         boxSizing: "border-box",
       }}
     >
@@ -312,46 +274,33 @@ const Sidebar = ({
               ? "10px"
               : "6px",
 
-          bgcolor: isLab
-            ? "#eaf5fb"
-            : "background.third",
+          // Global theme
+          bgcolor: "secondary.light",
 
           border: "1px solid",
+          borderColor: "divider",
 
-          borderColor: isLab
-            ? "#cfe3ef"
-            : "divider",
-
-          borderRadius: isLab
-            ? "6px"
-            : "12px",
+          borderRadius: "10px",
 
           p:
             isOpen || isMobile
-              ? "11px"
+              ? "10px"
               : "7px",
 
           flexShrink: 0,
 
-          transition:
-            "all 0.3s cubic-bezier(0.22,1,0.36,1)",
+          transition: "all 0.25s ease",
 
           "&:hover": {
-            transform:
-              "translateY(-2px)",
+            borderColor: "primary.light",
 
-            borderColor: isLab
-              ? "#b6d8e9"
-              : "primary.light",
-
-            boxShadow: `0 6px 18px ${alpha(
+            boxShadow: `0 4px 14px ${alpha(
               theme.palette.primary.main,
-              0.1
+              0.08
             )}`,
 
             "& .profile-avatar": {
-              transform:
-                "scale(1.05)",
+              transform: "scale(1.04)",
             },
           },
         }}
@@ -365,33 +314,29 @@ const Sidebar = ({
           sx={{
             width:
               isOpen || isMobile
-                ? 48
-                : 42,
+                ? 46
+                : 40,
 
             height:
               isOpen || isMobile
-                ? 48
-                : 42,
+                ? 46
+                : 40,
 
             flexShrink: 0,
 
             bgcolor: "background.paper",
 
             border: "1.5px solid",
-
-            borderColor: isLab
-              ? "#9fcade"
-              : "primary.light",
+            borderColor: "primary.light",
 
             color: "primary.main",
 
             boxShadow: `0 2px 6px ${alpha(
               theme.palette.primary.main,
-              0.1
+              0.08
             )}`,
 
-            transition:
-              "transform 0.3s ease",
+            transition: "transform 0.25s ease",
           }}
         />
 
@@ -406,22 +351,14 @@ const Sidebar = ({
           >
             <Typography
               sx={{
-                fontSize: "14px",
-
+                fontSize: "13.5px",
                 lineHeight: 1.2,
-
                 fontWeight: 700,
-
-                color: isLab
-                  ? "#123f66"
-                  : "text.primary",
+                color: "text.primary",
 
                 whiteSpace: "nowrap",
-
                 overflow: "hidden",
-
-                textOverflow:
-                  "ellipsis",
+                textOverflow: "ellipsis",
               }}
             >
               {userName}
@@ -432,19 +369,13 @@ const Sidebar = ({
                 mt: "3px",
 
                 fontSize: "10.5px",
-
                 lineHeight: 1.3,
 
-                color: isLab
-                  ? "#54748d"
-                  : "text.secondary",
+                color: "text.secondary",
 
                 whiteSpace: "nowrap",
-
                 overflow: "hidden",
-
-                textOverflow:
-                  "ellipsis",
+                textOverflow: "ellipsis",
               }}
             >
               {getProfileSubtitle()}
@@ -457,33 +388,27 @@ const Sidebar = ({
                 mt: "5px",
 
                 display: "flex",
-
                 alignItems: "center",
-
                 gap: "5px",
               }}
             >
               <Box
                 sx={{
                   width: "6px",
-
                   height: "6px",
 
                   borderRadius: "50%",
 
-                  bgcolor:
-                    "success.main",
+                  bgcolor: "success.main",
                 }}
               />
 
               <Typography
                 sx={{
                   fontSize: "9.5px",
-
                   fontWeight: 600,
 
-                  color:
-                    "success.dark",
+                  color: "success.dark",
                 }}
               >
                 Active
@@ -494,58 +419,35 @@ const Sidebar = ({
       </Box>
 
       {/* =====================================================
-          SHARE PROFILE
+          SHARE PROFILE BUTTON
       ====================================================== */}
 
       {canShareProfile &&
         (isOpen || isMobile) && (
           <Button
+            variant="contained"
+            color="primary"
             startIcon={
               <Share
                 sx={{
-                  fontSize:
-                    "16px !important",
+                  fontSize: "15px !important",
                 }}
               />
             }
             sx={{
               width: "100%",
 
-              height: "38px",
+              height: "36px",
 
-              mt: "10px",
-
-              borderRadius: "9px",
-
-              bgcolor:
-                "primary.main",
-
-              color:
-                "primary.contrastText",
+              mt: "9px",
 
               fontSize: "11.5px",
+              fontWeight: 600,
 
-              fontWeight: 650,
-
-              textTransform: "none",
-
-              boxShadow: "none",
-
-              transition:
-                "all 0.25s ease",
+              borderRadius: "8px",
 
               "&:hover": {
-                bgcolor:
-                  "primary.dark",
-
-                transform:
-                  "translateY(-1px)",
-
-                boxShadow: `0 5px 15px ${alpha(
-                  theme.palette
-                    .primary.main,
-                  0.2
-                )}`,
+                transform: "translateY(-1px)",
               },
             }}
           >
@@ -559,8 +461,7 @@ const Sidebar = ({
 
       <Divider
         sx={{
-          my: "14px",
-          borderColor: "divider",
+          my: "13px",
         }}
       />
 
@@ -572,11 +473,9 @@ const Sidebar = ({
         <Typography
           sx={{
             ml: "10px",
-
             mb: "7px",
 
             fontSize: "9px",
-
             fontWeight: 700,
 
             letterSpacing: "1px",
@@ -595,17 +494,14 @@ const Sidebar = ({
       <Box
         sx={{
           display: "flex",
-
           flexDirection: "column",
 
           gap: "3px",
 
           flex: 1,
-
           minHeight: 0,
 
           overflowY: "auto",
-
           overflowX: "hidden",
 
           scrollbarWidth: "none",
@@ -615,299 +511,248 @@ const Sidebar = ({
           },
         }}
       >
-        {currentMenuItems.map(
-          (item, index) => {
-            const isActive =
-              activeButton ===
-              item.label;
+        {currentMenuItems.map((item, index) => {
+          const isActive =
+            activeButton === item.label;
 
-            const showLabel =
-              isOpen || isMobile;
+          const showLabel =
+            isOpen || isMobile;
 
-            return (
-              <Tooltip
-                key={
-                  item?.route ||
-                  `${item?.label}-${index}`
-                }
-                title={
-                  !showLabel
-                    ? item.label
-                    : ""
-                }
-                placement="right"
-                arrow
+          return (
+            <Tooltip
+              key={
+                item?.route ||
+                `${item?.label}-${index}`
+              }
+              title={
+                !showLabel
+                  ? item.label
+                  : ""
+              }
+              placement="right"
+              arrow
+            >
+              <Link
+                href={item?.route || "#"}
+                style={{
+                  width: "100%",
+                  textDecoration: "none",
+                }}
               >
-                <Link
-                  href={
-                    item?.route || "#"
+                <Button
+                  onClick={() =>
+                    handleNavigation(item)
                   }
-                  style={{
+                  disableRipple
+                  sx={{
+                    position: "relative",
+
                     width: "100%",
+                    minWidth: 0,
 
-                    textDecoration:
-                      "none",
-                  }}
-                >
-                  <Button
-                    onClick={() =>
-                      handleNavigation(
-                        item
-                      )
-                    }
-                    disableRipple
-                    sx={{
-                      position:
-                        "relative",
+                    height: "42px",
+                    minHeight: "42px",
 
-                      width: "100%",
+                    px: showLabel
+                      ? "11px"
+                      : "8px",
 
-                      minWidth: 0,
+                    display: "flex",
 
-                      height: "44px",
+                    justifyContent:
+                      showLabel
+                        ? "flex-start"
+                        : "center",
 
-                      minHeight:
-                        "44px",
+                    alignItems: "center",
 
-                      px: showLabel
-                        ? "11px"
-                        : "8px",
+                    gap: showLabel
+                      ? "10px"
+                      : 0,
+
+                    borderRadius: "8px",
+
+                    // =========================
+                    // THEME COLORS
+                    // =========================
+
+                    color: isActive
+                      ? "primary.main"
+                      : "text.secondary",
+
+                    bgcolor: isActive
+                      ? "secondary.light"
+                      : "transparent",
+
+                    textTransform: "none",
+
+                    overflow: "hidden",
+
+                    transition:
+                      "all 0.2s ease",
+
+                    // =========================
+                    // ACTIVE LEFT BORDER
+                    // =========================
+
+                    "&::before": isActive
+                      ? {
+                          content: '""',
+
+                          position:
+                            "absolute",
+
+                          left: 0,
+                          top: "9px",
+
+                          width: "3px",
+                          height: "24px",
+
+                          borderRadius:
+                            "0 4px 4px 0",
+
+                          bgcolor:
+                            "primary.main",
+                        }
+                      : {},
+
+                    // =========================
+                    // ICON
+                    // =========================
+
+                    "& .menu-icon": {
+                      width: "23px",
+                      minWidth: "23px",
 
                       display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
 
-                      justifyContent:
-                        showLabel
-                          ? "flex-start"
-                          : "center",
-
-                      alignItems:
-                        "center",
-
-                      gap: showLabel
-                        ? "10px"
-                        : 0,
-
-                      borderRadius:
-                        isLab
-                          ? "6px"
-                          : "10px",
+                      flexShrink: 0,
 
                       color: isActive
-                        ? isLab
-                          ? "#0b5c8e"
-                          : "primary.main"
-                        : isLab
-                        ? "#54748d"
+                        ? "primary.main"
                         : "text.secondary",
 
-                      bgcolor: isActive
-                        ? isLab
-                          ? "#dceff8"
-                          : "secondary.light"
-                        : "transparent",
+                      transition:
+                        "all 0.2s ease",
 
-                      textTransform:
-                        "none",
+                      "& svg": {
+                        fontSize: "19px",
+                      },
+                    },
 
-                      overflow:
-                        "hidden",
+                    // =========================
+                    // LABEL
+                    // =========================
+
+                    "& .menu-label": {
+                      flex: 1,
+                      minWidth: 0,
+
+                      textAlign: "left",
+
+                      fontSize: "12.5px",
+
+                      fontWeight:
+                        isActive
+                          ? 700
+                          : 600,
+
+                      letterSpacing:
+                        "0.1px",
+
+                      whiteSpace: "nowrap",
+
+                      overflow: "hidden",
+
+                      textOverflow:
+                        "ellipsis",
+                    },
+
+                    // =========================
+                    // ARROW
+                    // =========================
+
+                    "& .menu-arrow": {
+                      fontSize: "16px",
+
+                      flexShrink: 0,
+
+                      color: "primary.main",
+
+                      opacity:
+                        isActive
+                          ? 1
+                          : 0,
+
+                      transform:
+                        isActive
+                          ? "translateX(0)"
+                          : "translateX(-4px)",
 
                       transition:
-                        "all 0.25s ease",
+                        "all 0.2s ease",
+                    },
 
-                      // ACTIVE LEFT LINE
+                    // =========================
+                    // HOVER
+                    // =========================
 
-                      "&::before":
-                        isActive
-                          ? {
-                              content:
-                                '""',
+                    "&:hover": {
+                      bgcolor:
+                        "secondary.light",
 
-                              position:
-                                "absolute",
+                      color:
+                        "primary.main",
 
-                              left: 0,
+                      transform:
+                        showLabel
+                          ? "translateX(2px)"
+                          : "none",
 
-                              top: "10px",
-
-                              width:
-                                "3px",
-
-                              height:
-                                "24px",
-
-                              borderRadius:
-                                "0 4px 4px 0",
-
-                              bgcolor:
-                                isLab
-                                  ? "#0b5c8e"
-                                  : "primary.main",
-                            }
-                          : {},
-
-                      // ICON
-
-                      "& .menu-icon":
-                        {
-                          width:
-                            "24px",
-
-                          minWidth:
-                            "24px",
-
-                          display:
-                            "flex",
-
-                          alignItems:
-                            "center",
-
-                          justifyContent:
-                            "center",
-
-                          flexShrink: 0,
-
-                          color:
-                            isActive
-                              ? isLab
-                                ? "#0b5c8e"
-                                : "primary.main"
-                              : isLab
-                              ? "#54748d"
-                              : "text.secondary",
-
-                          transition:
-                            "all 0.25s ease",
-
-                          "& svg":
-                            {
-                              fontSize:
-                                "20px",
-                            },
-                        },
-
-                      // LABEL
-
-                      "& .menu-label":
-                        {
-                          flex: 1,
-
-                          minWidth: 0,
-
-                          textAlign:
-                            "left",
-
-                          fontSize:
-                            "12.5px",
-
-                          fontWeight:
-                            isActive
-                              ? 700
-                              : 600,
-
-                          letterSpacing:
-                            "0.15px",
-
-                          whiteSpace:
-                            "nowrap",
-
-                          overflow:
-                            "hidden",
-
-                          textOverflow:
-                            "ellipsis",
-                        },
-
-                      // ARROW
-
-                      "& .menu-arrow":
-                        {
-                          fontSize:
-                            "17px",
-
-                          flexShrink: 0,
-
-                          color: isLab
-                            ? "#0b5c8e"
-                            : "primary.main",
-
-                          opacity:
-                            isActive
-                              ? 1
-                              : 0,
-
-                          transform:
-                            isActive
-                              ? "translateX(0)"
-                              : "translateX(-5px)",
-
-                          transition:
-                            "all 0.25s ease",
-                        },
-
-                      // HOVER
-
-                      "&:hover": {
-                        bgcolor: isLab
-                          ? "#e5f2f8"
-                          : "secondary.light",
-
-                        color: isLab
-                          ? "#0b5c8e"
-                          : "primary.main",
+                      "& .menu-icon": {
+                        color:
+                          "primary.main",
 
                         transform:
-                          showLabel
-                            ? "translateX(2px)"
-                            : "none",
-
-                        "& .menu-icon":
-                          {
-                            color:
-                              isLab
-                                ? "#0b5c8e"
-                                : "primary.main",
-
-                            transform:
-                              "scale(1.05)",
-                          },
-
-                        "& .menu-arrow":
-                          {
-                            opacity: 1,
-
-                            transform:
-                              "translateX(0)",
-                          },
+                          "scale(1.04)",
                       },
-                    }}
-                  >
-                    {/* ICON */}
 
-                    <Box className="menu-icon">
-                      {item.icon}
-                    </Box>
+                      "& .menu-arrow": {
+                        opacity: 1,
 
-                    {/* LABEL */}
+                        transform:
+                          "translateX(0)",
+                      },
+                    },
+                  }}
+                >
+                  {/* ICON */}
 
-                    {showLabel && (
-                      <>
-                        <Typography
-                          component="span"
-                          className="menu-label"
-                        >
-                          {item.label}
-                        </Typography>
+                  <Box className="menu-icon">
+                    {item.icon}
+                  </Box>
 
-                        <ChevronRight className="menu-arrow" />
-                      </>
-                    )}
-                  </Button>
-                </Link>
-              </Tooltip>
-            );
-          }
-        )}
+                  {/* LABEL */}
+
+                  {showLabel && (
+                    <>
+                      <Typography
+                        component="span"
+                        className="menu-label"
+                      >
+                        {item.label}
+                      </Typography>
+
+                      <ChevronRight className="menu-arrow" />
+                    </>
+                  )}
+                </Button>
+              </Link>
+            </Tooltip>
+          );
+        })}
       </Box>
 
       {/* =====================================================
@@ -919,17 +764,13 @@ const Sidebar = ({
           sx={{
             mt: "auto",
 
-            pt: "12px",
+            pt: "11px",
 
             px: "8px",
-
             pb: "3px",
 
-            borderTop:
-              "1px solid",
-
-            borderColor:
-              "divider",
+            borderTop: "1px solid",
+            borderColor: "divider",
 
             flexShrink: 0,
           }}
@@ -937,11 +778,9 @@ const Sidebar = ({
           <Typography
             sx={{
               fontSize: "11px",
-
               fontWeight: 700,
 
-              color:
-                "text.primary",
+              color: "text.primary",
             }}
           >
             Jeevan Dev
@@ -949,15 +788,14 @@ const Sidebar = ({
 
           <Typography
             sx={{
-              mt: "4px",
+              mt: "3px",
 
               fontSize: "9px",
 
-              color:
-                "text.disabled",
+              color: "text.disabled",
             }}
           >
-            © 2025 All rights reserved.
+            © 2026 All rights reserved.
           </Typography>
         </Box>
       )}
@@ -972,30 +810,23 @@ const Sidebar = ({
     return (
       <Drawer
         anchor="left"
-        open={Boolean(
-          isMobileOpen
-        )}
+        open={Boolean(isMobileOpen)}
         onClose={onClose}
         ModalProps={{
           keepMounted: true,
         }}
         sx={{
-          "& .MuiDrawer-paper":
-            {
-              boxSizing:
-                "border-box",
+          "& .MuiDrawer-paper": {
+            boxSizing: "border-box",
 
-              width:
-                drawerWidth,
+            width: drawerWidth,
 
-              bgcolor:
-                "background.paper",
+            bgcolor: "background.paper",
 
-              border: "none",
+            border: "none",
 
-              overflowX:
-                "hidden",
-            },
+            overflowX: "hidden",
+          },
         }}
       >
         {sidebarContent}
@@ -1024,18 +855,15 @@ const Sidebar = ({
 
           top: 0,
 
-          bgcolor:
-            "background.paper",
+          bgcolor: "background.paper",
 
           border: "none",
 
-          borderRight:
-            "1px solid",
+          borderRight: "1px solid",
 
           borderColor: "divider",
 
-          transition:
-            "width 0.3s ease",
+          transition: "width 0.3s ease",
         },
       }}
     >

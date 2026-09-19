@@ -7,7 +7,6 @@ import {
   Paper,
   Typography,
   Button,
-  Divider,
 } from "@mui/material";
 
 import Snackbar from "@mui/material/Snackbar";
@@ -32,10 +31,9 @@ import {
   datePickerPopupStyle,
 } from "./prescriptionStyles";
 
-
-// =====================================================
-// OPTIONS
-// =====================================================
+/* =========================================================
+   OPTIONS
+========================================================= */
 
 const unitOptions = [
   "Tablet",
@@ -76,10 +74,9 @@ const instructionOptions = [
   "After Dinner",
 ];
 
-
-// =====================================================
-// COMPONENT
-// =====================================================
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 export default function PrescriptionUI(props) {
   const {
@@ -110,33 +107,35 @@ export default function PrescriptionUI(props) {
 
     remark,
     setRemark,
+
     followUpDate,
     setFollowUpDate,
+
     qrImage,
   } = props;
 
   return (
     <Box
       sx={{
-        // =============================================
-        // MAIN CONTAINER
-        // =============================================
-
         width: "100%",
         maxWidth: "100%",
         minWidth: 0,
 
         p: {
           xs: 1,
-          sm: 1,
+          sm: 1.5,
         },
 
-        backgroundColor: "#e4eceb",
+        bgcolor: "#F4F7F6",
 
         boxSizing: "border-box",
 
         overflowX: "hidden",
         overflowY: "visible",
+
+        /* =============================================
+           GLOBAL INPUT THEME
+        ============================================= */
 
         "& .MuiInputLabel-root.Mui-focused": {
           color: PRIMARY_COLOR,
@@ -163,12 +162,12 @@ export default function PrescriptionUI(props) {
         },
 
         "& .MuiMenuItem-root.Mui-selected": {
-          backgroundColor: "rgba(30, 102, 88, 0.12)",
+          backgroundColor: "rgba(7, 135, 106, 0.10)",
           color: PRIMARY_COLOR,
         },
 
         "& .MuiMenuItem-root.Mui-selected:hover": {
-          backgroundColor: "rgba(30, 102, 88, 0.18)",
+          backgroundColor: "rgba(7, 135, 106, 0.16)",
         },
 
         "& .MuiChip-colorPrimary": {
@@ -176,75 +175,77 @@ export default function PrescriptionUI(props) {
         },
       }}
     >
-
       {/* =====================================================
-          TOOLBAR
-      ===================================================== */}
+          TOP ACTION BUTTONS
+      ====================================================== */}
 
       <Box
         sx={{
           width: "100%",
-          maxWidth: "100%",
           minWidth: 0,
 
-          display: "flex",
+          display: isDownloading ? "none" : "flex",
 
           justifyContent: "flex-end",
-
           alignItems: "center",
 
-          flexWrap: "nowrap",
+          flexWrap: "wrap",
 
           gap: {
-            xs: 0.5,
+            xs: 0.7,
             sm: 1,
           },
 
-          mb: 2,
-
-          boxSizing: "border-box",
+          mb: {
+            xs: 1.2,
+            sm: 1.5,
+          },
         }}
       >
-
-        {/* ================= PRINT ================= */}
+        {/* =========================
+            PRINT
+        ========================== */}
 
         {!isPatient && (
           <Button
             onClick={() => window.print()}
             variant="contained"
+            disableElevation
             sx={{
               minWidth: {
-                xs: 0,
+                xs: 64,
                 sm: 80,
               },
 
               px: {
-                xs: 1.5,
+                xs: 1.4,
                 sm: 2,
               },
 
               py: {
-                xs: 0.8,
-                sm: 1,
+                xs: 0.65,
+                sm: 0.75,
               },
+
+              borderRadius: 1.5,
 
               fontSize: {
                 xs: "12px",
-                sm: "14px",
+                sm: "13px",
               },
+
+              fontWeight: 600,
+
+              textTransform: "none",
 
               whiteSpace: "nowrap",
 
-              backgroundColor: PRIMARY_COLOR,
+              bgcolor: "primary.main",
 
               color: WHITE,
 
               "&:hover": {
-                backgroundColor: PRIMARY_COLOR,
-              },
-
-              "&:focus": {
-                outline: "none",
+                bgcolor: "primary.dark",
               },
             }}
           >
@@ -252,50 +253,53 @@ export default function PrescriptionUI(props) {
           </Button>
         )}
 
-
-        {/* ================= PDF ================= */}
+        {/* =========================
+            DOWNLOAD PDF
+        ========================== */}
 
         <Button
           onClick={downloadPdf}
           variant="contained"
+          disableElevation
           sx={{
             minWidth: {
-              xs: 0,
-              sm: 80,
+              xs: 64,
+              sm: 100,
             },
 
             px: {
-              xs: 1.5,
+              xs: 1.4,
               sm: 2,
             },
 
             py: {
-              xs: 0.8,
-              sm: 1,
+              xs: 0.65,
+              sm: 0.75,
             },
+
+            borderRadius: 1.5,
 
             fontSize: {
               xs: "12px",
-              sm: "14px",
+              sm: "13px",
             },
+
+            fontWeight: 600,
+
+            textTransform: "none",
 
             whiteSpace: "nowrap",
 
-            backgroundColor: PRIMARY_COLOR,
+            bgcolor: "primary.main",
 
             color: WHITE,
 
             "&:hover": {
-              backgroundColor: PRIMARY_COLOR,
-            },
-
-            "&:focus": {
-              outline: "none",
+              bgcolor: "primary.dark",
             },
           }}
         >
-
-          {/* Desktop */}
+          {/* DESKTOP */}
 
           <Box
             component="span"
@@ -306,11 +310,10 @@ export default function PrescriptionUI(props) {
               },
             }}
           >
-            Download Pdf
+            Download PDF
           </Box>
 
-
-          {/* Mobile */}
+          {/* MOBILE */}
 
           <Box
             component="span"
@@ -323,56 +326,58 @@ export default function PrescriptionUI(props) {
           >
             PDF
           </Box>
-
         </Button>
 
-
-        {/* ================= SAVE / UPDATE ================= */}
+        {/* =========================
+            SAVE / UPDATE
+        ========================== */}
 
         {!isPatient &&
           editable &&
           isTodayAppointment && (
             <Button
               variant="contained"
+              disableElevation
               onClick={handleSavePrescription}
               sx={{
                 minWidth: {
-                  xs: 0,
-                  sm: 80,
+                  xs: 64,
+                  sm: 110,
                 },
 
                 px: {
-                  xs: 1.5,
+                  xs: 1.4,
                   sm: 2,
                 },
 
                 py: {
-                  xs: 0.8,
-                  sm: 1,
+                  xs: 0.65,
+                  sm: 0.75,
                 },
+
+                borderRadius: 1.5,
 
                 fontSize: {
                   xs: "12px",
-                  sm: "14px",
+                  sm: "13px",
                 },
+
+                fontWeight: 600,
+
+                textTransform: "none",
 
                 whiteSpace: "nowrap",
 
-                backgroundColor: PRIMARY_COLOR,
+                bgcolor: "primary.main",
 
                 color: WHITE,
 
                 "&:hover": {
-                  backgroundColor: PRIMARY_COLOR,
-                },
-
-                "&:focus": {
-                  outline: "none",
+                  bgcolor: "primary.dark",
                 },
               }}
             >
-
-              {/* Desktop */}
+              {/* DESKTOP */}
 
               <Box
                 component="span"
@@ -388,8 +393,7 @@ export default function PrescriptionUI(props) {
                   : "Save Prescription"}
               </Box>
 
-
-              {/* Mobile */}
+              {/* MOBILE */}
 
               <Box
                 component="span"
@@ -404,69 +408,65 @@ export default function PrescriptionUI(props) {
                   ? "Update"
                   : "Save"}
               </Box>
-
             </Button>
           )}
-
       </Box>
-
 
       {/* =====================================================
           PRESCRIPTION PAPER
-      ===================================================== */}
+      ====================================================== */}
 
       <Paper
         ref={pdfRef}
+        elevation={0}
         sx={{
           width: "100%",
+
           maxWidth: 960,
+
           minWidth: 0,
 
           mx: "auto",
 
           p: {
-            xs: 1.5,
+            xs: isDownloading ? 2.5 : 1.5,
             sm: 3,
           },
 
-          borderRadius: 0.5,
+          bgcolor: "#FFFFFF",
 
-          backgroundColor: "#fff",
+          borderRadius: {
+            xs: 1,
+            sm: 1.5,
+          },
+
+          border: isDownloading
+            ? "none"
+            : "1px solid",
+
+          borderColor: "divider",
+
+          boxShadow: isDownloading
+            ? "none"
+            : "0 2px 10px rgba(0,0,0,0.04)",
 
           display: "flex",
 
           flexDirection: "column",
 
-          /*
-           * IMPORTANT:
-           * Previously fixed height was:
-           *
-           * height: isDownloading ? "1100px" : "auto"
-           *
-           * This can cause flex layout shifting while
-           * generating the PDF.
-           */
-
           height: "auto",
 
-          minHeight: isDownloading
-            ? "1100px"
-            : "auto",
+          // Fixed 1100px blank area removed
+          minHeight: "auto",
 
           boxSizing: "border-box",
 
-          overflowX: "hidden",
-
-          /*
-           * Do not hide vertical content during PDF generation.
-           */
-          overflowY: "visible",
+          overflow: "visible",
         }}
       >
-
         {/* =================================================
-            HEADER
-        ================================================= */}
+            PRESCRIPTION HEADER
+        ================================================== */}
 
         <Box
           sx={{
@@ -474,33 +474,29 @@ export default function PrescriptionUI(props) {
             minWidth: 0,
           }}
         >
-          <PrescriptionHeader
-            doctor={doctor}
+          <PrescriptionHeader doctor={doctor} />
+        </Box>
+
+        {/* =================================================
+            PATIENT INFORMATION
+        ================================================== */}
+
+        <Box
+          sx={{
+            width: "100%",
+            minWidth: 0,
+          }}
+        >
+          <PatientInfo
+            patient={patient}
+            dateNow={dateNow}
+            isDownloading={isDownloading}
           />
         </Box>
 
-
-        {/* =================================================
-            PATIENT INFO
-        ================================================= */}
-
-        <Box
-          sx={{
-            width: "100%",
-            minWidth: 0,
-          }}
-        >
-         <PatientInfo
-  patient={patient}
-  dateNow={dateNow}
-  isDownloading={isDownloading}
-/>
-        </Box>
-
-
         {/* =================================================
             DIAGNOSIS
-        ================================================= */}
+        ================================================== */}
 
         <Box
           sx={{
@@ -516,10 +512,9 @@ export default function PrescriptionUI(props) {
           />
         </Box>
 
-
         {/* =================================================
             RX + MEDICINE TABLE
-        ================================================= */}
+        ================================================== */}
 
         <Box
           sx={{
@@ -527,53 +522,23 @@ export default function PrescriptionUI(props) {
             minWidth: 0,
 
             display: "flex",
-
             flexDirection: "column",
-
             alignItems: "flex-start",
 
-            /*
-             * Prevent Rx and table from getting separated
-             * during PDF rendering.
-             */
             breakInside: "avoid",
             pageBreakInside: "avoid",
           }}
         >
-
-          {/* ================= RX SYMBOL ================= */}
-
-          <Typography
-            component="div"
-            sx={{
-              mt: 2,
-              mb: 1,
-
-              color: "#007BFF",
-
-              fontSize: "30px",
-
-              lineHeight: 1,
-
-              height: "32px",
-
-              flexShrink: 0,
-            }}
-          >
-            ℞
-          </Typography>
-
-
-          {/* ================= MEDICINE TABLE ================= */}
+         
+          {/* =========================
+              MEDICINE TABLE
+          ========================== */}
 
           <Box
             sx={{
               width: "100%",
               minWidth: 0,
 
-              /*
-               * Keep the table immediately below Rx.
-               */
               flexShrink: 0,
 
               breakInside: "avoid",
@@ -600,21 +565,25 @@ export default function PrescriptionUI(props) {
               autocompleteStyle={autocompleteStyle}
             />
           </Box>
-
         </Box>
-
 
         {/* =================================================
             FOOTER
-        ================================================= */}
+        ================================================== */}
 
         <Box
           sx={{
-            mt: isDownloading ? "auto" : 3,
+            mt: {
+              xs: 2,
+              sm: 2.5,
+            },
 
             flexShrink: 0,
 
             width: "100%",
+
+            breakInside: "avoid",
+            pageBreakInside: "avoid",
           }}
         >
           <PrescriptionFooter
@@ -634,16 +603,14 @@ export default function PrescriptionUI(props) {
             qrImage={qrImage}
           />
         </Box>
-
       </Paper>
-
 
       {/* =====================================================
           SNACKBAR
-      ===================================================== */}
+      ====================================================== */}
 
       <Snackbar
-        open={snackbar.open}
+        open={snackbar?.open || false}
         autoHideDuration={4000}
         onClose={() =>
           setSnackbar((prev) => ({
@@ -657,7 +624,7 @@ export default function PrescriptionUI(props) {
         }}
       >
         <Alert
-          severity={snackbar.severity}
+          severity={snackbar?.severity || "success"}
           variant="filled"
           onClose={() =>
             setSnackbar((prev) => ({
@@ -666,10 +633,9 @@ export default function PrescriptionUI(props) {
             }))
           }
         >
-          {snackbar.message}
+          {snackbar?.message || ""}
         </Alert>
       </Snackbar>
-
     </Box>
   );
 }

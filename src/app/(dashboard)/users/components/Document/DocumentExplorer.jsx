@@ -46,11 +46,8 @@ export const DocumentExplorer = ({
         {nodes.map((node) => {
           if (node.type !== "folder") return null;
 
-          const isExpanded =
-            expandedFolders?.[node.id] || false;
-
-          const isSelected =
-            selectedFolder === node.id;
+          const isExpanded = expandedFolders?.[node.id] || false;
+          const isSelected = selectedFolder === node.id;
 
           return (
             <Box
@@ -59,9 +56,9 @@ export const DocumentExplorer = ({
                 width: "100%",
               }}
             >
-              {/* =========================================
+              {/* =================================================
                   FOLDER ROW
-              ========================================== */}
+              ================================================= */}
 
               <ListItem
                 disableGutters
@@ -78,17 +75,17 @@ export const DocumentExplorer = ({
                 sx={{
                   minHeight: 38,
 
-                  pl: `${8 + depth * 14}px`,
+                  pl: `${7 + depth * 14}px`,
                   pr: 0.8,
-                  py: 0.35,
+                  py: 0.25,
 
-                  mb: 0.3,
+                  mb: 0.35,
 
                   position: "relative",
 
                   cursor: "pointer",
 
-                  borderRadius: 1,
+                  borderRadius: "7px",
 
                   bgcolor: isSelected
                     ? "secondary.light"
@@ -110,26 +107,25 @@ export const DocumentExplorer = ({
                       position: "absolute",
 
                       left: 0,
-                      top: 6,
-                      bottom: 6,
+                      top: 7,
+                      bottom: 7,
 
                       width: 3,
 
-                      borderRadius:
-                        "0 4px 4px 0",
+                      borderRadius: "0 4px 4px 0",
 
                       bgcolor: "primary.main",
                     },
                   }),
                 }}
               >
-                {/* =====================================
+                {/* =================================================
                     ARROW
-                ====================================== */}
+                ================================================= */}
 
                 <Box
                   sx={{
-                    width: 24,
+                    width: 22,
                     height: 28,
 
                     display: "flex",
@@ -140,7 +136,7 @@ export const DocumentExplorer = ({
 
                     color: isSelected
                       ? "primary.main"
-                      : "text.disabled",
+                      : "text.secondary",
                   }}
                 >
                   {isExpanded ? (
@@ -158,13 +154,13 @@ export const DocumentExplorer = ({
                   )}
                 </Box>
 
-                {/* =====================================
+                {/* =================================================
                     FOLDER ICON
-                ====================================== */}
+                ================================================= */}
 
                 <Box
                   sx={{
-                    width: 27,
+                    width: 25,
                     height: 28,
 
                     display: "flex",
@@ -179,26 +175,23 @@ export const DocumentExplorer = ({
                   {isExpanded ? (
                     <FolderOpenOutlinedIcon
                       sx={{
-                        fontSize: 20,
-
-                        // Folder icon ko yellow hi rakha
-                        // natural folder feel ke liye
-                        color: "warning.main",
+                        fontSize: 19,
+                        color: "primary.main",
                       }}
                     />
                   ) : (
                     <FolderOutlinedIcon
                       sx={{
-                        fontSize: 20,
-                        color: "warning.main",
+                        fontSize: 19,
+                        color: "primary.main",
                       }}
                     />
                   )}
                 </Box>
 
-                {/* =====================================
+                {/* =================================================
                     FOLDER NAME
-                ====================================== */}
+                ================================================= */}
 
                 <ListItemText
                   sx={{
@@ -210,22 +203,17 @@ export const DocumentExplorer = ({
                       noWrap
                       title={node.name}
                       sx={{
-                        fontSize: "0.8rem",
+                       fontSize: "12.5px",
+                        lineHeight: 1.35,
 
-                        lineHeight: 1.3,
-
-                        fontWeight: isSelected
-                          ? 600
-                          : 500,
+                        fontWeight: isSelected ? 600 : 500,
 
                         color: isSelected
-                          ? "primary.dark"
+                          ? "text.primary"
                           : "text.primary",
 
                         overflow: "hidden",
-
-                        textOverflow:
-                          "ellipsis",
+                        textOverflow: "ellipsis",
                       }}
                     >
                       {node.name}
@@ -234,9 +222,9 @@ export const DocumentExplorer = ({
                 />
               </ListItem>
 
-              {/* =========================================
+              {/* =================================================
                   CHILDREN
-              ========================================== */}
+              ================================================= */}
 
               {node.children && (
                 <Collapse
@@ -251,128 +239,96 @@ export const DocumentExplorer = ({
                       width: "100%",
                     }}
                   >
-                    {/* =================================
+                    {/* =============================================
                         CREATE NEW FOLDER INPUT
-                    ================================== */}
+                    ============================================= */}
 
                     {creatingFolder &&
-                      parentForNewFolder ===
-                        node.id && (
+                      parentForNewFolder === node.id && (
                         <ListItem
                           disableGutters
                           sx={{
                             minHeight: 38,
 
-                            pl: `${
-                              46 +
-                              depth * 14
-                            }px`,
+                            pl: `${44 + depth * 14}px`,
 
                             pr: 1,
-                            py: 0.45,
+                            py: 0.35,
                           }}
                         >
-                          {/* Folder Icon */}
-
                           <FolderOutlinedIcon
                             sx={{
                               mr: 0.8,
 
                               flexShrink: 0,
 
-                              fontSize: 19,
+                              fontSize: 18,
 
-                              color:
-                                "warning.main",
+                              color: "primary.main",
                             }}
                           />
-
-                          {/* Input */}
 
                           <Box
                             component="input"
                             autoFocus
-                            value={
-                              newFolderName
-                            }
+                            value={newFolderName}
                             placeholder="Folder name"
                             onChange={(e) =>
                               setNewFolderName(
                                 e.target.value
                               )
                             }
-                            onBlur={
-                              saveNewFolder
-                            }
+                            onBlur={saveNewFolder}
                             onClick={(e) =>
                               e.stopPropagation()
                             }
                             onKeyDown={(e) => {
                               e.stopPropagation();
 
-                              if (
-                                e.key === "Enter"
-                              ) {
+                              if (e.key === "Enter") {
                                 saveNewFolder();
                               }
 
-                              if (
-                                e.key === "Escape"
-                              ) {
-                                setCreatingFolder(
-                                  false
-                                );
+                              if (e.key === "Escape") {
+                                setCreatingFolder(false);
 
                                 setParentForNewFolder(
                                   null
                                 );
 
-                                setNewFolderName(
-                                  ""
-                                );
+                                setNewFolderName("");
                               }
                             }}
                             sx={{
                               width: "100%",
-
                               minWidth: 0,
 
                               height: 30,
 
                               px: 1,
 
-                              boxSizing:
-                                "border-box",
+                              boxSizing: "border-box",
 
-                              border:
-                                "1px solid",
+                              border: "1px solid",
+                              borderColor: "divider",
 
-                              borderColor:
-                                "divider",
-
-                              borderRadius: 1,
+                              borderRadius: "6px",
 
                               outline: "none",
 
-                              fontFamily:
-                                "inherit",
+                              fontFamily: "inherit",
+                              fontSize: "13px",
 
-                              fontSize:
-                                "0.78rem",
+                              color: "text.primary",
 
-                              color:
-                                "text.primary",
-
-                              bgcolor:
-                                "background.paper",
+                              bgcolor: "background.paper",
 
                               transition:
-                                "all 0.2s ease",
+                                "border-color 0.2s ease, box-shadow 0.2s ease",
 
                               "&::placeholder": {
-                                color:
-                                  "text.disabled",
-                                opacity: 1,
+                                color: "text.secondary",
+                                opacity: 0.7,
                               },
 
                               "&:hover": {
@@ -384,17 +340,17 @@ export const DocumentExplorer = ({
                                 borderColor:
                                   "primary.main",
 
-                                boxShadow: (
-                                  theme
-                                ) =>
-                                  `0 0 0 3px ${theme.palette.secondary.light}`,
+                                boxShadow: (theme) =>
+                                  `0 0 0 2px ${theme.palette.secondary.light}`,
                               },
                             }}
                           />
                         </ListItem>
                       )}
 
-                    {/* CHILD FOLDERS */}
+                    {/* =============================================
+                        CHILD FOLDERS
+                    ============================================= */}
 
                     {renderTree(
                       node.children,
@@ -417,35 +373,31 @@ export const DocumentExplorer = ({
   return (
     <Box
       sx={{
-        width: isMobile
-          ? "100%"
-          : 260,
+        width: isMobile ? "100%" : 250,
 
-        minWidth: isMobile
-          ? "auto"
-          : 260,
+        minWidth: isMobile ? "auto" : 250,
 
         height: "100%",
 
         display: "flex",
-
         flexDirection: "column",
 
         flexShrink: 0,
 
-        bgcolor:
-          "background.paper",
+        bgcolor: "background.paper",
 
         borderRight: isMobile
           ? "none"
           : "1px solid",
 
         borderColor: "divider",
+
+        fontSize: "13px",
       }}
     >
       {/* =================================================
-          HEADER
-      ================================================== */}
+          EXPLORER HEADER
+      ================================================= */}
 
       <Box
         sx={{
@@ -454,21 +406,15 @@ export const DocumentExplorer = ({
           px: 1.5,
 
           display: "flex",
-
           alignItems: "center",
-
-          justifyContent:
-            "space-between",
+          justifyContent: "space-between",
 
           flexShrink: 0,
 
-          borderBottom:
-            "1px solid",
-
+          borderBottom: "1px solid",
           borderColor: "divider",
 
-          bgcolor:
-            "background.paper",
+          bgcolor: "background.paper",
         }}
       >
         {/* TITLE */}
@@ -477,135 +423,110 @@ export const DocumentExplorer = ({
           sx={{
             display: "flex",
             alignItems: "center",
-
             gap: 0.8,
+            minWidth: 0,
           }}
         >
           <FolderOutlinedIcon
             sx={{
               fontSize: 18,
-
-              color:
-                "primary.main",
+              color: "primary.main",
             }}
           />
 
           <Typography
             sx={{
-              fontSize:
-                "0.78rem",
+            fontSize: "12.5px",
 
-              fontWeight: 700,
+              fontWeight: 600,
 
-              color:
-                "primary.dark",
+              // EXPLORER BLACK
+              color: "text.primary",
 
-              letterSpacing:
-                "0.5px",
+              letterSpacing: "0.2px",
+
+              lineHeight: 1,
             }}
           >
             EXPLORER
           </Typography>
         </Box>
 
-        {/* =============================================
-            HEADER ACTION
-        ============================================== */}
+        {/* =================================================
+            CREATE FOLDER BUTTON
+        ================================================= */}
 
-        <Box
-          sx={{
-            display: "flex",
+        <Tooltip title="Create Folder" arrow>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              createFolder();
+            }}
+            sx={{
+              width: 30,
+              height: 30,
 
-            alignItems: "center",
+              color: "text.primary",
 
-            gap: 0.3,
-          }}
-        >
-          <Tooltip
-            title="Create Folder"
-            arrow
+              borderRadius: "6px",
+
+              transition:
+                "background-color 0.18s ease, color 0.18s ease",
+
+              "&:hover": {
+                bgcolor: "secondary.light",
+                color: "primary.main",
+              },
+            }}
           >
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                createFolder();
-              }}
+            <AddIcon
               sx={{
-                width: 32,
-                height: 32,
-
-                color:
-                  "primary.main",
-
-                borderRadius: 1,
-
-                transition:
-                  "all 0.2s ease",
-
-                "&:hover": {
-                  bgcolor:
-                    "secondary.light",
-
-                  color:
-                    "primary.dark",
-                },
+                fontSize: 20,
               }}
-            >
-              <AddIcon
-                sx={{
-                  fontSize: 20,
-                }}
-              />
-            </IconButton>
-          </Tooltip>
-        </Box>
+            />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       {/* =================================================
           FOLDER LIST
-      ================================================== */}
+      ================================================= */}
 
       <Box
         sx={{
           flex: 1,
 
           overflowY: "auto",
-
           overflowX: "hidden",
 
           px: 0.8,
+          py: 0.8,
 
-          py: 1,
+          bgcolor: "background.paper",
 
-          bgcolor:
-            "background.paper",
+          // Firefox
+          scrollbarWidth: "thin",
+          scrollbarColor: "transparent transparent",
 
-          // Scrollbar
+          // Chrome / Edge / Safari
+          "&::-webkit-scrollbar": {
+            width: 4,
+          },
 
-          "&::-webkit-scrollbar":
-            {
-              width: 5,
-            },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
 
-          "&::-webkit-scrollbar-track":
-            {
-              bgcolor:
-                "transparent",
-            },
+          "&::-webkit-scrollbar-thumb": {
+            background: "transparent",
+            borderRadius: 10,
+          },
 
-          "&::-webkit-scrollbar-thumb":
-            {
-              bgcolor: "divider",
-
-              borderRadius: 10,
-            },
-
-          "&::-webkit-scrollbar-thumb:hover":
-            {
-              bgcolor:
-                "text.disabled",
-            },
+          // scrollbar sirf hover par halka visible
+          "&:hover::-webkit-scrollbar-thumb": {
+            bgcolor: "divider",
+          },
         }}
       >
         <List

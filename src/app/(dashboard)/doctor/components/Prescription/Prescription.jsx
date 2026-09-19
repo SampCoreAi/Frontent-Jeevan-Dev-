@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 
 import dayjs from "dayjs";
-
+import PrescriptionPdfView from "./PrescriptionPdfView";
 import {
   appointmentService,
   prescriptionService,
@@ -37,6 +37,7 @@ export default function Prescription({
   const [apiData, setApiData] = useState(null);
   const [loading, setLoading] = useState(false);
   const pdfRef = useRef(null);
+  const pdfDownloadRef = useRef(null);
   const [canEdit, setCanEdit] = useState(false);
 
   const [isEditable, setIsEditable] = useState(true);
@@ -244,12 +245,13 @@ const isTodayAppointment = appointmentDate
           ? followUpDate.format("YYYY-MM-DD")
           : null,
 
-       medicines: validMedicines.map((row) => ({
-  medicine_name: row.name,
-  dose: row.dose,
-  frequency: row.freq,
-  duration: "5 days",
-  instructions: row.instr,
+     medicines: validMedicines.map((row) => ({
+  medicine_name: row.name?.trim() || "",
+  dose: row.dose || "",
+  unit: row.unit || "",
+  frequency: row.freq || "",
+  duration: row.duration || "",
+  instructions: row.instr || "",
 })),
       };
 
@@ -338,17 +340,19 @@ const isTodayAppointment = appointmentDate
   // MEDICINE ROW
   // =========================================================
 
-  const addRow = () =>
-    setRows([
-      ...rows,
-      {
-        name: "",
-        dose: "",
-        unit: "Tablet",
-        freq: "OD",
-        instr: "",
-      },
-    ]);
+const addRow = () => {
+  setRows((prev) => [
+    ...prev,
+    {
+      name: "",
+      dose: "",
+      unit: "",
+      freq: "",
+      instr: "",
+      duration: "",
+    },
+  ]);
+};
 
   const removeRow = (idx) =>
     setRows(
@@ -437,49 +441,33 @@ const createPdfSafeClone = (element) => {
   // =========================================================
 
 const downloadPdf = async () => {
-  if (isDownloading || !pdfRef.current) return;
+  if (
+    isDownloading ||
+    !pdfDownloadRef.current
+  ) {
+    return;
+  }
 
   try {
     setIsDownloading(true);
 
-    await waitForImages(pdfRef.current);
-
     const html2pdf =
       (await import("html2pdf.js")).default;
 
-    const element = pdfRef.current;
+    // Images / QR load hone ka wait
+    await waitForImages(
+      pdfDownloadRef.current
+    );
 
-    // Save original inline styles
-    const originalStyles = [];
+    // Fonts ready
+    if (document.fonts?.ready) {
+      await document.fonts.ready;
+    }
 
-    // Temporarily replace problematic computed colors
-    const allElements = [
-      element,
-      ...element.querySelectorAll("*"),
-    ];
-
-    allElements.forEach((el) => {
-      const computed = window.getComputedStyle(el);
-
-      originalStyles.push({
-        el,
-        color: el.style.color,
-        backgroundColor: el.style.backgroundColor,
-        borderColor: el.style.borderColor,
-      });
-
-      if (computed.color.includes("oklch")) {
-        el.style.color = "#1f2937";
-      }
-
-      if (computed.backgroundColor.includes("oklch")) {
-        el.style.backgroundColor = "#ffffff";
-      }
-
-      if (computed.borderColor.includes("oklch")) {
-        el.style.borderColor = "#d1d5db";
-      }
-    });
+    // Browser ko layout settle karne do
+    await new Promise((resolve) =>
+      setTimeout(resolve, 150)
+    );
 
     await html2pdf()
       .set({
@@ -496,7 +484,12 @@ const downloadPdf = async () => {
           scale: 2,
           useCORS: true,
           allowTaint: true,
+          backgroundColor: "#ffffff",
+
+          scrollX: 0,
           scrollY: 0,
+
+          windowWidth: 794,
         },
 
         jsPDF: {
@@ -506,49 +499,38 @@ const downloadPdf = async () => {
         },
 
         pagebreak: {
-          mode: ["avoid-all"],
+          mode: ["css", "legacy"],
         },
       })
-      .from(element)
+      .from(pdfDownloadRef.current)
       .save();
-
-    // Restore original styles
-    originalStyles.forEach(
-      ({
-        el,
-        color,
-        backgroundColor,
-        borderColor,
-      }) => {
-        el.style.color = color;
-        el.style.backgroundColor = backgroundColor;
-        el.style.borderColor = borderColor;
-      }
-    );
-
   } catch (err) {
-    console.error("PDF download error:", err);
+    console.error(
+      "PDF download error:",
+      err
+    );
 
     setSnackbar({
       open: true,
       severity: "error",
       message:
-        err?.message || "Failed to download PDF.",
+        err?.message ||
+        "Failed to download PDF.",
     });
-
   } finally {
     setIsDownloading(false);
   }
 };
 
-  return (
+ return (
+  <>
     <PrescriptionUI
       isPatient={isPatient}
       editable={editable}
       isTodayAppointment={isTodayAppointment}
-      isDownloading={isDownloading}
+      isDownloading={false}
       snackbar={snackbar}
-        apiData={apiData}
+      apiData={apiData}
       setSnackbar={setSnackbar}
       handleSavePrescription={handleSavePrescription}
       handleClick={handleClick}
@@ -569,5 +551,33 @@ const downloadPdf = async () => {
       setFollowUpDate={setFollowUpDate}
       qrImage={qrImage}
     />
-  );
+
+    {/* ===============================================
+        PDF ONLY VIEW
+    =============================================== */}
+
+    <div
+      style={{
+        position: "fixed",
+        left: "-10000px",
+        top: 0,
+        width: "794px",
+        pointerEvents: "none",
+      }}
+    >
+      <div ref={pdfDownloadRef}>
+        <PrescriptionPdfView
+          doctor={doctor}
+          patient={patient}
+          dateNow={dateNow}
+          diagnosis={diagnosis}
+          medicines={rows}
+          remark={remark}
+          followUpDate={followUpDate}
+          qrImage={qrImage}
+        />
+      </div>
+    </div>
+  </>
+);
 }

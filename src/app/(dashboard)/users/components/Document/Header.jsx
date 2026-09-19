@@ -1,6 +1,12 @@
 "use client";
 
-import { Box, Typography, Button, IconButton } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Button,
+  IconButton,
+} from "@mui/material";
+
 import UploadIcon from "@mui/icons-material/Upload";
 import ViewModuleIcon from "@mui/icons-material/ViewModule";
 import ViewListIcon from "@mui/icons-material/ViewList";
@@ -13,29 +19,62 @@ export const Header = ({
   setDrawerOpen,
   currentFolderName,
   setOpenUpload,
+
+  // NEW
+  setUploadSuccess,
+  setUploadProgress,
+
   viewMode,
   setViewMode,
 }) => {
+  // ============================================
+  // OPEN UPLOAD DIALOG
+  // ============================================
+
+  const handleOpenUpload = () => {
+    // Previous upload result clear
+    setUploadSuccess?.("");
+
+    // Previous progress clear
+    setUploadProgress?.(0);
+
+    // Fresh upload dialog open
+    setOpenUpload(true);
+  };
+
   return (
     <Box
       sx={{
         height: isMobile ? 50 : 56,
         minHeight: isMobile ? 50 : 56,
-        borderBottom: "1px solid #898989",
+
+        borderBottom: "1px solid",
+        borderColor: "divider",
+
         px: isMobile ? 1.5 : isTablet ? 2 : 3,
+
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        bgcolor: "#ffffff",
+
+        bgcolor: "background.paper",
+
         flexShrink: 0,
+
         gap: isMobile ? 1 : 2,
       }}
     >
+      {/* ============================================
+          LEFT SIDE
+      ============================================ */}
+
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
+
           gap: 1,
+
           flex: 1,
           minWidth: 0,
         }}
@@ -43,88 +82,195 @@ export const Header = ({
         {isMobile && (
           <IconButton
             onClick={() => setDrawerOpen(true)}
-            sx={{ mr: 0.5 }}
             size="small"
+            sx={{
+              mr: 0.5,
+
+              width: 30,
+              height: 30,
+
+              color: "text.primary",
+            }}
           >
-            <MenuIcon sx={{ color: "#0f4f3f", fontSize: 20 }} />
+            <MenuIcon
+              sx={{
+                fontSize: 20,
+              }}
+            />
           </IconButton>
         )}
+
         <Typography
-          fontWeight={600}
-          color="#0f4f3f"
           noWrap
+          title={currentFolderName}
           sx={{
-            fontSize: isMobile
-              ? "0.85rem"
+            fontSize: "13px",
+
+            fontWeight: 600,
+
+            color: "text.primary",
+
+            maxWidth: isMobile
+              ? "120px"
               : isTablet
-              ? "0.95rem"
-              : "1rem",
-            maxWidth: isMobile ? "120px" : isTablet ? "200px" : "none",
+              ? "200px"
+              : "none",
+
             overflow: "hidden",
             textOverflow: "ellipsis",
           }}
-          title={currentFolderName}
         >
           {currentFolderName}
         </Typography>
       </Box>
 
+      {/* ============================================
+          RIGHT SIDE
+      ============================================ */}
+
       <Box
         sx={{
           display: "flex",
-          gap: isMobile ? 0.5 : 1,
+
+          gap: isMobile ? 0.4 : 0.7,
+
           alignItems: "center",
+
           flexShrink: 0,
         }}
       >
+        {/* ============================================
+            UPLOAD BUTTON
+        ============================================ */}
+
         <Button
-          size={isMobile ? "small" : isTablet ? "medium" : "medium"}
+          size="small"
           startIcon={!isMobile && <UploadIcon />}
           variant="contained"
-          onClick={() => setOpenUpload(true)}
+          onClick={handleOpenUpload}
           sx={{
-            bgcolor: "#0f4f3f",
-            "&:hover": { bgcolor: "#0c3f33" },
+            minHeight: 34,
+
+            minWidth: isMobile ? 38 : "auto",
+
+            px: isMobile ? 1 : 1.7,
+            py: 0.5,
+
+            bgcolor: "primary.main",
+
+            color: "primary.contrastText",
+
             textTransform: "none",
-            fontSize: isMobile
-              ? "0.7rem"
-              : isTablet
-              ? "0.8rem"
-              : "0.875rem",
-            padding: isMobile
-              ? "3px 8px"
-              : isTablet
-              ? "4px 12px"
-              : "6px 16px",
-            minWidth: isMobile ? "60px" : "auto",
+
+            fontSize: "13px",
+
+            fontWeight: 600,
+
+            borderRadius: "7px",
+
+            boxShadow: "none",
+
             whiteSpace: "nowrap",
+
+            "&:hover": {
+              bgcolor: "primary.dark",
+              boxShadow: "none",
+            },
+
+            "& .MuiButton-startIcon": {
+              mr: 0.6,
+
+              "& svg": {
+                fontSize: 17,
+              },
+            },
           }}
         >
-          {isMobile ? <UploadIcon sx={{ fontSize: 16 }} /> : "Upload"}
+          {isMobile ? (
+            <UploadIcon
+              sx={{
+                fontSize: 17,
+              }}
+            />
+          ) : (
+            "Upload"
+          )}
         </Button>
+
+        {/* ============================================
+            GRID VIEW
+        ============================================ */}
 
         <IconButton
           size="small"
           onClick={() => setViewMode("grid")}
           sx={{
-            bgcolor: viewMode === "grid" ? "#e6f2ef" : "transparent",
-            color: viewMode === "grid" ? "#0f4f3f" : "inherit",
-            padding: isMobile ? "4px" : "8px",
+            width: 34,
+            height: 34,
+
+            borderRadius: "50%",
+
+            bgcolor:
+              viewMode === "grid"
+                ? "secondary.light"
+                : "transparent",
+
+            color:
+              viewMode === "grid"
+                ? "primary.main"
+                : "text.secondary",
+
+            transition: "all 0.2s ease",
+
+            "&:hover": {
+              bgcolor: "secondary.light",
+              color: "primary.main",
+            },
           }}
         >
-          <ViewModuleIcon sx={{ fontSize: isMobile ? 18 : 20 }} />
+          <ViewModuleIcon
+            sx={{
+              fontSize: 19,
+            }}
+          />
         </IconButton>
+
+        {/* ============================================
+            LIST VIEW
+        ============================================ */}
 
         <IconButton
           size="small"
           onClick={() => setViewMode("list")}
           sx={{
-            bgcolor: viewMode === "list" ? "#e6f2ef" : "transparent",
-            color: viewMode === "list" ? "#0f4f3f" : "inherit",
-            padding: isMobile ? "4px" : "8px",
+            width: 34,
+            height: 34,
+
+            borderRadius: "50%",
+
+            bgcolor:
+              viewMode === "list"
+                ? "secondary.light"
+                : "transparent",
+
+            color:
+              viewMode === "list"
+                ? "primary.main"
+                : "text.secondary",
+
+            transition: "all 0.2s ease",
+
+            "&:hover": {
+              bgcolor: "secondary.light",
+              color: "primary.main",
+            },
           }}
         >
-          <ViewListIcon sx={{ fontSize: isMobile ? 18 : 20 }} />
+          <ViewListIcon
+            sx={{
+              fontSize: 19,
+            }}
+          />
         </IconButton>
       </Box>
     </Box>
