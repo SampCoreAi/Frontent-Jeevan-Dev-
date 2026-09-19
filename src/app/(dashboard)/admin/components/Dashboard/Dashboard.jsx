@@ -42,12 +42,12 @@ const Page = () => {
     const user = localStorage.getItem("user");
 
     if (!token) {
-      router.push("/Home/pages/Register");
+      router.push("/Home/pages/Login");
       return;
     }
 
     if (!user) {
-      router.push("/Home/pages/Register");
+      router.push("/Home/pages/Login");
       return;
     }
 
@@ -55,14 +55,14 @@ const Page = () => {
       const parsedUser = JSON.parse(user);
 
       if (parsedUser.role_id !== 4) {
-        router.push("/Home/pages/Register");
+        router.push("/Home/pages/Login");
         return;
       }
 
       setRoleId(parsedUser.role_id);
     } catch (error) {
       console.error("Invalid user data:", error);
-      router.push("/Home/pages/Register");
+      router.push("/Home/pages/Login");
     }
   }, [router]);
 

@@ -87,7 +87,7 @@ const SettingsContent = () => {
 
   const handleLogoutConfirm = () => {
     localStorage.clear();
-    window.location.href = "/Home/pages/Register";
+    window.location.href = "/Home/pages/Login";
   };
   const showSnackbar = (message, severity = "error") => {
     setSnackbarMessage(message);

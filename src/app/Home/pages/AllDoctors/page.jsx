@@ -135,20 +135,7 @@ export default function SearchPage() {
         return a.name.localeCompare(b.name);
       });
   }, [results, activeTab, sortBy]);
-  const forceLogin = () => {
-    if (isLoggedIn()) {
-      router.push("/Home/pages/Appointment");
-      return;
-    }
 
-    setSnackMsg("Please login first");
-    setSnackType("warning");
-    setSnackOpen(true);
-
-    timerRef.current = setTimeout(() => {
-      router.push("/Home/pages/Register");
-    }, 1500);
-  };
 
 
 
@@ -474,7 +461,7 @@ export default function SearchPage() {
                             color: "text.secondary",
                             "&:hover": { backgroundColor: "hover.primary" },
                           }}
-                          onClick={() => router.push("/Home/pages/Register")}
+                          onClick={() => router.push("/Home/pages/Login")}
 
                         >
                           Book Appointment
@@ -486,7 +473,7 @@ export default function SearchPage() {
                             borderColor: "border.third",
                             color: "text.third",
                           }}
-                          onClick={() => router.push("/Home/pages/Register")}
+                          onClick={() => router.push("/Home/pages/Login")}
                         >
                           View Details
                         </Button>
