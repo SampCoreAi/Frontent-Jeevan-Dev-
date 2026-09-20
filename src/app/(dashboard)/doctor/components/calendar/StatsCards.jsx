@@ -5,107 +5,140 @@
 import React from "react";
 
 import {
-  Grid,
-  Card,
-  Typography,
   Box,
+  Card,
+  Grid,
+  Typography,
 } from "@mui/material";
 
-import PersonIcon from "@mui/icons-material/Person";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import PendingIcon from "@mui/icons-material/Pending";
-import CancelIcon from "@mui/icons-material/Cancel";
+import { alpha, useTheme } from "@mui/material/styles";
+
+import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
+import UpcomingOutlinedIcon from "@mui/icons-material/UpcomingOutlined";
+import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
+import EventBusyOutlinedIcon from "@mui/icons-material/EventBusyOutlined";
 
 const StatsCards = ({ stats }) => {
+  const theme = useTheme();
 
   const cards = [
     {
-      title: "Total Appointment",
-      value:
-        stats?.total_appointment || 0,
-
-      icon: <PersonIcon />,
+      title: "Total Appointments",
+      value: stats?.total_appointment || 0,
+      icon: <EventNoteOutlinedIcon />,
     },
-
     {
       title: "Total Upcoming",
-      value:
-        stats?.total_upcoming || 0,
-
-      icon: <CheckCircleIcon />,
+      value: stats?.total_upcoming || 0,
+      icon: <UpcomingOutlinedIcon />,
     },
-
     {
       title: "Total Completed",
-      value:
-        stats?.total_completed || 0,
-
-      icon: <PendingIcon />,
+      value: stats?.total_completed || 0,
+      icon: <CheckCircleOutlineRoundedIcon />,
     },
-
     {
       title: "Total Expired",
-      value:
-        stats?.total_expired || 0,
-
-      icon: <CancelIcon />,
+      value: stats?.total_expired || 0,
+      icon: <EventBusyOutlinedIcon />,
     },
   ];
 
   return (
-    <Box sx={{ width: "100%" }}>
-      <Grid container spacing={2}>
-
-        {cards.map((item, index) => (
-
+    <Box
+      sx={{
+        width: "100%",
+        mb: "12px",
+      }}
+    >
+      <Grid
+        container
+        spacing={{
+          xs: 1,
+          sm: 1.25,
+          md: 1.5,
+        }}
+      >
+        {cards.map((item) => (
           <Grid
-            key={index}
+            key={item.title}
             size={{
               xs: 12,
               sm: 6,
               md: 3,
             }}
           >
-
             <Card
+              elevation={0}
               sx={{
+                width: "100%",
+                minHeight: "82px",
+
                 display: "flex",
                 alignItems: "center",
-                justifyContent:
-                  "space-between",
+                justifyContent: "space-between",
 
-                p: 2,
-                borderRadius: 3,
-                boxShadow: 1,
-                border:
-                  "1px solid #1e6658",
+                gap: "10px",
 
-                transition: "0.3s",
+                px: {
+                  xs: "12px",
+                  sm: "14px",
+                },
 
-                backgroundColor: "#fff",
+                py: "11px",
 
-                minHeight: 110,
+                bgcolor: "background.paper",
+
+                border: "1px solid",
+                borderColor: "divider",
+
+                borderRadius: "10px",
+
+                boxShadow: `0 2px 8px ${alpha(
+                  theme.palette.text.primary,
+                  0.035
+                )}`,
+
+                transition:
+                  "border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease",
 
                 "&:hover": {
-                  transform:
-                    "translateY(-5px)",
+                  borderColor: alpha(
+                    theme.palette.primary.main,
+                    0.3
+                  ),
 
-                  boxShadow: 4,
+                  boxShadow: `0 4px 12px ${alpha(
+                    theme.palette.primary.main,
+                    0.08
+                  )}`,
+
+                  transform: "translateY(-2px)",
                 },
               }}
             >
+              {/* LEFT CONTENT */}
 
-              <Box>
-
+              <Box
+                sx={{
+                  minWidth: 0,
+                  flex: 1,
+                }}
+              >
                 <Typography
                   sx={{
-                    color: "#1e6658",
-                    fontWeight: 600,
+                    mb: "4px",
 
-                    fontSize: {
-                      xs: 14,
-                      sm: 15,
-                    },
+                    fontSize: "12.5px",
+                    lineHeight: 1.3,
+
+                    fontWeight: 550,
+
+                    color: "text.secondary",
+
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
                   {item.title}
@@ -113,55 +146,58 @@ const StatsCards = ({ stats }) => {
 
                 <Typography
                   sx={{
-                    color: "#1e6658",
-                    fontWeight: 700,
-
                     fontSize: {
-                      xs: 24,
-                      sm: 28,
+                      xs: "19px",
+                      sm: "20px",
                     },
 
-                    mt: 0.5,
+                    lineHeight: 1.2,
+
+                    fontWeight: 700,
+
+                    color: "text.primary",
                   }}
                 >
                   {item.value}
                 </Typography>
-
               </Box>
+
+              {/* ICON */}
 
               <Box
                 sx={{
-                  backgroundColor:
-                    "#e8f5f2",
+                  width: "38px",
+                  height: "38px",
 
-                  borderRadius: 2,
-
-                  p: 1.5,
+                  flexShrink: 0,
 
                   display: "flex",
                   alignItems: "center",
-                  justifyContent:
-                    "center",
+                  justifyContent: "center",
 
-                  color: "#1e6658",
+                  borderRadius: "9px",
+
+                  bgcolor: "secondary.light",
+
+                  color: "primary.main",
+
+                  border: "1px solid",
+
+                  borderColor: alpha(
+                    theme.palette.primary.main,
+                    0.08
+                  ),
 
                   "& svg": {
-                    fontSize: {
-                      xs: 28,
-                      sm: 34,
-                    },
+                    fontSize: "19px",
                   },
                 }}
               >
                 {item.icon}
               </Box>
-
             </Card>
-
           </Grid>
-
         ))}
-
       </Grid>
     </Box>
   );

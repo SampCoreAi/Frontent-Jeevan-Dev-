@@ -1,747 +1,1011 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+
 import {
-  Typography,
-  TextField,
   Box,
-  Divider,
   Button,
-  useMediaQuery,
-  useTheme,
   Dialog,
-  DialogTitle,
   DialogContent,
+  DialogTitle,
   IconButton,
+  TextField,
+  Typography,
 } from "@mui/material";
+
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
+import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
+import WorkHistoryOutlinedIcon from "@mui/icons-material/WorkHistoryOutlined";
+import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
+import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
+import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
+import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import CloseIcon from "@mui/icons-material/Close";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+
 import WorkingHoursModal from "./WorkingHoursModal";
+
+// ============================================================
+// COMMON STYLE
+// ============================================================
+
+const rowSx = {
+  minHeight: "46px",
+
+  display: "flex",
+  alignItems: "center",
+
+  gap: "10px",
+
+  px: "12px",
+  py: "7px",
+
+  border: "1px solid",
+  borderColor: "divider",
+
+  borderRadius: "8px",
+
+  bgcolor: "#f7f9f9",
+};
+
+const iconSx = {
+  width: "28px",
+  height: "28px",
+
+  flexShrink: 0,
+
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+
+  borderRadius: "7px",
+
+  bgcolor: "secondary.light",
+  color: "primary.main",
+
+  "& svg": {
+    fontSize: "16px",
+  },
+};
+
+const labelSx = {
+  width: "150px",
+  minWidth: "150px",
+
+  fontSize: "12.5px",
+  fontWeight: 650,
+
+  color: "text.primary",
+};
+
+const valueSx = {
+  flex: 1,
+  minWidth: 0,
+
+  fontSize: "12.5px",
+  lineHeight: 1.4,
+
+  fontWeight: 500,
+
+  color: "text.secondary",
+
+  wordBreak: "break-word",
+};
+
+const inputSx = {
+  flex: 1,
+
+  "& .MuiInputBase-root": {
+    minHeight: "34px",
+
+    fontSize: "12.5px",
+
+    borderRadius: "7px",
+
+    bgcolor: "background.paper",
+  },
+
+  "& .MuiInputBase-input": {
+    py: "7px",
+  },
+
+  "& .MuiOutlinedInput-notchedOutline": {
+    borderColor: "divider",
+  },
+
+  "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline":
+    {
+      borderColor: "primary.light",
+    },
+
+  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+    {
+      borderColor: "primary.main",
+      borderWidth: "1px",
+    },
+};
+
+// ============================================================
+// DETAIL ROW
+// ============================================================
+
+const DetailRow = ({
+  icon,
+  label,
+  value,
+  isEditing,
+  editable = false,
+  type = "text",
+  placeholder,
+  onChange,
+}) => {
+  return (
+    <Box sx={rowSx}>
+      <Box sx={iconSx}>
+        {icon}
+      </Box>
+
+      <Typography sx={labelSx}>
+        {label}
+      </Typography>
+
+      {isEditing && editable ? (
+        <TextField
+          fullWidth
+          size="small"
+          type={type}
+          value={value ?? ""}
+          placeholder={placeholder}
+          onChange={onChange}
+          sx={inputSx}
+        />
+      ) : (
+        <Typography sx={valueSx}>
+          {value !== null &&
+          value !== undefined &&
+          value !== ""
+            ? value
+            : "Not provided"}
+        </Typography>
+      )}
+    </Box>
+  );
+};
+
+// ============================================================
+// MAIN
+// ============================================================
 
 const ProfileDetails = ({
   profileData,
   isEditing,
   onFieldChange,
-  onLicenseUpload,
   onWorkingHoursChange,
 }) => {
-  const theme = useTheme();
-  const [documentsModalOpen, setDocumentsModalOpen] =
-    React.useState(false);
-  const isTablet = useMediaQuery(theme.breakpoints.down("lg"));
-  const [workingHoursModalOpen, setWorkingHoursModalOpen] =
-    React.useState(false);
-  // Component ke andar, return se pehle add karo
-  const formatDisplayTime = (timeStr) => {
-    if (!timeStr) return "";
-    const [hours, minutes] = timeStr.split(":").map(Number);
-    const ampm = hours >= 12 ? "PM" : "AM";
-    const displayHours = hours % 12 || 12;
-    return `${displayHours}:${String(minutes).padStart(2, "0")} ${ampm}`;
+  const [
+    documentsModalOpen,
+    setDocumentsModalOpen,
+  ] = useState(false);
+
+  const [
+    workingHoursModalOpen,
+    setWorkingHoursModalOpen,
+  ] = useState(false);
+
+  const languageValue =
+    Array.isArray(
+      profileData?.language
+    )
+      ? profileData.language.join(
+          ", "
+        )
+      : profileData?.language || "";
+
+  // ============================================================
+  // TIME
+  // ============================================================
+
+  const formatDisplayTime = (
+    time
+  ) => {
+    if (!time) return "";
+
+    const [hour, minute] =
+      time.split(":").map(Number);
+
+    const ampm =
+      hour >= 12 ? "PM" : "AM";
+
+    const displayHour =
+      hour % 12 || 12;
+
+    return `${displayHour}:${String(
+      minute
+    ).padStart(2, "0")} ${ampm}`;
   };
+
+  const days = [
+    ["monday", "Mon"],
+    ["tuesday", "Tue"],
+    ["wednesday", "Wed"],
+    ["thursday", "Thu"],
+    ["friday", "Fri"],
+    ["saturday", "Sat"],
+    ["sunday", "Sun"],
+  ];
+
+  // ============================================================
+  // DOCUMENTS
+  // ============================================================
+
   const documents = [
     {
-      name: "Medical Registration Certificate",
-      path: profileData?.medical_registration_certificate,
+      name:
+        "Medical Registration Certificate",
+
+      path:
+        profileData?.medical_registration_certificate,
     },
+
     {
-      name: "Medical Degree Certificate",
-      path: profileData?.medical_degree_certificate,
+      name:
+        "Medical Degree Certificate",
+
+      path:
+        profileData?.medical_degree_certificate,
     },
+
     {
-      name: "Government ID Proof",
-      path: profileData?.government_id_proof,
+      name:
+        "Government ID Proof",
+
+      path:
+        profileData?.government_id_proof,
     },
+
     {
       name: "Selfie",
+
       path: profileData?.selfie,
     },
   ];
+
+  const availableDocuments =
+    documents.filter(
+      (document) =>
+        document.path
+    );
+
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        gap: 3,
-        mt: 2,
-      }}
-    >
-      {/* Left Column */}
+    <>
       <Box
         sx={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          gap: 1.5,
+          display: "grid",
+
+          gridTemplateColumns: {
+            xs: "1fr",
+
+            lg: "minmax(0, 1.08fr) minmax(330px, .92fr)",
+          },
+
+          gap: "12px",
+
+          mt: "10px",
         }}
       >
-        {/* Language */}
+        {/* ====================================================
+            BASIC INFORMATION
+        ==================================================== */}
+
         <Box
           sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            alignItems: { xs: "flex-start", sm: "center" },
-            backgroundColor: "#f5f5f5",
-            borderRadius: 1,
-            padding: 1.5,
-            gap: 1.5,
-          }}
-        >
-          <Typography
-            variant="h6"
-            fontWeight={600}
-            color="#153933"
-            fontSize={{ xs: "1rem", sm: "1.25rem" }}
-          >
-            Language:
-          </Typography>
+            p: "12px",
 
-          {isEditing ? (
-            <TextField
-              value={profileData.language?.join(", ") || ""}
-              placeholder={!profileData.language ? "Enter language" : ""}
-              sx={{
+            border: "1px solid",
+            borderColor: "divider",
 
-                "& .MuiOutlinedInput-root": {
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#153933",
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1D9E75",
-                    borderWidth: "2px",
-                  },
-                  "& textarea::placeholder": {
-                    color: "#999",
-                    opacity: 1,
-                  },
-                },
-              }}
-              onChange={(e) =>
-                onFieldChange(
-                  "language",
-                  e.target.value.split(",").map((lang) => lang.trim())
-                )
-              }
-              variant="outlined"
-              size="small"
-            />
-          ) : (
-            <Typography
-              component="span"
-              sx={{
-                fontSize: { xs: 14, sm: 16, md: 18 },
-                lineHeight: 1.2,
-                color: "#7e8180",
-              }}
-            >
-              {Array.isArray(profileData.language)
-                ? profileData.language.join(", ")
-                : profileData.language || "Not provided"}
-            </Typography>
-          )}
-        </Box>
+            borderRadius: "10px",
 
-        {/* Email */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            alignItems: { xs: "flex-start", sm: "center" },
-            backgroundColor: "#f5f5f5",
-            borderRadius: 1,
-            padding: 1.5,
-            gap: 1.5,
-          }}
-        >
-          <Typography
-            variant="h6"
-            fontWeight={600}
-            color="#153933"
-            fontSize={{ xs: "1rem", sm: "1.25rem" }}
-          >
-            Email:
-          </Typography>
-          <Typography
-            component="span"
-            sx={{
-              fontSize: { xs: 14, sm: 16, md: 18 },
-              lineHeight: 1.2,
-              color: "#7e8180",
-            }}
-          >
-            {profileData.email || "Not provided"}
-          </Typography>
-        </Box>
-
-        {/* Phone Number */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            alignItems: { xs: "flex-start", sm: "center" },
-            backgroundColor: "#f5f5f5",
-            borderRadius: 1,
-            padding: 1.5,
-            gap: 1.5,
-          }}
-        >
-          <Typography
-            variant="h6"
-            fontWeight={600}
-            color="#153933"
-            fontSize={{ xs: "1rem", sm: "1.25rem" }}
-          >
-            Phone Number:
-          </Typography>
-          <Typography
-            component="span"
-            sx={{
-              fontSize: { xs: 14, sm: 16, md: 18 },
-              lineHeight: 1.2,
-              color: "#7e8180",
-            }}
-          >
-            {profileData.mobile || "Not provided"}
-          </Typography>
-        </Box>
-
-        {/* Experience */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            alignItems: { xs: "flex-start", sm: "center" },
-            backgroundColor: "#f5f5f5",
-            borderRadius: 1,
-            padding: 1.5,
-            gap: 1.5,
-          }}
-        >
-          <Typography
-            variant="h6"
-            fontWeight={600}
-            color="#153933"
-            fontSize={{ xs: "1rem", sm: "1.25rem" }}
-          >
-            Experience:
-          </Typography>
-
-          {isEditing ? (
-            <TextField
-              value={profileData.experience}
-              placeholder={
-                !profileData.experience ? "Enter experience (in years)" : ""
-              }
-              sx={{
-
-                "& .MuiOutlinedInput-root": {
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#153933",
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1D9E75",
-                    borderWidth: "2px",
-                  },
-                  "& textarea::placeholder": {
-                    color: "#999",
-                    opacity: 1,
-                  },
-                },
-              }}
-              onChange={(e) => onFieldChange("experience", e.target.value)}
-              variant="outlined"
-              size="small"
-              type="number"
-            />
-          ) : (
-            <Typography
-              component="span"
-              sx={{
-                fontSize: { xs: 14, sm: 16, md: 18 },
-                lineHeight: 1.2,
-                color: "#7e8180",
-              }}
-            >
-              {profileData.experience || "Not provided"}
-            </Typography>
-          )}
-        </Box>
-
-        {/* Consultation Fee */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            alignItems: { xs: "flex-start", sm: "center" },
-            backgroundColor: "#f5f5f5",
-            borderRadius: 1,
-            padding: 1.5,
-            gap: 1.5,
-          }}
-        >
-          <Typography
-            variant="h6"
-            fontWeight={600}
-            color="#153933"
-            fontSize={{ xs: "1rem", sm: "1.25rem" }}
-          >
-            Consultation Fee:
-          </Typography>
-
-          {isEditing ? (
-            <TextField
-              value={profileData.consultation_fee}
-              placeholder={
-                !profileData.consultationFee ? "Enter consultation fee" : ""
-              }
-              onChange={(e) =>
-                onFieldChange("consultation_fee", e.target.value)
-              }
-              variant="outlined"
-              size="small"
-              type="number"
-              sx={{
-
-                "& .MuiOutlinedInput-root": {
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#153933",
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1D9E75",
-                    borderWidth: "2px",
-                  },
-                  "& textarea::placeholder": {
-                    color: "#999",
-                    opacity: 1,
-                  },
-                },
-              }}
-            />
-          ) : (
-            <Typography
-              component="span"
-              sx={{
-                fontSize: { xs: 14, sm: 16, md: 18 },
-                lineHeight: 1.2,
-                color: "#7e8180",
-              }}
-            >
-              {profileData.consultation_fee || "Not provided"}
-            </Typography>
-          )}
-        </Box>
-
-        {/* Medical License */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            alignItems: { xs: "flex-start", sm: "center" },
-            backgroundColor: "#f5f5f5",
-            borderRadius: 1,
-            padding: 1.5,
-            gap: 1.5,
-          }}
-        >
-          <Typography
-            variant="h6"
-            fontWeight={600}
-            color="#153933"
-            fontSize={{ xs: "1rem", sm: "1.25rem" }}
-          >
-            Medical license / Reg. no:
-          </Typography>
-
-          {isEditing ? (
-            <TextField
-              value={profileData.medical_registration_number}
-              placeholder={
-                !profileData.medicalLicense
-                  ? "Enter medical license / registration no."
-                  : ""
-              }
-              onChange={(e) => onFieldChange("medicalLicense", e.target.value)}
-              variant="outlined"
-              size="small"
-              sx={{
-
-                "& .MuiOutlinedInput-root": {
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#153933",
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1D9E75",
-                    borderWidth: "2px",
-                  },
-                  "& textarea::placeholder": {
-                    color: "#999",
-                    opacity: 1,
-                  },
-                },
-              }}
-            />
-          ) : (
-            <Typography
-              component="span"
-              sx={{
-                fontSize: { xs: 14, sm: 16, md: 18 },
-                lineHeight: 1.2,
-                color: "#7e8180",
-              }}
-            >
-              {profileData.medical_registration_number || "Not provided"}
-            </Typography>
-          )}
-        </Box>
-
-        {/* Working Hours Modal */}
-        <WorkingHoursModal
-          open={workingHoursModalOpen}
-          onClose={() => setWorkingHoursModalOpen(false)}
-          workingHours={profileData.workingHours}
-          onWorkingHoursChange={onWorkingHoursChange}
-        />
-      </Box>
-
-      {!isTablet && (
-        <Divider
-          orientation="vertical"
-          flexItem
-          sx={{ backgroundColor: "#14b8a6", width: 2 }}
-        />
-      )}
-
-      {/* Right Column */}
-      <Box
-        sx={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          gap: 1.5,
-        }}
-      >
-        {/* Working Hours Section */}
-        <Box
-          sx={{
-            width: "100%",
-
-            backgroundColor: "#f5f5f5",
-            borderRadius: 0.5,
-            padding: 2,
+            bgcolor:
+              "background.paper",
           }}
         >
           <Box
             sx={{
               display: "flex",
-              justifyContent: "space-between",
               alignItems: "center",
-              mb: 2,
+
+              gap: "8px",
+
+              mb: "10px",
             }}
           >
+            <Box sx={iconSx}>
+              <PersonOutlineIcon />
+            </Box>
+
             <Typography
-              variant="h6"
-              fontWeight={600}
-              color="#153933"
-              fontSize={{ xs: "1rem", sm: "1.25rem" }}
+              sx={{
+                fontSize: "15px",
+                fontWeight: 700,
+
+                color:
+                  "text.primary",
+              }}
             >
-              Working Hours:
+              Basic Information
             </Typography>
-            {isEditing && (
-              <Button
-                variant="contained"
-                onClick={() => setWorkingHoursModalOpen(true)}
-                sx={{
-                  backgroundColor: "#14b8a6",
-                  "&:hover": {
-                    backgroundColor: "#0f7468",
-                  },
-                  color: "white",
-                  textTransform: "none",
-                  fontWeight: 600,
-                  fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                  padding: { xs: "6px 12px", sm: "8px 20px" },
-                  borderRadius: "8px",
-                }}
-              >
-                Set Working Hours
-              </Button>
-            )}
           </Box>
 
-          {/* Display Working Hours Summary */}
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
-              gap: 1,
-              mt: 1,
-            }}
-          >
-            {[
-              { key: "monday", label: "Mon" },
-              { key: "tuesday", label: "Tue" },
-              { key: "wednesday", label: "Wed" },
-              { key: "thursday", label: "Thu" },
-              { key: "friday", label: "Fri" },
-              { key: "saturday", label: "Sat" },
-              { key: "sunday", label: "Sun" },
-            ].map((day) => {
-              const dayData = profileData.workingHours?.[day.key] || {
-                start: "",
-                end: "",
-              };
-
-              // Auto-determine if closed (no time set)
-              const isClosed = !dayData.start || !dayData.end;
-
-              return (
-                <Box
-                  key={day.key}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "8px 12px",
-                    backgroundColor: "#ffffff",
-                    borderRadius: "8px",
-                    border: "1px solid #e0e0e0",
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontWeight: 600,
-                      color: "#153933",
-                      fontSize: "0.85rem",
-                    }}
-                  >
-                    {day.label}
-                  </Typography>
-
-                  <Box
-                    sx={{
-                      px: 1.5,
-                      py: 0.5,
-                      borderRadius: "6px",
-                      backgroundColor: isClosed ? "#fdecea" : "#f3f4f6",
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontSize: "0.8rem",
-                        color: isClosed ? "#d32f2f" : "#4b5563",
-                        fontWeight: isClosed ? 600 : 500,
-                      }}
-                    >
-                      {isClosed
-                        ? "Closed"
-                        : dayData.start && dayData.end
-                          ? `${formatDisplayTime(dayData.start)} - ${formatDisplayTime(dayData.end)}`
-                          : "Not set"}
-                    </Typography>
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
-        </Box>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            alignItems: { xs: "flex-start", sm: "center" },
-            justifyContent: "space-between",
-            backgroundColor: "#f5f5f5",
-            borderRadius: 1,
-            padding: 1.5,
-            gap: 1.5,
-          }}
-        >
-          <Typography
-            variant="h6"
-            fontWeight={600}
-            color="#153933"
-            fontSize={{ xs: "1rem", sm: "1.25rem" }}
-          >
-            Documents:
-          </Typography>
-
-          <Button
-            variant="contained"
-            onClick={() => setDocumentsModalOpen(true)}
-
-            sx={{
-              backgroundColor: "#14b8a6",
-              "&:hover": {
-                backgroundColor: "#0f7468",
-              },
-              color: "white",
-              textTransform: "none",
-              fontWeight: 700,
-              borderRadius: "8px",
-            }}
-          >
-            View Documents
-          </Button>
-        </Box>
-        {/* Registration Number */}
-<Box
-  sx={{
-    display: "flex",
-    flexDirection: { xs: "column", sm: "row" },
-    alignItems: { xs: "flex-start", sm: "center" },
-    justifyContent: "space-between",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 1,
-    padding: 1.5,
-    gap: 1.5,
-  }}
->
-  <Typography
-    variant="h6"
-    fontWeight={600}
-    color="#153933"
-    fontSize={{ xs: "1rem", sm: "1.25rem" }}
-  >
-    Registration Number:
-  </Typography>
-
- {isEditing ? (
-  <TextField
-    value={profileData?.registration_number || ""}
-    placeholder="Enter registration number"
-    onChange={(e) =>
-      onFieldChange(
-        "registration_number",
-        e.target.value
-      )
-    }
-    variant="outlined"
-    size="small"
-  />
-) : (
-  <Typography
-    sx={{
-      fontSize: { xs: 14, sm: 16, md: 18 },
-      color: "#7e8180",
-    }}
-  >
-    {profileData?.registration_number ||
-      "Not provided"}
-  </Typography>
-)}
-</Box>
-      </Box>
-      <Dialog
-        open={documentsModalOpen}
-        onClose={() => setDocumentsModalOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle
-          sx={{
-            fontWeight: 700,
-            color: "#153933",
-          }}
-        >
-          Documents
-        </DialogTitle>
-
-        <DialogContent>
           <Box
             sx={{
               display: "flex",
               flexDirection: "column",
-              gap: 1.5,
-              mt: 1,
+
+              gap: "6px",
             }}
           >
-            {documents.filter((document) => document.path).length > 0 ? (
-              documents
-                .filter((document) => document.path)
-                .map((document) => (
+            {/* LANGUAGE */}
+
+            <Box sx={rowSx}>
+              <Box sx={iconSx}>
+                <LanguageOutlinedIcon />
+              </Box>
+
+              <Typography
+                sx={labelSx}
+              >
+                Language
+              </Typography>
+
+              {isEditing ? (
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={
+                    languageValue
+                  }
+                  placeholder="Hindi, English"
+                  onChange={(
+                    event
+                  ) =>
+                    onFieldChange?.(
+                      "language",
+
+                      event.target.value
+                        .split(",")
+                        .map((item) =>
+                          item.trim()
+                        )
+                        .filter(Boolean)
+                    )
+                  }
+                  sx={inputSx}
+                />
+              ) : (
+                <Typography
+                  sx={valueSx}
+                >
+                  {languageValue ||
+                    "Not provided"}
+                </Typography>
+              )}
+            </Box>
+
+            <DetailRow
+              icon={
+                <EmailOutlinedIcon />
+              }
+              label="Email"
+              value={
+                profileData?.email
+              }
+            />
+
+            <DetailRow
+              icon={
+                <PhoneOutlinedIcon />
+              }
+              label="Phone Number"
+              value={
+                profileData?.mobile
+              }
+            />
+
+            <DetailRow
+              icon={
+                <WorkHistoryOutlinedIcon />
+              }
+              label="Experience"
+              value={
+                profileData?.experience
+              }
+              isEditing={isEditing}
+              editable
+              type="number"
+              placeholder="Years"
+              onChange={(event) =>
+                onFieldChange?.(
+                  "experience",
+                  event.target.value
+                )
+              }
+            />
+
+            <DetailRow
+              icon={
+                <PaymentsOutlinedIcon />
+              }
+              label="Consultation Fee"
+              value={
+                profileData?.consultation_fee
+              }
+              isEditing={isEditing}
+              editable
+              type="number"
+              placeholder="Fee"
+              onChange={(event) =>
+                onFieldChange?.(
+                  "consultation_fee",
+                  event.target.value
+                )
+              }
+            />
+
+            <DetailRow
+              icon={
+                <BadgeOutlinedIcon />
+              }
+              label="Medical License / Reg. No."
+              value={
+                profileData?.medical_registration_number
+              }
+              isEditing={isEditing}
+              editable
+              placeholder="License number"
+              onChange={(event) =>
+                onFieldChange?.(
+                  "medicalLicense",
+                  event.target.value
+                )
+              }
+            />
+
+            <DetailRow
+              icon={
+                <ConfirmationNumberOutlinedIcon />
+              }
+              label="Registration Number"
+              value={
+                profileData?.registration_number
+              }
+              isEditing={isEditing}
+              editable
+              placeholder="Registration number"
+              onChange={(event) =>
+                onFieldChange?.(
+                  "registration_number",
+                  event.target.value
+                )
+              }
+            />
+          </Box>
+        </Box>
+
+        {/* ====================================================
+            RIGHT SIDE
+        ==================================================== */}
+
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+
+            gap: "10px",
+          }}
+        >
+          {/* WORKING HOURS */}
+
+          <Box
+            sx={{
+              p: "12px",
+
+              border: "1px solid",
+              borderColor: "divider",
+
+              borderRadius: "10px",
+
+              bgcolor:
+                "background.paper",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent:
+                  "space-between",
+
+                mb: "10px",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+
+                  gap: "8px",
+                }}
+              >
+                <Box sx={iconSx}>
+                  <AccessTimeOutlinedIcon />
+                </Box>
+
+                <Typography
+                  sx={{
+                    fontSize:
+                      "15px",
+
+                    fontWeight:
+                      700,
+
+                    color:
+                      "text.primary",
+                  }}
+                >
+                  Working Hours
+                </Typography>
+              </Box>
+
+              {/* Edit Hours sirf edit mode me */}
+
+              {isEditing && (
+                <Typography
+                  component="button"
+                  onClick={() =>
+                    setWorkingHoursModalOpen(
+                      true
+                    )
+                  }
+                  sx={{
+                    border: 0,
+                    background: "none",
+
+                    cursor:
+                      "pointer",
+
+                    fontSize:
+                      "12.5px",
+
+                    fontWeight:
+                      600,
+
+                    color:
+                      "primary.main",
+                  }}
+                >
+                  Change
+                </Typography>
+              )}
+            </Box>
+
+            <Box
+              sx={{
+                display: "grid",
+
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, minmax(0,1fr))",
+                },
+
+                gap: "6px",
+              }}
+            >
+              {days.map(
+                ([key, label]) => {
+                  const day =
+                    profileData
+                      ?.workingHours?.[
+                      key
+                    ] || {};
+
+                  const closed =
+                    !day.start ||
+                    !day.end;
+
+                  return (
+                    <Box
+                      key={key}
+                      sx={{
+                        minHeight:
+                          "42px",
+
+                        display:
+                          "flex",
+
+                        alignItems:
+                          "center",
+
+                        justifyContent:
+                          "space-between",
+
+                        gap: "8px",
+
+                        px: "10px",
+
+                        border:
+                          "1px solid",
+
+                        borderColor:
+                          "divider",
+
+                        borderRadius:
+                          "7px",
+
+                        bgcolor:
+                          "background.default",
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontSize:
+                            "12.5px",
+
+                          fontWeight:
+                            650,
+
+                          color:
+                            "text.primary",
+                        }}
+                      >
+                        {label}
+                      </Typography>
+
+                      <Typography
+                        sx={{
+                          fontSize:
+                            "12.5px",
+
+                          color:
+                            closed
+                              ? "text.disabled"
+                              : "text.secondary",
+
+                          textAlign:
+                            "right",
+                        }}
+                      >
+                        {closed
+                          ? "Closed"
+                          : `${formatDisplayTime(
+                              day.start
+                            )} - ${formatDisplayTime(
+                              day.end
+                            )}`}
+                      </Typography>
+                    </Box>
+                  );
+                }
+              )}
+            </Box>
+          </Box>
+
+          {/* DOCUMENT */}
+
+          <Box
+            onClick={() =>
+              setDocumentsModalOpen(
+                true
+              )
+            }
+            sx={{
+              p: "12px",
+
+              border: "1px solid",
+              borderColor: "divider",
+
+              borderRadius: "10px",
+
+              bgcolor:
+                "background.paper",
+
+              cursor: "pointer",
+
+              "&:hover": {
+                borderColor:
+                  "primary.light",
+              },
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+
+                gap: "8px",
+
+                mb: "10px",
+              }}
+            >
+              <Box sx={iconSx}>
+                <DescriptionOutlinedIcon />
+              </Box>
+
+              <Typography
+                sx={{
+                  fontSize: "15px",
+
+                  fontWeight: 700,
+
+                  color:
+                    "text.primary",
+                }}
+              >
+                Documents
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                minHeight: "48px",
+
+                display: "flex",
+                alignItems: "center",
+
+                gap: "9px",
+
+                px: "10px",
+
+                bgcolor:
+                  "background.default",
+
+                border: "1px solid",
+                borderColor: "divider",
+
+                borderRadius: "8px",
+              }}
+            >
+              <Box sx={iconSx}>
+                <DescriptionOutlinedIcon />
+              </Box>
+
+              <Box sx={{ flex: 1 }}>
+                <Typography
+                  sx={{
+                    fontSize:
+                      "12.5px",
+
+                    fontWeight:
+                      600,
+
+                    color:
+                      "text.primary",
+                  }}
+                >
+                  {
+                    availableDocuments.length
+                  }{" "}
+                  documents available
+                </Typography>
+              </Box>
+
+              <ArrowForwardIosIcon
+                sx={{
+                  fontSize: "13px",
+
+                  color:
+                    "text.secondary",
+                }}
+              />
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* WORKING HOURS */}
+
+      <WorkingHoursModal
+        open={
+          workingHoursModalOpen
+        }
+        onClose={() =>
+          setWorkingHoursModalOpen(
+            false
+          )
+        }
+        workingHours={
+          profileData?.workingHours
+        }
+        onWorkingHoursChange={
+          onWorkingHoursChange
+        }
+      />
+
+      {/* DOCUMENT DIALOG */}
+
+      <Dialog
+        open={documentsModalOpen}
+        onClose={() =>
+          setDocumentsModalOpen(
+            false
+          )
+        }
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            borderRadius: "10px",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent:
+              "space-between",
+
+            fontSize: "15px",
+            fontWeight: 700,
+
+            borderBottom:
+              "1px solid",
+
+            borderColor:
+              "divider",
+          }}
+        >
+          Documents
+
+          <IconButton
+            size="small"
+            onClick={() =>
+              setDocumentsModalOpen(
+                false
+              )
+            }
+          >
+            <CloseIcon
+              sx={{
+                fontSize: "18px",
+              }}
+            />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent
+          sx={{
+            p: "14px !important",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+
+              gap: "7px",
+            }}
+          >
+            {availableDocuments.length ? (
+              availableDocuments.map(
+                (document) => (
                   <Box
-                    key={document.name}
+                    key={
+                      document.name
+                    }
                     sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 2,
-                      p: 1.5,
-                      border: "1px solid #e0e0e0",
-                      borderRadius: 2,
-                      backgroundColor: "#f9faf9",
+                      minHeight:
+                        "46px",
+
+                      display:
+                        "flex",
+
+                      alignItems:
+                        "center",
+
+                      justifyContent:
+                        "space-between",
+
+                      gap: "10px",
+
+                      px: "10px",
+
+                      border:
+                        "1px solid",
+
+                      borderColor:
+                        "divider",
+
+                      borderRadius:
+                        "7px",
+
+                      bgcolor:
+                        "background.default",
                     }}
                   >
                     <Typography
                       sx={{
-                        fontWeight: 600,
-                        color: "#153933",
-                        fontSize: {
-                          xs: "0.85rem",
-                          sm: "0.95rem",
-                        },
+                        fontSize:
+                          "12.5px",
+
+                        fontWeight:
+                          600,
+
+                        color:
+                          "text.primary",
                       }}
                     >
-                      {document.name}
+                      {
+                        document.name
+                      }
                     </Typography>
 
                     <Button
-                      variant="outlined"
                       size="small"
+                      variant="outlined"
                       onClick={() => {
-                        const baseUrl = process.env.NEXT_PUBLIC_S3_BUCKET_URL;
+                        const base =
+                          process.env
+                            .NEXT_PUBLIC_S3_BUCKET_URL ||
+                          "";
 
-                        const documentUrl = `${baseUrl}/${document.path}`;
+                        const url =
+                          document.path.startsWith(
+                            "http"
+                          )
+                            ? document.path
+                            : `${base.replace(
+                                /\/$/,
+                                ""
+                              )}/${document.path.replace(
+                                /^\//,
+                                ""
+                              )}`;
 
                         window.open(
-                          documentUrl,
-                          "_blank",
-                          "noopener,noreferrer"
+                          url,
+                          "_blank"
                         );
                       }}
                       sx={{
-                        flexShrink: 0,
-                        textTransform: "none",
-                        borderColor: "#14b8a6",
-                        color: "#0f7468",
-                        fontWeight: 600,
+                        fontSize:
+                          "12.5px",
 
-                        "&:hover": {
-                          borderColor: "#0f7468",
-                          backgroundColor: "#e6f6ed",
-                        },
+                        textTransform:
+                          "none",
                       }}
                     >
                       View
                     </Button>
                   </Box>
-                ))
+                )
+              )
             ) : (
-              <Typography color="text.secondary">
-                No documents available.
+              <Typography
+                sx={{
+                  textAlign:
+                    "center",
+
+                  py: "20px",
+
+                  fontSize:
+                    "12.5px",
+
+                  color:
+                    "text.secondary",
+                }}
+              >
+                No documents
+                available
               </Typography>
             )}
-
-            <Button
-              variant="contained"
-              onClick={() => setDocumentsModalOpen(false)}
-              sx={{
-                mt: 1,
-                alignSelf: "flex-end",
-                backgroundColor: "#14b8a6",
-                textTransform: "none",
-
-                "&:hover": {
-                  backgroundColor: "#0f7468",
-                },
-              }}
-            >
-              Close
-            </Button>
           </Box>
         </DialogContent>
       </Dialog>
-
-
-    </Box>
+    </>
   );
 };
 

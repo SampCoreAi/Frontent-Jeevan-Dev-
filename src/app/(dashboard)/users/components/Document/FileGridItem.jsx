@@ -51,23 +51,18 @@ export const FileGridItem = ({
 
   const handleDownloadClick = (event) => {
     event.stopPropagation();
-
     handleDownload(file);
-
     setAnchorEl(null);
   };
 
   const handleOpenClick = (event) => {
     event.stopPropagation();
-
     handleFileClick(file);
-
     setAnchorEl(null);
   };
 
   const handleDeleteClick = (event) => {
     event.stopPropagation();
-
     setAnchorEl(null);
 
     setTimeout(() => {
@@ -85,8 +80,6 @@ export const FileGridItem = ({
       })
     : "-";
 
-  // ================= UI =================
-
   return (
     <Paper
       elevation={0}
@@ -95,65 +88,81 @@ export const FileGridItem = ({
       onMouseLeave={() => setHoveredFile?.(null)}
       sx={{
         width: "100%",
-        height: isMobile ? 140 : isTablet ? 150 : 165,
+        height: {
+          xs: 138,
+          sm: 145,
+          md: 152,
+        },
 
-        p: isMobile ? 1 : isTablet ? 1.25 : 1.5,
+        p: {
+          xs: 1,
+          sm: 1.15,
+          md: 1.25,
+        },
 
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
 
         position: "relative",
+
         boxSizing: "border-box",
+
+        bgcolor: "background.paper",
+
+        border: "1px solid",
+        borderColor: "divider",
+
+        borderRadius: "8px",
 
         cursor: "pointer",
 
-        bgcolor: "#fff",
-
-        border: "1px solid #e5e7eb",
-        borderRadius: 2,
-
-        transition: "all 0.18s ease",
+        transition:
+          "border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease",
 
         "&:hover": {
-          bgcolor: "#f8fbfa",
-          borderColor: "#b8d5ce",
-          boxShadow: "0 4px 12px rgba(15, 79, 63, 0.08)",
-          transform: "translateY(-2px)",
+          borderColor: "primary.light",
+
+          boxShadow:
+            "0 3px 10px rgba(0, 0, 0, 0.06)",
+
+          transform: "translateY(-1px)",
         },
       }}
     >
-      {/* ================= 3 DOT MENU ================= */}
+      {/* ================= 3 DOT ================= */}
 
       <IconButton
         size="small"
         onClick={handleMenuClick}
-        aria-label="file options"
-        aria-controls={open ? `file-menu-${file.id}` : undefined}
+        aria-label="File options"
+        aria-controls={
+          open ? `file-menu-${file.id}` : undefined
+        }
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
         sx={{
           position: "absolute",
 
-          top: 6,
-          right: 6,
+          top: 5,
+          right: 5,
 
-          width: 30,
-          height: 30,
+          width: 27,
+          height: 27,
 
-          color: "#6b7280",
+          color: "text.secondary",
 
           zIndex: 2,
 
           "&:hover": {
-            bgcolor: "#edf5f2",
-            color: "#0f4f3f",
+            bgcolor: "action.hover",
+            color: "text.primary",
           },
         }}
       >
         <MoreVertIcon
           sx={{
-            fontSize: isMobile ? 18 : 20,
+            fontSize: 18,
           }}
         />
       </IconButton>
@@ -168,6 +177,9 @@ export const FileGridItem = ({
         onClick={(e) => e.stopPropagation()}
         MenuListProps={{
           dense: true,
+          sx: {
+            py: 0.5,
+          },
         }}
         anchorOrigin={{
           horizontal: "right",
@@ -179,31 +191,41 @@ export const FileGridItem = ({
         }}
         sx={{
           "& .MuiPaper-root": {
-            mt: 0.5,
+            mt: 0.4,
 
-            minWidth: 180,
+            minWidth: 155,
 
-            borderRadius: 2,
+            borderRadius: "8px",
 
-            border: "1px solid #e5e7eb",
+            border: "1px solid",
+            borderColor: "divider",
 
-            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            boxShadow:
+              "0 6px 20px rgba(0,0,0,0.10)",
+          },
+
+          "& .MuiMenuItem-root": {
+            minHeight: 34,
+            py: 0.5,
+            px: 1.2,
+            fontSize: "13px",
+          },
+
+          "& .MuiListItemIcon-root": {
+            minWidth: 30,
+          },
+
+          "& .MuiListItemText-primary": {
+            fontSize: "13px",
           },
         }}
       >
-        {/* OPEN */}
-
-        <MenuItem
-          onClick={handleOpenClick}
-          sx={{
-            py: 1,
-          }}
-        >
+        <MenuItem onClick={handleOpenClick}>
           <ListItemIcon>
             <OpenInNewIcon
-              fontSize="small"
               sx={{
-                color: "#0f4f3f",
+                fontSize: 17,
+                color: "text.secondary",
               }}
             />
           </ListItemIcon>
@@ -211,19 +233,12 @@ export const FileGridItem = ({
           <ListItemText primary="Open" />
         </MenuItem>
 
-        {/* DOWNLOAD */}
-
-        <MenuItem
-          onClick={handleDownloadClick}
-          sx={{
-            py: 1,
-          }}
-        >
+        <MenuItem onClick={handleDownloadClick}>
           <ListItemIcon>
             <DownloadIcon
-              fontSize="small"
               sx={{
-                color: "#0f4f3f",
+                fontSize: 17,
+                color: "text.secondary",
               }}
             />
           </ListItemIcon>
@@ -231,21 +246,14 @@ export const FileGridItem = ({
           <ListItemText primary="Download" />
         </MenuItem>
 
-        <Divider />
+        <Divider sx={{ my: 0.4 }} />
 
-        {/* DELETE */}
-
-        <MenuItem
-          onClick={handleDeleteClick}
-          sx={{
-            py: 1,
-          }}
-        >
+        <MenuItem onClick={handleDeleteClick}>
           <ListItemIcon>
             <DeleteOutlineIcon
-              fontSize="small"
               sx={{
-                color: "#dc2626",
+                fontSize: 17,
+                color: "error.main",
               }}
             />
           </ListItemIcon>
@@ -253,7 +261,7 @@ export const FileGridItem = ({
           <ListItemText
             primary="Delete"
             sx={{
-              color: "#dc2626",
+              color: "error.main",
             }}
           />
         </MenuItem>
@@ -263,21 +271,42 @@ export const FileGridItem = ({
 
       <Box
         sx={{
-          width: isMobile ? 54 : isTablet ? 60 : 64,
-          height: isMobile ? 54 : isTablet ? 60 : 64,
+          width: {
+            xs: 48,
+            sm: 52,
+            md: 54,
+          },
 
-          mt: isMobile ? 0.8 : 1,
+          height: {
+            xs: 48,
+            sm: 52,
+            md: 54,
+          },
+
+          mt: {
+            xs: 0.8,
+            md: 1,
+          },
+
           mb: 0.7,
 
-          borderRadius: 2,
+          borderRadius: "10px",
 
-          bgcolor: "#f2f8f6",
+          bgcolor: "secondary.light",
 
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
 
           flexShrink: 0,
+
+          "& svg": {
+            fontSize: {
+              xs: 27,
+              sm: 29,
+              md: 30,
+            },
+          },
         }}
       >
         {getFileIcon(file)}
@@ -293,10 +322,10 @@ export const FileGridItem = ({
           flex: 1,
 
           display: "flex",
-          flexDirection: "column",
+          alignItems: "center",
           justifyContent: "center",
 
-          px: 0.5,
+          px: 0.4,
         }}
       >
         <Tooltip
@@ -306,21 +335,16 @@ export const FileGridItem = ({
           disableHoverListener={isMobile}
         >
           <Typography
-            variant="body2"
             sx={{
               width: "100%",
 
+              fontSize: "12.5px",
+
               fontWeight: 600,
 
-              color: "#1f2937",
+              color: "text.primary",
 
               textAlign: "center",
-
-              fontSize: isMobile
-                ? "0.72rem"
-                : isTablet
-                  ? "0.8rem"
-                  : "0.85rem",
 
               lineHeight: 1.3,
 
@@ -345,23 +369,18 @@ export const FileGridItem = ({
       {/* ================= SIZE + DATE ================= */}
 
       <Typography
-        variant="caption"
         sx={{
-          mt: 0.4,
-
           width: "100%",
+
+          mt: 0.3,
 
           textAlign: "center",
 
-          color: "#8a9491",
+           fontSize: "12.5px",
 
           fontWeight: 400,
 
-          fontSize: isMobile
-            ? "0.62rem"
-            : isTablet
-              ? "0.68rem"
-              : "0.72rem",
+          color: "text.secondary",
 
           lineHeight: 1.3,
 

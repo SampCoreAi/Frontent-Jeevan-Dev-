@@ -38,36 +38,36 @@ export default function AppointmentPage() {
 
 
   const fetchSlots = async () => {
-  if (!selectedDate || !schedule) return;
+    if (!selectedDate || !schedule) return;
 
-  try {
-    const hospitalName = getHospitalLabel(schedule);
+    try {
+      const hospitalName = getHospitalLabel(schedule);
 
-    const response = await api.get("/api/appointments/doctor-slots", {
-      params: {
-        doctorId: doctorIdFromUrl,
-        hospitalName,
-        date: selectedDate.format("YYYY-MM-DD"),
-      },
-    });
+      const response = await api.get("/api/appointments/doctor-slots", {
+        params: {
+          doctorId: doctorIdFromUrl,
+          hospitalName,
+          date: selectedDate.format("YYYY-MM-DD"),
+        },
+      });
 
-  setFilteredSlots(
-  response.data.slots.map((slot) => ({
-    slotId: slot.slotId,
-    start: slot.startTime,
-     tokenNumber: slot.tokenNumber,
-    end: slot.endTime,
-    status: slot.status,
-    date: selectedDate.format("YYYY-MM-DD"),
-  }))
-);
-  } catch (err) {
-    console.log(err);
-  }
-};
- useEffect(() => {
-  fetchSlots();
-}, [selectedDate, schedule]);
+      setFilteredSlots(
+        response.data.slots.map((slot) => ({
+          slotId: slot.slotId,
+          start: slot.startTime,
+          tokenNumber: slot.tokenNumber,
+          end: slot.endTime,
+          status: slot.status,
+          date: selectedDate.format("YYYY-MM-DD"),
+        }))
+      );
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  useEffect(() => {
+    fetchSlots();
+  }, [selectedDate, schedule]);
   const toDate = (d) => dayjs(d).format("YYYY-MM-DD");
   const getHospitalLabel = (schedule) => {
     try {
@@ -170,26 +170,26 @@ export default function AppointmentPage() {
 
     const current = toDate(selectedDate);
 
-   const selectedHospital = getHospitalLabel(schedule);
+    const selectedHospital = getHospitalLabel(schedule);
 
-const matchedSchedule = allSchedules.find((sch) => {
+    const matchedSchedule = allSchedules.find((sch) => {
 
-    if (getHospitalLabel(sch) !== selectedHospital)
+      if (getHospitalLabel(sch) !== selectedHospital)
         return false;
 
-    const start = toDate(sch.availability.startDate);
-    const end = toDate(sch.availability.endDate);
+      const start = toDate(sch.availability.startDate);
+      const end = toDate(sch.availability.endDate);
 
-    const activeDays = sch.availability.activeDays || [];
+      const activeDays = sch.availability.activeDays || [];
 
-    const dayName = dayjs(selectedDate).format("ddd");
+      const dayName = dayjs(selectedDate).format("ddd");
 
-    return (
+      return (
         current >= start &&
         current <= end &&
         activeDays.includes(dayName)
-    );
-});
+      );
+    });
 
     if (matchedSchedule) {
       setSchedule(matchedSchedule);
@@ -202,7 +202,7 @@ const matchedSchedule = allSchedules.find((sch) => {
 
     const fetchUserProfile = async () => {
       try {
-       const response = await api.get("/api/user/getProfile");
+        const response = await api.get("/api/user/getProfile");
         const profile = response.data.data;
         setUserProfile(profile);
 
@@ -215,7 +215,7 @@ const matchedSchedule = allSchedules.find((sch) => {
             addressStr = profile.address;
           }
 
-      
+
 
           // Parse city from address string
           try {
@@ -251,12 +251,12 @@ const matchedSchedule = allSchedules.find((sch) => {
     };
     const fetchAppointmentSlots = async () => {
       try {
-      const response = await api.get(
-  `/api/schedules/getSchedulePublicByDoctorId/${doctorId}`
-);
+        const response = await api.get(
+          `/api/schedules/getSchedulePublicByDoctorId/${doctorId}`
+        );
 
         const scheduleData = response.data.data;
-    
+
         if (scheduleData && scheduleData.length > 0) {
           setAllSchedules(scheduleData);
           setFilteredSchedules(scheduleData);
@@ -302,7 +302,7 @@ const matchedSchedule = allSchedules.find((sch) => {
           reason: "",
         };
 
-          return updated;
+        return updated;
       });
     } else if (bookingFor === "other") {
       setFormData({
@@ -365,12 +365,12 @@ const matchedSchedule = allSchedules.find((sch) => {
 
     const payload = {
       appointment_date: selectedDate.format("YYYY-MM-DD"),
-     start_time: dayjs(`2000-01-01 ${selectedSlot.start}`).format("hh:mm A"),
-  end_time: dayjs(`2000-01-01 ${selectedSlot.end}`).format("hh:mm A"),
+      start_time: dayjs(`2000-01-01 ${selectedSlot.start}`).format("hh:mm A"),
+      end_time: dayjs(`2000-01-01 ${selectedSlot.end}`).format("hh:mm A"),
       reason_for_visit: formData.reason,
       booking_type: bookingFor === "self" ? "myself" : "someone_else",
       mode: "online",
-        token_number: selectedSlot.tokenNumber,
+      token_number: selectedSlot.tokenNumber,
       hospital_name: getHospitalLabel(schedule),
       ...(bookingFor === "other" && {
         patient: {
@@ -383,13 +383,13 @@ const matchedSchedule = allSchedules.find((sch) => {
       }),
     };
 
- 
+
 
     try {
-    const response = await api.post(
-  `/api/appointments/create/${doctorId}`,
-  payload
-);
+      const response = await api.post(
+        `/api/appointments/create/${doctorId}`,
+        payload
+      );
 
       setSnackbar({
         open: true,
@@ -417,34 +417,34 @@ const matchedSchedule = allSchedules.find((sch) => {
     }
   };
 
- const shouldDisableDate = (date) => {
-  // Past dates disable
-  if (date.startOf("day").isBefore(dayjs().startOf("day"))) {
-    return true;
-  }
+  const shouldDisableDate = (date) => {
+    // Past dates disable
+    if (date.startOf("day").isBefore(dayjs().startOf("day"))) {
+      return true;
+    }
 
-  const current = toDate(date);
+    const current = toDate(date);
 
-  const selectedHospital = getHospitalLabel(schedule);
+    const selectedHospital = getHospitalLabel(schedule);
 
-  const hospitalSchedules = allSchedules.filter(
-    s => getHospitalLabel(s) === selectedHospital
-  );
-
-  return !hospitalSchedules.some((sch) => {
-    const start = toDate(sch.availability.startDate);
-    const end = toDate(sch.availability.endDate);
-
-    const dayName = dayjs(date).format("ddd");
-    const activeDays = sch.availability?.activeDays || [];
-
-    return (
-      current >= start &&
-      current <= end &&
-      activeDays.includes(dayName)
+    const hospitalSchedules = allSchedules.filter(
+      s => getHospitalLabel(s) === selectedHospital
     );
-  });
-};
+
+    return !hospitalSchedules.some((sch) => {
+      const start = toDate(sch.availability.startDate);
+      const end = toDate(sch.availability.endDate);
+
+      const dayName = dayjs(date).format("ddd");
+      const activeDays = sch.availability?.activeDays || [];
+
+      return (
+        current >= start &&
+        current <= end &&
+        activeDays.includes(dayName)
+      );
+    });
+  };
 
 
 
@@ -454,10 +454,9 @@ const matchedSchedule = allSchedules.find((sch) => {
       <Grid
         container
         sx={{
-         height: "calc(100vh - 60px)",
-          p: { xs: 1, sm: 2, md: 1 },
-          mt: 7.5,
-          mb: 2,
+          height: "calc(100vh - 60px)",
+          mt: 8,
+
           overflow: {
             xs: "visible",
             md: "hidden",
@@ -471,7 +470,7 @@ const matchedSchedule = allSchedules.find((sch) => {
               xs: "auto",
               md: "100%",
             },
-          
+
             boxShadow: "0 4px 12px rgba(15,116,104,0.9)",
             overflow: "hidden",
           }}
@@ -529,19 +528,23 @@ const matchedSchedule = allSchedules.find((sch) => {
             <Grid
               size={{ xs: 12, md: 7 }}
               sx={{
-                p: {
+                px: {
                   xs: 2,
                   sm: 3,
                   md: 4,
                 },
-                maxHeight: {
-                  xs: "none",
-                  md: "calc(100vh - 150px)",
+
+                height: {
+                  xs: "auto",
+                  md: "100%",
                 },
-                overflowY: {
-                  xs: "visible",
-                  md: "auto",
-                },
+
+                minHeight: 0,
+
+                overflow: "hidden",
+
+                display: "flex",
+                flexDirection: "column",
               }}
             >
               <AppointmentForm
@@ -581,7 +584,17 @@ const matchedSchedule = allSchedules.find((sch) => {
           <Alert
             onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
             severity={snackbar.severity}
-            sx={{ width: "100%", borderRadius: 2 }}
+            sx={{
+      color: "#fff",
+
+      "& .MuiAlert-icon": {
+        color: "#fff",
+      },
+
+      "& .MuiAlert-action": {
+        color: "#fff",
+      },
+    }}
             variant="filled"
           >
             {snackbar.message}

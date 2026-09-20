@@ -52,86 +52,57 @@ const PatientContent = () => {
     fetchHospitals();
   }, []);
 
-useEffect(() => {
-  const fetchDashboardCards = async () => {
-    try {
-      const token = localStorage.getItem("token");
+  useEffect(() => {
+    const fetchDashboardCards = async () => {
+      try {
+        const token = localStorage.getItem("token");
 
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/appointments/patient-dashboard-cards`,
-        {
-          params: {
-            filter: selectedFilter,
-            mode: cardMode,
-          },
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/appointments/patient-dashboard-cards`,
+          {
+            params: {
+              filter: selectedFilter,
+              mode: cardMode,
+            },
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.data.success) {
+          setDashboardData(response.data.data);
         }
-      );
-
-      if (response.data.success) {
-        setDashboardData(response.data.data);
+      } catch (error) {
+        console.error(
+          "Error fetching dashboard cards:",
+          error.response?.data || error.message
+        );
       }
-    } catch (error) {
-      console.error(
-        "Error fetching dashboard cards:",
-        error.response?.data || error.message
-      );
-    }
-  };
+    };
 
-  fetchDashboardCards();
-}, [selectedFilter, cardMode]);
+    fetchDashboardCards();
+  }, [selectedFilter, cardMode]);
   return (
-   <Box
-         sx={{
-           width: {
-             xs: "30%",
-             sm: "100%",
-             md: "60%",
-             lg: "100%",
-             xl: "100%",
-   
-             "@media (min-width: 375px)": {
-               width: "35%",
-             },
-   
-             "@media (min-width: 425px)": {
-               width: "40%",
-             },
-   
-             "@media (min-width: 600px)": {
-               width: "70%",
-             },
-   
-            
-   
-             "@media (min-width: 1024px)": {
-               width: "67%",
-             },
-   
-             "@media (min-width: 1140px)": {
-               width: "100%",
-             },
-           },
-           minHeight: "100vh",
-           mt: { xs: 6, sm: 7.5 },
-           p: { xs: 1, sm: 2, md: 1 },
-           bgcolor: "#f5f7f9",
-   
-         }}
-       >
+    <Box
+      sx={{
+
+        minHeight: "100vh",
+        mt: { xs: 6, sm: 7.5 },
+        p: { xs: 1, sm: 2, md: 1 },
+        bgcolor: "#f5f7f9",
+
+      }}
+    >
 
       <Grid
         container
         spacing={2}
         sx={{
           backgroundColor: "white",
-          borderRadius: 2,
           boxShadow: "0 4px 12px #0f7468",
           overflow: "hidden",
-          p: { xs: 2, sm: 3 },
+          p: { xs: 1, sm: 3 },
 
         }}
       >
@@ -145,7 +116,6 @@ useEffect(() => {
             flexWrap: "wrap",
           }}
         >
-          {/* Filter */}
           <FormControl
             size="small"
             sx={{
@@ -183,7 +153,6 @@ useEffect(() => {
             </Select>
           </FormControl>
 
-          {/* Mode */}
           <FormControl
             size="small"
             sx={{
@@ -231,7 +200,7 @@ useEffect(() => {
         </Grid> */}
 
         <Grid sx={{ mt: 2, mb: 2, gap: 2, display: "flex", width: "100%" }}>
-          {/* Left Half */}
+        
           <Grid size={{ xs: 12, md: 6 }}>
             <FormControl
               fullWidth
@@ -278,7 +247,6 @@ useEffect(() => {
             </FormControl>
           </Grid>
 
-          {/* Right Half */}
           <Grid size={{ xs: 12, md: 6 }}>
             <FormControl
               fullWidth

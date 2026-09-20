@@ -1,170 +1,334 @@
 "use client";
 
-import React from "react";
-import {
-  Typography,
-  TextField,
-  Box,
-  IconButton,
-  Grid,
-  Collapse,
-  Button,
-} from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import React, { useState } from "react";
 
-/* ---------------- COMMON FIELD STYLE ---------------- */
+import {
+  Box,
+  Button,
+  Collapse,
+  Grid,
+  IconButton,
+  TextField,
+  Typography,
+} from "@mui/material";
+
+import AddIcon from "@mui/icons-material/Add";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import LocalHospitalOutlinedIcon from "@mui/icons-material/LocalHospitalOutlined";
+import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
+
+// ============================================================
+// FIELD STYLE
+// ============================================================
+
 const fieldSx = {
   "& .MuiInputLabel-root": {
-    color: "#000000",
-    "&.Mui-disabled": {
-      color: "#000000",
-    },
+    fontSize: "12.5px",
   },
 
   "& .MuiOutlinedInput-root": {
-    borderRadius: "10px",
-    backgroundColor: "#ffffff",
+    minHeight: "36px",
+
+    fontSize: "12.5px",
+
+    borderRadius: "7px",
+
+    bgcolor: "background.paper",
 
     "& fieldset": {
-      borderColor: "#cbd5e1",
+      borderColor: "divider",
     },
 
-    "&.Mui-disabled fieldset": {
-      borderColor: "#e2e8f0",
+    "&:hover fieldset": {
+      borderColor: "primary.light",
     },
 
-    "& input": {
-      color: "#6b7280",
-    },
-    "& input:-webkit-autofill": {
-      WebkitBoxShadow: "0 0 0 1000px #ffffff inset !important",
-      WebkitTextFillColor: "#6b7280 !important",
+    "&.Mui-focused fieldset": {
+      borderColor: "primary.main",
+      borderWidth: "1px",
     },
   },
 };
 
-/* ---------------- ACCORDION CARD ---------------- */
-const AccordionCard = ({ title, subtitle, children, isEditing, onRemove, showRemove }) => {
-  const [expanded, setExpanded] = React.useState(false);
+// ============================================================
+// ADDRESS
+// ============================================================
+
+const getAddressSummary = (
+  hospital
+) => {
+  if (!hospital)
+    return "Address not provided";
+
+  const values = [
+    hospital.flatNo,
+    hospital.building,
+    hospital.street,
+    hospital.area,
+    hospital.landmark,
+    hospital.city,
+    hospital.district,
+    hospital.state,
+    hospital.pinCode,
+  ].filter(Boolean);
+
+  return values.length
+    ? values.join(", ")
+    : "Address not provided";
+};
+
+// ============================================================
+// HOSPITAL CARD
+// ============================================================
+
+const HospitalCard = ({
+  hospital,
+  index,
+  isEditing,
+  canRemove,
+  onChange,
+  onRemove,
+}) => {
+  const [open, setOpen] =
+    useState(false);
+
+  const fields = [
+    ["flatNo", "Flat / Plot No.", 4],
+    ["building", "Building / Society", 8],
+    ["street", "Street Name", 6],
+    ["area", "Area / Locality", 6],
+    ["landmark", "Landmark", 6],
+    ["city", "City / Town", 6],
+    ["district", "District", 4],
+    ["state", "State", 4],
+    ["pinCode", "PIN Code", 4],
+  ];
 
   return (
     <Box
       sx={{
-        backgroundColor: "#ffffff",
-        borderRadius: "12px",
-        boxShadow: "0px 4px 12px rgba(0,0,0,0.05)",
-        mb: 2,
+        border: "1px solid",
+        borderColor: "divider",
+
+        borderRadius: "8px",
+
+        bgcolor: "background.paper",
+
         overflow: "hidden",
-        border: "1px solid #e2e8f0",
       }}
     >
+      {/* HEADER */}
+
       <Box
+        onClick={() =>
+          setOpen((prev) => !prev)
+        }
         sx={{
-          p: 2,
+          minHeight: "56px",
+
           display: "flex",
           alignItems: "center",
-          backgroundColor: "#f5f5f5",
-          justifyContent: "space-between",
+
+          gap: "10px",
+
+          px: "12px",
+
           cursor: "pointer",
-          transition: "background-color 0.2s",
+
           "&:hover": {
-            backgroundColor: "#ffff",
+            bgcolor:
+              "secondary.light",
           },
         }}
-        onClick={() => setExpanded(!expanded)}
       >
-        <Box display="flex" alignItems="center" gap={2}>
-          <Box>
-            <Typography fontWeight={600} color="#334155" fontSize="16px">
-              {title || "Hospital Name"}
-            </Typography>
-            {subtitle && (
-              <Typography fontSize="13px" color="#94a3b8">
-                {subtitle}
-              </Typography>
-            )}
-          </Box>
+        <Box
+          sx={{
+            width: "32px",
+            height: "32px",
+
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+
+            flexShrink: 0,
+
+            borderRadius: "7px",
+
+            bgcolor:
+              "secondary.light",
+
+            color: "primary.main",
+          }}
+        >
+          <BusinessOutlinedIcon
+            sx={{
+              fontSize: "18px",
+            }}
+          />
         </Box>
 
-        <Box>
-          {isEditing && showRemove && (
-            <IconButton
-              size="small"
-              color="error"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove();
-              }}
-              sx={{ mr: 1 }}
-            >
-              <DeleteOutlineIcon fontSize="small" />
-            </IconButton>
-          )}
-          <IconButton size="small">
-            {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-          </IconButton>
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "12.5px",
+              fontWeight: 650,
+
+              color: "text.primary",
+            }}
+          >
+            {hospital.hospitalName ||
+              `Hospital ${index + 1}`}
+          </Typography>
+
+          <Typography
+            sx={{
+              mt: "2px",
+
+              fontSize: "11px",
+
+              color:
+                "text.secondary",
+
+              overflow: "hidden",
+              textOverflow:
+                "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {getAddressSummary(
+              hospital
+            )}
+          </Typography>
         </Box>
+
+        {isEditing && canRemove && (
+          <IconButton
+            size="small"
+            onClick={(event) => {
+              event.stopPropagation();
+
+              onRemove();
+            }}
+            sx={{
+              color: "error.main",
+            }}
+          >
+            <DeleteOutlineIcon
+              sx={{
+                fontSize: "17px",
+              }}
+            />
+          </IconButton>
+        )}
+
+        <IconButton size="small">
+          {open ? (
+            <KeyboardArrowUpIcon />
+          ) : (
+            <KeyboardArrowDownIcon />
+          )}
+        </IconButton>
       </Box>
 
-      <Collapse in={expanded}>
-        <Box sx={{ p: 3, pt: 1, mt: 2, borderTop: "1px solid #f1f5f9" }}>
-          {children}
+      {/* BODY */}
+
+      <Collapse in={open}>
+        <Box
+          sx={{
+            p: "12px",
+
+            borderTop:
+              "1px solid",
+
+            borderColor:
+              "divider",
+          }}
+        >
+          <TextField
+            fullWidth
+            size="small"
+            label="Hospital Name"
+            value={
+              hospital.hospitalName ||
+              ""
+            }
+            disabled={!isEditing}
+            onChange={(event) =>
+              onChange(
+                "hospitalName",
+                event.target.value
+              )
+            }
+            sx={{
+              ...fieldSx,
+
+              mb: "10px",
+            }}
+          />
+
+          <Grid
+            container
+            spacing={1.25}
+          >
+            {fields.map(
+              ([
+                key,
+                label,
+                size,
+              ]) => (
+                <Grid
+                  item
+                  xs={12}
+                  sm={size}
+                  key={key}
+                >
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label={label}
+                    value={
+                      hospital?.[
+                        key
+                      ] || ""
+                    }
+                    disabled={
+                      !isEditing
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      onChange(
+                        key,
+                        event
+                          .target
+                          .value
+                      )
+                    }
+                    sx={
+                      fieldSx
+                    }
+                  />
+                </Grid>
+              )
+            )}
+          </Grid>
         </Box>
       </Collapse>
     </Box>
   );
 };
 
-/* ---------------- ADDRESS EDIT FIELDS ---------------- */
-const AddressFields = ({ data, isEditing, onFieldChange }) => (
-  <Grid container spacing={2} mt={1}>
-    {[
-      ["flatNo", "Flat / Plot No : ", 4],
-      ["building", "Building / Society : ", 8],
-      ["street", "Street Name : ", 6],
-      ["area", "Area / Locality : ", 6],
-      ["landmark", "Landmark : ", 6],
-      ["city", "City / Town / Village : ", 6],
-      ["district", "District", 4],
-      ["state", "State", 4],
-      ["pinCode", "PIN Code", 4],
-    ].map(([key, label, size]) => (
-      <Grid item xs={12} sm={size} key={key}>
-        <TextField
-          fullWidth
-          size="small"
-          label={label}
-          value={isEditing ? data?.[key] || "" : data?.[key] || "Not Provided"}
-          disabled={!isEditing}
-          onChange={(e) => onFieldChange(key, e.target.value)}
-          sx={fieldSx}
-        />
-      </Grid>
-    ))}
-  </Grid>
-);
+// ============================================================
+// MAIN
+// ============================================================
 
-/* ---------------- HELPER: Get Subtitle ---------------- */
-const getAddressSummary = (data) => {
-  if (!data) return "Address Details";
-  const parts = [
-    data.flatNo,
-    data.building,
-    data.street,
-    data.area,
-    data.landmark,
-    data.city,
-    data.district,
-    data.state,
-    data.pinCode,
-  ].filter(Boolean);
-  return parts.length > 0 ? parts.join(", ") : "Address Details";
-};
-
-/* ---------------- MAIN COMPONENT ---------------- */
 const ProfileAddress = ({
   profileData,
   isEditing,
@@ -172,65 +336,196 @@ const ProfileAddress = ({
   onAddHospital,
   onRemoveHospital,
 }) => {
-  const hospitals = profileData?.hospitalDetail || [];
+  const hospitals =
+    profileData?.hospitalDetail ||
+    [];
 
   return (
-    <Box sx={{ mt: 2 }}>
+    <Box
+      sx={{
+        mt: "12px",
+
+        p: "12px",
+
+        bgcolor: "background.paper",
+
+        border: "1px solid",
+        borderColor: "divider",
+
+        borderRadius: "10px",
+      }}
+    >
+      {/* HEADER */}
+
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}
-        ml={1}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent:
+            "space-between",
+
+          mb: "10px",
+        }}
       >
-        <Typography variant="h6" fontWeight={600} color="#153933">
-          Hospital Address
-        </Typography>
-        {isEditing && (
-          <IconButton
-            onClick={onAddHospital}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+
+            gap: "8px",
+          }}
+        >
+          <Box
             sx={{
-              backgroundColor: "#e0f2f1",
-              "&:hover": { backgroundColor: "#ccfbf1" },
+              width: "30px",
+              height: "30px",
+
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+
+              borderRadius: "7px",
+
+              bgcolor:
+                "secondary.light",
+
+              color:
+                "primary.main",
             }}
           >
-            <AddIcon sx={{ color: "#0f766e" }} />
-          </IconButton>
+            <LocalHospitalOutlinedIcon
+              sx={{
+                fontSize: "18px",
+              }}
+            />
+          </Box>
+
+          <Box>
+            <Typography
+              sx={{
+                fontSize: "15px",
+                fontWeight: 700,
+
+                color:
+                  "text.primary",
+              }}
+            >
+              Hospital Address
+            </Typography>
+
+            <Typography
+              sx={{
+                fontSize: "11px",
+
+                color:
+                  "text.secondary",
+              }}
+            >
+              {hospitals.length}{" "}
+              {hospitals.length === 1
+                ? "hospital"
+                : "hospitals"}{" "}
+              added
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Add Hospital sirf editing me */}
+
+        {isEditing && (
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={
+              <AddIcon
+                sx={{
+                  fontSize:
+                    "16px !important",
+                }}
+              />
+            }
+            onClick={onAddHospital}
+            sx={{
+              height: "32px",
+
+              fontSize: "12.5px",
+
+              textTransform: "none",
+
+              borderRadius: "7px",
+            }}
+          >
+            Add Hospital
+          </Button>
         )}
       </Box>
 
-      {hospitals.map((hospital, index) => (
-        <AccordionCard
-          key={index}
-          title={hospital.hospitalName || (index === 0 ? "Primary Hospital" : `Hospital ${index + 1}`)}
-          subtitle={getAddressSummary(hospital)}
-          isEditing={isEditing}
-          showRemove={hospitals.length > 1}
-          onRemove={() => onRemoveHospital(index)}
-        >
-          <TextField
-            fullWidth
-            size="small"
-            label="Hospital Name"
-            value={hospital.hospitalName || ""}
-            disabled={!isEditing}
-            onChange={(e) => onHospitalChange(index, "hospitalName", e.target.value)}
-            sx={{ ...fieldSx, mb: 2 }}
-          />
+      {/* HOSPITAL LIST */}
 
-          <AddressFields
-            data={hospital}
-            isEditing={isEditing}
-            onFieldChange={(field, value) => onHospitalChange(index, field, value)}
-          />
-        </AccordionCard>
-      ))}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
 
-      {hospitals.length === 0 && (
-        <Typography color="textSecondary" sx={{ ml: 1 }}>
-          No hospital addresses added.
-        </Typography>
-      )}
+          gap: "7px",
+        }}
+      >
+        {hospitals.map(
+          (hospital, index) => (
+            <HospitalCard
+              key={index}
+              hospital={hospital}
+              index={index}
+              isEditing={isEditing}
+              canRemove={
+                hospitals.length > 1
+              }
+              onChange={(
+                field,
+                value
+              ) =>
+                onHospitalChange?.(
+                  index,
+                  field,
+                  value
+                )
+              }
+              onRemove={() =>
+                onRemoveHospital?.(
+                  index
+                )
+              }
+            />
+          )
+        )}
+
+        {!hospitals.length && (
+          <Box
+            sx={{
+              py: "18px",
+
+              textAlign: "center",
+
+              border: "1px dashed",
+              borderColor: "divider",
+
+              borderRadius: "8px",
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: "12.5px",
+
+                color:
+                  "text.secondary",
+              }}
+            >
+              No hospital address
+              added
+            </Typography>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 };

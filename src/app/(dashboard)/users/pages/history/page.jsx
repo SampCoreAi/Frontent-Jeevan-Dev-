@@ -1,42 +1,38 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  Box,
-  Typography,
-
-  Snackbar,
   Alert,
-
-
   Avatar,
+  Box,
+  Snackbar,
+  Typography,
 } from "@mui/material";
 
-import Filter from '../../components/History/Filter'
-import CardHistory from '../../components/History/CardHistory'
-import ConsultationPopup from "../../components/History/ConsultationPopup";
-import { formatTimeRange } from "../../../../../config/timeFormatter";
-import VerifiedIcon from "@mui/icons-material/Verified";
-import { PDFDocument } from "pdf-lib";
-
 import dayjs from "dayjs";
-import { useEffect } from "react";
-import api from "../../../../../utils/axiosInstance";
+import { PDFDocument } from "pdf-lib";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
+import Filter from "../../components/History/Filter";
+import CardHistory from "../../components/History/CardHistory";
+import ConsultationPopup from "../../components/History/ConsultationPopup";
+
+import { formatTimeRange } from "../../../../../config/timeFormatter";
+import api from "../../../../../utils/axiosInstance";
+
 export default function PatientHistoryPage() {
-  const [anchorEl, setAnchorEl] = useState(null);
   const [appointmentTracking, setAppointmentTracking] = useState({});
-  const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [selectedDate, setSelectedDate] = useState(null);
-  const [copiedTokenId, setCopiedTokenId] = useState(null);
+
   const [selectedConsultation, setSelectedConsultation] = useState(null);
   const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+
   const [consultationHistory, setConsultationHistory] = useState([]);
+
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -45,8 +41,9 @@ export default function PatientHistoryPage() {
 
   const pdfRef = useRef(null);
 
-
-
+  // =========================================================
+  // FETCH APPOINTMENT HISTORY
+  // =========================================================
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,8 +51,10 @@ export default function PatientHistoryPage() {
         const res = await api.get(
           "/api/appointments/getAllappoinment/my"
         );
+
         const formatted = res.data.data.map((item) => ({
           id: item.id,
+
           title:
             item.appointment_type === "online"
               ? "Online Consultation"
@@ -67,12 +66,17 @@ export default function PatientHistoryPage() {
           doctor: item.doctor_name,
           department: item.doctor_department,
 
-          time: formatTimeRange(item.start_time, item.end_time),
+          time: formatTimeRange(
+            item.start_time,
+            item.end_time
+          ),
+
           startTime: item.start_time,
           status: item.status,
 
           token: item.token_number,
           code: item.code,
+
           address: item.hospital_name || "N/A",
         }));
 
@@ -85,6 +89,10 @@ export default function PatientHistoryPage() {
     fetchData();
   }, []);
 
+  // =========================================================
+  // APPOINTMENT TRACKING
+  // =========================================================
+
   useEffect(() => {
     let intervalId;
 
@@ -95,8 +103,6 @@ export default function PatientHistoryPage() {
         );
 
         const trackingData = res.data?.data || [];
-
-        // appointment_id ko key bana rahe hain
         const trackingMap = {};
 
         trackingData.forEach((item) => {
@@ -114,67 +120,112 @@ export default function PatientHistoryPage() {
       }
     };
 
-    // first call
     fetchTrackingData();
 
-    // current serving change ho sakta hai,
-    // isliye har 15 sec fresh data
-    intervalId = setInterval(fetchTrackingData, 15000);
+    intervalId = setInterval(
+      fetchTrackingData,
+      15000
+    );
 
     return () => clearInterval(intervalId);
   }, []);
 
+  // =========================================================
+  // FILTER
+  // =========================================================
 
+  const filteredConsultations = consultationHistory.filter(
+    (item) => {
+      const itemStatus = (
+        item.status || ""
+      ).toUpperCase();
 
+      // SEARCH
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
 
+        if (
+          !item.title?.toLowerCase().includes(q) &&
+          !(item.doctor || "")
+            .toLowerCase()
+            .includes(q) &&
+          !(item.department || "")
+            .toLowerCase()
+            .includes(q) &&
+          !String(item.token || "").includes(q) &&
+          !String(item.code || "").includes(q)
+        ) {
+          return false;
+        }
+      }
 
-  const filteredConsultations = consultationHistory.filter((item) => {
-    const itemStatus = (item.status || "").toUpperCase();
+      const appointmentDate = dayjs(item.dateObj);
 
-    // Search
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
+      const isComplete =
+        itemStatus === "COMPLETED";
+
+      const isCancel =
+        itemStatus === "CANCELLED";
+
+      const isToday =
+        itemStatus === "PENDING" &&
+        appointmentDate.isSame(dayjs(), "day");
+
+      const isUpcoming =
+        itemStatus === "PENDING" &&
+        appointmentDate.isAfter(dayjs(), "day");
 
       if (
-        !item.title?.toLowerCase().includes(q) &&
-        !(item.doctor || "").toLowerCase().includes(q) &&
-        !(item.department || "").toLowerCase().includes(q) &&
-        !String(item.token || "").includes(q) &&
-        !String(item.code || "").includes(q)
+        activeFilter === "Complete" &&
+        !isComplete
       ) {
         return false;
       }
-    }
 
-    const appointmentDate = dayjs(item.dateObj);
-
-    const isComplete = itemStatus === "COMPLETED";
-    const isCancel = itemStatus === "CANCELLED";
-
-    const isToday =
-      itemStatus === "PENDING" &&
-      appointmentDate.isSame(dayjs(), "day");
-
-    const isUpcoming =
-      itemStatus === "PENDING" &&
-      appointmentDate.isAfter(dayjs(), "day");
-
-    if (activeFilter === "Complete" && !isComplete) return false;
-    if (activeFilter === "Today" && !isToday) return false;
-    if (activeFilter === "Upcoming" && !isUpcoming) return false;
-    if (activeFilter === "Cancel" && !isCancel) return false;
-
-    if (selectedDate) {
-      if (!appointmentDate.isSame(selectedDate, "day")) {
+      if (
+        activeFilter === "Today" &&
+        !isToday
+      ) {
         return false;
       }
+
+      if (
+        activeFilter === "Upcoming" &&
+        !isUpcoming
+      ) {
+        return false;
+      }
+
+      if (
+        activeFilter === "Cancel" &&
+        !isCancel
+      ) {
+        return false;
+      }
+
+      if (selectedDate) {
+        if (
+          !appointmentDate.isSame(
+            selectedDate,
+            "day"
+          )
+        ) {
+          return false;
+        }
+      }
+
+      return true;
     }
+  );
 
-    return true;
-  });
+  // =========================================================
+  // CANCEL APPOINTMENT
+  // =========================================================
 
-
-  const handleCancelAppointment = async (id, reason) => {
+  const handleCancelAppointment = async (
+    id,
+    reason
+  ) => {
     try {
       await api.patch(
         `/api/appointments/${id}/cancel`,
@@ -184,7 +235,10 @@ export default function PatientHistoryPage() {
       setConsultationHistory((prev) =>
         prev.map((item) =>
           item.id === id
-            ? { ...item, status: "CANCELLED" }
+            ? {
+                ...item,
+                status: "CANCELLED",
+              }
             : item
         )
       );
@@ -192,7 +246,8 @@ export default function PatientHistoryPage() {
       setSnackbar({
         open: true,
         severity: "success",
-        message: "Appointment cancelled successfully.",
+        message:
+          "Appointment cancelled successfully.",
       });
     } catch (err) {
       console.error(err);
@@ -200,55 +255,109 @@ export default function PatientHistoryPage() {
       setSnackbar({
         open: true,
         severity: "error",
-        message: "Failed to cancel appointment.",
+        message:
+          "Failed to cancel appointment.",
       });
     }
   };
+
+  // =========================================================
+  // GENERATE PDF
+  // =========================================================
+
   const handleGeneratePdf = async () => {
     setGeneratingPdf(true);
 
     try {
-      // 1️⃣ Generate consultation PDF (your existing code)
-      const canvas = await html2canvas(pdfRef.current);
-      const imgData = canvas.toDataURL("image/png");
+      const canvas = await html2canvas(
+        pdfRef.current
+      );
+
+      const imgData =
+        canvas.toDataURL("image/png");
 
       const mainPdf = new jsPDF();
-      mainPdf.addImage(imgData, "PNG", 0, 0, 210, 297);
 
-      const mainPdfBytes = mainPdf.output("arraybuffer");
+      mainPdf.addImage(
+        imgData,
+        "PNG",
+        0,
+        0,
+        210,
+        297
+      );
 
-      // 2️⃣ Load PDFs using pdf-lib
-      const finalPdf = await PDFDocument.create();
+      const mainPdfBytes =
+        mainPdf.output("arraybuffer");
+
+      const finalPdf =
+        await PDFDocument.create();
 
       // Consultation PDF
-      const consultationDoc = await PDFDocument.load(mainPdfBytes);
-      const pages1 = await finalPdf.copyPages(
-        consultationDoc,
-        consultationDoc.getPageIndices(),
+      const consultationDoc =
+        await PDFDocument.load(mainPdfBytes);
+
+      const pages1 =
+        await finalPdf.copyPages(
+          consultationDoc,
+          consultationDoc.getPageIndices()
+        );
+
+      pages1.forEach((page) =>
+        finalPdf.addPage(page)
       );
-      pages1.forEach((p) => finalPdf.addPage(p));
 
       // Prescription PDF
-      const prescriptionBytes = await fetch("/prescription.pdf")
-        .then((res) => {
-          if (!res.ok) throw new Error("PDF not found");
-          return res.arrayBuffer();
-        });
-      const prescriptionDoc = await PDFDocument.load(prescriptionBytes);
-      const pages2 = await finalPdf.copyPages(
-        prescriptionDoc,
-        prescriptionDoc.getPageIndices(),
+      const prescriptionBytes = await fetch(
+        "/prescription.pdf"
+      ).then((res) => {
+        if (!res.ok) {
+          throw new Error("PDF not found");
+        }
+
+        return res.arrayBuffer();
+      });
+
+      const prescriptionDoc =
+        await PDFDocument.load(
+          prescriptionBytes
+        );
+
+      const pages2 =
+        await finalPdf.copyPages(
+          prescriptionDoc,
+          prescriptionDoc.getPageIndices()
+        );
+
+      pages2.forEach((page) =>
+        finalPdf.addPage(page)
       );
-      pages2.forEach((p) => finalPdf.addPage(p));
 
-      // 3️⃣ Download merged PDF
-      const finalBytes = await finalPdf.save();
-      const blob = new Blob([finalBytes], { type: "application/pdf" });
-      const link = document.createElement("a");
+      // Download
+      const finalBytes =
+        await finalPdf.save();
 
-      link.href = URL.createObjectURL(blob);
-      link.download = `Consultation_${selectedConsultation.token}.pdf`;
+      const blob = new Blob(
+        [finalBytes],
+        {
+          type: "application/pdf",
+        }
+      );
+
+      const link =
+        document.createElement("a");
+
+      const objectUrl =
+        URL.createObjectURL(blob);
+
+      link.href = objectUrl;
+
+      link.download =
+        `Consultation_${selectedConsultation.token}.pdf`;
+
       link.click();
+
+      URL.revokeObjectURL(objectUrl);
 
       setPdfDialogOpen(false);
     } catch (err) {
@@ -258,35 +367,47 @@ export default function PatientHistoryPage() {
     }
   };
 
+  // =========================================================
+  // SNACKBAR
+  // =========================================================
 
   const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
+    setSnackbar((prev) => ({
+      ...prev,
+      open: false,
+    }));
   };
 
-
-
+  // =========================================================
+  // UI
+  // =========================================================
 
   return (
     <Box
       sx={{
-        width: "calc(100% - 20px)", // 32px left + 32px right
+        width:"100%",
+
         mx: "auto",
-        mt: 8.5,
-        mb: 3,
-        py: 3,
-        px: {
-          xs: 1.5, 
-          sm: 2,   
-          md: 4,   
+
+        mt: {
+          xs: 8,
+          sm: 8.5,
         },
+
+    p:4,
+
+    
+
         minHeight: "calc(100vh - 64px)",
-        borderRadius: 1,
-        background: "#fff",
-        boxShadow: "0 4px 12px #0f7468",
-        border: "1px solid #e1ecea",
+
+        bgcolor: "background.paper",
+
+
         overflow: "hidden",
       }}
     >
+      {/* ================= FILTER ================= */}
+
       <Filter
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -296,75 +417,138 @@ export default function PatientHistoryPage() {
         setSelectedDate={setSelectedDate}
       />
 
+      {/* ================= HISTORY ================= */}
+
       {filteredConsultations.length > 0 ? (
         <CardHistory
-          consultationHistory={filteredConsultations}
-          appointmentTracking={appointmentTracking}
+          consultationHistory={
+            filteredConsultations
+          }
+          appointmentTracking={
+            appointmentTracking
+          }
           searchQuery={searchQuery}
           setSnackbar={setSnackbar}
-          setSelectedConsultation={setSelectedConsultation}
-          setPdfDialogOpen={setPdfDialogOpen}
-          handleCancelAppointment={handleCancelAppointment}
+          setSelectedConsultation={
+            setSelectedConsultation
+          }
+          setPdfDialogOpen={
+            setPdfDialogOpen
+          }
+          handleCancelAppointment={
+            handleCancelAppointment
+          }
         />
       ) : (
         <Box
           sx={{
-            minHeight: "450px",
+            minHeight: {
+              xs: 320,
+              sm: 380,
+            },
+
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
             alignItems: "center",
+
             textAlign: "center",
+
+            px: 2,
           }}
         >
           <Avatar
             src="/img/IconDoctor.png"
             sx={{
-              width: 140,
-              height: 140,
-              mb: 2,
+              width: {
+                xs: 80,
+                sm: 95,
+              },
+
+              height: {
+                xs: 80,
+                sm: 95,
+              },
+
+              mb: 1.5,
+
+              bgcolor: "background.default",
             }}
           />
 
           <Typography
-            variant="h5"
-            fontWeight={700}
-            color="#0f7468"
-            gutterBottom
+            sx={{
+              fontSize: {
+                xs: "14px",
+                sm: "15px",
+              },
+
+              fontWeight: 600,
+
+              color: "text.primary",
+
+              mb: 0.4,
+            }}
           >
             No Appointment Yet
           </Typography>
 
           <Typography
-            variant="body1"
-            color="text.secondary"
+            sx={{
+              fontSize: {
+                xs: "11.5px",
+                sm: "12px",
+              },
+
+              color: "text.secondary",
+
+              lineHeight: 1.5,
+            }}
           >
-            You haven't booked any appointments yet.
+            You haven't booked any appointments
+            yet.
           </Typography>
         </Box>
       )}
 
+      {/* ================= CONSULTATION ================= */}
+
       <ConsultationPopup
         open={pdfDialogOpen}
-        handleClose={() => setPdfDialogOpen(false)}
-        selectedConsultation={selectedConsultation}
-        handleGeneratePdf={handleGeneratePdf}
+        handleClose={() =>
+          setPdfDialogOpen(false)
+        }
+        selectedConsultation={
+          selectedConsultation
+        }
+        handleGeneratePdf={
+          handleGeneratePdf
+        }
         generatingPdf={generatingPdf}
         pdfRef={pdfRef}
-        handleCancelAppointment={handleCancelAppointment}
+        handleCancelAppointment={
+          handleCancelAppointment
+        }
       />
 
-      {/* SNACKBAR FOR NOTIFICATIONS */}
+      {/* ================= SNACKBAR ================= */}
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
       >
         <Alert
           onClose={handleCloseSnackbar}
           severity={snackbar.severity}
-          sx={{ width: "100%" }}
+          sx={{
+            width: "100%",
+            fontSize: "12px",
+          }}
         >
           {snackbar.message}
         </Alert>

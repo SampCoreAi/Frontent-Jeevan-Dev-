@@ -3,40 +3,40 @@ import {
   Box,
   Typography,
   Divider,
-  Avatar,
 } from "@mui/material";
 
-import LocalHospitalOutlinedIcon from "@mui/icons-material/LocalHospitalOutlined";
-
-export default function PrescriptionHeader({ doctor }) {
+export default function PrescriptionHeader({ doctor = {} }) {
   // ============================================
   // HOSPITAL DATA
   // ============================================
 
-  const hospital = doctor?.hospital_detail?.[0];
+  const hospital = doctor?.hospital_detail?.[0] || null;
 
   // ============================================
   // DOCTOR NAME
-  // Dr. already hai to dobara add nahi hoga
   // ============================================
 
-  const doctorTitle = doctor?.name
-    ? doctor.name.toLowerCase().startsWith("dr")
-      ? doctor.name
-      : `Dr. ${doctor.name}`
+  const doctorName = doctor?.name || "";
+
+  const doctorTitle = doctorName
+    ? doctorName.toLowerCase().startsWith("dr")
+      ? doctorName
+      : `Dr. ${doctorName}`
     : "Doctor";
 
   // ============================================
-  // QUALIFICATION + SPECIALIZATION
-  // null values automatically remove
+  // QUALIFICATION
+  // Specialization removed
   // ============================================
 
-  const qualificationText = [
-    doctor?.qualification,
-    doctor?.specialization,
-  ]
-    .filter(Boolean)
-    .join(" • ");
+  const qualificationText = doctor?.qualification || "";
+
+  // ============================================
+  // REGISTRATION NUMBER
+  // ============================================
+
+  const registrationNumber =
+    doctor?.registration_number || "";
 
   // ============================================
   // HOSPITAL ADDRESS
@@ -62,9 +62,9 @@ export default function PrescriptionHeader({ doctor }) {
         width: "100%",
       }}
     >
-      {/* =====================================================
+      {/* =========================================
           HEADER
-      ====================================================== */}
+      ========================================== */}
 
       <Box
         sx={{
@@ -83,146 +83,89 @@ export default function PrescriptionHeader({ doctor }) {
           },
 
           gap: {
-            xs: 1.5,
+            xs: 1.2,
             sm: 2,
           },
 
           pb: {
-            xs: 1.4,
-            sm: 1.7,
+            xs: 1.2,
+            sm: 1.5,
           },
         }}
       >
-        {/* =================================================
-            LEFT SIDE
-            DOCTOR DETAILS
-        ================================================== */}
+        {/* =========================================
+            LEFT SIDE - DOCTOR DETAILS
+        ========================================== */}
 
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-
-            gap: {
-              xs: 1.2,
-              sm: 1.4,
-            },
-
             flex: 1,
             minWidth: 0,
           }}
         >
-          {/* =========================
-              DOCTOR ICON
-          ========================== */}
+          {/* DOCTOR NAME */}
 
-          <Avatar
+          <Typography
             sx={{
-              width: {
-                xs: 40,
-                sm: 46,
+              fontSize: {
+                xs: "14px",
+                sm: "16px",
               },
 
-              height: {
-                xs: 40,
-                sm: 46,
-              },
+              fontWeight: 700,
 
-              bgcolor: "secondary.light",
-              color: "primary.main",
+              color: "text.primary",
 
-              border: "1px solid",
-              borderColor: "divider",
-
-              flexShrink: 0,
+              lineHeight: 1.25,
             }}
           >
-            <LocalHospitalOutlinedIcon
-              sx={{
-                fontSize: {
-                  xs: 20,
-                  sm: 23,
-                },
-              }}
-            />
-          </Avatar>
+            {doctorTitle}
+          </Typography>
 
-          {/* =========================
-              DOCTOR INFORMATION
-          ========================== */}
+          {/* QUALIFICATION */}
 
-          <Box
-            sx={{
-              minWidth: 0,
-            }}
-          >
-            {/* Doctor Name */}
-
+          {qualificationText && (
             <Typography
               sx={{
+                mt: 0.25,
+
                 fontSize: {
-                  xs: "14px",
-                  sm: "16px",
+                  xs: "12px",
+                  sm: "13px",
                 },
 
-                fontWeight: 700,
+                color: "text.secondary",
 
-                color: "text.primary",
-
-                lineHeight: 1.2,
+                lineHeight: 1.4,
               }}
             >
-              {doctorTitle}
+              {qualificationText}
             </Typography>
+          )}
 
-            {/* Qualification + Specialization */}
+          {/* REGISTRATION NUMBER */}
 
-            {qualificationText && (
-              <Typography
-                sx={{
-                  mt: 0.25,
+          <Typography
+            sx={{
+              mt: 0.2,
 
-                  fontSize: {
-                    xs: "10px",
-                    sm: "11px",
-                  },
+              fontSize: {
+                xs: "12px",
+                sm: "13px",
+              },
 
-                  color: "text.secondary",
+              color: "text.secondary",
 
-                  lineHeight: 1.4,
-                }}
-              >
-                {qualificationText}
-              </Typography>
-            )}
-
-            {/* Registration Number */}
-
-            {doctor?.registration_number && (
-              <Typography
-                sx={{
-                  mt: 0.15,
-
-                  fontSize: {
-                    xs: "9px",
-                    sm: "10px",
-                  },
-
-                  color: "text.disabled",
-
-                  lineHeight: 1.4,
-                }}
-              >
-                Reg. No: {doctor.registration_number}
-              </Typography>
-            )}
-          </Box>
+              lineHeight: 1.4,
+            }}
+          >
+            Registration Number: {registrationNumber || "—"}
+          </Typography>
         </Box>
 
-        {/* =================================================
-            CENTER DIVIDER
-            DESKTOP ONLY
-        ================================================== */}
+        {/* =========================================
+            CENTER DIVIDER - DESKTOP
+        ========================================== */}
 
         <Divider
           orientation="vertical"
@@ -239,10 +182,9 @@ export default function PrescriptionHeader({ doctor }) {
           }}
         />
 
-        {/* =================================================
-            RIGHT SIDE
-            HOSPITAL DETAILS
-        ================================================== */}
+        {/* =========================================
+            RIGHT SIDE - HOSPITAL
+        ========================================== */}
 
         <Box
           sx={{
@@ -261,9 +203,7 @@ export default function PrescriptionHeader({ doctor }) {
             },
           }}
         >
-          {/* =========================
-              HOSPITAL NAME
-          ========================== */}
+          {/* HOSPITAL NAME */}
 
           <Typography
             sx={{
@@ -276,20 +216,18 @@ export default function PrescriptionHeader({ doctor }) {
 
               color: "primary.main",
 
-              lineHeight: 1.2,
+              lineHeight: 1.25,
             }}
           >
             {hospital?.hospitalName || "Hospital"}
           </Typography>
 
-          {/* =========================
-              HOSPITAL ADDRESS
-          ========================== */}
+          {/* HOSPITAL ADDRESS */}
 
           {hospitalAddress && (
             <Typography
               sx={{
-                mt: 0.45,
+                mt: 0.4,
 
                 ml: {
                   xs: 0,
@@ -298,17 +236,17 @@ export default function PrescriptionHeader({ doctor }) {
 
                 maxWidth: {
                   xs: "100%",
-                  sm: "330px",
+                  sm: "380px",
                 },
 
                 fontSize: {
-                  xs: "9px",
-                  sm: "10px",
+                  xs: "11px",
+                  sm: "12px",
                 },
 
                 color: "text.secondary",
 
-                lineHeight: 1.45,
+                lineHeight: 1.4,
 
                 wordBreak: "break-word",
               }}
@@ -319,9 +257,9 @@ export default function PrescriptionHeader({ doctor }) {
         </Box>
       </Box>
 
-      {/* =====================================================
-          BOTTOM GREEN DIVIDER
-      ====================================================== */}
+      {/* =========================================
+          BOTTOM GREEN LINE
+      ========================================== */}
 
       <Box
         sx={{
@@ -334,8 +272,8 @@ export default function PrescriptionHeader({ doctor }) {
           opacity: 0.55,
 
           mb: {
-            xs: 1.5,
-            sm: 2,
+            xs: 1.4,
+            sm: 1.7,
           },
         }}
       />
