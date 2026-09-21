@@ -1,23 +1,28 @@
+"use client";
 import React, { useMemo } from "react";
-import { Box, Typography, Tooltip, Badge, Paper, Avatar } from "@mui/material";
+import { Box, Typography, Tooltip, Badge, Paper } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import dayjs from "dayjs";
-import { AccessTime, Person, LocationOn, MedicalServices } from "@mui/icons-material";
+import { AccessTime, Person, LocationOn } from "@mui/icons-material";
 
-const WeekView = ({ selectedDate, events, onEditEvent }) => {
+const WeekView = ({ selectedDate, events = [], onEditEvent }) => {
   const theme = useTheme();
-  console.log("selectedDate", selectedDate.format("YYYY-MM-DD"));
-  console.log(events);
+  const primaryColor = theme.palette.primary.main;
+  const paperColor = theme.palette.background.paper;
+  const backgroundColor = theme.palette.background.default;
+  const textColor = theme.palette.text.primary;
+  const secondaryText = theme.palette.text.secondary;
+  const dividerColor = theme.palette.divider;
+
   const weekDays = useMemo(() => {
     const startOfWeek = selectedDate.startOf("week");
-
     return Array.from({ length: 7 }, (_, i) => {
       const date = startOfWeek.add(i, "day");
-
-      const dayEvents = events.filter((event) => {
-        return dayjs(event.date).format("YYYY-MM-DD") === date.format("YYYY-MM-DD");
-      });
-
+      const dayEvents = events.filter(
+        (event) =>
+          dayjs(event.date).format("YYYY-MM-DD") ===
+          date.format("YYYY-MM-DD")
+      );
       return {
         label: date.format("ddd"),
         date: date.date(),
@@ -34,228 +39,292 @@ const WeekView = ({ selectedDate, events, onEditEvent }) => {
   const getStatusConfig = (status) => {
     const configs = {
       PENDING: {
-        bg: "#FFF8E1",
+        bg: `${theme.palette.warning.main}12`,
         label: "Pending",
-        color: "#F57F17",
-        icon: "⏳"
+        color: theme.palette.warning.main,
       },
       CONFIRMED: {
-        bg: "#E8F5E9",
+        bg: `${theme.palette.success.main}12`,
         label: "Confirmed",
-        color: "#2E7D32",
-        icon: "✅"
+        color: theme.palette.success.main,
       },
       CANCELLED: {
-        bg: "#FFEBEE",
+        bg: `${theme.palette.error.main}12`,
         label: "Cancelled",
-        color: "#C62828",
-        icon: "❌"
+        color: theme.palette.error.main,
       },
       COMPLETED: {
-        bg: "#E3F2FD",
+        bg: `${theme.palette.info.main}12`,
         label: "Completed",
-        color: "#0D47A1",
-        icon: "✔️"
+        color: theme.palette.info.main,
       },
     };
-    return configs[status?.toUpperCase()] || configs.PENDING;
+    return configs[String(status || "").toUpperCase()] || configs.PENDING;
   };
 
   return (
     <Box
-      display="flex"
-      gap={2}
       sx={{
-        minHeight: 550,
+        display: "flex",
+        gap: 1.2,
         overflowX: "auto",
         overflowY: "hidden",
-        px: 2,
-        pb: 2,
-        pt: 1,
+        px: { xs: 0.5, sm: 1 },
+        py: 1,
+        backgroundColor,
         "&::-webkit-scrollbar": {
-          height: 6,
+          height: 4,
         },
         "&::-webkit-scrollbar-thumb": {
-          backgroundColor: "#1E6658",
-          borderRadius: 10,
+          backgroundColor: `${primaryColor}70`,
+          borderRadius: "10px",
+        },
+        "&::-webkit-scrollbar-thumb:hover": {
+          backgroundColor: primaryColor,
         },
         "&::-webkit-scrollbar-track": {
-          backgroundColor: "#F5F5F5",
-          borderRadius: 10,
+          backgroundColor: "transparent",
         },
       }}
     >
       {weekDays.map((day) => (
         <Paper
-          key={day.label}
+          key={day.fullDate}
           elevation={0}
           sx={{
-            minWidth: {
-              xs: 280,
-              sm: 300,
-              md: 320,
-            },
-            maxWidth: 340,
+            minWidth: { xs: 235, sm: 245, md: 250 },
+            width: { xs: 235, sm: 245, md: 250 },
             flex: "0 0 auto",
-            borderRadius: 3,
-            bgcolor: day.isToday ? "#F8FBF9" : "#FFFFFF",
-            border: day.isToday ? "2px solid #1E6658" : "1px solid #707070",
-            transition: "all 0.2s ease",
+            borderRadius: "8px",
+            backgroundColor: day.isToday ? `${primaryColor}05` : paperColor,
+            border: `1px solid ${day.isToday ? primaryColor : dividerColor}`,
             overflow: "hidden",
+            transition: "border-color 0.15s ease",
             "&:hover": {
-              boxShadow: "0 4px 20px rgba(30, 102, 88, 0.08)",
+              borderColor: `${primaryColor}80`,
             },
           }}
         >
-          {/* Header */}
           <Box
             sx={{
-              p: 2,
-              pb: 1.5,
-              borderBottom: "1px solid #E8EDF2",
-              bgcolor: day.isToday ? "#F0F7F5" : "transparent",
+              px: 1.2,
+              py: 1,
+              borderBottom: `1px solid ${dividerColor}`,
+              backgroundColor: day.isToday ? `${primaryColor}0A` : paperColor,
             }}
           >
             <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 1,
+              }}
             >
-              <Box display="flex" alignItems="center" gap={1.5}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
                 <Typography
-                  fontWeight="700"
-                  variant="subtitle1"
                   sx={{
-                    color: day.isToday ? "#1E6658" : "#37474F",
-                    fontSize: {
-                      xs: "0.9rem",
-                      sm: "1rem",
-                    },
-                    letterSpacing: "0.3px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: day.isToday ? primaryColor : textColor,
                   }}
                 >
                   {day.label}
                 </Typography>
                 <Box
                   sx={{
-                    bgcolor: day.isToday ? "#1E6658" : "#E8EDF2",
-                    color: day.isToday ? "#FFFFFF" : "#607D8B",
-                    borderRadius: "50%",
-                    width: 28,
-                    height: 28,
+                    width: 25,
+                    height: 25,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    borderRadius: "50%",
+                    backgroundColor: day.isToday ? primaryColor : backgroundColor,
+                    color: day.isToday
+                      ? theme.palette.primary.contrastText
+                      : secondaryText,
+                    fontSize: "10.5px",
                     fontWeight: 600,
-                    fontSize: "0.75rem",
                   }}
                 >
                   {day.date}
                 </Box>
               </Box>
-
               <Badge
                 badgeContent={day.eventCount}
+                showZero
                 sx={{
+                  mr: 1,
                   "& .MuiBadge-badge": {
-                    backgroundColor: "#1E6658",
-                    color: "#fff",
-                    fontWeight: 600,
-                    fontSize: "0.7rem",
-                    minWidth: 20,
+                    position: "relative",
+                    transform: "none",
+                    minWidth: 21,
                     height: 20,
-                    borderRadius: 10,
+                    px: 0.6,
+                    borderRadius: "6px",
+                    backgroundColor:
+                      day.eventCount > 0
+                        ? `${primaryColor}12`
+                        : backgroundColor,
+                    color:
+                      day.eventCount > 0 ? primaryColor : secondaryText,
+                    border: `1px solid ${
+                      day.eventCount > 0
+                        ? `${primaryColor}30`
+                        : dividerColor
+                    }`,
+                    fontSize: "9.5px",
+                    fontWeight: 600,
                   },
                 }}
               />
             </Box>
           </Box>
-
-          {/* Events List */}
           <Box
             sx={{
-              p: 1.5,
-              maxHeight: 420,
+              p: 1,
+              minHeight: 170,
+              maxHeight: 390,
               overflowY: "auto",
               "&::-webkit-scrollbar": {
-                width: 4,
+                width: 3,
               },
               "&::-webkit-scrollbar-thumb": {
-                backgroundColor: "#1E6658",
-                borderRadius: 4,
+                backgroundColor: `${primaryColor}50`,
+                borderRadius: "10px",
+              },
+              "&::-webkit-scrollbar-track": {
+                backgroundColor: "transparent",
               },
             }}
           >
             {day.events.length > 0 ? (
-              <Box display="flex" flexDirection="column" gap={1.5}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 0.8,
+                }}
+              >
                 {day.events.map((event) => {
                   const statusInfo = getStatusConfig(event.status);
-                  const tokenDisplay = event.token_number ? `#${event.token_number}` : "";
-                  const department = event.doctor_department || "General";
-
+                  const tokenDisplay = event.token_number
+                    ? `#${event.token_number}`
+                    : "";
                   return (
                     <Tooltip
                       key={event.id}
+                      arrow
+                      placement="right"
                       title={
-                        <Box sx={{ p: 1 }}>
-                          <Typography variant="body2" fontWeight={600} gutterBottom>
-                            {event.reason_for_visit || "No reason provided"}
+                        <Box sx={{ p: 0.5, minWidth: 190 }}>
+                          <Typography
+                            sx={{
+                              fontSize: "11.5px",
+                              fontWeight: 600,
+                              color:"white",
+                              mb: 0.7,
+                            }}
+                            >
+                            {event.reason_for_visit || "Appointment"}
                           </Typography>
-                          <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
-                            <AccessTime sx={{ fontSize: 14, mr: 0.5, verticalAlign: "middle" }} />
-                            {event.start_time} – {event.end_time}
+                          <Typography
+                            sx={{
+                              fontSize: "10.5px",
+                              color:"white",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              mb: 0.35,
+                            }}
+                          >
+                            <AccessTime sx={{ fontSize: 13 }} />
+                            {event.start_time || "N/A"} -{" "}
+                            {event.end_time || "N/A"}
                           </Typography>
-                          <Typography variant="caption" display="block">
-                            <Person sx={{ fontSize: 14, mr: 0.5, verticalAlign: "middle" }} />
-                            {event.doctor_name || "Doctor"}
+                          <Typography
+                            sx={{
+                              fontSize: "10.5px",
+                              display: "flex",
+                              color:"white",
+                              alignItems: "center",
+                              gap: 0.5,
+                              mb: 0.35,
+                            }}
+                          >
+                            <Person sx={{ fontSize: 13 }} />
+                            {event.patientName || "N/A"}
                           </Typography>
+                          {event.doctor_name && (
+                            <Typography
+                            sx={{
+                              fontSize: "10.5px",
+                              mb: 0.35,
+                              color:"white",
+                            }}
+                            >
+                              Doctor: {event.doctor_name}
+                            </Typography>
+                          )}
                           {event.hospital_name && (
-                            <Typography variant="caption" display="block">
-                              <LocationOn sx={{ fontSize: 14, mr: 0.5, verticalAlign: "middle" }} />
+                            <Typography
+                              sx={{
+                                fontSize: "10.5px",
+                                display: "flex",
+                          color:"white",
+                          alignItems: "center",
+                          gap: 0.5,
+                          mb: 0.35,
+                        }}
+                        >
+                              <LocationOn sx={{ fontSize: 13 }} />
                               {event.hospital_name}
                             </Typography>
                           )}
-                          {event.cancel_reason && (
-                            <Typography variant="caption" display="block" color="error" sx={{ mt: 0.5 }}>
-                              {statusInfo.icon} {event.cancel_reason}
-                            </Typography>
-                          )}
-                          {event.patientName  && (
-                            <Typography variant="caption" display="block">
-                              👤 Patient: {event.patientName }
-                            </Typography>
-                          )}
                           {event.patient_phone && (
-                            <Typography variant="caption" display="block">
-                              📞 {event.patient_phone}
+                            <Typography
+                              sx={{
+                                fontSize: "10.5px",
+                                mb: 0.35,
+                              color:"white",
+                              }}
+                            >
+                              Phone: {event.patient_phone}
                             </Typography>
                           )}
                           {event.age && (
-                            <Typography variant="caption" display="block">
-                              🎂 Age: {event.age}
+                            <Typography sx={{ fontSize: "10.5px" }}>
+                              Age: {event.age}
+                            </Typography>
+                          )}
+                          {event.cancel_reason && (
+                            <Typography
+                              sx={{
+                                fontSize: "10.5px",
+                                color: theme.palette.error.light,
+                                mt: 0.5,
+                              }}
+                            >
+                              Cancel reason: {event.cancel_reason}
                             </Typography>
                           )}
                         </Box>
                       }
-                      arrow
-                      placement="right"
                     >
                       <Paper
-                        onClick={() => onEditEvent(event)}
                         elevation={0}
+                        onClick={() => onEditEvent?.(event)}
                         sx={{
-                          p: 1.5,
-                          borderRadius: 2,
-                          bgcolor: statusInfo.status === "CANCELLED" ? "#FAFAFA" : "#FFFFFF",
-                          border: "1px solid #E8EDF2",
-                          cursor: "pointer",
-                          transition: "all 0.2s ease",
-                          opacity: statusInfo.status === "CANCELLED" ? 0.7 : 1,
                           position: "relative",
+                          p: 1,
+                          borderRadius: "7px",
+                          backgroundColor: paperColor,
+                          border: `1px solid ${dividerColor}`,
+                          cursor: "pointer",
+                          overflow: "hidden",
+                          transition: "border-color 0.15s ease",
                           "&:hover": {
-                            transform: "translateY(-2px)",
-                            boxShadow: "0 6px 20px rgba(30, 102, 88, 0.12)",
-                            borderColor: "#1E6658",
+                            borderColor: primaryColor,
                           },
                           "&::before": {
                             content: '""',
@@ -263,169 +332,132 @@ const WeekView = ({ selectedDate, events, onEditEvent }) => {
                             left: 0,
                             top: 0,
                             bottom: 0,
-                            width: 3,
-                            bgcolor: statusInfo.color,
-                            borderRadius: "2px 0 0 2px",
+                            width: "3px",
+                            backgroundColor: statusInfo.color,
                           },
                         }}
                       >
-                        {/* Header: Time + Token + Status */}
                         <Box
-                          display="flex"
-                          justifyContent="space-between"
-                          alignItems="center"
-                          mb={1}
-                          gap={1}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 0.6,
+                            mb: 0.7,
+                          }}
                         >
-                          <Box display="flex" alignItems="center" gap={0.5}>
-                            <AccessTime sx={{ fontSize: 14, color: "#1E6658" }} />
-                            <Typography
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.4,
+                              minWidth: 0,
+                            }}
+                          >
+                            <AccessTime
                               sx={{
-                                fontSize: "0.7rem",
+                                fontSize: 13,
+                                color: primaryColor,
+                                flexShrink: 0,
+                              }}
+                            />
+                            <Typography
+                              noWrap
+                              sx={{
+                                fontSize: "10px",
                                 fontWeight: 600,
-                                color: "#1E6658",
+                                color: primaryColor,
                               }}
                             >
-                              {event.start_time} – {event.end_time}
+                              {event.start_time || "N/A"} -{" "}
+                              {event.end_time || "N/A"}
                             </Typography>
                           </Box>
-
                           {tokenDisplay && (
-                            <Typography
+                            <Box
                               sx={{
-                                fontSize: "0.65rem",
-                                fontWeight: 700,
-                                color: "#1E6658",
-                                bgcolor: "#E0F2F1",
-                                px: 1,
-                                py: 0.25,
-                                borderRadius: 1.5,
+                                px: 0.6,
+                                py: 0.2,
+                                borderRadius: "4px",
+                                flexShrink: 0,
+                                backgroundColor: `${primaryColor}0D`,
+                                color: primaryColor,
+                                fontSize: "9px",
+                                fontWeight: 600,
                               }}
                             >
                               {tokenDisplay}
-                            </Typography>
+                            </Box>
                           )}
-
+                        </Box>
+                        <Box
+                          sx={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            px: 0.7,
+                            py: 0.25,
+                            mb: 0.7,
+                            borderRadius: "4px",
+                            backgroundColor: statusInfo.bg,
+                            color: statusInfo.color,
+                            fontSize: "9px",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {statusInfo.label}
+                        </Box>
+                       
+                        <Typography
+                          noWrap
+                          sx={{
+                            fontSize: "10px",
+                            color: secondaryText,
+                            mb: 0.7,
+                          }}
+                        >
+                          Reason: {event.reason_for_visit || "Not provided"}
+                        </Typography>
+                        {event.patientName && (
                           <Box
                             sx={{
-                              px: 1.5,
-                              py: 0.35,
-                              borderRadius: 10,
-                              bgcolor: statusInfo.bg,
                               display: "flex",
                               alignItems: "center",
                               gap: 0.5,
+                              minWidth: 0,
+                              mb: 0.4,
                             }}
                           >
-                            <Typography sx={{ fontSize: "0.65rem" }}>
-                              {statusInfo.icon}
-                            </Typography>
-                            <Typography
+                            <Person
                               sx={{
-                                fontSize: "0.6rem",
-                                fontWeight: 700,
-                                color: statusInfo.color,
-                                textTransform: "capitalize",
+                                fontSize: 13,
+                                color: secondaryText,
+                                flexShrink: 0,
+                              }}
+                            />
+                            <Typography
+                              noWrap
+                              sx={{
+                                fontSize: "10.5px",
+                                fontWeight: 500,
+                                color: textColor,
                               }}
                             >
-                              {statusInfo.label}
+                              {event.patientName}
+                              {event.age ? ` • ${event.age}y` : ""}
+                              {event.gender ? ` • ${event.gender}` : ""}
                             </Typography>
                           </Box>
-                        </Box>
-
-                        {/* Title - Main Reason for Visit */}
-                       {/* Appointment Title */}
-<Typography
-  sx={{
-    fontSize: "0.9rem",
-    fontWeight: 700,
-    color: "#263238",
-    lineHeight: 1.3,
-    mb: 0.5,
-  }}
->
-  Appointment
-</Typography>
-
-{/* Reason For Visit */}
-<Typography
-  sx={{
-    fontSize: "0.75rem",
-    color: "#607D8B",
-    mb: 1,
-  }}
->
-  🩺 Reason: {event.reason_for_visit || "No reason provided"}
-</Typography>
-
-                        {/* Patient Name and Age - Clean display */}
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          gap={1.5}
-                          mb={0.5}
-                        >
-                          {event.patientName  && (
-                            <Typography
-                              sx={{
-                                fontSize: "0.8rem",
-                                color: "#455A64",
-                                fontWeight: 500,
-                              }}
-                            >
-                              👤 {event.patientName}
-                            </Typography>
-                          )}
-                          {event.age && (
-                            <Typography
-                              sx={{
-                                fontSize: "0.75rem",
-                                color: "#78909C",
-                              }}
-                            >
-                              🎂 {event.age}y
-                            </Typography>
-                          )}
-                          {event.gender && (
-                            <Typography
-                              sx={{
-                                fontSize: "0.75rem",
-                                color: "#78909C",
-                              }}
-                            >
-                              {event.gender === "MALE" ? "♂" : event.gender === "FEMALE" ? "♀" : event.gender}
-                            </Typography>
-                          )}
-                        </Box>
-
-                        {/* Contact Info - Compact */}
-                        {event.patient_phone && (
-                          <Typography
-                            sx={{
-                              fontSize: "0.7rem",
-                              color: "#90A4AE",
-                              mb: 0.5,
-                            }}
-                          >
-                            📞 {event.patient_phone}
-                          </Typography>
                         )}
-
-                        {/* Cancel Reason */}
                         {event.cancel_reason && (
                           <Typography
-                            sx={{
-                              fontSize: "0.65rem",
-                              color: "#C62828",
-                              fontStyle: "italic",
-                              mt: 0.5,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                            }}
                             noWrap
+                            sx={{
+                              mt: 0.5,
+                              fontSize: "9.5px",
+                              color: theme.palette.error.main,
+                            }}
                           >
-                            {statusInfo.icon} {event.cancel_reason}
+                            Cancelled: {event.cancel_reason}
                           </Typography>
                         )}
                       </Paper>
@@ -435,52 +467,36 @@ const WeekView = ({ selectedDate, events, onEditEvent }) => {
               </Box>
             ) : (
               <Box
-                display="flex"
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
                 sx={{
-                  height: "100%",
-                  minHeight: 150,
-                  gap: 1,
+                  minHeight: 145,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 0.5,
                 }}
               >
                 <Box
                   sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: "50%",
-                    bgcolor: "#F5F7F6",
+                    width: 30,
+                    height: 30,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    borderRadius: "50%",
+                    backgroundColor,
                   }}
                 >
-                  <Typography sx={{ fontSize: "1.5rem" }}>📅</Typography>
+                  <Typography sx={{ fontSize: "14px" }}>📅</Typography>
                 </Box>
                 <Typography
-                  variant="body2"
-                  textAlign="center"
                   sx={{
-                    color: "#90A4AE",
-                    fontSize: {
-                      xs: "0.8rem",
-                      sm: "0.85rem",
-                    },
+                    fontSize: "10.5px",
                     fontWeight: 500,
+                    color: secondaryText,
                   }}
                 >
                   No appointments
-                </Typography>
-                <Typography
-                  variant="caption"
-                  textAlign="center"
-                  sx={{
-                    color: "#B0BEC5",
-                    fontSize: "0.7rem",
-                  }}
-                >
-                  Click to add new appointment
                 </Typography>
               </Box>
             )}

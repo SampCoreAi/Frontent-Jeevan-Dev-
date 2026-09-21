@@ -1,86 +1,116 @@
 "use client";
 
 import React from "react";
-
 import { Grid, Paper, Typography, Box } from "@mui/material";
-import PersonIcon from "@mui/icons-material/Person";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import PendingIcon from "@mui/icons-material/Pending";
-import CancelIcon from "@mui/icons-material/Cancel";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import PendingOutlinedIcon from "@mui/icons-material/PendingOutlined";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import { useTheme } from "@mui/material/styles";
 
 const DashboardCard = ({ stats = {} }) => {
- const theme = useTheme();
-  const cardBg = theme.palette.background.third;
-  const text = theme.palette.text.primary;
+  const theme = useTheme();
 
-
- const cards = [
+  const cards = [
     {
-      icon: <PersonIcon />,
+      icon: PersonOutlineIcon,
       title: "Today Appointment",
-      value: stats.today_appointments ?? 0,
+      value: stats?.today_appointments ?? 0,
     },
     {
-      icon: <CheckCircleIcon />,
+      icon: CheckCircleOutlineIcon,
       title: "Today Completed",
-      value: stats.today_completed ?? 0,
+      value: stats?.today_completed ?? 0,
     },
     {
-      icon: <PendingIcon />,
+      icon: PendingOutlinedIcon,
       title: "Today Pending",
-      value: stats.today_pending ?? 0,
+      value: stats?.today_pending ?? 0,
     },
     {
-      icon: <CancelIcon />,
-      title: "Today Cancel",
-      value: stats.today_cancelled ?? 0,
+      icon: CancelOutlinedIcon,
+      title: "Today Cancelled",
+      value: stats?.today_cancelled ?? 0,
     },
   ];
 
   return (
-    <Grid container spacing={2}>
-      {cards.map((item, index) => (
-      <Grid key={item.title} size={{ xs: 12, sm: 6, md: 3 }}>
-          <Paper
-            sx={{
-              p: 2,
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              borderRadius: 2,
-              backgroundColor: cardBg,
-              border: "1px solid #0f7468",
-              height: "100%",
-            }}
-          >
-            <Box
+    <Grid container spacing={1.5}>
+      {cards.map((item) => {
+        const Icon = item.icon;
+
+        return (
+          <Grid key={item.title} size={{ xs: 12, sm: 6, md: 3 }}>
+            <Paper
+              elevation={0}
               sx={{
-                fontSize: { xs: 40, sm: 50, md: 60 },
-                color: text,
+                p: { xs: 1.5, sm: 1.75 },
+                minHeight: 82,
+                height: "100%",
                 display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                borderRadius: 1.5,
+                bgcolor: "background.paper",
+                border: "1px solid #b1b1b1",
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  borderColor: "#07876a",
+                  boxShadow: `0 3px 10px ${theme.palette.divider}`,
+                  transform: "translateY(-1px)",
+                },
               }}
             >
-              {item.icon}
-            </Box>
-
-            <Box>
-              <Typography fontWeight={700}>
-                {item.title}
-              </Typography>
-
-              <Typography
+              <Box
                 sx={{
-                  fontSize: 26,
-                  fontWeight: 600,
+                  width: 42,
+                  height: 42,
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 1.2,
+                  bgcolor: "#edf7f2",
+                  color: "primary.dark",
                 }}
               >
-                {item.value}
-              </Typography>
-            </Box>
-          </Paper>
-        </Grid>
-      ))}
+                <Icon sx={{ fontSize: 21 }} />
+              </Box>
+              <Box
+                sx={{
+                  minWidth: 0,
+                  flex: 1,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: "12.5px",
+                    fontWeight: 500,
+                    color: "text.secondary",
+                    lineHeight: 1.3,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {item.title}
+                </Typography>
+                <Typography
+                  sx={{
+                    mt: 0.35,
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    lineHeight: 1.2,
+                    color: "text.primary",
+                  }}
+                >
+                  {Number(item.value) || 0}
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
+        );
+      })}
     </Grid>
   );
 };

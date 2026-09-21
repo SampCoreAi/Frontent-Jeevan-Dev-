@@ -199,22 +199,20 @@ export default function Page() {
   return (
     <Box
       sx={{
-        mt: 9,
+        mt: 8,
 
-        px: {
-          xs: 1,
-          sm: 2,
-        },
+       
       }}
     >
       <Grid
         container
         spacing={2}
         sx={{
-          p: {
+          px: {
             xs: 1,
-            sm: 2,
+            sm: 3,
           },
+          pt:3,
 
           bgcolor: "background.paper",
 

@@ -29,7 +29,7 @@ export default function LabPanel({ section = "dashboard" }) {
   const pageSize = 10;
 
   const loadProfile = async () => {
-    const response = await api.get("/api/labs/me");
+    const response = await api.get("/api/labs/getLabProfile");
     let loggedInUser = {};
     try {
       loggedInUser = JSON.parse(localStorage.getItem("user") || "{}");
