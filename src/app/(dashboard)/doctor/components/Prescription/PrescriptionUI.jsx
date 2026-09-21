@@ -12,6 +12,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  TextField,
 } from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
@@ -129,6 +130,7 @@ export default function PrescriptionUI(props) {
   const [reportsOpen, setReportsOpen] = useState(false);
   const [cancellingRequestId, setCancellingRequestId] = useState(null);
   const [cancelRequest, setCancelRequest] = useState(null);
+  const [cancelReason, setCancelReason] = useState("");
 
   const {
     isPatient,
@@ -224,6 +226,8 @@ export default function PrescriptionUI(props) {
     loadPatientReports();
   }, [isPatient, patientId]);
 
+  const getRequestNote = (request = {}) => request.latest_status_note || request.latestStatusNote || request.status_note || request.note || request.reason || request.statusReason || "";
+
   const labReportRows = patientLabRequests
     .filter((request) => request.status !== "CANCELLED")
     .flatMap((request) => {
@@ -238,6 +242,8 @@ export default function PrescriptionUI(props) {
     }
     if (!Array.isArray(tests)) tests = [String(tests)];
 
+    const matchedReport = patientReports.find((item) => Number(item.requestId || item.testRequestId || item.test_request_id) === Number(request.id));
+
     return tests.map((test, index) => ({
       id: `${request.id}-${index}`,
       labName: request.lab_name,
@@ -245,14 +251,15 @@ export default function PrescriptionUI(props) {
       requestId: request.id,
       status: request.status || "PENDING",
       createdAt: request.created_at,
-      report: patientReports.find((item) => Number(item.requestId || item.testRequestId || item.test_request_id) === Number(request.id)),
+      reportDate: request.expected_report_at || request.expectedReportAt || matchedReport?.createdAt || matchedReport?.created_at || matchedReport?.uploadedAt || matchedReport?.uploaded_at || request.created_at,
+      report: matchedReport,
     }));
     });
 
-  const cancelPendingRequest = async (requestId) => {
+  const cancelPendingRequest = async (requestId, reason = null) => {
     try {
       setCancellingRequestId(requestId);
-      await api.patch(`/api/lab-requests/${requestId}/cancel`);
+      await api.patch(`/api/lab-requests/${requestId}/cancel`, { note: reason || null });
       setPatientLabRequests((current) => current.map((request) => (
         request.id === requestId ? { ...request, status: "CANCELLED" } : request
       )));
@@ -431,30 +438,40 @@ export default function PrescriptionUI(props) {
             <Box sx={{ display: "grid", gap: 0.75 }}>
               {labReportRows.map((row) => (
                 <Box key={row.id} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, minWidth: 0, py: 0.5, borderBottom: "1px solid", borderColor: "divider" }}>
-                  <Box sx={{ minWidth: 0 }}>
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, display: "block", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {row.labName || "Lab"} - {row.testName}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: "11px" }}>
-                      Status: {row.status} {row.createdAt ? `- ${new Date(row.createdAt).toLocaleDateString()}` : ""}
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: "11px", display: "block" }}>
+                      Created: {row.createdAt ? new Date(row.createdAt).toLocaleString() : "-"}
                     </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: "11px", display: "block" }}>
+                      Status: {row.status}{row.reportDate ? ` • Report Date: ${new Date(row.reportDate).toLocaleString()}` : ""}
+                    </Typography>
+                    {(row.status === "REJECTED" || row.status === "CANCELLED") && (
+                      <Typography variant="caption" color={row.status === "CANCELLED" ? "error.main" : "warning.main"} sx={{ fontSize: "11px", display: "block", fontWeight: 600 }}>
+                        Reason: {getRequestNote(patientLabRequests.find((request) => Number(request.id) === Number(row.requestId))) || "No reason provided."}
+                      </Typography>
+                    )}
                   </Box>
-                  {row.report?.downloadUrl ? (
-                    <Button size="small" href={row.report.downloadUrl} target="_blank" rel="noreferrer" sx={{ textTransform: "none", flexShrink: 0, fontSize: "12px", minHeight: 32, minWidth: 0, px: 1 }}>
-                      Open Report
-                    </Button>
-                  ) : null}
-                  {row.status === "PENDING" ? (
-                    <Button
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0 }}>
+                    {row.report?.downloadUrl ? (
+                      <Button size="small" href={row.report.downloadUrl} target="_blank" rel="noreferrer" sx={{ textTransform: "none", flexShrink: 0, fontSize: "12px", minHeight: 32, minWidth: 0, px: 1 }}>
+                        Open Report
+                      </Button>
+                    ) : null}
+                    {row.status === "PENDING" ? (
+                      <Button
                       size="small"
                       color="error"
                       onClick={() => setCancelRequest(row)}
                       disabled={cancellingRequestId === row.requestId}
                       sx={{ textTransform: "none", flexShrink: 0, fontSize: "12px", minHeight: 32, minWidth: 0, px: 1 }}
-                    >
-                      {cancellingRequestId === row.requestId ? "Cancelling..." : "Cancel"}
-                    </Button>
-                  ) : null}
+                      >
+                        {cancellingRequestId === row.requestId ? "Cancelling..." : "Cancel"}
+                      </Button>
+                    ) : null}
+                  </Box>
                 </Box>
               ))}
             </Box>
@@ -473,13 +490,22 @@ export default function PrescriptionUI(props) {
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>Cancel lab test request?</DialogTitle>
-        <DialogContent dividers>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, pb: 1 }}>Cancel lab test request?</DialogTitle>
+        <DialogContent sx={{ display: "grid", gap: 1.25, pt: 1.5, px: 2 }}>
           <Typography variant="body2" color="text.secondary">
             {cancelRequest?.testName} sent to {cancelRequest?.labName || "the selected lab"} will be cancelled. The lab will see the cancelled request in its history.
           </Typography>
+          <TextField
+            multiline
+            minRows={2}
+            size="small"
+            label="Reason / comment"
+            value={cancelReason}
+            onChange={(event) => setCancelReason(event.target.value)}
+            placeholder="Please tell why this request is being cancelled."
+          />
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: 2, pb: 1.5, pt: 1 }}>
           <Button onClick={() => setCancelRequest(null)} disabled={Boolean(cancellingRequestId)} sx={{ textTransform: "none" }}>
             Keep Request
           </Button>
@@ -488,7 +514,8 @@ export default function PrescriptionUI(props) {
             variant="contained"
             onClick={async () => {
               if (!cancelRequest) return;
-              await cancelPendingRequest(cancelRequest.requestId);
+              await cancelPendingRequest(cancelRequest.requestId, cancelReason.trim() || null);
+              setCancelReason("");
               setCancelRequest(null);
             }}
             disabled={Boolean(cancellingRequestId)}

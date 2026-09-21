@@ -206,6 +206,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
     [tableFilters]
   );
 
+  const getRequestNote = (request = {}) => request.latest_status_note || request.latestStatusNote || request.status_note || request.note || request.reason || request.statusReason || "";
   const visibleConnections = connections.slice((tablePage - 1) * pageSize, tablePage * pageSize);
   const visibleRequests = requests.slice((tablePage - 1) * pageSize, tablePage * pageSize);
   const reportRows = useMemo(() => {
@@ -348,7 +349,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
         <SectionTitle title="Lab Requests" description="View your patient test requests and their status." />
         <TableFilters {...filterProps} statusOptions={["PENDING", "APPROVED", "REJECTED", "SAMPLE_COLLECTED", "PROCESSING", "REPORT_UPLOADED", "COMPLETED", "CANCELLED"]} />
         <DataTable
-          columns={["PATIENT", "LAB", "TESTS", "PRIORITY", "STATUS", "CREATED"]}
+          columns={["PATIENT", "LAB", "TESTS", "PRIORITY", "STATUS", "REASON", "CREATED"]}
           loading={loading}
           emptyMessage="No lab requests found."
           footer={<Pagination count={Math.max(1, Math.ceil(requests.length / pageSize))} page={tablePage} onChange={(_, value) => setTablePage(value)} size="small" color="primary" />}
@@ -359,7 +360,10 @@ export default function DoctorLabPanel({ section = "connections" }) {
               <TableCell sx={{ color: "#1f2937 !important" }}>{request.lab_name || "-"}</TableCell>
               <TableCell sx={{ color: "#1f2937 !important", maxWidth: 240, whiteSpace: "normal" }}>{Array.isArray(request.requested_tests) ? request.requested_tests.join(", ") : request.requested_tests || "-"}</TableCell>
               <TableCell><Chip size="small" label={request.priority || "NORMAL"} color={request.priority === "URGENT" ? "error" : "default"} /></TableCell>
-              <TableCell><Chip size="small" label={request.status || "PENDING"} color={request.status === "COMPLETED" ? "success" : request.status === "REJECTED" ? "error" : "warning"} /></TableCell>
+              <TableCell><Chip size="small" label={request.status || "PENDING"} color={request.status === "COMPLETED" ? "success" : request.status === "REJECTED" || request.status === "CANCELLED" ? "error" : "warning"} /></TableCell>
+              <TableCell sx={{ color: "#64748b !important", maxWidth: 220, whiteSpace: "normal" }}>
+                {request.status === "REJECTED" || request.status === "CANCELLED" ? (getRequestNote(request) || "No reason provided.") : "-"}
+              </TableCell>
               <TableCell sx={{ color: "#64748b !important" }}>{request.created_at ? new Date(request.created_at).toLocaleDateString() : "-"}</TableCell>
             </TableRow>
           )) : null}

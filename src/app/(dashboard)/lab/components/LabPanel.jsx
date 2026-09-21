@@ -24,6 +24,7 @@ export default function LabPanel({ section = "dashboard" }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [requestUpdateFeedback, setRequestUpdateFeedback] = useState({ type: "", message: "" });
   const [tableFilters, setTableFilters] = useState({ search: "", status: "", date: "" });
   const [tablePage, setTablePage] = useState(1);
   const pageSize = 10;
@@ -111,14 +112,18 @@ export default function LabPanel({ section = "dashboard" }) {
     }
   };
 
-  const updateRequest = async (requestId, status) => {
+  const updateRequest = async (requestId, status, expectedReportAt = null, note = null) => {
     try {
       setActionId(requestId);
-      await api.patch(`/api/lab-requests/${requestId}/status`, { status });
-      setRequests((items) => items.map((item) => item.id === requestId ? { ...item, status } : item));
+      setRequestUpdateFeedback({ type: "info", message: status === "REJECTED" || status === "CANCELLED" ? "Submitting rejection reason..." : "Updating report delivery time..." });
+      await api.patch(`/api/lab-requests/${requestId}/status`, { status, expectedReportAt: expectedReportAt || null, note: note || null });
+      setRequests((items) => items.map((item) => item.id === requestId ? { ...item, status, expected_report_at: expectedReportAt || item.expected_report_at } : item));
+      setRequestUpdateFeedback({ type: "success", message: status === "REJECTED" || status === "CANCELLED" ? "Reason submitted successfully." : "Report delivery time updated successfully." });
       setNotice("Test request status updated.");
     } catch (requestError) {
-      setError(getErrorMessage(requestError, "Unable to update request."));
+      const message = getErrorMessage(requestError, "Unable to update request.");
+      setRequestUpdateFeedback({ type: "error", message: `Update failed: ${message}` });
+      setError(message);
     } finally {
       setActionId(null);
     }
@@ -169,7 +174,7 @@ export default function LabPanel({ section = "dashboard" }) {
   const content = section === "connections" ? (
     <LabConnections connections={connections} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} actionId={actionId} onStatusUpdate={updateConnection} />
   ) : section === "requests" ? (
-    <LabRequests reports={reports} requests={requests} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} actionId={actionId} onStatusUpdate={updateRequest} uploading={uploading} onUploadReport={uploadReport} onDeleteReport={deleteReport} />
+    <LabRequests reports={reports} requests={requests} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} actionId={actionId} onStatusUpdate={updateRequest} uploading={uploading} onUploadReport={uploadReport} onDeleteReport={deleteReport} updateFeedback={requestUpdateFeedback} />
   ) : section === "reports" ? (
     <LabReports reports={reports} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} />
   ) : section === "profile" ? (

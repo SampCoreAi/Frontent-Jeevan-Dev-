@@ -325,27 +325,29 @@ export default function LabTestRequestForm({ patientId, storageKey, resetKey, on
                   </Typography>
                 )}
                 {draftAssignments.map((assignment) => (
-                  <Box key={assignment.test} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Chip
-                      label={assignment.test}
-                      onDelete={sent ? undefined : () => setDraftAssignments((current) => current.filter((item) => item.test !== assignment.test))}
-                      sx={{ flexShrink: 0 }}
-                    />
-                    <FormControl size="small" fullWidth>
-                      <InputLabel>{`Lab for ${assignment.test}`}</InputLabel>
-                      <Select
-                        value={assignment.labId}
-                        label={`Lab for ${assignment.test}`}
-                        disabled={sent}
-                        onChange={(event) => {
-                          setDraftAssignments((current) => current.map((item) => (
-                            item.test === assignment.test ? { ...item, labId: event.target.value } : item
-                          )));
-                        }}
-                      >
-                        {labs.map((lab) => <MenuItem key={lab.id} value={String(lab.id)}>{lab.name}{lab.code ? ` (${lab.code})` : ""}</MenuItem>)}
-                      </Select>
-                    </FormControl>
+                  <Box key={assignment.test} sx={{ display: "grid", gap: 1.25 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Chip
+                        label={assignment.test}
+                        onDelete={sent ? undefined : () => setDraftAssignments((current) => current.filter((item) => item.test !== assignment.test))}
+                        sx={{ flexShrink: 0 }}
+                      />
+                      <FormControl size="small" fullWidth>
+                        <InputLabel>{`Lab for ${assignment.test}`}</InputLabel>
+                        <Select
+                          value={assignment.labId}
+                          label={`Lab for ${assignment.test}`}
+                          disabled={sent}
+                          onChange={(event) => {
+                            setDraftAssignments((current) => current.map((item) => (
+                              item.test === assignment.test ? { ...item, labId: event.target.value } : item
+                            )));
+                          }}
+                        >
+                          {labs.map((lab) => <MenuItem key={lab.id} value={String(lab.id)}>{lab.name}{lab.code ? ` (${lab.code})` : ""}</MenuItem>)}
+                        </Select>
+                      </FormControl>
+                    </Box>
                   </Box>
                 ))}
               </Stack>
