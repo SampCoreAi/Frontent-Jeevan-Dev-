@@ -1,51 +1,83 @@
 "use client";
-
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Grid,
   Box,
-  Typography,
-  Button,
-  Divider,
-  Dialog,
-  DialogContent,
-  IconButton,
+  FormControl,
+  Grid,
+  InputLabel,
   MenuItem,
   Select,
-  FormControl,
-  InputLabel,
+  Typography,
+  useTheme,
 } from "@mui/material";
 import axios from "axios";
-import CloseIcon from "@mui/icons-material/Close";
 import OnOffCard from "./on-offCard";
 import PatientCard from "./patientCard";
-
 import { scheduleService } from "../../services/api";
 
 const PatientContent = () => {
-  const [showAnalytics, setShowAnalytics] = useState(false);
+  const theme = useTheme();
   const [hospitals, setHospitals] = useState([]);
   const [selectedHospital, setSelectedHospital] = useState("");
   const [dashboardData, setDashboardData] = useState(null);
-  const [selectedMode, setSelectedMode] = useState("online");
   const [selectedFilter, setSelectedFilter] = useState("day");
   const [cardMode, setCardMode] = useState("online");
   const [tableMode, setTableMode] = useState("online");
+
+  const selectStyle = {
+    "& .MuiInputLabel-root": {
+      fontSize: "13px",
+      color: theme.palette.text.secondary,
+    },
+    "& .MuiInputLabel-root.Mui-focused": {
+      color: theme.palette.primary.main,
+    },
+    "& .MuiOutlinedInput-root": {
+      height: 42,
+      fontSize: "13px",
+      bgcolor: theme.palette.background.paper,
+      "& fieldset": {
+        borderColor: "#D8DEDC",
+      },
+      "&:hover fieldset": {
+        borderColor: theme.palette.primary.main,
+      },
+      "&.Mui-focused fieldset": {
+        borderColor: theme.palette.primary.main,
+        borderWidth: "1px",
+      },
+    },
+    "& .MuiSelect-select": {
+      fontSize: "13px",
+    },
+  };
+
+  const menuProps = {
+    PaperProps: {
+      sx: {
+        maxHeight: 300,
+        "& .MuiMenuItem-root": {
+          fontSize: "13px",
+        },
+      },
+    },
+  };
+
   useEffect(() => {
     const fetchHospitals = async () => {
       try {
         const data = await scheduleService.getHospitals();
-
-        const hospitalData = data.data || [];
+        const hospitalData = Array.isArray(data?.data) ? data.data : [];
 
         setHospitals(hospitalData);
 
-        if (hospitalData.length > 0) {
-          setSelectedHospital(hospitalData[0].hospitalName);
+        if (hospitalData.length) {
+          setSelectedHospital(hospitalData[0]?.hospitalName || "");
         }
       } catch (error) {
         console.error("Error fetching hospitals:", error);
         setHospitals([]);
+        setSelectedHospital("");
       }
     };
 
@@ -56,6 +88,11 @@ const PatientContent = () => {
     const fetchDashboardCards = async () => {
       try {
         const token = localStorage.getItem("token");
+
+        if (!token) {
+          setDashboardData(null);
+          return;
+        }
 
         const response = await axios.get(
           `${process.env.NEXT_PUBLIC_API_URL}/api/appointments/patient-dashboard-cards`,
@@ -70,212 +107,212 @@ const PatientContent = () => {
           }
         );
 
-        if (response.data.success) {
-          setDashboardData(response.data.data);
+        if (response.data?.success) {
+          setDashboardData(response.data?.data || null);
+        } else {
+          setDashboardData(null);
         }
       } catch (error) {
         console.error(
           "Error fetching dashboard cards:",
           error.response?.data || error.message
         );
+        setDashboardData(null);
       }
     };
 
     fetchDashboardCards();
   }, [selectedFilter, cardMode]);
+
   return (
     <Box
       sx={{
-
-        minHeight: "100vh",
+        // minHeight: "100vh",
         mt: { xs: 6, sm: 7.5 },
-        p: { xs: 1, sm: 2, md: 1 },
-        bgcolor: "#f5f7f9",
-
       }}
     >
-
-      <Grid
-        container
-        spacing={2}
+      <Box
         sx={{
-          backgroundColor: "white",
-          boxShadow: "0 4px 12px #0f7468",
-          overflow: "hidden",
-          p: { xs: 1, sm: 3 },
-
+          width: "100%",
+          height:"100vh",
+          bgcolor: theme.palette.background.paper,
+          border: `1px solid ${theme.palette.divider}`,
+          // p
+          pt:4,
+          px:3,
         }}
       >
-        <Grid
-          size={12}
+        <Box
           sx={{
             display: "flex",
-            justifyContent: "flex-end",
-            gap: 2,
-            mb: 2,
-            flexWrap: "wrap",
+            alignItems: { xs: "stretch", md: "center" },
+            justifyContent: "space-between",
+            flexDirection: { xs: "column", md: "row" },
+            gap: 1.5,
+            mb: 1.5,
           }}
         >
-          <FormControl
-            size="small"
-            sx={{
-              minWidth: 180,
-              "& .MuiInputLabel-root": {
-                color: "#1e6658",
-              },
-              "& .MuiInputLabel-root.Mui-focused": {
-                color: "#1e6658",
-              },
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": {
-                  borderColor: "#1e6658",
-                },
-                "&:hover fieldset": {
-                  borderColor: "#1e6658",
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#1e6658",
-                },
-              },
-            }}
-          >
-            <InputLabel>Filter</InputLabel>
-
-            <Select
-              value={selectedFilter}
-              label="Filter"
-              onChange={(e) => setSelectedFilter(e.target.value)}
-            >
-              <MenuItem value="day">Today</MenuItem>
-              <MenuItem value="week">Week</MenuItem>
-              <MenuItem value="month">Month</MenuItem>
-              <MenuItem value="year">Yearly</MenuItem>
-            </Select>
-          </FormControl>
-
-          <FormControl
-            size="small"
-            sx={{
-              minWidth: 180,
-              "& .MuiInputLabel-root": {
-                color: "#1e6658",
-              },
-              "& .MuiInputLabel-root.Mui-focused": {
-                color: "#1e6658",
-              },
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": {
-                  borderColor: "#1e6658",
-                },
-                "&:hover fieldset": {
-                  borderColor: "#1e6658",
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#1e6658",
-                },
-              },
-            }}
-          >
-            <InputLabel>Mode</InputLabel>
-
-            <Select
-              value={cardMode}
-              label="Mode"
-              onChange={(e) => setCardMode(e.target.value)}
-            >
-              <MenuItem value="online">Online</MenuItem>
-              <MenuItem value="offline">Offline</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid size={12}>
-          <PatientCard
-            dashboardData={dashboardData}
-            selectedMode={cardMode}
-          />
-        </Grid>
-
-        {/* <Grid size={{ xs: 12, lg: 6 }}>
-          <PatientDetailsCard />
-        </Grid> */}
-
-        <Grid sx={{ mt: 2, mb: 2, gap: 2, display: "flex", width: "100%" }}>
-        
-          <Grid size={{ xs: 12, md: 6 }}>
-            <FormControl
-              fullWidth
+          <Box>
+            <Typography
               sx={{
-                "& .MuiInputLabel-root": {
-                  color: "#1e6658",
-                },
-                "& .MuiInputLabel-root.Mui-focused": {
-                  color: "#1e6658",
-                },
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: "#1e6658",
-                  },
-                  "&:hover fieldset": {
-                    borderColor: "#1e6658",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#1e6658",
-                  },
-                },
+                fontSize: "13px",
+                fontWeight: 700,
+                color: theme.palette.text.primary,
               }}
             >
-              <InputLabel id="hospital-select-label">
-                Select Hospital
-              </InputLabel>
+              Patient Overview
+            </Typography>
+
+            <Typography
+              sx={{
+                mt: 0.25,
+                fontSize: "11px",
+                color: theme.palette.text.secondary,
+              }}
+            >
+              Filter patient statistics by period and consultation mode
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: 1,
+              width: { xs: "100%", md: "auto" },
+            }}
+          >
+            <FormControl
+              size="small"
+              sx={{
+                ...selectStyle,
+                width: { xs: "100%", sm: 160 },
+              }}
+            >
+              <InputLabel>Period</InputLabel>
 
               <Select
-                labelId="hospital-select-label"
+                value={selectedFilter}
+                label="Period"
+                onChange={(e) => setSelectedFilter(e.target.value)}
+                MenuProps={menuProps}
+              >
+                <MenuItem value="day">Today</MenuItem>
+                <MenuItem value="week">Week</MenuItem>
+                <MenuItem value="month">Month</MenuItem>
+                <MenuItem value="year">Yearly</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl
+              size="small"
+              sx={{
+                ...selectStyle,
+                width: { xs: "100%", sm: 160 },
+              }}
+            >
+              <InputLabel>Patient Mode</InputLabel>
+
+              <Select
+                value={cardMode}
+                label="Patient Mode"
+                onChange={(e) => setCardMode(e.target.value)}
+                MenuProps={menuProps}
+              >
+                <MenuItem value="online">Online</MenuItem>
+                <MenuItem value="offline">Offline</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+
+        <PatientCard
+          dashboardData={dashboardData}
+          selectedMode={cardMode}
+        />
+
+        <Box
+          sx={{
+            mt: { xs: 2.5, sm: 3 },
+            mb: 1.5,
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "13px",
+              fontWeight: 700,
+              color: theme.palette.text.primary,
+            }}
+          >
+            Appointments
+          </Typography>
+
+          <Typography
+            sx={{
+              mt: 0.25,
+              fontSize: "11px",
+              color: theme.palette.text.secondary,
+            }}
+          >
+            Select hospital and consultation mode to manage appointments
+          </Typography>
+        </Box>
+
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, md: 8 }}>
+            <FormControl
+              fullWidth
+              size="small"
+              disabled={!hospitals.length}
+              sx={selectStyle}
+            >
+              <InputLabel>Select Hospital</InputLabel>
+
+              <Select
                 value={selectedHospital}
                 label="Select Hospital"
                 onChange={(e) => setSelectedHospital(e.target.value)}
+                MenuProps={menuProps}
               >
-                {hospitals.length > 0 ? (
-                  hospitals.map((h, i) => (
-                    <MenuItem key={i} value={h.hospitalName}>
-                      {`${h.hospitalName} - ${h.landmark}, ${h.city}`}
+                {hospitals.map((hospital, index) => {
+                  const hospitalName = hospital?.hospitalName || "";
+
+                  const location = [
+                    hospital?.landmark,
+                    hospital?.city,
+                  ]
+                    .filter(Boolean)
+                    .join(", ");
+
+                  return (
+                    <MenuItem
+                      key={hospital?.id || hospital?._id || index}
+                      value={hospitalName}
+                      disabled={!hospitalName}
+                    >
+                      {location
+                        ? `${hospitalName} - ${location}`
+                        : hospitalName}
                     </MenuItem>
-                  ))
-                ) : (
-                  <MenuItem disabled>No hospitals found</MenuItem>
-                )}
+                  );
+                })}
               </Select>
             </FormControl>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <FormControl
               fullWidth
-              sx={{
-                "& .MuiInputLabel-root": {
-                  color: "#1e6658",
-                },
-                "& .MuiInputLabel-root.Mui-focused": {
-                  color: "#1e6658",
-                },
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: "#1e6658",
-                  },
-                  "&:hover fieldset": {
-                    borderColor: "#1e6658",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#1e6658",
-                  },
-                },
-              }}
+              size="small"
+              sx={selectStyle}
             >
-              <InputLabel>Select Mode</InputLabel>
+              <InputLabel>Consultation Mode</InputLabel>
 
               <Select
                 value={tableMode}
-                label="Select Mode"
+                label="Consultation Mode"
                 onChange={(e) => setTableMode(e.target.value)}
+                MenuProps={menuProps}
               >
                 <MenuItem value="online">Online</MenuItem>
                 <MenuItem value="offline">Offline</MenuItem>
@@ -284,18 +321,13 @@ const PatientContent = () => {
           </Grid>
         </Grid>
 
-        {/* Divider */}
-
-        {/* OnOff Card */}
-        <Grid size={12}>
+        <Box sx={{ mt: 1.5 }}>
           <OnOffCard
             selectedHospital={selectedHospital}
             selectedMode={tableMode}
           />
-        </Grid>
-      </Grid>
-
-
+        </Box>
+      </Box>
     </Box>
   );
 };

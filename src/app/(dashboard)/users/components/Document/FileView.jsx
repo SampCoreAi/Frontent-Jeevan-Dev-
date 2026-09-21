@@ -27,7 +27,7 @@ export const FileView = ({
         overflowY: "auto",
         overflowX: "hidden",
 
-        bgcolor: "background.default",
+        bgcolor: "white",
 
         // ===============================
         // GRID / LIST

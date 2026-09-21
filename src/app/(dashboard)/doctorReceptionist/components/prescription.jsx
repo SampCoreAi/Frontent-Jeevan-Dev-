@@ -350,7 +350,7 @@ export default function Prescription() {
               value={remark}
               onChange={(e) => setRemark(e.target.value)}
               inputProps={{
-                style: { fontSize: 14, color: "#000" },
+                style: { fontSize: 14, color: "#000"  },
               }}
               sx={{ backgroundColor: "#ffffffff" }}
             />
