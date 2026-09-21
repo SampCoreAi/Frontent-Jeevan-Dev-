@@ -1,92 +1,98 @@
 "use client";
-
 import React from "react";
-import { Grid, Paper, Typography, Box } from "@mui/material";
+import { Box, Grid, Paper, Typography, useTheme } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PendingIcon from "@mui/icons-material/Pending";
-import CancelIcon from "@mui/icons-material/Cancel";
-import { useTheme } from "@mui/material/styles";
+import GroupsIcon from "@mui/icons-material/Groups";
 
 const PatientCard = ({ dashboardData, selectedMode }) => {
   const theme = useTheme();
+  const isOnline = selectedMode === "online";
 
-  const cardBg = theme.palette.background.third;
-  const text = theme.palette.text.primary;
-const isOnline = selectedMode === "online";
-
-const cards = [
-  {
-    icon: <PersonIcon />,
-    title: isOnline ? "Online Patients" : "Offline Patients",
-    value: isOnline
-      ? dashboardData?.online_patient || 0
-      : dashboardData?.offline_patient || 0,
-  },
-  {
-    icon: <PendingIcon />,
-    title: isOnline ? "Online Pending" : "Offline Pending",
-    
-    value: isOnline
-    ? dashboardData?.online_pending || 0
-    : dashboardData?.offline_pending || 0,
-  },
-  {
-    icon: <CheckCircleIcon />,
-    title: isOnline ? "Online Completed" : "Offline Completed",
-    value: isOnline
-    ? dashboardData?.online_complete || 0
-    : dashboardData?.offline_complete || 0,
-  },
-  {
-    icon: <CancelIcon />,
-    title: "Total Patients",
-    value: dashboardData?.total_patient || 0,
-  },
-];
+  const cards = [
+    {
+      icon: <PersonIcon />,
+      title: isOnline ? "Online Patients" : "Offline Patients",
+      value: isOnline
+        ? dashboardData?.online_patient || 0
+        : dashboardData?.offline_patient || 0,
+    },
+    {
+      icon: <PendingIcon />,
+      title: isOnline ? "Online Pending" : "Offline Pending",
+      value: isOnline
+        ? dashboardData?.online_pending || 0
+        : dashboardData?.offline_pending || 0,
+    },
+    {
+      icon: <CheckCircleIcon />,
+      title: isOnline ? "Online Completed" : "Offline Completed",
+      value: isOnline
+        ? dashboardData?.online_complete || 0
+        : dashboardData?.offline_complete || 0,
+    },
+    {
+      icon: <GroupsIcon />,
+      title: "Total Patients",
+      value: dashboardData?.total_patient || 0,
+    },
+  ];
 
   return (
-    <Grid container spacing={2}>
-      {cards.map((item, index) => (
-        <Grid
-          key={index}
-          size={{ xs: 12, sm: 6, lg: 3 }}
-        >
+    <Grid container spacing={1.5}>
+      {cards.map((item) => (
+        <Grid key={item.title} size={{ xs: 12, sm: 6, lg: 3 }}>
           <Paper
+            elevation={0}
             sx={{
-              p: { xs: 1, sm: 2 },
               width: "100%",
-              overflow: "hidden",
+              minHeight: 82,
+              height: "100%",
+              p: 1.5,
               display: "flex",
               alignItems: "center",
-              gap: 2,
+              gap: 1.5,
+              bgcolor: theme.palette.background.paper,
+              border: "1px solid #D8DEDC",
               borderRadius: 2,
-              backgroundColor: cardBg,
-              border: "1px solid #0f7468",
-              transition: "0.3s",
-              height: "100%",
-
+              transition: "all 0.2s ease",
               "&:hover": {
-                transform: "translateY(-4px)",
-                boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
+                borderColor: theme.palette.primary.main,
+                boxShadow: theme.shadows[1],
+                transform: "translateY(-2px)",
               },
             }}
           >
             <Box
               sx={{
-                fontSize: { xs: 40, sm: 50, md: 60 },
-                color: text,
+                width: 44,
+                height: 44,
+                minWidth: 44,
+                borderRadius: 1.5,
+                bgcolor: "#EDF7F2",
+                color: theme.palette.primary.main,
                 display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                "& svg": {
+                  fontSize: 22,
+                },
               }}
             >
               {item.icon}
             </Box>
 
-            <Box>
+            <Box sx={{ minWidth: 0 }}>
               <Typography
                 sx={{
-                  fontSize: { xs: 14, sm: 16, md: 18 },
-                  fontWeight: 700,
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  lineHeight: 1.3,
+                  color: theme.palette.text.secondary,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
                 {item.title}
@@ -94,8 +100,11 @@ const cards = [
 
               <Typography
                 sx={{
-                  fontSize: { xs: 20, sm: 22, md: 26 },
-                  fontWeight: 600,
+                  mt: 0.35,
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  lineHeight: 1.2,
+                  color: theme.palette.text.primary,
                 }}
               >
                 {item.value}

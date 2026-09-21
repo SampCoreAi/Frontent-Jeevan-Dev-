@@ -253,12 +253,12 @@ export default function LabTestRequestForm({ patientId, storageKey, resetKey, on
             setDraftAssignments(assignments);
             setOpen(true);
           }}
-          sx={{ textTransform: "none", borderRadius: 1.5 }}
+          sx={{ textTransform: "none", borderRadius: 1.5, minHeight: 32, px: 1.25, fontSize: "12px" }}
         >
           Lab Test
         </Button>
         {assignments.length && assignments.every((assignment) => assignment.labId) && !open && !sent ? (
-          <Button size="small" variant="contained" onClick={handleSend} disabled={sending} sx={{ textTransform: "none" }}>
+          <Button size="small" variant="contained" onClick={handleSend} disabled={sending} sx={{ textTransform: "none", minHeight: 32, px: 1.25, fontSize: "12px" }}>
             {sending ? "Sending..." : "Send to Lab"}
           </Button>
         ) : null}
@@ -353,8 +353,8 @@ export default function LabTestRequestForm({ patientId, storageKey, resetKey, on
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setDraftAssignments(assignments); setTestInput(""); setOpen(false); }} sx={{ textTransform: "none" }}>Cancel</Button>
-          <Button variant="contained" onClick={handleDone} disabled={loadingLabs} sx={{ textTransform: "none" }}>Done</Button>
+          <Button onClick={() => { setDraftAssignments(assignments); setTestInput(""); setOpen(false); }} sx={{ textTransform: "none", minHeight: 32, px: 1.25, fontSize: "12px" }}>Cancel</Button>
+          <Button variant="contained" onClick={handleDone} disabled={loadingLabs} sx={{ textTransform: "none", minHeight: 32, px: 1.25, fontSize: "12px" }}>Done</Button>
         </DialogActions>
       </Dialog>
 

@@ -161,7 +161,11 @@
 }
 
 .lab-workspace .MuiButton-root {
-  font-size: 0.7rem;
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.2;
+  text-transform: none;
 }
 
 .lab-workspace .MuiChip-label {
