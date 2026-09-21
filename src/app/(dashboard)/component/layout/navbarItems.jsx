@@ -27,20 +27,10 @@ export const navbarItems = {
   ],
 
   3: [
-    {
-      icon: NotificationsIcon,
-      label: "New Patients",
-      badge: 10,
-      onClick: () => console.log("Receptionist Patient Alerts"),
-    },
+    
   ],
 
   4: [
-    {
-      icon: NotificationsIcon,
-      label: "New Patients",
-      badge: 10,
-      onClick: () => console.log("Receptionist Patient Alerts"),
-    },
+   
   ],
 };

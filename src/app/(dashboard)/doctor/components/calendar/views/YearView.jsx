@@ -6,11 +6,8 @@ import {
   Chip,
   Card,
   CardContent,
-  LinearProgress,
   Paper,
   Divider,
-  Tooltip,
-  Avatar,
   Stack,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
@@ -19,32 +16,30 @@ import dayjs from "dayjs";
 import {
   CalendarToday,
   EventNote,
-  CheckCircle,
-  Schedule,
-  Cancel,
-  TrendingUp,
-  TrendingDown,
-  TrendingFlat,
   Circle,
 } from "@mui/icons-material";
 
 const YearView = ({ selectedDate, allEvents, onMonthClick }) => {
   const theme = useTheme();
-  const primaryColor = "#1e6658";
+  const primaryColor = theme.palette.primary.main;
 
   const months = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => {
       const month = dayjs(selectedDate).month(i);
       const currentMonth = dayjs().month(i);
       const isCurrentMonth = dayjs().month(i).isSame(dayjs(), "month");
-
       const monthEvents = allEvents.filter((event) =>
         dayjs(event.date).isSame(month, "month")
       );
-
-      const completed = monthEvents.filter((e) => e.status === "completed" || e.status === "done").length;
-      const upcoming = monthEvents.filter((e) => e.status === "scheduled" || e.status === "pending").length;
-      const cancelled = monthEvents.filter((e) => e.status === "cancelled").length;
+      const completed = monthEvents.filter(
+        (e) => e.status === "completed" || e.status === "done"
+      ).length;
+      const upcoming = monthEvents.filter(
+        (e) => e.status === "scheduled" || e.status === "pending"
+      ).length;
+      const cancelled = monthEvents.filter(
+        (e) => e.status === "cancelled"
+      ).length;
 
       return {
         name: month.format("MMMM"),
@@ -56,9 +51,10 @@ const YearView = ({ selectedDate, allEvents, onMonthClick }) => {
           completed,
           upcoming,
           cancelled,
-          completionRate: monthEvents.length > 0 
-            ? Math.round((completed / monthEvents.length) * 100) 
-            : 0,
+          completionRate:
+            monthEvents.length > 0
+              ? Math.round((completed / monthEvents.length) * 100)
+              : 0,
         },
       };
     });
@@ -77,223 +73,304 @@ const YearView = ({ selectedDate, allEvents, onMonthClick }) => {
     }
   };
 
-  const getTrendIcon = (rate) => {
-    if (rate > 70) return <TrendingUp sx={{ fontSize: 16, color: theme.palette.success.main }} />;
-    if (rate > 40) return <TrendingFlat sx={{ fontSize: 16, color: theme.palette.warning.main }} />;
-    return <TrendingDown sx={{ fontSize: 16, color: theme.palette.error.main }} />;
-  };
-
   return (
     <Paper
       elevation={0}
       sx={{
-        p: 3,
-        borderRadius: 3,
-        bgcolor: "background.default",
+        p: { xs: 1, sm: 1.5 },
+        borderRadius: "8px",
+        bgcolor: theme.palette.background.default,
         border: `1px solid ${theme.palette.divider}`,
       }}
     >
-      {/* Enhanced Header */}
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={4}
-        flexWrap="wrap"
-        gap={2}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 1,
+          mb: 1.5,
+        }}
       >
-        <Box display="flex" alignItems="center" gap={1.5}>
-          <CalendarToday sx={{ color: primaryColor, fontSize: 32 }} />
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0.7,
+          }}
+        >
+          <Box
+            sx={{
+              width: 30,
+              height: 30,
+              borderRadius: "7px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: `${primaryColor}10`,
+              border: `1px solid ${primaryColor}20`,
+            }}
+          >
+            <CalendarToday
+              sx={{
+                color: primaryColor,
+                fontSize: 16,
+              }}
+            />
+          </Box>
           <Box>
-            <Typography variant="h5" fontWeight="700" sx={{ color: primaryColor }}>
+            <Typography
+              sx={{
+                fontSize: "13px",
+                fontWeight: 600,
+                lineHeight: 1.2,
+                color: theme.palette.text.primary,
+              }}
+            >
               Year Overview
             </Typography>
-          
+            <Typography
+              sx={{
+                mt: 0.2,
+                fontSize: "10px",
+                color: theme.palette.text.secondary,
+              }}
+            >
+              {selectedDate.format("YYYY")} appointment summary
+            </Typography>
           </Box>
         </Box>
-
-        <Box display="flex" alignItems="center" gap={2}>
-          <Chip
-            label={`${allEvents.length} total`}
-            icon={<EventNote fontSize="small" />}
-            sx={{
+        <Chip
+          label={`${allEvents.length} total`}
+          icon={<EventNote />}
+          size="small"
+          sx={{
+            height: 24,
+            borderRadius: "6px",
+            bgcolor: `${primaryColor}0D`,
+            color: primaryColor,
+            border: `1px solid ${primaryColor}25`,
+            "& .MuiChip-icon": {
               color: primaryColor,
-              borderColor: primaryColor,
+              fontSize: 14,
+              ml: 0.7,
+            },
+            "& .MuiChip-label": {
+              px: 0.8,
+              fontSize: "10px",
               fontWeight: 600,
-              '& .MuiChip-icon': {
-                color: primaryColor,
-              },
-            }}
-            variant="outlined"
-          />
-        
-        </Box>
+            },
+          }}
+        />
       </Box>
-
-      
-
-      {/* Months Grid */}
-      <Grid container spacing={2}>
+      <Grid container spacing={1}>
         {months.map((month, index) => (
-          <Grid key={month.name} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+          <Grid
+            key={month.name}
+            size={{
+              xs: 12,
+              sm: 6,
+              md: 4,
+              lg: 3,
+            }}
+          >
             <Card
-              variant="outlined"
+              elevation={0}
+              onClick={() => onMonthClick(index)}
               sx={{
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                height: "100%",
                 cursor: "pointer",
                 position: "relative",
-                overflow: "visible",
-                borderRadius: 2,
-                borderColor: month.isCurrentMonth ? primaryColor : theme.palette.divider,
-                borderWidth: month.isCurrentMonth ? 2 : 1,
-                bgcolor: month.isCurrentMonth ? `${primaryColor}05` : "background.paper",
+                overflow: "hidden",
+                borderRadius: "8px",
+                border: `1px solid ${
+                  month.isCurrentMonth
+                    ? primaryColor
+                    : theme.palette.divider
+                }`,
+                bgcolor: month.isCurrentMonth
+                  ? `${primaryColor}05`
+                  : theme.palette.background.paper,
+                transition: "border-color 0.15s ease",
                 "&:hover": {
-                  boxShadow: theme.shadows[8],
-                  transform: "translateY(-4px)",
                   borderColor: primaryColor,
                 },
               }}
-              onClick={() => onMonthClick(index)}
             >
               {month.isCurrentMonth && (
                 <Box
                   sx={{
                     position: "absolute",
-                    top: -10,
-                    right: -10,
+                    top: 0,
+                    right: 0,
+                    px: 0.8,
+                    py: 0.3,
+                    borderBottomLeftRadius: "6px",
                     bgcolor: primaryColor,
-                    color: "#fff",
-                    px: 1.5,
-                    py: 0.25,
-                    borderRadius: 20,
-                    fontSize: "0.55rem",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                    boxShadow: theme.shadows[2],
+                    color: theme.palette.primary.contrastText,
+                    fontSize: "8.5px",
+                    fontWeight: 600,
+                    lineHeight: 1.3,
                   }}
                 >
                   Current
                 </Box>
               )}
-
-              <CardContent sx={{ p: 2.5 }}>
-                {/* Month Header */}
+              <CardContent
+                sx={{
+                  p: "12px !important",
+                }}
+              >
                 <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="flex-start"
-                  mb={2}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 1,
+                    mb: 1,
+                  }}
                 >
                   <Box>
                     <Typography
-                      variant="h6"
-                      fontWeight="700"
-                      sx={{ 
-                        color: month.isCurrentMonth ? primaryColor : "#000000",
-                        fontSize: "1.1rem",
+                      sx={{
+                        fontSize: "12.5px",
+                        fontWeight: 600,
+                        lineHeight: 1.2,
+                        color: month.isCurrentMonth
+                          ? primaryColor
+                          : theme.palette.text.primary,
                       }}
                     >
                       {month.shortName}
                     </Typography>
                     <Typography
-                      variant="caption"
-                      sx={{ color: "#000000", fontSize: "0.6rem", opacity: 0.7 }}
+                      sx={{
+                        mt: 0.2,
+                        fontSize: "9.5px",
+                        color: theme.palette.text.secondary,
+                      }}
                     >
                       {month.name}
                     </Typography>
                   </Box>
-
-                  <Chip
-                    label={month.events.length}
-                    size="small"
+                  <Box
                     sx={{
-                      bgcolor: month.events.length > 0 ? primaryColor : theme.palette.grey[300],
-                      color: "#fff",
+                      minWidth: 25,
+                      height: 23,
+                      px: 0.7,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "6px",
+                      bgcolor:
+                        month.events.length > 0
+                          ? `${primaryColor}0D`
+                          : theme.palette.background.default,
+                      color:
+                        month.events.length > 0
+                          ? primaryColor
+                          : theme.palette.text.secondary,
+                      border: `1px solid ${
+                        month.events.length > 0
+                          ? `${primaryColor}20`
+                          : theme.palette.divider
+                      }`,
+                      fontSize: "9.5px",
                       fontWeight: 600,
-                      minWidth: 28,
-                      "& .MuiChip-label": {
-                        px: 1,
-                      },
                     }}
-                  />
+                  >
+                    {month.events.length}
+                  </Box>
                 </Box>
-
-            
-
-                <Divider sx={{ my: 1.5 }} />
-
-                {/* Events Preview */}
+                <Divider sx={{ mb: 1 }} />
                 {month.events.length > 0 ? (
                   <Box>
-                    <Stack spacing={1}>
+                    <Stack spacing={0.6}>
                       {month.events.slice(0, 2).map((event, idx) => (
                         <Box
                           key={event.id || idx}
                           sx={{
-                            p: 1,
-                            bgcolor: `${getEventColor(event.type)}10`,
-                            borderLeft: `3px solid ${getEventColor(event.type)}`,
-                            borderRadius: 1,
-                            transition: "all 0.2s",
-                            "&:hover": {
-                              bgcolor: `${getEventColor(event.type)}20`,
-                            },
+                            minWidth: 0,
+                            px: 0.7,
+                            py: 0.6,
+                            borderRadius: "5px",
+                            bgcolor: `${getEventColor(event.type)}08`,
+                            borderLeft: `2px solid ${getEventColor(
+                              event.type
+                            )}`,
                           }}
                         >
-                          <Typography
-                            variant="caption"
-                            fontWeight="600"
-                            sx={{ 
-                              color: "#000000",
-                              fontSize: "0.65rem",
-                              display: "block",
-                              mb: 0.25,
-                              opacity: 0.9,
-                            }}
-                          >
-                            <Circle sx={{ 
-                              fontSize: 6, 
-                              color: getEventColor(event.type),
-                              verticalAlign: "middle",
-                              mr: 0.5,
-                            }} />
-                            {dayjs(event.date).format("DD MMM")} - {event.title || event.name}
-                          </Typography>
-
-                          <Typography
-                            variant="caption"
+                          <Box
                             sx={{
-                              color: "#000000",
-                              fontSize: "0.55rem",
                               display: "flex",
                               alignItems: "center",
                               gap: 0.5,
-                              opacity: 0.7,
+                              minWidth: 0,
                             }}
                           >
-                            <EventNote sx={{ fontSize: 10 }} />
-                            Token: {event.token_number || event.id || "#NA"}
-                            {` • ${event.patientName}`}
-                          
-                          </Typography>
+                            <Circle
+                              sx={{
+                                fontSize: 5,
+                                flexShrink: 0,
+                                color: getEventColor(event.type),
+                              }}
+                            />
+                            <Typography
+                              noWrap
+                              sx={{
+                                minWidth: 0,
+                                fontSize: "9.5px",
+                                fontWeight: 600,
+                                color: theme.palette.text.primary,
+                              }}
+                            >
+                              {dayjs(event.date).format("DD MMM")} -{" "}
+                              {event.title || event.name}
+                            </Typography>
+                          </Box>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.4,
+                              mt: 0.35,
+                              minWidth: 0,
+                            }}
+                          >
+                            <EventNote
+                              sx={{
+                                fontSize: 10,
+                                flexShrink: 0,
+                                color: theme.palette.text.secondary,
+                              }}
+                            />
+                            <Typography
+                              noWrap
+                              sx={{
+                                minWidth: 0,
+                                fontSize: "9px",
+                                color: theme.palette.text.secondary,
+                              }}
+                            >
+                              Token:{" "}
+                              {event.token_number || event.id || "#NA"}
+                              {event.patientName
+                                ? ` • ${event.patientName}`
+                                : ""}
+                            </Typography>
+                          </Box>
                         </Box>
                       ))}
                     </Stack>
-
                     {month.events.length > 2 && (
                       <Typography
-                        variant="caption"
                         sx={{
-                          color: primaryColor,
+                          mt: 0.7,
+                          fontSize: "9px",
                           fontWeight: 600,
-                          display: "block",
+                          color: primaryColor,
                           textAlign: "center",
-                          mt: 1,
-                          fontSize: "0.6rem",
-                          "&:hover": {
-                            textDecoration: "underline",
-                          },
                         }}
                       >
                         +{month.events.length - 2} more appointments
@@ -303,14 +380,21 @@ const YearView = ({ selectedDate, allEvents, onMonthClick }) => {
                 ) : (
                   <Box
                     sx={{
-                      py: 2,
+                      minHeight: 65,
                       display: "flex",
-                      justifyContent: "center",
                       alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "5px",
+                      bgcolor: theme.palette.background.default,
                     }}
                   >
-                    <Typography variant="caption" sx={{ color: "#000000", fontSize: "0.6rem", opacity: 0.4 }}>
-                      No events this month
+                    <Typography
+                      sx={{
+                        fontSize: "9.5px",
+                        color: theme.palette.text.secondary,
+                      }}
+                    >
+                      No appointments
                     </Typography>
                   </Box>
                 )}
@@ -319,34 +403,38 @@ const YearView = ({ selectedDate, allEvents, onMonthClick }) => {
           </Grid>
         ))}
       </Grid>
-
-      {/* Legend */}
       <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        gap={3}
-        mt={3}
-        pt={2}
-        borderTop={`1px solid ${theme.palette.divider}`}
-        flexWrap="wrap"
+        sx={{
+          mt: 1.5,
+          pt: 1.2,
+          borderTop: `1px solid ${theme.palette.divider}`,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 1.5,
+        }}
       >
         {["completed", "cancelled", "emergency", "default"].map((type) => (
-          <Box key={type} display="flex" alignItems="center" gap={0.75}>
+          <Box
+            key={type}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+            }}
+          >
             <Circle
               sx={{
-                fontSize: 10,
+                fontSize: 7,
                 color: getEventColor(type),
               }}
             />
             <Typography
-              variant="caption"
               sx={{
-                fontSize: "0.6rem",
+                fontSize: "9.5px",
                 textTransform: "capitalize",
-                color: "#000000",
-                fontWeight: 500,
-                opacity: 0.7,
+                color: theme.palette.text.secondary,
               }}
             >
               {type}

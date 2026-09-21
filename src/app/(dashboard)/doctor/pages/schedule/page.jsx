@@ -45,15 +45,15 @@ export default function SchedulePage() {
     message: "",
     severity: "success",
   });
-const handleSetFormData = useCallback(
-  (data) => dispatch(setFormData(data)),
-  [dispatch]
-);
+  const handleSetFormData = useCallback(
+    (data) => dispatch(setFormData(data)),
+    [dispatch]
+  );
 
-const handleSetEditIndex = useCallback(
-  (index) => dispatch(setEditIndex(index)),
-  [dispatch]
-);
+  const handleSetEditIndex = useCallback(
+    (index) => dispatch(setEditIndex(index)),
+    [dispatch]
+  );
   const showMessage = useCallback((message, severity = "success") => {
     setSnackbar({
       open: true,
@@ -135,7 +135,7 @@ const handleSetEditIndex = useCallback(
           typeof err === "string"
             ? err
             : err?.message ||
-              "Something went wrong. Please try again.";
+            "Something went wrong. Please try again.";
 
         showMessage(message, "error");
 
@@ -204,32 +204,44 @@ const handleSetEditIndex = useCallback(
           sm: 2,
         },
         mt: 7.5,
+        backgroundColor:"white"
       }}
     >
-     <ScheduleForm
-  onSave={handleSaveSchedule}
-  formData={formData}
-  setFormData={handleSetFormData}
-  editIndex={editIndex}
-  setEditIndex={handleSetEditIndex}
-  hospitals={hospitals}
-  availability={availability}
-  loading={loading}
-/>
+      <ScheduleForm
+        onSave={handleSaveSchedule}
+        formData={formData}
+        setFormData={handleSetFormData}
+        editIndex={editIndex}
+        setEditIndex={handleSetEditIndex}
+        hospitals={hospitals}
+        availability={availability}
+        loading={loading}
+      />
+<Typography
+ component="div"
+  sx={{
+    mt: 3,
+    mb: 1.5,
+    ml:1,
+    fontSize: "14px",
+    fontWeight: 600,
+    color: "text.primary",
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+  }}
+>
+  Saved Schedules
 
-      <Typography
-        variant="h5"
-        sx={{
-          mt: 4,
-          mb: 2,
-        }}
-      >
-        Saved Schedules{" "}
-        <Chip
-          label={schedules.length}
-          size="small"
-        />
-      </Typography>
+  <Chip
+    label={schedules.length}
+    size="small"
+    sx={{
+      height: 22,
+      fontSize: "10.5px",
+    }}
+  />
+</Typography>
 
       <SavedSchedules
         schedules={schedules}

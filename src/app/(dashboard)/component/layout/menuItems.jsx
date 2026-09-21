@@ -66,6 +66,29 @@ export const menuItems = {
       icon: <DashboardOutlined />,
       route: "/doctor/pages/dashboard",
     },
+     {
+      label: "Patient",
+      icon: <PeopleAltOutlined />,
+      route: "/doctor/pages/patient",
+    },
+    {
+      label: "Schedule",
+      icon: <EventAvailableOutlined />,
+      route: "/doctor/pages/schedule",
+    },
+   
+    {
+      label: "Appointment",
+      icon: <CalendarMonthOutlined />,
+      route: "/doctor/pages/appointment",
+    },
+
+{
+      label: "Assistants",
+      icon: <GroupOutlined />,
+      route: "/doctor/pages/doctorReceptionistUser",
+    },
+    
     {
       label: "Connections",
       icon: <GroupOutlined />,
@@ -81,26 +104,7 @@ export const menuItems = {
       icon: <DescriptionOutlined />,
       route: "/doctor/pages/lab/reports",
     },
-    {
-      label: "Assistants",
-      icon: <GroupOutlined />,
-      route: "/doctor/pages/doctorReceptionistUser",
-    },
-    {
-      label: "Schedule",
-      icon: <EventAvailableOutlined />,
-      route: "/doctor/pages/schedule",
-    },
-    {
-      label: "Patient",
-      icon: <PeopleAltOutlined />,
-      route: "/doctor/pages/patient",
-    },
-    {
-      label: "Appointment",
-      icon: <CalendarMonthOutlined />,
-      route: "/doctor/pages/appointment",
-    },
+    
     {
       label: "Profile",
       icon: <BadgeOutlined />,

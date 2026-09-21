@@ -1,5 +1,3 @@
-
-// components/DashboardContent/NextPatientCard.jsx
 "use client";
 
 import React from "react";
@@ -18,27 +16,43 @@ import {
 const NextPatientCard = ({ patient, loading }) => {
   const router = useRouter();
 
-  // Show "Not provided" for null, undefined, or empty values
   const displayValue = (value) => {
-    return value !== null && value !== undefined && value !== ""
-      ? value
-      : "Not provided";
+    if (value === null || value === undefined || value === "") {
+      return "Not provided";
+    }
+
+    if (Array.isArray(value)) {
+      return value.length ? value.join(", ") : "Not provided";
+    }
+
+    return value;
+  };
+
+  const handleViewPatient = () => {
+    if (!patient?.appointment_id) return;
+
+    router.push(
+      `/doctor/pages/patient?appointment_id=${encodeURIComponent(
+        patient.appointment_id
+      )}&verify=true`
+    );
   };
 
   if (loading) {
     return (
       <Card
+        elevation={0}
         sx={{
-          p: 3,
-          borderRadius: 1,
-          border: "1px solid black",
+          p: 2,
+          borderRadius: 1.5,
+          border: "1px solid #c6c6c6",
           display: "flex",
-          justifyContent: "center",
           alignItems: "center",
-          minHeight: 300,
+          justifyContent: "center",
+          py: 5,
         }}
       >
-        <CircularProgress />
+        <CircularProgress size={25} />
       </Card>
     );
   }
@@ -46,206 +60,207 @@ const NextPatientCard = ({ patient, loading }) => {
   if (!patient) {
     return (
       <Card
+        elevation={0}
         sx={{
-          p: 3,
-          borderRadius: 1,
-          border: "1px solid black",
-          minHeight: 300,
+          p: 2,
+          borderRadius: 1.5,
+          border: "1px solid #b1b1b1",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          py: 5,
         }}
       >
-        <Typography>No patient found</Typography>
+        <Typography
+          sx={{
+            fontSize: "12.5px",
+            color: "text.secondary",
+          }}
+        >
+          No patient found
+        </Typography>
       </Card>
     );
   }
 
+  const details = [
+    {
+      label: "Patient ID",
+      value: patient?.patient_id,
+    },
+    {
+      label: "Age",
+      value: patient?.age,
+    },
+    {
+      label: "Sex",
+      value: patient?.gender,
+    },
+    {
+      label: "Weight",
+      value:
+        patient?.weight !== null &&
+        patient?.weight !== undefined &&
+        patient?.weight !== ""
+          ? `${patient.weight} kg`
+          : null,
+    },
+    {
+      label: "Height",
+      value:
+        patient?.height !== null &&
+        patient?.height !== undefined &&
+        patient?.height !== ""
+          ? `${patient.height} cm`
+          : null,
+    },
+    {
+      label: "Blood Group",
+      value: patient?.blood_group,
+    },
+    {
+      label: "Language",
+      value: patient?.language,
+    },
+    {
+      label: "Phone Number",
+      value: patient?.phone_number,
+    },
+  ];
+
   return (
     <Card
+      elevation={0}
       sx={{
-        p: {
-          xs: 1.5,
-          sm: 2,
-        },
-        borderRadius: 1,
-        border: "1px solid black",
-        height: "100%",
+        p: { xs: 1.5, sm: 2 },
+        width: "100%",
+        borderRadius: 1.5,
+        border: "1px solid #c6c6c6",
+        bgcolor: "#fff",
       }}
     >
       <Typography
-        variant="h6"
         sx={{
-          fontSize: {
-            xs: "1rem",
-            sm: "1.25rem",
-          },
+          fontSize: "12.5px",
           fontWeight: 700,
+          color: "text.primary",
         }}
       >
         Patient Details
       </Typography>
-
-      <Divider sx={{ my: 2 }} />
-
-      {/* TOP SECTION */}
-      <Stack direction="row" spacing={2} alignItems="center">
+      <Divider sx={{ my: 1.5 }} />
+      <Stack
+        direction="row"
+        spacing={1.3}
+        alignItems="center"
+      >
         <Avatar
           sx={{
-            width: {
-              xs: 48,
-              sm: 56,
-            },
-            height: {
-              xs: 48,
-              sm: 56,
-            },
-            bgcolor: "#439f8e",
+            width: 40,
+            height: 40,
+            bgcolor: "#edf7f2",
+            color: "#07876a",
+            fontSize: "12.5px",
             fontWeight: 700,
           }}
         >
-          {patient.patient_name?.charAt(0)?.toUpperCase() || "?"}
+          {patient?.patient_name
+            ?.trim()
+            ?.charAt(0)
+            ?.toUpperCase() || "?"}
         </Avatar>
-
         <Box sx={{ minWidth: 0 }}>
           <Typography
-            fontWeight={600}
             sx={{
-              fontSize: {
-                xs: "0.9rem",
-                sm: "1rem",
-              },
+              fontSize: "12.5px",
+              fontWeight: 700,
+              color: "text.primary",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
-            {displayValue(patient.patient_name)}
+            {displayValue(patient?.patient_name)}
           </Typography>
-
           <Typography
-            variant="body2"
             sx={{
-              color: "#1e6658",
-              fontSize: {
-                xs: "0.75rem",
-                sm: "0.875rem",
-              },
+              mt: 0.2,
+              fontSize: "12.5px",
+              color: "#07876a",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
-            {displayValue(patient.reason_for_visit)}
+            {displayValue(patient?.reason_for_visit)}
           </Typography>
         </Box>
       </Stack>
-
-      {/* DETAILS */}
       <Box
         sx={{
-          mt: 4,
+          mt: 2,
           display: "grid",
           gridTemplateColumns: {
-            xs: "1fr",
-            sm: "repeat(2,1fr)",
+            xs: "repeat(2, minmax(0, 1fr))",
+            sm: "repeat(2, minmax(0, 1fr))",
           },
-          gap: 2,
+          columnGap: 2,
+          rowGap: 1.4,
         }}
       >
-        {/* Patient ID */}
-        <Box>
-          <Typography variant="body2">Patient ID</Typography>
-          <Typography fontWeight={600}>
-            {displayValue(patient.patient_id)}
-          </Typography>
-        </Box>
-
-        {/* Age */}
-        <Box>
-          <Typography variant="body2">Age</Typography>
-          <Typography fontWeight={600}>
-            {displayValue(patient.age)}
-          </Typography>
-        </Box>
-
-        {/* Sex */}
-        <Box>
-          <Typography variant="body2">Sex</Typography>
-          <Typography fontWeight={600}>
-            {displayValue(patient.gender)}
-          </Typography>
-        </Box>
-
-        {/* Weight */}
-        <Box>
-          <Typography variant="body2">Weight</Typography>
-          <Typography fontWeight={600}>
-            {patient.weight !== null &&
-            patient.weight !== undefined &&
-            patient.weight !== ""
-              ? `${patient.weight} kg`
-              : "Not provided"}
-          </Typography>
-        </Box>
-
-        {/* Height */}
-        <Box>
-          <Typography variant="body2">Height</Typography>
-          <Typography fontWeight={600}>
-            {patient.height !== null &&
-            patient.height !== undefined &&
-            patient.height !== ""
-              ? `${patient.height} cm`
-              : "Not provided"}
-          </Typography>
-        </Box>
-
-        {/* Blood Group */}
-        <Box>
-          <Typography variant="body2">Blood Group</Typography>
-          <Typography fontWeight={600}>
-            {displayValue(patient.blood_group)}
-          </Typography>
-        </Box>
-
-        {/* Language */}
-        <Box>
-          <Typography variant="body2">Language</Typography>
-          <Typography fontWeight={600}>
-            {displayValue(patient.language)}
-          </Typography>
-        </Box>
-
-        {/* Phone Number */}
-        <Box>
-          <Typography variant="body2">Phone Number</Typography>
-          <Typography fontWeight={600}>
-            {displayValue(patient.phone_number)}
-          </Typography>
-        </Box>
+        {details.map((item) => (
+          <Box
+            key={item.label}
+            sx={{
+              minWidth: 0,
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: "12.5px",
+                color: "text.secondary",
+                lineHeight: 1.3,
+              }}
+            >
+              {item.label}
+            </Typography>
+            <Typography
+              sx={{
+                mt: 0.2,
+                fontSize: "12.5px",
+                fontWeight: 600,
+                color: "text.primary",
+                lineHeight: 1.3,
+                overflowWrap: "anywhere",
+              }}
+            >
+              {displayValue(item.value)}
+            </Typography>
+          </Box>
+        ))}
       </Box>
-
-      <Divider sx={{ my: 3 }} />
-
-      {/* VIEW PATIENT BUTTON */}
-      <Box
+      <Divider sx={{ my: 1.8 }} />
+      <Button
+        variant="contained"
+        fullWidth
+        disabled={!patient?.appointment_id}
+        onClick={handleViewPatient}
         sx={{
-          mt: 4,
-          display: "flex",
-          justifyContent: "flex-end",
+          minHeight: 34,
+          py: 0.7,
+          bgcolor: "#07876a",
+          fontSize: "12.5px",
+          fontWeight: 600,
+          textTransform: "none",
+          boxShadow: "none",
+          "&:hover": {
+            bgcolor: "#066f58",
+            boxShadow: "none",
+          },
         }}
       >
-        <Button
-          variant="contained"
-          fullWidth
-          onClick={() =>
-            router.push(
-              `/doctor/pages/patient?appointment_id=${patient.appointment_id}&verify=true`
-            )
-          }
-          sx={{
-            bgcolor: "#439f8e",
-            py: 1.2,
-            "&:hover": {
-              bgcolor: "#357d70",
-            },
-          }}
-        >
-          View Patient
-        </Button>
-      </Box>
+        View Patient
+      </Button>
     </Card>
   );
 };

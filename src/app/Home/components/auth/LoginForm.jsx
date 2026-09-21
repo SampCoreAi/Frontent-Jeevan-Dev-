@@ -149,16 +149,19 @@ export default function LoginForm({
         "Login successful!",
         "success"
       );
+setTimeout(() => {
+  const role = Number(resData?.user?.role_id);
 
-      setTimeout(() => {
-        const role = resData.user.role_id;
-        if (role === 1) router.push("/users/pages/doctor");
-        else if (role === 2) router.push("/doctor/pages/dashboard");
-        else if (role === 3) router.push("/doctor/pages/dashboard");
-        else if (role === 4) router.push("/lab/pages/dashboard");
-        else if (role === 5) router.push("/admin/pages/dashboard");
-        else router.push("/Home/pages/Register");
-      }, 1500);
+  if (role === 1) router.replace("/users/pages/doctor");
+  else if (role === 2) router.replace("/doctor/pages/dashboard");
+  else if (role === 3) router.replace("/doctor/pages/dashboard");
+  else if (role === 5) router.replace("/admin/pages/dashboard");
+  else if (role === 4) router.replace("/lab/pages/dashboard");
+  else {
+    console.error("Invalid role_id:", resData?.user?.role_id);
+    showMessage("Invalid user role", "error");
+  }
+}, 1500);
     } catch (error) {
       if (
         error.name === "AbortError" ||

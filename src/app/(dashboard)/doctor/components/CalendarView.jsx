@@ -238,8 +238,6 @@ console.log("result",result);
           backgroundColor: theme.palette.background.default,
           minHeight: "100vh",
           width: "100%",
-          maxWidth: 1180,
-          mx: "auto",
         }}
       >
         <Box sx={{ mb: 4 }}>
@@ -276,94 +274,114 @@ console.log("result",result);
 
           <StatsCards stats={dashboardStats} />
 
+        <Card
+  elevation={0}
+  sx={{
+    mt: 1.5,
+    mb: 2,
+    borderRadius: "8px",
+    border: `1px solid ${theme.palette.divider}`,
+    backgroundColor: theme.palette.background.paper,
+  }}
+>
+  <CardContent
+    sx={{
+      px: { xs: 1.5, sm: 2 },
+      py: "12px !important",
+    }}
+  >
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 1,
+      }}
+    >
+      {/* CURRENT DATE / PERIOD */}
+
+      <Box>
+        <Typography
+          sx={{
+            fontSize: { xs: "12.5px", sm: "13.5px" },
+            fontWeight: 600,
+            lineHeight: 1.3,
+            color: theme.palette.text.primary,
+          }}
+        >
+          {renderCurrentPeriod()}
+        </Typography>
+
+        <Typography
+          sx={{
+            mt: 0.3,
+            fontSize: "10.5px",
+            color: theme.palette.text.secondary,
+          }}
+        >
+          Appointment schedule
+        </Typography>
+      </Box>
+
+      {/* APPOINTMENT COUNT */}
+
+      <Chip
+        label={`${filteredEvents.length} ${
+          filteredEvents.length === 1
+            ? "appointment"
+            : "appointments"
+        }`}
+        size="small"
+        sx={{
+          height: 24,
+          borderRadius: "6px",
+          color: theme.palette.primary.main,
+          backgroundColor: `${theme.palette.primary.main}10`,
+          border: `1px solid ${theme.palette.primary.main}25`,
+
+          "& .MuiChip-label": {
+            px: 1.1,
+            fontSize: "10.5px",
+            fontWeight: 600,
+          },
+        }}
+      />
+    </Box>
+  </CardContent>
+</Card>
+
+
           <Card
-            sx={{
-              mt: 2,
-              mb: 3,
-              boxShadow: 2,
-              borderRadius: 3,
-              backgroundColor: theme.palette.background.paper,
-            }}
-          >
-            <CardContent
-              sx={{
-                py: 2,
-                px: {
-                  xs: 2,
-                  sm: 3,
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: {
-                    xs: "flex-start",
-                    sm: "center",
-                  },
-                  flexDirection: {
-                    xs: "column",
-                    sm: "row",
-                  },
-                  gap: 1.5,
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  fontWeight="bold"
-                  sx={{
-                    color: "#1E6658",
-                    fontSize: {
-                      xs: "1rem",
-                      sm: "1.15rem",
-                      md: "1.25rem",
-                    },
-                    lineHeight: 1.4,
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {renderCurrentPeriod()}
-                </Typography>
+  elevation={0}
+  sx={{
+    width: "100%",
+    mx: "auto",
+    mb: 2,
+    borderRadius: "10px",
+    border: `1px solid ${theme.palette.divider}`,
+    backgroundColor: theme.palette.background.paper,
+    overflow: "hidden",
+  }}
+>
+  <CardContent
+    sx={{
+      p: {
+        xs: 0.5,
+        sm: 1,
+      },
 
-                <Chip
-                  label={`${filteredEvents.length} appointments`}
-                  size="small"
-                  sx={{
-                    color: "#1E6658",
-                    fontWeight: 600,
-                    borderRadius: 2,
-                    alignSelf: {
-                      xs: "flex-start",
-                      sm: "center",
-                    },
-                    maxWidth: "100%",
-
-                    "& .MuiChip-label": {
-                      px: 1.5,
-                    },
-                  }}
-                />
-              </Box>
-            </CardContent>
-          </Card>
-
-
-          <Card
-            sx={{
-              width: "100%",
-              maxWidth: 1150,
-              mx: "auto",
-              px: { xs: 1, sm: 2 },
-              boxShadow: 3,
-              mb: 3,
-              border: "2px solid #1e6658",
-            }}
-          >
-            <CardContent sx={{ p: 0.5 }}>
-              {renderView()}
-            </CardContent>
-          </Card>
+      "&:last-child": {
+        pb: {
+          xs: 0.5,
+          sm: 1,
+        },
+      },
+    }}
+  >
+    {renderView()}
+  </CardContent>
+</Card>
 
         </Box>
         {/* 

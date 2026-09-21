@@ -53,11 +53,12 @@ const Page = () => {
 
     try {
       const parsedUser = JSON.parse(user);
-      if (parsedUser.role_id !== 5) {
-        router.push("/Home/pages/Register");
-      }
+     if (Number(parsedUser.role_id) !== 4) {
+  router.replace("/Home/pages/Login");
+  return;
+}
 
-      setRoleId(parsedUser.role_id);
+setRoleId(Number(parsedUser.role_id));
     } catch (error) {
       console.error("Invalid user data:", error);
       router.push("/Home/pages/Login");
