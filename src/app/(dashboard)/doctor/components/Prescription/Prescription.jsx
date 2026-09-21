@@ -44,28 +44,7 @@ export default function Prescription({
   const [diagnosis, setDiagnosis] = useState("");
   const [rows, setRows] = useState([]);
 
-  const startTimeRef = useRef(null);
-  const endTimeRef = useRef(null);
-  const slotDurationRef = useRef(null);
-  const breakDurationRef = useRef(null);
-  const startDateRef = useRef(null);
-  const endDateRef = useRef(null);
-  const offlinepatient_number = useRef(null);
 
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-
-    if (file) {
-      const reader = new FileReader();
-
-      reader.onloadend = () => {
-        setLogo(reader.result);
-      };
-
-      reader.readAsDataURL(file);
-    }
-  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -83,11 +62,6 @@ export default function Prescription({
   const appointmentId =
     propAppointmentId || searchParams.get("appointment_id");
 
-  console.log("appointmentId from URL:", appointmentId);
-
-  // =========================================================
-  // EDIT PERMISSION
-  // =========================================================
 
   useEffect(() => {
     if (!apiData?.prescription?.created_at) return;
@@ -113,9 +87,6 @@ export default function Prescription({
     return () => clearInterval(interval);
   }, [apiData]);
 
-  // =========================================================
-  // FETCH PRESCRIPTION
-  // =========================================================
 
   useEffect(() => {
     if (!appointmentId) return;
@@ -142,19 +113,12 @@ export default function Prescription({
     fetchPrescription();
   }, [appointmentId]);
 
-  // =========================================================
-  // REMARK
-  // =========================================================
 
   useEffect(() => {
     if (apiData?.prescription?.remark) {
       setRemark(apiData.prescription.remark);
     }
   }, [apiData]);
-
-  // =========================================================
-  // FOLLOW UP DATE
-  // =========================================================
 
   useEffect(() => {
     if (apiData?.prescription?.follow_up_date) {
@@ -163,10 +127,6 @@ export default function Prescription({
       );
     }
   }, [apiData]);
-
-  // =========================================================
-  // MEDICINES
-  // =========================================================
 
   useEffect(() => {
     if (apiData?.prescription?.medicines) {
@@ -202,14 +162,7 @@ const isTodayAppointment = appointmentDate
     weight: patientApi?.weight,
   };
 
-  const qrImage =
-    doctor?.qr_code
-      ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/qr/${doctor.qr_code}`
-      : null;
-
-  // =========================================================
-  // SAVE PRESCRIPTION
-  // =========================================================
+const qrImage = doctor?.qr_url || null;
 
   const handleSavePrescription = async () => {
     const validMedicines = rows.filter((row) => {

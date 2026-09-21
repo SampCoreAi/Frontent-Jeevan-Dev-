@@ -645,10 +645,11 @@ const processFiles = async (files) => {
       sx={{
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
-        mt: 8,
+     mt: { xs: 7, md: 8 },
        
         height: "91vh",
         width: "100%",
+        
         boxShadow: "0 4px 12px #0f7468",
       }}
     >

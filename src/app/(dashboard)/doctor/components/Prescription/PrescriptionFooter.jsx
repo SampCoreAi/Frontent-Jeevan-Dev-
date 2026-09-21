@@ -1,14 +1,16 @@
-
 "use client";
-
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
-  Typography,
-  Divider,
   TextField,
+  Typography,
+  useTheme,
+  IconButton,
+  Tooltip,
+  Menu,
+  MenuItem,
 } from "@mui/material";
-
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -25,130 +27,182 @@ export default function PrescriptionFooter({
   doctor,
   qrImage,
 }) {
+  const theme = useTheme();
+  const [remarkAnchor, setRemarkAnchor] = useState(null);
+
   const hospital = doctor?.hospital_detail?.[0];
   const availability = doctor?.availability?.[0];
+
+  const quickRemarks = [
+    "Take adequate rest",
+    "Drink plenty of water",
+    "Take medicines on time",
+    "Complete the prescribed medication course",
+    "Avoid heavy physical activity",
+    "Take medicines after food",
+    "Monitor symptoms regularly",
+    "Return if symptoms worsen",
+  ];
+
+  const address = [
+    hospital?.flatPlotNo,
+    hospital?.areaLocality,
+    hospital?.buildingSociety,
+    hospital?.district,
+    hospital?.city,
+    hospital?.pinCode,
+    hospital?.state,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const handleQuickRemark = (message) => {
+    setRemark(message);
+    setRemarkAnchor(null);
+  };
+
+  const inputStyle = {
+    "& .MuiOutlinedInput-root": {
+      height: 40,
+      fontSize: "13px",
+      bgcolor: theme.palette.background.paper,
+      borderRadius: 1,
+      "& fieldset": {
+        borderColor: "#D6D6D6",
+      },
+      "&:hover fieldset": {
+        borderColor: "#B1B1B1",
+      },
+      "&.Mui-focused fieldset": {
+        borderColor: theme.palette.primary.main,
+        borderWidth: "1px",
+      },
+    },
+    "& .MuiInputBase-input": {
+      fontSize: "13px",
+      color: theme.palette.text.primary,
+    },
+  };
 
   return (
     <Box
       sx={{
         width: "100%",
         mt: 2,
-        color: "#1f2937",
+        color: theme.palette.text.primary,
       }}
     >
-      {/* =====================================================
-          REMARK + FOLLOW UP
-      ===================================================== */}
-
-    <Box
-  sx={{
-    display: "grid",
-    gridTemplateColumns: {
-      xs: "1fr",
-      sm: "1fr auto",
-    },
-    gap: 2,
-    mb: 3,
-  }}
->
-        {/* REMARK */}
-        <Box
-          sx={{
-            border: "1px solid #dce5e3",
-            borderRadius: 1.5,
-            backgroundColor: "#f8fbfa",
-            p: 1.5,
-          }}
-        >
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "minmax(0, 1fr) 220px",
+          },
+          gap: 2,
+          alignItems: "start",
+        }}
+      >
+        <Box>
           <Typography
             sx={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: "#1e6658",
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
-              mb: 1,
+              mb: 0.75,
+              fontSize: "12px",
+              fontWeight: 600,
+              color: theme.palette.text.secondary,
             }}
           >
             Remark
           </Typography>
 
           {!isDownloading ? (
-            <TextField
-              fullWidth
-             
-              minRows={2}
-              maxRows={4}
-              disabled={!editable}
-              value={remark || ""}
-              onChange={(e) => setRemark(e.target.value)}
-              placeholder="Enter remark..."
-              size="small"
+            <Box
               sx={{
-                backgroundColor: "#fff",
-
-                "& .MuiInputBase-input": {
-                  color: "#111827",
-                  fontSize: 14,
-                },
-
-                "& .MuiInputBase-input::placeholder": {
-                  color: "#9ca3af",
-                  opacity: 1,
-                },
-
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                },
-
-                "& .MuiOutlinedInput-root fieldset": {
-                  borderColor: "#cbd5e1",
-                },
-
-                "& .MuiOutlinedInput-root:hover fieldset": {
-                  borderColor: "#1e6658",
-                },
-
-                "& .MuiOutlinedInput-root.Mui-focused fieldset": {
-                  borderColor: "#1e6658",
-                  borderWidth: 1,
-                },
-              }}
-            />
-          ) : (
-            <Typography
-              sx={{
-                minHeight: 45,
-                fontSize: 14,
-                color: "#374151",
-                whiteSpace: "pre-wrap",
-                lineHeight: 1.6,
+                position: "relative",
+                width: "100%",
               }}
             >
-              {remark || " "}
-            </Typography>
+              <TextField
+                fullWidth
+                disabled={!editable}
+                value={remark || ""}
+                onChange={(e) => setRemark(e.target.value)}
+                placeholder="Add remark for patient"
+                size="small"
+                inputProps={{
+                  maxLength: 300,
+                }}
+                sx={{
+                  ...inputStyle,
+                  "& .MuiOutlinedInput-root": {
+                    ...inputStyle["& .MuiOutlinedInput-root"],
+                    pr: editable ? "42px" : 1,
+                  },
+                }}
+              />
+
+              {editable && (
+                <Tooltip title="Quick Remarks">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => setRemarkAnchor(e.currentTarget)}
+                    sx={{
+                      position: "absolute",
+                      right: 5,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      width: 30,
+                      height: 30,
+                      color: theme.palette.text.secondary,
+                      "&:hover": {
+                        bgcolor: "#EDF7F2",
+                        color: theme.palette.primary.main,
+                      },
+                    }}
+                  >
+                    <ChatBubbleOutlineIcon
+                      sx={{
+                        fontSize: 17,
+                      }}
+                    />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                height: 40,
+                px: 1.5,
+                display: "flex",
+                alignItems: "center",
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: 1,
+              }}
+            >
+              <Typography
+                sx={{
+                  width: "100%",
+                  fontSize: "13px",
+                  color: theme.palette.text.primary,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {remark || "Not provided"}
+              </Typography>
+            </Box>
           )}
         </Box>
 
-        {/* FOLLOW UP */}
-        <Box
-  sx={{
-    border: "1px solid #dce5e3",
-    borderRadius: 1.5,
-    backgroundColor: "#f8fbfa",
-    p: 1.5,
-    width: "fit-content",
-    minWidth: 190,
-  }}
->
+        <Box>
           <Typography
             sx={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: "#1e6658",
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
-              mb: 1,
+              mb: 0.75,
+              fontSize: "12px",
+              fontWeight: 600,
+              color: theme.palette.text.secondary,
             }}
           >
             Next Follow-up
@@ -166,41 +220,35 @@ export default function PrescriptionFooter({
                     fullWidth: true,
                     size: "small",
                     sx: {
-                      backgroundColor: "#fff",
-
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 1,
-                      },
-
-                      "& .MuiOutlinedInput-root fieldset": {
-                        borderColor: "#cbd5e1",
-                      },
-
-                      "& .MuiOutlinedInput-root:hover fieldset": {
-                        borderColor: "#1e6658",
-                      },
-
-                      "& .MuiOutlinedInput-root.Mui-focused fieldset": {
-                        borderColor: "#1e6658",
-                        borderWidth: 1,
-                      },
-
+                      ...inputStyle,
                       ...dateInputStyle,
+                      "& .MuiOutlinedInput-root": {
+                        height: 40,
+                        fontSize: "13px",
+                        bgcolor: theme.palette.background.paper,
+                        borderRadius: 1,
+                        "& fieldset": {
+                          borderColor: "#D6D6D6",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "#B1B1B1",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: theme.palette.primary.main,
+                          borderWidth: "1px",
+                        },
+                      },
                     },
                   },
-
                   popper: {
                     sx: datePickerPopupStyle,
                   },
-
                   desktopPaper: {
                     sx: datePickerPopupStyle,
                   },
-
                   mobilePaper: {
                     sx: datePickerPopupStyle,
                   },
-
                   layout: {
                     sx: datePickerPopupStyle,
                   },
@@ -208,27 +256,112 @@ export default function PrescriptionFooter({
               />
             </LocalizationProvider>
           ) : (
-            <Typography
+            <Box
               sx={{
-                minHeight: 40,
+                height: 40,
+                px: 1.5,
                 display: "flex",
                 alignItems: "center",
-                fontSize: 14,
-                color: "#374151",
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: 1,
               }}
             >
-              {followUpDate
-                ? followUpDate.format("DD-MMM-YYYY")
-                : " "}
-            </Typography>
+              <Typography
+                sx={{
+                  fontSize: "13px",
+                  color: theme.palette.text.primary,
+                }}
+              >
+                {followUpDate
+                  ? followUpDate.format("DD-MMM-YYYY")
+                  : "Not provided"}
+              </Typography>
+            </Box>
           )}
         </Box>
       </Box>
 
-     
-      {/* =====================================================
-          DOCTOR / QR SECTION
-      ===================================================== */}
+      <Menu
+        anchorEl={remarkAnchor}
+        open={Boolean(remarkAnchor)}
+        onClose={() => setRemarkAnchor(null)}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        PaperProps={{
+          sx: {
+            mt: 0.5,
+            width: 290,
+            maxWidth: "calc(100vw - 32px)",
+            maxHeight: 300,
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 1.5,
+            boxShadow: theme.shadows[3],
+          },
+        }}
+      >
+        <Box
+          sx={{
+            px: 1.5,
+            py: 1,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "12px",
+              fontWeight: 700,
+              color: theme.palette.text.primary,
+            }}
+          >
+            Quick Remarks
+          </Typography>
+
+          <Typography
+            sx={{
+              mt: 0.15,
+              fontSize: "10px",
+              color: theme.palette.text.secondary,
+            }}
+          >
+            Select a message
+          </Typography>
+        </Box>
+
+        {quickRemarks.map((message) => (
+          <MenuItem
+            key={message}
+            onClick={() => handleQuickRemark(message)}
+            sx={{
+              minHeight: 38,
+              px: 1.5,
+              py: 0.75,
+              fontSize: "12px",
+              lineHeight: 1.4,
+              whiteSpace: "normal",
+              color: theme.palette.text.primary,
+              "&:hover": {
+                bgcolor: "#EDF7F2",
+                color: theme.palette.primary.main,
+              },
+            }}
+          >
+            {message}
+          </MenuItem>
+        ))}
+      </Menu>
+
+      <Box
+        sx={{
+          my: 2.5,
+          borderTop: `1px solid ${theme.palette.divider}`,
+        }}
+      />
 
       <Box
         sx={{
@@ -237,54 +370,41 @@ export default function PrescriptionFooter({
             xs: "column",
             sm: "row",
           },
-          justifyContent: "space-between",
           alignItems: {
             xs: "center",
-            sm: "flex-start",
+            sm: "flex-end",
           },
+          justifyContent: "space-between",
           gap: 3,
-          mb: 3,
         }}
       >
-        {/* QR CODE */}
         <Box
           sx={{
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
-            flexShrink: 0,
+            gap: 1.5,
           }}
         >
           <Box
             sx={{
-              width: {
-                xs: 90,
-                sm: 100,
-              },
-
-              height: {
-                xs: 90,
-                sm: 100,
-              },
-
-              border: "1px solid #d1d5db",
-              borderRadius: 1.5,
-              p: 1,
-
+              width: 82,
+              height: 82,
+              flexShrink: 0,
+              p: 0.5,
+              border: `1px solid ${theme.palette.divider}`,
+              borderRadius: 1,
+              bgcolor: "#fff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-
-              backgroundColor: "#fff",
-
-              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
             }}
           >
             {qrImage ? (
-              <img
+              <Box
+                component="img"
                 src={qrImage}
                 alt="Doctor QR"
-                style={{
+                sx={{
                   width: "100%",
                   height: "100%",
                   objectFit: "contain",
@@ -293,9 +413,9 @@ export default function PrescriptionFooter({
             ) : (
               <Typography
                 sx={{
-                  fontSize: 11,
-                  color: "#9ca3af",
+                  fontSize: "10px",
                   textAlign: "center",
+                  color: theme.palette.text.disabled,
                 }}
               >
                 QR Not Available
@@ -304,148 +424,146 @@ export default function PrescriptionFooter({
           </Box>
 
           {qrImage && (
-            <Typography
-              sx={{
-                mt: 0.7,
-                fontSize: 10,
-                color: "#6b7280",
-              }}
-            >
-              Scan to connect
-            </Typography>
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: theme.palette.text.primary,
+                }}
+              >
+                Connect with Doctor
+              </Typography>
+
+              <Typography
+                sx={{
+                  mt: 0.2,
+                  fontSize: "10px",
+                  color: theme.palette.text.secondary,
+                }}
+              >
+                Scan QR code
+              </Typography>
+            </Box>
           )}
         </Box>
 
-        {/* DOCTOR SIGNATURE */}
         <Box
           sx={{
-            flex: 1,
-            width: "100%",
+            width: {
+              xs: "100%",
+              sm: 250,
+            },
             textAlign: {
               xs: "center",
               sm: "right",
             },
           }}
         >
-          <Typography
-            sx={{
-              fontSize: 12,
-              color: "#6b7280",
-              mb: 0.5,
-            }}
-          >
-            Doctor's Signature
-          </Typography>
-
+          
           <Box
             sx={{
-              width: {
-                xs: "180px",
-                sm: "230px",
-              },
-
-              height: 35,
-
-              borderBottom: "1px solid #374151",
-
-              ml: {
-                xs: "auto",
-                sm: "auto",
-              },
-
+              width: 210,
+              ml: "auto",
               mr: {
                 xs: "auto",
                 sm: 0,
               },
-
-              mb: 1,
-            }}
-          />
-
-          <Typography
-            sx={{
-              fontSize: 16,
-              fontWeight: 700,
-              color: "#111827",
+              borderTop: `1px solid ${theme.palette.text.secondary}`,
+              pt: 0.75,
             }}
           >
-            {doctor?.name || "Doctor"}
-          </Typography>
-
-          <Typography
-            sx={{
-              fontSize: 13,
-              color: "#4b5563",
-              mt: 0.3,
-            }}
-          >
-            {doctor?.qualification || ""}
-          </Typography>
-
-          {doctor?.specialization && (
             <Typography
               sx={{
-                fontSize: 12,
-                color: "#1e6658",
-                fontWeight: 600,
-                mt: 0.3,
+                fontSize: "13px",
+                fontWeight: 700,
+                color: theme.palette.text.primary,
               }}
             >
-              {doctor.specialization}
+              {doctor?.name || "Doctor"}
             </Typography>
-          )}
+
+            {doctor?.qualification && (
+              <Typography
+                sx={{
+                  mt: 0.15,
+                  fontSize: "11px",
+                  color: theme.palette.text.secondary,
+                }}
+              >
+                {doctor.qualification}
+              </Typography>
+            )}
+
+            {doctor?.specialization && (
+              <Typography
+                sx={{
+                  mt: 0.15,
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: theme.palette.primary.main,
+                }}
+              >
+                {doctor.specialization}
+              </Typography>
+            )}
+          </Box>
         </Box>
       </Box>
 
-      {/* =====================================================
-          CONTACT / HOSPITAL INFORMATION
-      ===================================================== */}
-
       <Box
         sx={{
-        
-      
+          mt: 2.5,
+          pt: 1.25,
+          borderTop: `1px solid ${theme.palette.divider}`,
           textAlign: "center",
         }}
       >
         <Typography
-          variant="caption"
-          align="center"
           sx={{
-            display: "block",
-        
-            color: "#666",
-            fontSize: 12,
-            borderTop: "1px solid #ddd",
-            pt: 1,
+            fontSize: "11px",
+            lineHeight: 1.6,
+            color: theme.palette.text.secondary,
           }}
         >
-          For Appointment: <strong>+91 {doctor?.mobile}</strong>
-          &nbsp;|&nbsp;
-          {hospital?.flatPlotNo}, {hospital?.areaLocality}, {hospital?.buildingSociety},{" "}
-          {hospital?.district}, {hospital?.city}, {hospital?.pinCode}, {hospital?.state}
-          &nbsp;|&nbsp;
-          <br />
-          Timings: {availability?.startTime} - {availability?.endTime} ({availability?.day})
+          For Appointment:{" "}
+          <Box
+            component="span"
+            sx={{
+              fontWeight: 600,
+              color: theme.palette.text.primary,
+            }}
+          >
+            {doctor?.mobile
+              ? `+91 ${doctor.mobile}`
+              : "Not provided"}
+          </Box>
+
+          {address && (
+            <Box component="span">
+              {" · "}
+              {address}
+            </Box>
+          )}
         </Typography>
+
+        {availability?.startTime &&
+          availability?.endTime && (
+            <Typography
+              sx={{
+                mt: 0.25,
+                fontSize: "11px",
+                color: theme.palette.text.secondary,
+              }}
+            >
+              Timings: {availability.startTime} -{" "}
+              {availability.endTime}
+              {availability?.day
+                ? ` · ${availability.day}`
+                : ""}
+            </Typography>
+          )}
       </Box>
-
-      {/* =====================================================
-          DISCLAIMER
-      ===================================================== */}
-
-      <Typography
-        sx={{
-          mt: 2,
-          textAlign: "center",
-          fontSize: 9,
-          color: "#9ca3af",
-        }}
-      >
-        This prescription is digitally generated and is valid
-        as prescribed by the doctor.
-      </Typography>
     </Box>
   );
 }
-

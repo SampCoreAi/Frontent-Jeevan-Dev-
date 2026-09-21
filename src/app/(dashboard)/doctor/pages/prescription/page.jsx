@@ -8,10 +8,7 @@ const Page = () => {
   return (
     <Grid
       sx={{
-        padding: {
-          xs: 0,
-          sm: 1,
-        },
+       
 
         marginTop: {
           xs: 8,
