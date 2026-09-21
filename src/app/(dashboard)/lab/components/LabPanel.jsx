@@ -69,7 +69,7 @@ export default function LabPanel({ section = "dashboard" }) {
       setLoading(true);
       setError("");
       if (section === "connections") await Promise.all([loadProfile(), loadConnections()]);
-      else if (section === "requests") await Promise.all([loadProfile(), loadRequests()]);
+      else if (section === "requests") await Promise.all([loadProfile(), loadRequests(), loadReports()]);
       else if (section === "reports") await Promise.all([loadProfile(), loadReports()]);
       else await loadProfile();
     } catch (requestError) {
@@ -143,6 +143,20 @@ export default function LabPanel({ section = "dashboard" }) {
     }
   };
 
+  const deleteReport = async (reportId) => {
+    try {
+      setActionId(reportId);
+      await api.delete(`/api/lab-reports/${reportId}`);
+      setNotice("Report deleted successfully.");
+      await loadReports();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Unable to delete report."));
+      throw requestError;
+    } finally {
+      setActionId(null);
+    }
+  };
+
   const filterProps = {
     search: tableFilters.search,
     status: tableFilters.status,
@@ -155,7 +169,7 @@ export default function LabPanel({ section = "dashboard" }) {
   const content = section === "connections" ? (
     <LabConnections connections={connections} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} actionId={actionId} onStatusUpdate={updateConnection} />
   ) : section === "requests" ? (
-    <LabRequests requests={requests} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} actionId={actionId} onStatusUpdate={updateRequest} uploading={uploading} onUploadReport={uploadReport} />
+    <LabRequests reports={reports} requests={requests} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} actionId={actionId} onStatusUpdate={updateRequest} uploading={uploading} onUploadReport={uploadReport} onDeleteReport={deleteReport} />
   ) : section === "reports" ? (
     <LabReports reports={reports} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} />
   ) : section === "profile" ? (

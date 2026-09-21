@@ -38,11 +38,6 @@ export const menuItems = {
       route: "/users/pages/history",
     },
     {
-      label: "Lab Requests",
-      icon: <AssignmentOutlined />,
-      route: "/users/pages/lab/requests",
-    },
-    {
       label: "Lab Reports",
       icon: <DescriptionOutlined />,
       route: "/users/pages/lab/reports",
@@ -93,11 +88,6 @@ export const menuItems = {
       label: "Connections",
       icon: <GroupOutlined />,
       route: "/doctor/pages/lab/connections",
-    },
-    {
-      label: "Test Requests",
-      icon: <AssignmentOutlined />,
-      route: "/doctor/pages/lab/requests",
     },
     {
       label: "Reports",

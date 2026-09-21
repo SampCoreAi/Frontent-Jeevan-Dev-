@@ -201,6 +201,7 @@ const isTodayAppointment = appointmentDate
     height: patientApi?.height,
     weight: patientApi?.weight,
   };
+  const patientId = patientApi?.id || patientApi?.patient_id || apiData?.appointment?.patient_id;
 
   const qrImage =
     doctor?.qr_code
@@ -538,6 +539,7 @@ const downloadPdf = async () => {
       pdfRef={pdfRef}
       doctor={doctor}
       patient={patient}
+      patientId={patientId}
       dateNow={dateNow}
       diagnosis={diagnosis}
       setDiagnosis={setDiagnosis}

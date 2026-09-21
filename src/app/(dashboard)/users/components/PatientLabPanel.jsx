@@ -5,6 +5,7 @@ import api from "../../../../utils/axiosInstance";
 import {
   Alert,
   Box,
+  Button,
   Chip,
   Pagination,
   Snackbar,
@@ -12,10 +13,19 @@ import {
   TableRow,
 } from "@mui/material";
 import { DataTable, SectionTitle, TableFilters } from "../../lab/components/LabUi";
-import LabReports from "../../lab/components/LabReports";
 
 const getRows = (response) => response?.data?.data || [];
 const getErrorMessage = (error, fallback) => error.response?.data?.message || error.message || fallback;
+const getTestNames = (value) => {
+  if (Array.isArray(value)) return value.join(", ");
+  if (typeof value !== "string") return "-";
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.join(", ") : value;
+  } catch {
+    return value;
+  }
+};
 
 export default function PatientLabPanel({ section = "requests" }) {
   const [requests, setRequests] = useState([]);
@@ -61,11 +71,7 @@ export default function PatientLabPanel({ section = "requests" }) {
         setLoading(true);
         setError("");
 
-        if (section === "requests") {
-          await loadRequests();
-        } else if (section === "reports") {
-          await loadReports();
-        }
+        await Promise.all([loadRequests(), loadReports()]);
       } finally {
         setLoading(false);
       }
@@ -94,53 +100,38 @@ export default function PatientLabPanel({ section = "requests" }) {
     [tableFilters]
   );
 
-  const visibleRequests = requests.slice((tablePage - 1) * pageSize, tablePage * pageSize);
-  const visibleReports = reports.slice((tablePage - 1) * pageSize, tablePage * pageSize);
-
-  if (section === "requests") {
-    return (
-      <Box sx={{ mt: { xs: 7, md: 8 }, display: "grid", gap: 3 }}>
-        <SectionTitle title="Lab Requests" description="Track all lab test requests assigned to you." />
-        <TableFilters {...filterProps} statusOptions={["PENDING", "APPROVED", "REJECTED", "SAMPLE_COLLECTED", "PROCESSING", "REPORT_UPLOADED", "COMPLETED"]} />
-        <DataTable
-          columns={["DOCTOR", "LAB", "TESTS", "PRIORITY", "STATUS", "CREATED"]}
-          loading={loading}
-          emptyMessage="No lab requests found."
-          footer={<Pagination count={Math.max(1, Math.ceil(requests.length / pageSize))} page={tablePage} onChange={(_, value) => setTablePage(value)} size="small" color="primary" />}
-        >
-          {visibleRequests.length ? visibleRequests.map((request) => (
-            <TableRow key={request.id} hover>
-              <TableCell sx={{ color: "#1f2937 !important", fontWeight: 600 }}>{request.doctor_name || request.doctor_id || "-"}</TableCell>
-              <TableCell sx={{ color: "#1f2937 !important" }}>{request.lab_name || "-"}</TableCell>
-              <TableCell sx={{ color: "#1f2937 !important", maxWidth: 260, whiteSpace: "normal" }}>{Array.isArray(request.requested_tests) ? request.requested_tests.join(", ") : request.requested_tests || "-"}</TableCell>
-              <TableCell>
-                <Chip size="small" label={request.priority || "NORMAL"} color={request.priority === "URGENT" ? "error" : "default"} />
-              </TableCell>
-              <TableCell>
-                <Chip size="small" label={request.status || "PENDING"} color={request.status === "COMPLETED" ? "success" : request.status === "REJECTED" ? "error" : "warning"} />
-              </TableCell>
-              <TableCell sx={{ color: "#64748b !important" }}>{request.created_at ? new Date(request.created_at).toLocaleDateString() : "-"}</TableCell>
-            </TableRow>
-          )) : null}
-        </DataTable>
-
-        <Snackbar open={Boolean(error)} autoHideDuration={6000} onClose={() => setError("")}>
-          <Alert severity="error" onClose={() => setError("")}>{error}</Alert>
-        </Snackbar>
-      </Box>
-    );
-  }
+  const rows = useMemo(() => requests.map((request) => ({
+    ...request,
+    report: reports.find((item) => Number(item.requestId || item.testRequestId || item.test_request_id) === Number(request.id)),
+  })), [reports, requests]);
+  const visibleRows = rows.slice((tablePage - 1) * pageSize, tablePage * pageSize);
 
   return (
-    <Box sx={{ mt: { xs: 7, md: 8 } }}>
-      <LabReports
-        reports={reports}
+    <Box sx={{ mt: { xs: 7, md: 8 }, display: "grid", gap: 3 }}>
+      <SectionTitle title="Lab Reports" description="Track your lab requests, lab details, status, and uploaded reports in one place." />
+      <TableFilters {...filterProps} statusOptions={["PENDING", "APPROVED", "REJECTED", "SAMPLE_COLLECTED", "PROCESSING", "REPORT_UPLOADED", "COMPLETED", "CANCELLED"]} />
+      <DataTable
+        columns={["LAB", "ADDRESS", "TESTS", "PRIORITY", "STATUS", "REPORT", "DATE"]}
         loading={loading}
-        filters={filterProps}
-        page={tablePage}
-        pageSize={pageSize}
-        onPageChange={setTablePage}
-      />
+        emptyMessage="No lab requests or reports found."
+        footer={<Pagination count={Math.max(1, Math.ceil(rows.length / pageSize))} page={tablePage} onChange={(_, value) => setTablePage(value)} size="small" color="primary" />}
+      >
+        {visibleRows.length ? visibleRows.map((request) => (
+          <TableRow key={request.id} hover>
+            <TableCell sx={{ color: "#1f2937 !important", fontWeight: 600 }}>{request.lab_name || "-"}</TableCell>
+            <TableCell sx={{ color: "#64748b !important", maxWidth: 240, whiteSpace: "normal" }}>{request.lab_address || "-"}</TableCell>
+            <TableCell sx={{ color: "#1f2937 !important", maxWidth: 220, whiteSpace: "normal" }}>{getTestNames(request.requested_tests)}</TableCell>
+            <TableCell><Chip size="small" label={request.priority || "NORMAL"} color={request.priority === "URGENT" ? "error" : "default"} /></TableCell>
+            <TableCell><Chip size="small" label={request.status || "PENDING"} color={request.status === "COMPLETED" ? "success" : request.status === "REJECTED" ? "error" : "warning"} /></TableCell>
+            <TableCell>
+              {request.report?.downloadUrl ? (
+                <Button size="small" href={request.report.downloadUrl} target="_blank" rel="noreferrer" sx={{ textTransform: "none" }}>View / Download</Button>
+              ) : "Not uploaded"}
+            </TableCell>
+            <TableCell sx={{ color: "#64748b !important" }}>{request.created_at ? new Date(request.created_at).toLocaleDateString() : "-"}</TableCell>
+          </TableRow>
+        )) : null}
+      </DataTable>
       <Snackbar open={Boolean(error)} autoHideDuration={6000} onClose={() => setError("")}>
         <Alert severity="error" onClose={() => setError("")}>{error}</Alert>
       </Snackbar>

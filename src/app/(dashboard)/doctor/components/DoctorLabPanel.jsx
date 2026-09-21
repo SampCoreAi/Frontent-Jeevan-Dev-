@@ -14,7 +14,6 @@ import {
   TableCell,
   TableRow,
   TextField,
-  Typography,
 } from "@mui/material";
 import { DataTable, SectionTitle, TableFilters } from "../../lab/components/LabUi";
 import LabReports from "../../lab/components/LabReports";
@@ -57,12 +56,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
   const pageSize = 10;
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [selectedLab, setSelectedLab] = useState(null);
-  const [patientId, setPatientId] = useState("");
-  const [testsInput, setTestsInput] = useState("");
-  const [doctorNote, setDoctorNote] = useState("");
-  const [priority, setPriority] = useState("NORMAL");
-  const [creatingRequest, setCreatingRequest] = useState(false);
 
   const loadLabs = async () => {
     const trimmed = searchText.trim();
@@ -165,7 +158,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
         } else if (section === "requests") {
           await loadRequests();
         } else if (section === "reports") {
-          await loadReports();
+          await Promise.all([loadRequests(), loadReports()]);
         }
       } catch (requestError) {
         setError(getErrorMessage(requestError, "Unable to load doctor lab data."));
@@ -193,55 +186,11 @@ export default function DoctorLabPanel({ section = "connections" }) {
       setNotice("Lab connection request sent successfully.");
       setSearchText("");
       setLabs([]);
-      setSelectedLab(null);
       await loadConnections();
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to send lab connection request."));
     } finally {
       setConnectingId(null);
-    }
-  };
-
-  const handleCreateRequest = async (event) => {
-    event.preventDefault();
-
-    if (!selectedLab?.id) {
-      setError("Please select a lab first.");
-      return;
-    }
-
-    const parsedPatientId = Number(patientId);
-    const tests = testsInput
-      .split(/[\n,]/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-
-    if (!parsedPatientId || tests.length === 0) {
-      setError("Patient ID and at least one test are required.");
-      return;
-    }
-
-    try {
-      setCreatingRequest(true);
-      setError("");
-      await api.post("/api/lab-requests/create", {
-        labId: Number(selectedLab.id),
-        patientId: parsedPatientId,
-        tests,
-        doctorNote: doctorNote.trim(),
-        priority,
-      });
-      setNotice("Lab test request sent to the selected lab.");
-      setSelectedLab(null);
-      setPatientId("");
-      setTestsInput("");
-      setDoctorNote("");
-      setPriority("NORMAL");
-      await loadRequests();
-    } catch (requestError) {
-      setError(getErrorMessage(requestError, "Unable to create the lab test request."));
-    } finally {
-      setCreatingRequest(false);
     }
   };
 
@@ -259,7 +208,36 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
   const visibleConnections = connections.slice((tablePage - 1) * pageSize, tablePage * pageSize);
   const visibleRequests = requests.slice((tablePage - 1) * pageSize, tablePage * pageSize);
-  const visibleReports = reports.slice((tablePage - 1) * pageSize, tablePage * pageSize);
+  const reportRows = useMemo(() => {
+    const uploadedRequestIds = new Set(
+      reports.map((report) => Number(report.requestId || report.testRequestId || report.test_request_id))
+    );
+    const pendingRequests = requests
+      .filter((request) => !uploadedRequestIds.has(Number(request.id)))
+      .map((request) => {
+        let requestedTests = request.requested_tests || "-";
+        if (typeof requestedTests === "string") {
+          try {
+            const parsed = JSON.parse(requestedTests);
+            if (Array.isArray(parsed)) requestedTests = parsed.join(", ");
+          } catch {
+            // Keep the original value when the API returns plain text.
+          }
+        }
+
+        return {
+          id: `request-${request.id}`,
+          requestId: request.id,
+          patientName: request.patient_name,
+          labName: request.lab_name,
+          testName: requestedTests,
+          status: request.status || "PENDING",
+          createdAt: request.created_at,
+        };
+      });
+
+    return [...reports, ...pendingRequests];
+  }, [reports, requests]);
 
   if (section === "connections") {
     return (
@@ -312,124 +290,18 @@ export default function DoctorLabPanel({ section = "connections" }) {
                     <TableCell sx={{ color: "#1f2937 !important" }}>{lab.phone_number || "-"}</TableCell>
                     <TableCell sx={{ color: "#64748b !important" }}>{lab.address || lab.location || "-"}</TableCell>
                     <TableCell>
-                      <Stack direction="row" spacing={1}>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => setSelectedLab(lab)}
-                        >
-                          Select
-                        </Button>
-                        <Button
-                          size="small"
-                          variant="contained"
-                          disabled={connectingId === lab.id}
-                          onClick={() => handleConnectLab(lab.id)}
-                        >
-                          {connectingId === lab.id ? "Sending..." : "Connect"}
-                        </Button>
-                      </Stack>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        disabled={connectingId === lab.id}
+                        onClick={() => handleConnectLab(lab.id)}
+                      >
+                        {connectingId === lab.id ? "Sending..." : "Connect"}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
               </DataTable>
-            ) : null}
-
-            {selectedLab ? (
-              <Box component="form" onSubmit={handleCreateRequest} sx={{ mt: 2, p: 2.5, border: "1px solid #dfeaf1", borderRadius: 2, bgcolor: "#f9fbfc", boxShadow: "0 2px 10px rgba(17, 72, 98, 0.04)" }}>
-                <Typography variant="h6" sx={{ color: "#123f66", fontWeight: 700, mb: 2 }}>
-                  Send test request to {selectedLab.lab_name}
-                </Typography>
-                <Stack spacing={2}>
-                  <TextField
-                    size="small"
-                    label="Patient ID"
-                    value={patientId}
-                    onChange={(event) => setPatientId(event.target.value)}
-                    type="number"
-                    sx={{
-                      '& .MuiInputLabel-root': { color: '#1f3a4a', fontWeight: 600 },
-                      '& .MuiInputLabel-root.Mui-focused': { color: '#0b5c8e' },
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: '#fff',
-                        '& fieldset': { borderColor: '#cfe0ea' },
-                        '&:hover fieldset': { borderColor: '#8eb7d1' },
-                        '&.Mui-focused fieldset': { borderColor: '#0b5c8e' },
-                      },
-                    }}
-                  />
-                  <TextField
-                    size="small"
-                    label="Tests (comma or newline separated)"
-                    value={testsInput}
-                    onChange={(event) => setTestsInput(event.target.value)}
-                    placeholder="Blood Test, Urine Test"
-                    sx={{
-                      '& .MuiInputLabel-root': { color: '#1f3a4a', fontWeight: 600 },
-                      '& .MuiInputLabel-root.Mui-focused': { color: '#0b5c8e' },
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: '#fff',
-                        '& fieldset': { borderColor: '#cfe0ea' },
-                        '&:hover fieldset': { borderColor: '#8eb7d1' },
-                        '&.Mui-focused fieldset': { borderColor: '#0b5c8e' },
-                      },
-                    }}
-                  />
-                  <TextField
-                    select
-                    size="small"
-                    label="Priority"
-                    value={priority}
-                    onChange={(event) => setPriority(event.target.value)}
-                    SelectProps={{ native: true }}
-                    sx={{
-                      '& .MuiInputLabel-root': { color: '#1f3a4a', fontWeight: 600 },
-                      '& .MuiInputLabel-root.Mui-focused': { color: '#0b5c8e' },
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: '#fff',
-                        '& fieldset': { borderColor: '#cfe0ea' },
-                        '&:hover fieldset': { borderColor: '#8eb7d1' },
-                        '&.Mui-focused fieldset': { borderColor: '#0b5c8e' },
-                      },
-                    }}
-                  >
-                    <option value="NORMAL">NORMAL</option>
-                    <option value="URGENT">URGENT</option>
-                  </TextField>
-                  <TextField
-                    size="small"
-                    label="Doctor Note"
-                    value={doctorNote}
-                    onChange={(event) => setDoctorNote(event.target.value)}
-                    multiline
-                    minRows={3}
-                    sx={{
-                      '& .MuiInputLabel-root': { color: '#1f3a4a', fontWeight: 600 },
-                      '& .MuiInputLabel-root.Mui-focused': { color: '#0b5c8e' },
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: '#fff',
-                        '& fieldset': { borderColor: '#cfe0ea' },
-                        '&:hover fieldset': { borderColor: '#8eb7d1' },
-                        '&.Mui-focused fieldset': { borderColor: '#0b5c8e' },
-                      },
-                    }}
-                  />
-                  <Stack direction="row" spacing={1}>
-                    <Button type="submit" variant="contained" disabled={creatingRequest}>
-                      {creatingRequest ? "Sending..." : "Send Request"}
-                    </Button>
-                    <Button variant="outlined" onClick={() => {
-                      setSelectedLab(null);
-                      setPatientId("");
-                      setTestsInput("");
-                      setDoctorNote("");
-                      setPriority("NORMAL");
-                    }}>
-                      Cancel
-                    </Button>
-                  </Stack>
-                </Stack>
-              </Box>
             ) : null}
           </Box>
         </Box>
@@ -474,7 +346,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
     return (
       <Box sx={{ mt: { xs: 7, md: 8 }, display: "grid", gap: 3 }}>
         <SectionTitle title="Lab Requests" description="View your patient test requests and their status." />
-        <TableFilters {...filterProps} statusOptions={["PENDING", "APPROVED", "REJECTED", "SAMPLE_COLLECTED", "PROCESSING", "REPORT_UPLOADED", "COMPLETED"]} />
+        <TableFilters {...filterProps} statusOptions={["PENDING", "APPROVED", "REJECTED", "SAMPLE_COLLECTED", "PROCESSING", "REPORT_UPLOADED", "COMPLETED", "CANCELLED"]} />
         <DataTable
           columns={["PATIENT", "LAB", "TESTS", "PRIORITY", "STATUS", "CREATED"]}
           loading={loading}
@@ -504,7 +376,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
     return (
       <Box sx={{ mt: { xs: 7, md: 8 } }}>
         <LabReports
-          reports={reports}
+          reports={reportRows}
           loading={loading}
           filters={filterProps}
           page={tablePage}

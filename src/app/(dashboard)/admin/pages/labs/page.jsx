@@ -33,7 +33,6 @@ import { API_BASE_URL } from "../../../../../config/api";
 const initialForm = {
   fullName: "",
   email: "",
-  password: "",
   phoneNumber: "",
   labName: "",
   labCode: "",
@@ -189,7 +188,6 @@ export default function LabsPage() {
     const errors = {};
     const fullName = form.fullName.trim();
     const email = form.email.trim();
-    const password = form.password;
     const phoneNumber = form.phoneNumber.trim();
     const labName = form.labName.trim();
     const labCode = form.labCode.trim();
@@ -212,14 +210,6 @@ export default function LabsPage() {
       errors.email = "Enter a valid email address.";
     } else if (email.length > 150) {
       errors.email = "Email is too long.";
-    }
-
-    if (!password) {
-      errors.password = "Password is required.";
-    } else if (password.length < 8) {
-      errors.password = "Password must be at least 8 characters.";
-    } else if (password.length > 100) {
-      errors.password = "Password is too long.";
     }
 
     if (!labName) {
@@ -272,7 +262,6 @@ export default function LabsPage() {
       const payload = {
         fullName: form.fullName.trim(),
         email: form.email.trim().toLowerCase(),
-        password: form.password,
         phoneNumber: form.phoneNumber.trim(),
         labName: form.labName.trim(),
         labCode: form.labCode.trim(),
@@ -312,7 +301,11 @@ export default function LabsPage() {
       setDialogOpen(false);
       setForm(initialForm);
       setFormErrors({});
-      setNotice("Lab created successfully.");
+      setNotice(
+        response?.data?.data?.emailSent === false
+          ? "Lab created, but credential email could not be sent. Check SMTP settings."
+          : "Lab created successfully. Login credentials were emailed to the lab owner."
+      );
       await fetchLabs();
     } catch (requestError) {
       setError(
@@ -449,13 +442,6 @@ export default function LabsPage() {
       required: true,
       type: "email",
       autoComplete: "email",
-    },
-    {
-      name: "password",
-      label: "Login password",
-      required: true,
-      type: "password",
-      autoComplete: "new-password",
     },
     {
       name: "phoneNumber",

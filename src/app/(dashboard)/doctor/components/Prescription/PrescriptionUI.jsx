@@ -1,16 +1,23 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 import {
   Box,
   Paper,
   Typography,
   Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
 } from "@mui/material";
 
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
+import api from "../../../../../utils/axiosInstance";
 
 import PrescriptionHeader from "./PrescriptionHeader";
 import PrescriptionFooter from "./PrescriptionFooter";
@@ -21,6 +28,7 @@ import {
 } from "./PatientInfo";
 
 import MedicineTable from "./MedicineTable";
+import LabTestRequestForm from "./LabTestRequestForm";
 
 import {
   PRIMARY_COLOR,
@@ -79,6 +87,15 @@ const instructionOptions = [
 ========================================================= */
 
 export default function PrescriptionUI(props) {
+  const [labTestSummary, setLabTestSummary] = useState({ labName: "", tests: [] });
+  const [labTestResetKey, setLabTestResetKey] = useState(0);
+  const [patientReports, setPatientReports] = useState([]);
+  const [patientLabRequests, setPatientLabRequests] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [reportsOpen, setReportsOpen] = useState(false);
+  const [cancellingRequestId, setCancellingRequestId] = useState(null);
+  const [cancelRequest, setCancelRequest] = useState(null);
+
   const {
     isPatient,
     editable,
@@ -95,6 +112,7 @@ export default function PrescriptionUI(props) {
 
     doctor,
     patient,
+    patientId,
     dateNow,
 
     diagnosis,
@@ -113,6 +131,108 @@ export default function PrescriptionUI(props) {
 
     qrImage,
   } = props;
+
+  const refreshPatientLabData = async () => {
+    if (!patientId || isPatient) return;
+
+    try {
+      setReportsLoading(true);
+      const [reportsResponse, requestsResponse] = await Promise.all([
+        api.get("/api/lab-reports"),
+        api.get("/api/lab-requests/doctor"),
+      ]);
+      const reports = reportsResponse?.data?.data || [];
+      const requests = requestsResponse?.data?.data || [];
+      setPatientReports(
+        reports.filter((report) => Number(report.patientId || report.patient_id) === Number(patientId))
+      );
+      setPatientLabRequests(
+        requests.filter((request) => Number(request.patient_id || request.patientId) === Number(patientId))
+      );
+    } catch (requestError) {
+      setSnackbar((current) => ({
+        ...current,
+        open: true,
+        severity: "error",
+        message: requestError?.response?.data?.message || "Unable to refresh lab reports.",
+      }));
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!patientId || isPatient) return;
+
+    const loadPatientReports = async () => {
+      try {
+        setReportsLoading(true);
+        const [reportsResponse, requestsResponse] = await Promise.all([
+          api.get("/api/lab-reports"),
+          api.get("/api/lab-requests/doctor"),
+        ]);
+        const reports = reportsResponse?.data?.data || [];
+        const requests = requestsResponse?.data?.data || [];
+        setPatientReports(
+          reports.filter((report) => Number(report.patientId || report.patient_id) === Number(patientId))
+        );
+        setPatientLabRequests(
+          requests.filter((request) => Number(request.patient_id || request.patientId) === Number(patientId))
+        );
+      } catch {
+        setPatientReports([]);
+        setPatientLabRequests([]);
+      } finally {
+        setReportsLoading(false);
+      }
+    };
+
+    loadPatientReports();
+  }, [isPatient, patientId]);
+
+  const labReportRows = patientLabRequests
+    .filter((request) => request.status !== "CANCELLED")
+    .flatMap((request) => {
+    let tests = request.requested_tests || "-";
+    if (typeof tests === "string") {
+      try {
+        const parsed = JSON.parse(tests);
+        tests = Array.isArray(parsed) ? parsed : [tests];
+      } catch {
+        tests = [tests];
+      }
+    }
+    if (!Array.isArray(tests)) tests = [String(tests)];
+
+    return tests.map((test, index) => ({
+      id: `${request.id}-${index}`,
+      labName: request.lab_name,
+      testName: test,
+      requestId: request.id,
+      status: request.status || "PENDING",
+      createdAt: request.created_at,
+      report: patientReports.find((item) => Number(item.requestId || item.testRequestId || item.test_request_id) === Number(request.id)),
+    }));
+    });
+
+  const cancelPendingRequest = async (requestId) => {
+    try {
+      setCancellingRequestId(requestId);
+      await api.patch(`/api/lab-requests/${requestId}/cancel`);
+      setPatientLabRequests((current) => current.map((request) => (
+        request.id === requestId ? { ...request, status: "CANCELLED" } : request
+      )));
+    } catch (requestError) {
+      setSnackbar((current) => ({
+        ...current,
+        open: true,
+        severity: "error",
+        message: requestError?.response?.data?.message || "Unable to cancel lab request.",
+      }));
+    } finally {
+      setCancellingRequestId(null);
+    }
+  };
 
   return (
     <Box
@@ -202,6 +322,29 @@ export default function PrescriptionUI(props) {
           },
         }}
       >
+        {!isPatient && (
+          <LabTestRequestForm
+            patientId={patientId}
+            storageKey={`doctor-lab-test-${apiData?.appointment?.id || apiData?.appointment?.appointment_id || patientId || "unknown"}`}
+            resetKey={labTestResetKey}
+            onSummaryChange={setLabTestSummary}
+          />
+        )}
+
+        {!isPatient && (
+          <Button
+            variant="outlined"
+            startIcon={<DescriptionOutlined />}
+            onClick={() => {
+              setReportsOpen(true);
+              refreshPatientLabData();
+            }}
+            sx={{ textTransform: "none", borderRadius: 1.5 }}
+          >
+            Lab Reports{labReportRows.length ? ` (${labReportRows.length})` : ""}
+          </Button>
+        )}
+
         {/* =========================
             PRINT
         ========================== */}
@@ -412,6 +555,83 @@ export default function PrescriptionUI(props) {
           )}
       </Box>
 
+      <Dialog open={reportsOpen} onClose={() => setReportsOpen(false)} fullWidth maxWidth="sm" aria-labelledby="lab-reports-dialog-title">
+        <DialogTitle id="lab-reports-dialog-title">Lab Reports</DialogTitle>
+        <DialogContent dividers>
+          {reportsLoading ? (
+            <Box display="flex" justifyContent="center" py={3}><CircularProgress size={24} /></Box>
+          ) : labReportRows.length ? (
+            <Box sx={{ display: "grid", gap: 0.75 }}>
+              {labReportRows.map((row) => (
+                <Box key={row.id} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, minWidth: 0, py: 0.5, borderBottom: "1px solid", borderColor: "divider" }}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, display: "block", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {row.labName || "Lab"} - {row.testName}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: "11px" }}>
+                      Status: {row.status} {row.createdAt ? `- ${new Date(row.createdAt).toLocaleDateString()}` : ""}
+                    </Typography>
+                  </Box>
+                  {row.report?.downloadUrl ? (
+                    <Button size="small" href={row.report.downloadUrl} target="_blank" rel="noreferrer" sx={{ textTransform: "none", flexShrink: 0, fontSize: "11px", minWidth: 0, px: 1 }}>
+                      Open Report
+                    </Button>
+                  ) : null}
+                  {row.status === "PENDING" ? (
+                    <Button
+                      size="small"
+                      color="error"
+                      onClick={() => setCancelRequest(row)}
+                      disabled={cancellingRequestId === row.requestId}
+                      sx={{ textTransform: "none", flexShrink: 0, fontSize: "11px", minWidth: 0, px: 1 }}
+                    >
+                      {cancellingRequestId === row.requestId ? "Cancelling..." : "Cancel"}
+                    </Button>
+                  ) : null}
+                </Box>
+              ))}
+            </Box>
+          ) : (
+            <Typography color="text.secondary" variant="body2">No lab test requests found for this patient.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReportsOpen(false)} sx={{ textTransform: "none" }}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(cancelRequest)}
+        onClose={() => !cancellingRequestId && setCancelRequest(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Cancel lab test request?</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" color="text.secondary">
+            {cancelRequest?.testName} sent to {cancelRequest?.labName || "the selected lab"} will be cancelled. The lab will see the cancelled request in its history.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCancelRequest(null)} disabled={Boolean(cancellingRequestId)} sx={{ textTransform: "none" }}>
+            Keep Request
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={async () => {
+              if (!cancelRequest) return;
+              await cancelPendingRequest(cancelRequest.requestId);
+              setCancelRequest(null);
+            }}
+            disabled={Boolean(cancellingRequestId)}
+            sx={{ textTransform: "none" }}
+          >
+            {cancellingRequestId ? "Cancelling..." : "Cancel Request"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* =====================================================
           PRESCRIPTION PAPER
       ====================================================== */}
@@ -510,6 +730,34 @@ export default function PrescriptionUI(props) {
             setDiagnosis={setDiagnosis}
             isDownloading={isDownloading}
           />
+
+          {!isDownloading && labTestSummary.tests.length > 0 && (
+            <Box
+              sx={{
+                width: "100%",
+                mb: 1.5,
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                minWidth: 0,
+                overflowX: "auto",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Typography sx={{ fontSize: "14px", fontWeight: 700, color: "primary.main", flexShrink: 0 }}>
+                Test Name
+              </Typography>
+              {labTestSummary.labName && (
+                <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>
+                  Lab: {labTestSummary.labName}:-
+                </Typography>
+              )}
+              <Typography variant="body2" sx={{ color: "text.primary", flexShrink: 0 }}>
+                {labTestSummary.tests.join(", ")}
+              </Typography>
+            </Box>
+          )}
+
         </Box>
 
         {/* =================================================
