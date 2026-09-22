@@ -8,18 +8,22 @@ import {
   Button,
   Chip,
   CircularProgress,
+  InputAdornment,
   Pagination,
   Snackbar,
-  Stack,
   TableCell,
   TableRow,
   TextField,
+  Typography,
 } from "@mui/material";
 import { DataTable, SectionTitle, TableFilters } from "../../lab/components/LabUi";
 import LabReports from "../../lab/components/LabReports";
+import { SearchIcon } from "lucide-react";
 
 const getRows = (response) => response?.data?.data || [];
-const getErrorMessage = (error, fallback) => error.response?.data?.message || error.message || fallback;
+
+const getErrorMessage = (error, fallback) =>
+  error.response?.data?.message || error.message || fallback;
 
 const getSearchResultRows = (response) => {
   const payload = response?.data;
@@ -39,8 +43,19 @@ const normalizeLab = (lab = {}) => ({
   id: lab.id || lab.lab_id || lab.labId,
   lab_name: lab.lab_name || lab.name || lab.labName || lab.lab || "-",
   lab_code: lab.lab_code || lab.code || lab.labCode || "-",
-  phone_number: lab.phone_number || lab.phone || lab.contact_number || lab.mobile || "-",
-  address: lab.address || lab.location || lab.city || lab.area || lab.address_line || "-",
+  phone_number:
+    lab.phone_number ||
+    lab.phone ||
+    lab.contact_number ||
+    lab.mobile ||
+    "-",
+  address:
+    lab.address ||
+    lab.location ||
+    lab.city ||
+    lab.area ||
+    lab.address_line ||
+    "-",
 });
 
 const normalizeMedicalStore = (store = {}) => ({
@@ -64,15 +79,21 @@ export default function DoctorLabPanel({ section = "connections" }) {
   const [connectingId, setConnectingId] = useState(null);
   const [connectingMedicalId, setConnectingMedicalId] = useState(null);
   const [searchText, setSearchText] = useState("");
-  const [medicalSearchText, setMedicalSearchText] = useState("");
-  const [tableFilters, setTableFilters] = useState({ search: "", status: "", date: "" });
+  const [connectionSearch, setConnectionSearch] = useState("");
+  const [tableFilters, setTableFilters] = useState({
+    search: "",
+    status: "",
+    date: "",
+  });
   const [tablePage, setTablePage] = useState(1);
-  const pageSize = 10;
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
+  const pageSize = 10;
+
   const loadLabs = async () => {
     const trimmed = searchText.trim();
+
     if (!trimmed) {
       setLabs([]);
       return;
@@ -93,6 +114,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
       const rawLabs = getSearchResultRows(response).map(normalizeLab);
       const query = trimmed.toLowerCase();
+
       const filteredLabs = rawLabs.filter((lab) => {
         const haystack = [
           lab.lab_name,
@@ -121,7 +143,12 @@ export default function DoctorLabPanel({ section = "connections" }) {
       const response = await api.get("/api/labs/doctor/connections");
       setConnections(getRows(response));
     } catch (requestError) {
-      setError(getErrorMessage(requestError, "Unable to load your lab connections."));
+      setError(
+        getErrorMessage(
+          requestError,
+          "Unable to load your lab connections."
+        )
+      );
     }
   };
 
@@ -173,9 +200,12 @@ export default function DoctorLabPanel({ section = "connections" }) {
           date: tableFilters.date || undefined,
         },
       });
+
       setRequests(getRows(response));
     } catch (requestError) {
-      setError(getErrorMessage(requestError, "Unable to load lab requests."));
+      setError(
+        getErrorMessage(requestError, "Unable to load lab requests.")
+      );
     }
   };
 
@@ -187,16 +217,22 @@ export default function DoctorLabPanel({ section = "connections" }) {
           date: tableFilters.date || undefined,
         },
       });
+
       setReports(getRows(response));
     } catch (requestError) {
-      setError(getErrorMessage(requestError, "Unable to load lab reports."));
+      setError(
+        getErrorMessage(requestError, "Unable to load lab reports.")
+      );
     }
   };
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (section === "connections") loadLabs();
+      if (section === "connections") {
+        loadLabs();
+      }
     }, 300);
+
     return () => clearTimeout(timeout);
   }, [searchText, section]);
 
@@ -214,41 +250,68 @@ export default function DoctorLabPanel({ section = "connections" }) {
         setError("");
 
         if (section === "connections") {
-          await Promise.all([loadConnections(), loadMedicalConnections()]);
+          await loadConnections();
         } else if (section === "requests") {
           await loadRequests();
         } else if (section === "reports") {
           await Promise.all([loadRequests(), loadReports()]);
         }
       } catch (requestError) {
-        setError(getErrorMessage(requestError, "Unable to load doctor lab data."));
+        setError(
+          getErrorMessage(
+            requestError,
+            "Unable to load doctor lab data."
+          )
+        );
       } finally {
         setLoading(false);
       }
     };
 
     loadBySection();
-  }, [section, tableFilters.date, tableFilters.search, tableFilters.status]);
+  }, [
+    section,
+    tableFilters.date,
+    tableFilters.search,
+    tableFilters.status,
+  ]);
 
   useEffect(() => {
     setTablePage(1);
-  }, [section, tableFilters.date, tableFilters.search, tableFilters.status]);
+  }, [
+    section,
+    tableFilters.date,
+    tableFilters.search,
+    tableFilters.status,
+    connectionSearch,
+  ]);
 
   const handleFilter = (field) => (value) => {
-    setTableFilters((current) => ({ ...current, [field]: value }));
+    setTableFilters((current) => ({
+      ...current,
+      [field]: value,
+    }));
   };
 
   const handleConnectLab = async (labId) => {
     try {
       setConnectingId(labId);
       setError("");
+
       await api.post("/api/labs/connect", { labId });
+
       setNotice("Lab connection request sent successfully.");
       setSearchText("");
       setLabs([]);
+
       await loadConnections();
     } catch (requestError) {
-      setError(getErrorMessage(requestError, "Unable to send lab connection request."));
+      setError(
+        getErrorMessage(
+          requestError,
+          "Unable to send lab connection request."
+        )
+      );
     } finally {
       setConnectingId(null);
     }
@@ -286,24 +349,71 @@ export default function DoctorLabPanel({ section = "connections" }) {
     [tableFilters]
   );
 
-  const getRequestNote = (request = {}) => request.latest_status_note || request.latestStatusNote || request.status_note || request.note || request.reason || request.statusReason || "";
-  const visibleConnections = connections.slice((tablePage - 1) * pageSize, tablePage * pageSize);
-  const visibleRequests = requests.slice((tablePage - 1) * pageSize, tablePage * pageSize);
+  const getRequestNote = (request = {}) =>
+    request.latest_status_note ||
+    request.latestStatusNote ||
+    request.status_note ||
+    request.note ||
+    request.reason ||
+    request.statusReason ||
+    "";
+
+  const filteredConnections = useMemo(() => {
+    const query = connectionSearch.trim().toLowerCase();
+
+    if (!query) return connections;
+
+    return connections.filter((connection) => {
+      const searchableText = [
+        connection.lab_name,
+        connection.lab_code,
+        connection.status,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(query);
+    });
+  }, [connections, connectionSearch]);
+
+  const visibleConnections = filteredConnections.slice(
+    (tablePage - 1) * pageSize,
+    tablePage * pageSize
+  );
+
+  const visibleRequests = requests.slice(
+    (tablePage - 1) * pageSize,
+    tablePage * pageSize
+  );
+
   const reportRows = useMemo(() => {
     const uploadedRequestIds = new Set(
-      reports.map((report) => Number(report.requestId || report.testRequestId || report.test_request_id))
+      reports.map((report) =>
+        Number(
+          report.requestId ||
+            report.testRequestId ||
+            report.test_request_id
+        )
+      )
     );
+
     const pendingRequests = requests
-      .filter((request) => !uploadedRequestIds.has(Number(request.id)))
+      .filter(
+        (request) =>
+          !uploadedRequestIds.has(Number(request.id))
+      )
       .map((request) => {
         let requestedTests = request.requested_tests || "-";
+
         if (typeof requestedTests === "string") {
           try {
             const parsed = JSON.parse(requestedTests);
-            if (Array.isArray(parsed)) requestedTests = parsed.join(", ");
-          } catch {
-            // Keep the original value when the API returns plain text.
-          }
+
+            if (Array.isArray(parsed)) {
+              requestedTests = parsed.join(", ");
+            }
+          } catch {}
         }
 
         return {
@@ -346,160 +456,225 @@ export default function DoctorLabPanel({ section = "connections" }) {
     };
 
     return (
-      <Box sx={{ mt: { xs: 7, md: 8 }, display: "grid", gap: 2.25 }}>
-        <Box sx={connectionCardSx}>
-          <SectionTitle title="Lab Connections" description="Search labs and send a connection request." />
-          <Box sx={{ mt: 1.5, display: "grid", gap: 1.5 }}>
-            <TextField
-              size="small"
-              label="Search by name, code, city or location"
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-              sx={{
-                maxWidth: 420,
-                '& .MuiInputLabel-root': { color: '#1f3a4a', fontWeight: 600, fontSize: '0.78rem' },
-                '& .MuiInputLabel-root.Mui-focused': { color: '#0b5c8e' },
-                '& .MuiOutlinedInput-root': { backgroundColor: '#fff', borderRadius: 1.5, fontSize: '0.8rem', '& fieldset': { borderColor: '#cfe0ea' }, '&:hover fieldset': { borderColor: '#8eb7d1' }, '&.Mui-focused fieldset': { borderColor: '#0b5c8e' } },
-              }}
-            />
-            {loading ? (
-              <Box display="flex" justifyContent="center" py={4}><CircularProgress size={26} sx={{ color: "#0b5c8e" }} /></Box>
-            ) : labs.length ? (
-              <DataTable
-                columns={["LAB", "CODE", "PHONE", "ADDRESS", "ACTION"]}
-                loading={false}
-                emptyMessage="No labs found."
-                footer={null}
+      <Box
+        sx={{
+          mt: { xs: 7, md: 8 },
+          minHeight: "100%",
+          px: { xs: 2, sm: 3, md: 4 },
+          py: { xs: 2, sm: 3, md: 1 },
+          bgcolor: "background.paper",
+        }}
+      >
+       
+        <Box sx={{ mt: 3 }}>
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              alignItems: { xs: "stretch", sm: "center" },
+              justifyContent: "space-between",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: { xs: 1.5, sm: 2 },
+              mb: 1.5,
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                sx={{
+                  fontSize: { xs: "15px", sm: "18px" },
+                  fontWeight: 700,
+                  lineHeight: 1.3,
+                  color: "text.primary",
+                }}
               >
-                {labs.map((lab) => (
-                  <TableRow key={lab.id} hover>
-                    <TableCell sx={{ ...compactCellSx, fontWeight: 600 }}>{lab.lab_name || "-"}</TableCell>
-                    <TableCell sx={compactCellSx}>{lab.lab_code || "-"}</TableCell>
-                    <TableCell sx={compactCellSx}>{lab.phone_number || "-"}</TableCell>
-                    <TableCell sx={{ ...compactCellSx, color: "#64748b" }}>{lab.address || lab.location || "-"}</TableCell>
-                    <TableCell sx={compactCellSx}>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        disabled={connectingId === lab.id}
-                        onClick={() => handleConnectLab(lab.id)}
-                        sx={compactButtonSx}
-                      >
-                        {connectingId === lab.id ? "Sending..." : "Connect"}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </DataTable>
-            ) : null}
-          </Box>
-        </Box>
+                My Connections
+              </Typography>
 
-        <Box sx={connectionCardSx}>
-          <SectionTitle title="My Connections" description="Track your lab connection requests and current status." />
-          <Box sx={{ mt: 1 }}>
-            <DataTable
-              columns={["LAB", "CODE", "STATUS", "REQUESTED", "APPROVED"]}
-              loading={loading}
-              emptyMessage="No lab connections found."
-              footer={<Pagination count={Math.max(1, Math.ceil(connections.length / pageSize))} page={tablePage} onChange={(_, value) => setTablePage(value)} size="small" color="primary" />}
-            >
-              {visibleConnections.length ? visibleConnections.map((connection) => (
-                <TableRow key={connection.connection_id} hover>
-                  <TableCell sx={{ ...compactCellSx, fontWeight: 600 }}>{connection.lab_name || "-"}</TableCell>
-                  <TableCell sx={compactCellSx}>{connection.lab_code || "-"}</TableCell>
-                  <TableCell sx={compactCellSx}>
-                    <Chip
-                      size="small"
-                      label={connection.status || "PENDING"}
-                      color={connection.status === "APPROVED" ? "success" : connection.status === "REJECTED" ? "error" : "warning"}
-                      sx={{ fontSize: '11.5px', height: 24, '& .MuiChip-label': { px: 1 } }}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ ...compactCellSx, color: "#64748b" }}>{connection.requested_at ? new Date(connection.requested_at).toLocaleDateString() : "-"}</TableCell>
-                  <TableCell sx={{ ...compactCellSx, color: "#64748b" }}>{connection.approved_at ? new Date(connection.approved_at).toLocaleDateString() : "-"}</TableCell>
-                </TableRow>
-              )) : null}
-            </DataTable>
-          </Box>
-        </Box>
+              <Typography
+                sx={{
+                  mt: 0.4,
+                  fontSize: "12.5px",
+                  lineHeight: 1.4,
+                  color: "text.secondary",
+                }}
+              >
+                Track your lab connection requests and current status.
+              </Typography>
+            </Box>
 
-        <Box sx={connectionCardSx}>
-          <SectionTitle title="Medical Connections" description="Search medical stores and connect with your preferred pharmacy partners." />
-          <Box sx={{ mt: 1.5, display: "grid", gap: 1.5 }}>
             <TextField
-              size="small"
-              label="Search by name, code, city or location"
-              value={medicalSearchText}
-              onChange={(event) => setMedicalSearchText(event.target.value)}
-              sx={{
-                maxWidth: 420,
-                '& .MuiInputLabel-root': { color: '#1f3a4a', fontWeight: 600, fontSize: '0.78rem' },
-                '& .MuiInputLabel-root.Mui-focused': { color: '#0b5c8e' },
-                '& .MuiOutlinedInput-root': { backgroundColor: '#fff', borderRadius: 1.5, fontSize: '0.8rem', '& fieldset': { borderColor: '#cfe0ea' }, '&:hover fieldset': { borderColor: '#8eb7d1' }, '&.Mui-focused fieldset': { borderColor: '#0b5c8e' } },
-              }}
-            />
+  size="small"
+  label="Find Lab"
+  placeholder="Enter a lab code to find and connect with a lab"
+  value={connectionSearch}
+  onChange={(event) => setConnectionSearch(event.target.value)}
+  InputProps={{
+    startAdornment: (
+      <InputAdornment position="start">
+        <SearchIcon
+          sx={{
+            fontSize: 18,
+            color: "text.secondary",
+          }}
+        />
+      </InputAdornment>
+    ),
+  }}
+  sx={{
+    width: { xs: "100%", sm: 320, md: 360 },
+    flexShrink: 0,
+    "& .MuiOutlinedInput-root": {
+      height: 40,
+      fontSize: "12.5px",
+      bgcolor: "background.paper",
+      borderRadius: "8px",
+      "& fieldset": {
+        borderColor: "#757575",
+      },
+      "&:hover fieldset": {
+        borderColor: "primary.main",
+      },
+      "&.Mui-focused fieldset": {
+        borderColor: "primary.main",
+        borderWidth: "1px",
+      },
+    },
+    "& .MuiInputLabel-root": {
+      fontSize: "12.5px",
+    },
+    "& .MuiFormHelperText-root": {
+      mx: 0.5,
+      mt: 0.5,
+      fontSize: "10.5px",
+      color: "text.secondary",
+    },
+  }}
+/>
+          </Box>
 
-            {medicalStores.length ? (
-              <DataTable columns={["STORE", "CODE", "PHONE", "ADDRESS", "ACTION"]} loading={false} emptyMessage="No medical stores found." footer={null}>
-                {medicalStores.map((store) => (
-                  <TableRow key={store.id} hover>
-                    <TableCell sx={{ ...compactCellSx, fontWeight: 600 }}>{store.name || "-"}</TableCell>
-                    <TableCell sx={compactCellSx}>{store.code || "-"}</TableCell>
-                    <TableCell sx={compactCellSx}>{store.phone || "-"}</TableCell>
-                    <TableCell sx={{ ...compactCellSx, color: "#64748b" }}>{store.address || store.city || "-"}</TableCell>
-                    <TableCell sx={compactCellSx}>
-                      <Button
+          <DataTable
+            columns={[
+              "LAB",
+              "CODE",
+              "STATUS",
+              "REQUESTED",
+              "APPROVED",
+            ]}
+            loading={loading}
+            emptyMessage={
+              connectionSearch
+                ? "No matching connections found."
+                : "No lab connections found."
+            }
+            footer={
+              <Pagination
+                count={Math.max(
+                  1,
+                  Math.ceil(
+                    filteredConnections.length / pageSize
+                  )
+                )}
+                page={tablePage}
+                onChange={(_, value) =>
+                  setTablePage(value)
+                }
+                size="small"
+                color="primary"
+              />
+            }
+          >
+            {visibleConnections.length
+              ? visibleConnections.map((connection) => (
+                  <TableRow
+                    key={connection.connection_id}
+                    hover
+                  >
+                    <TableCell
+                      sx={{
+                        color: "text.primary",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {connection.lab_name || "-"}
+                    </TableCell>
+
+                    <TableCell
+                      sx={{
+                        color: "text.primary",
+                      }}
+                    >
+                      {connection.lab_code || "-"}
+                    </TableCell>
+
+                    <TableCell>
+                      <Chip
                         size="small"
-                        variant="contained"
-                        disabled={connectingMedicalId === store.id}
-                        onClick={() => handleConnectMedicalStore(store.id)}
-                        sx={compactButtonSx}
-                      >
-                        {connectingMedicalId === store.id ? "Sending..." : "Connect"}
-                      </Button>
+                        label={
+                          connection.status || "PENDING"
+                        }
+                        color={
+                          connection.status === "APPROVED"
+                            ? "success"
+                            : connection.status === "REJECTED"
+                            ? "error"
+                            : "warning"
+                        }
+                      />
+                    </TableCell>
+
+                    <TableCell
+                      sx={{
+                        color: "text.secondary",
+                      }}
+                    >
+                      {connection.requested_at
+                        ? new Date(
+                            connection.requested_at
+                          ).toLocaleDateString()
+                        : "-"}
+                    </TableCell>
+
+                    <TableCell
+                      sx={{
+                        color: "text.secondary",
+                      }}
+                    >
+                      {connection.approved_at
+                        ? new Date(
+                            connection.approved_at
+                          ).toLocaleDateString()
+                        : "-"}
                     </TableCell>
                   </TableRow>
-                ))}
-              </DataTable>
-            ) : null}
-          </Box>
+                ))
+              : null}
+          </DataTable>
         </Box>
 
-        <Box sx={connectionCardSx}>
-          <SectionTitle title="My Medical Connections" description="Track your connected medical stores and request status." />
-          <Box sx={{ mt: 1 }}>
-            <DataTable
-              columns={["STORE", "CODE", "STATUS", "REQUESTED", "APPROVED"]}
-              loading={loading}
-              emptyMessage="No medical connections found."
-              footer={null}
-            >
-              {medicalConnections.length ? medicalConnections.map((connection) => (
-                <TableRow key={connection.id || connection.store_name} hover>
-                  <TableCell sx={{ ...compactCellSx, fontWeight: 600 }}>{connection.store_name || "-"}</TableCell>
-                  <TableCell sx={compactCellSx}>{connection.store_code || "-"}</TableCell>
-                  <TableCell sx={compactCellSx}>
-                    <Chip
-                      size="small"
-                      label={connection.status || "PENDING"}
-                      color={connection.status === "APPROVED" ? "success" : connection.status === "REJECTED" ? "error" : "warning"}
-                      sx={{ fontSize: '11.5px', height: 24, '& .MuiChip-label': { px: 1 } }}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ ...compactCellSx, color: "#64748b" }}>{connection.requested_at ? new Date(connection.requested_at).toLocaleDateString() : "-"}</TableCell>
-                  <TableCell sx={{ ...compactCellSx, color: "#64748b" }}>{connection.approved_at ? new Date(connection.approved_at).toLocaleDateString() : "-"}</TableCell>
-                </TableRow>
-              )) : null}
-            </DataTable>
-          </Box>
-        </Box>
-
-        <Snackbar open={Boolean(error)} autoHideDuration={6000} onClose={() => setError("")}>
-          <Alert severity="error" onClose={() => setError("")}>{error}</Alert>
+        <Snackbar
+          open={Boolean(error)}
+          autoHideDuration={6000}
+          onClose={() => setError("")}
+        >
+          <Alert
+            severity="error"
+            onClose={() => setError("")}
+          >
+            {error}
+          </Alert>
         </Snackbar>
-        <Snackbar open={Boolean(notice)} autoHideDuration={3500} onClose={() => setNotice("")}>
-          <Alert severity="success" onClose={() => setNotice("")}>{notice}</Alert>
+
+        <Snackbar
+          open={Boolean(notice)}
+          autoHideDuration={3500}
+          onClose={() => setNotice("")}
+        >
+          <Alert
+            severity="success"
+            onClose={() => setNotice("")}
+          >
+            {notice}
+          </Alert>
         </Snackbar>
       </Box>
     );
@@ -507,32 +682,163 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
   if (section === "requests") {
     return (
-      <Box sx={{ mt: { xs: 7, md: 8 }, display: "grid", gap: 3 }}>
-        <SectionTitle title="Lab Requests" description="View your patient test requests and their status." />
-        <TableFilters {...filterProps} statusOptions={["PENDING", "APPROVED", "REJECTED", "SAMPLE_COLLECTED", "PROCESSING", "REPORT_UPLOADED", "COMPLETED", "CANCELLED"]} />
+      <Box
+        sx={{
+          mt: { xs: 7, md: 8 },
+          display: "grid",
+          gap: 3,
+        }}
+      >
+        <SectionTitle
+          title="Lab Requests"
+          description="View your patient test requests and their status."
+        />
+
+        <TableFilters
+          {...filterProps}
+          statusOptions={[
+            "PENDING",
+            "APPROVED",
+            "REJECTED",
+            "SAMPLE_COLLECTED",
+            "PROCESSING",
+            "REPORT_UPLOADED",
+            "COMPLETED",
+            "CANCELLED",
+          ]}
+        />
+
         <DataTable
-          columns={["PATIENT", "LAB", "TESTS", "PRIORITY", "STATUS", "REASON", "CREATED"]}
+          columns={[
+            "PATIENT",
+            "LAB",
+            "TESTS",
+            "PRIORITY",
+            "STATUS",
+            "REASON",
+            "CREATED",
+          ]}
           loading={loading}
           emptyMessage="No lab requests found."
-          footer={<Pagination count={Math.max(1, Math.ceil(requests.length / pageSize))} page={tablePage} onChange={(_, value) => setTablePage(value)} size="small" color="primary" />}
+          footer={
+            <Pagination
+              count={Math.max(
+                1,
+                Math.ceil(requests.length / pageSize)
+              )}
+              page={tablePage}
+              onChange={(_, value) =>
+                setTablePage(value)
+              }
+              size="small"
+              color="primary"
+            />
+          }
         >
-          {visibleRequests.length ? visibleRequests.map((request) => (
-            <TableRow key={request.id} hover>
-              <TableCell sx={{ color: "#1f2937 !important", fontWeight: 600 }}>{request.patient_name || request.patient_id || "-"}</TableCell>
-              <TableCell sx={{ color: "#1f2937 !important" }}>{request.lab_name || "-"}</TableCell>
-              <TableCell sx={{ color: "#1f2937 !important", maxWidth: 240, whiteSpace: "normal" }}>{Array.isArray(request.requested_tests) ? request.requested_tests.join(", ") : request.requested_tests || "-"}</TableCell>
-              <TableCell><Chip size="small" label={request.priority || "NORMAL"} color={request.priority === "URGENT" ? "error" : "default"} /></TableCell>
-              <TableCell><Chip size="small" label={request.status || "PENDING"} color={request.status === "COMPLETED" ? "success" : request.status === "REJECTED" || request.status === "CANCELLED" ? "error" : "warning"} /></TableCell>
-              <TableCell sx={{ color: "#64748b !important", maxWidth: 220, whiteSpace: "normal" }}>
-                {request.status === "REJECTED" || request.status === "CANCELLED" ? (getRequestNote(request) || "No reason provided.") : "-"}
-              </TableCell>
-              <TableCell sx={{ color: "#64748b !important" }}>{request.created_at ? new Date(request.created_at).toLocaleDateString() : "-"}</TableCell>
-            </TableRow>
-          )) : null}
+          {visibleRequests.length
+            ? visibleRequests.map((request) => (
+                <TableRow key={request.id} hover>
+                  <TableCell
+                    sx={{
+                      color: "text.primary",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {request.patient_name ||
+                      request.patient_id ||
+                      "-"}
+                  </TableCell>
+
+                  <TableCell
+                    sx={{ color: "text.primary" }}
+                  >
+                    {request.lab_name || "-"}
+                  </TableCell>
+
+                  <TableCell
+                    sx={{
+                      color: "text.primary",
+                      maxWidth: 240,
+                      whiteSpace: "normal",
+                    }}
+                  >
+                    {Array.isArray(
+                      request.requested_tests
+                    )
+                      ? request.requested_tests.join(", ")
+                      : request.requested_tests || "-"}
+                  </TableCell>
+
+                  <TableCell>
+                    <Chip
+                      size="small"
+                      label={
+                        request.priority || "NORMAL"
+                      }
+                      color={
+                        request.priority === "URGENT"
+                          ? "error"
+                          : "default"
+                      }
+                    />
+                  </TableCell>
+
+                  <TableCell>
+                    <Chip
+                      size="small"
+                      label={
+                        request.status || "PENDING"
+                      }
+                      color={
+                        request.status === "COMPLETED"
+                          ? "success"
+                          : request.status === "REJECTED" ||
+                            request.status === "CANCELLED"
+                          ? "error"
+                          : "warning"
+                      }
+                    />
+                  </TableCell>
+
+                  <TableCell
+                    sx={{
+                      color: "text.secondary",
+                      maxWidth: 220,
+                      whiteSpace: "normal",
+                    }}
+                  >
+                    {request.status === "REJECTED" ||
+                    request.status === "CANCELLED"
+                      ? getRequestNote(request) ||
+                        "No reason provided."
+                      : "-"}
+                  </TableCell>
+
+                  <TableCell
+                    sx={{ color: "text.secondary" }}
+                  >
+                    {request.created_at
+                      ? new Date(
+                          request.created_at
+                        ).toLocaleDateString()
+                      : "-"}
+                  </TableCell>
+                </TableRow>
+              ))
+            : null}
         </DataTable>
 
-        <Snackbar open={Boolean(error)} autoHideDuration={6000} onClose={() => setError("")}> 
-          <Alert severity="error" onClose={() => setError("")}>{error}</Alert>
+        <Snackbar
+          open={Boolean(error)}
+          autoHideDuration={6000}
+          onClose={() => setError("")}
+        >
+          <Alert
+            severity="error"
+            onClose={() => setError("")}
+          >
+            {error}
+          </Alert>
         </Snackbar>
       </Box>
     );
@@ -540,7 +846,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
   if (section === "reports") {
     return (
-      <Box sx={{ mt: { xs: 7, md: 8 } }}>
+      <Box sx={{ mt: { xs: 7, md: 8 },px:4,py:2 , backgroundColor:"white" }}>
         <LabReports
           reports={reportRows}
           loading={loading}
@@ -549,8 +855,18 @@ export default function DoctorLabPanel({ section = "connections" }) {
           pageSize={pageSize}
           onPageChange={setTablePage}
         />
-        <Snackbar open={Boolean(error)} autoHideDuration={6000} onClose={() => setError("")}>
-          <Alert severity="error" onClose={() => setError("")}>{error}</Alert>
+
+        <Snackbar
+          open={Boolean(error)}
+          autoHideDuration={6000}
+          onClose={() => setError("")}
+        >
+          <Alert
+            severity="error"
+            onClose={() => setError("")}
+          >
+            {error}
+          </Alert>
         </Snackbar>
       </Box>
     );
