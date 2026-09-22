@@ -3,7 +3,7 @@ import { Box } from "@mui/material";
 
 export default function LabSettingsPage() {
   return (
-    <Box className="lab-settings-page">
+    <Box >
       <SettingsContent />
     </Box>
   );
