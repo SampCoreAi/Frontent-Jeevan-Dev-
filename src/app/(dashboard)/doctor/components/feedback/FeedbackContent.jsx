@@ -101,10 +101,9 @@ useEffect(() => {
   ];
 
   return (
-    <Box sx={{ width: "100%", pt: 8.5, px: 1 }}>
+    <Box sx={{ width: "100%", pt: 8.5 }}>
       <Box
         sx={{
-          boxShadow: "0 4px 12px rgba(15,116,104,0.3)",
           backgroundColor: "#fff",
           borderRadius: 1,
           minHeight: "100vh",

@@ -228,33 +228,44 @@ export default function PrescriptionUI(props) {
 
   const getRequestNote = (request = {}) => request.latest_status_note || request.latestStatusNote || request.status_note || request.note || request.reason || request.statusReason || "";
 
-  const labReportRows = patientLabRequests
-    .filter((request) => request.status !== "CANCELLED")
-    .flatMap((request) => {
-    let tests = request.requested_tests || "-";
-    if (typeof tests === "string") {
-      try {
-        const parsed = JSON.parse(tests);
-        tests = Array.isArray(parsed) ? parsed : [tests];
-      } catch {
-        tests = [tests];
-      }
+  const labReportRows = patientLabRequests.flatMap((request) => {
+  let tests = request.requested_tests || "-";
+
+  if (typeof tests === "string") {
+    try {
+      const parsed = JSON.parse(tests);
+      tests = Array.isArray(parsed) ? parsed : [tests];
+    } catch {
+      tests = [tests];
     }
-    if (!Array.isArray(tests)) tests = [String(tests)];
+  }
 
-    const matchedReport = patientReports.find((item) => Number(item.requestId || item.testRequestId || item.test_request_id) === Number(request.id));
+  if (!Array.isArray(tests)) tests = [String(tests)];
 
-    return tests.map((test, index) => ({
-      id: `${request.id}-${index}`,
-      labName: request.lab_name,
-      testName: test,
-      requestId: request.id,
-      status: request.status || "PENDING",
-      createdAt: request.created_at,
-      reportDate: request.expected_report_at || request.expectedReportAt || matchedReport?.createdAt || matchedReport?.created_at || matchedReport?.uploadedAt || matchedReport?.uploaded_at || request.created_at,
-      report: matchedReport,
-    }));
-    });
+  const matchedReport = patientReports.find(
+    (item) =>
+      Number(item.requestId || item.testRequestId || item.test_request_id) ===
+      Number(request.id)
+  );
+
+  return tests.map((test, index) => ({
+    id: `${request.id}-${index}`,
+    labName: request.lab_name,
+    testName: test,
+    requestId: request.id,
+    status: request.status || "PENDING",
+    createdAt: request.created_at,
+    reportDate:
+      request.expected_report_at ||
+      request.expectedReportAt ||
+      matchedReport?.createdAt ||
+      matchedReport?.created_at ||
+      matchedReport?.uploadedAt ||
+      matchedReport?.uploaded_at ||
+      request.created_at,
+    report: matchedReport,
+  }));
+});
 
   const cancelPendingRequest = async (requestId, reason = null) => {
     try {
@@ -445,9 +456,71 @@ export default function PrescriptionUI(props) {
                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: "11px", display: "block" }}>
                       Created: {row.createdAt ? new Date(row.createdAt).toLocaleString() : "-"}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: "11px", display: "block" }}>
-                      Status: {row.status}{row.reportDate ? ` • Report Date: ${new Date(row.reportDate).toLocaleString()}` : ""}
-                    </Typography>
+                    <Box
+  sx={{
+    mt: 0.5,
+    display: "flex",
+    alignItems: "center",
+    gap: 0.7,
+    flexWrap: "wrap",
+  }}
+>
+  <Box
+    component="span"
+    sx={{
+      px: 1,
+      py: 0.3,
+      borderRadius: "6px",
+      fontSize: "10.5px",
+      fontWeight: 700,
+      lineHeight: 1.4,
+      bgcolor:
+        row.status === "COMPLETED"
+          ? "#E8F5E9"
+          : row.status === "REPORT_UPLOADED"
+          ? "#E3F2FD"
+          : row.status === "PROCESSING"
+          ? "#EDE7F6"
+          : row.status === "SAMPLE_COLLECTED"
+          ? "#E0F7FA"
+          : row.status === "APPROVED"
+          ? "#E8F5E9"
+          : row.status === "CANCELLED"
+          ? "#FFEBEE"
+          : row.status === "REJECTED"
+          ? "#FFF3E0"
+          : "#FFF8E1",
+      color:
+        row.status === "COMPLETED"
+          ? "#2E7D32"
+          : row.status === "REPORT_UPLOADED"
+          ? "#1565C0"
+          : row.status === "PROCESSING"
+          ? "#6A1B9A"
+          : row.status === "SAMPLE_COLLECTED"
+          ? "#00838F"
+          : row.status === "APPROVED"
+          ? "#2E7D32"
+          : row.status === "CANCELLED"
+          ? "#D32F2F"
+          : row.status === "REJECTED"
+          ? "#E65100"
+          : "#F57F17",
+    }}
+  >
+    {row.status?.replaceAll("_", " ")}
+  </Box>
+
+  {row.reportDate && (
+    <Typography
+      variant="caption"
+      color="text.secondary"
+      sx={{ fontSize: "11px" }}
+    >
+      Report Date: {new Date(row.reportDate).toLocaleString()}
+    </Typography>
+  )}
+</Box>
                     {(row.status === "REJECTED" || row.status === "CANCELLED") && (
                       <Typography variant="caption" color={row.status === "CANCELLED" ? "error.main" : "warning.main"} sx={{ fontSize: "11px", display: "block", fontWeight: 600 }}>
                         Reason: {getRequestNote(patientLabRequests.find((request) => Number(request.id) === Number(row.requestId))) || "No reason provided."}

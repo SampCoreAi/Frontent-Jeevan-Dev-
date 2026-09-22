@@ -184,7 +184,7 @@ export default function LabPanel({ section = "dashboard" }) {
   );
 
   return (
-    <Box className="lab-workspace" sx={{ mt: { xs: 7, md: 8 } }}>
+    <Box  sx={{ pt:12,px:3, backgroundColor:"white"  }}>
       {loading && section === "dashboard" ? <Box display="flex" justifyContent="center" py={8}><CircularProgress sx={{ color: "#0b5c8e" }} /></Box> : null}
       {!loading || section !== "dashboard" ? content : null}
       <Snackbar open={Boolean(error)} autoHideDuration={6000} onClose={() => setError("")}><Alert severity="error" onClose={() => setError("")}>{error}</Alert></Snackbar>

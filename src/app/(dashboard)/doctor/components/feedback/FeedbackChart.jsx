@@ -1,6 +1,7 @@
 "use client";
+
 import React from "react";
-import { Grid, Box, Typography, Paper } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import {
   BarChart,
   Bar,
@@ -10,6 +11,7 @@ import {
   ResponsiveContainer,
   LabelList,
   Cell,
+  CartesianGrid,
 } from "recharts";
 
 const FeedbackCharts = ({ positive = 0, negative = 0 }) => {
@@ -27,74 +29,149 @@ const FeedbackCharts = ({ positive = 0, negative = 0 }) => {
   ];
 
   return (
-    <Grid sx={{ mt: 4 }}>
-      <Grid size={{ xs: 12 }}>
-
-        <Box
+    <Box
+      sx={{
+        mt: 2,
+        width: "100%",
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: "10px",
+        bgcolor: "background.paper",
+        boxShadow: "0 2px 8px rgba(15, 23, 42, 0.04)",
+        overflow: "hidden",
+      }}
+    >
+      <Box
+        sx={{
+          px: { xs: 1.5, sm: 2 },
+          pt: 1.8,
+          pb: 1.2,
+          borderBottom: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <Typography
           sx={{
-            p: 3,
-
+            fontSize: { xs: "14px", sm: "15px" },
+            fontWeight: 700,
+            lineHeight: 1.3,
+            color: "text.primary",
           }}
         >
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 600,
-              color: "#1e6658",
-              marginBottom: "15px",
-              textAlign: { xs: "center", md: "left" } // center on mobile
-            }}
-          >
-            Feedback Performance
-          </Typography>
+          Feedback Performance
+        </Typography>
 
-          <Box sx={{ height: 220, width: "100%" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                layout="vertical"
-                data={data}
-                barSize={30}
-                margin={{ top: 10, right: 40, left: 10, bottom: 30 }}
+        <Typography
+          sx={{
+            mt: 0.4,
+            fontSize: "12.5px",
+            lineHeight: 1.4,
+            color: "text.secondary",
+          }}
+        >
+          Positive and negative feedback distribution
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{
+          px: { xs: 1, sm: 2 },
+          py: { xs: 1.5, sm: 2 },
+        }}
+      >
+        <Box
+          sx={{
+            width: "100%",
+            height: { xs: 190, sm: 210, md: 220 },
+          }}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              layout="vertical"
+              data={data}
+              barSize={24}
+              margin={{
+                top: 5,
+                right: 45,
+                left: 5,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid
+                horizontal={false}
+                stroke="#E2E8F0"
+                strokeDasharray="3 3"
+              />
+
+              <YAxis
+                type="category"
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                width={70}
+                tick={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  fill: "#64748B",
+                }}
+              />
+
+              <XAxis
+                type="number"
+                domain={[0, 100]}
+                axisLine={false}
+                tickLine={false}
+                tick={{
+                  fontSize: 11,
+                  fill: "#07876a",
+                }}
+                tickFormatter={(value) => `${value}%`}
+              />
+
+              <Tooltip
+                formatter={(value) => [`${value}%`, "Feedback"]}
+                cursor={{
+                  fill: "rgba(15, 23, 42, 0.02)",
+                }}
+                contentStyle={{
+                  borderRadius: "8px",
+                  border: "1px solid #E2E8F0",
+                  boxShadow: "0 4px 12px rgba(15, 23, 42, 0.08)",
+                  fontSize: "12px",
+                }}
+              />
+
+              <Bar
+                dataKey="value"
+                radius={[0, 6, 6, 0]}
               >
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  tick={{ fontSize: 14, fontWeight: 500 }}
-                />
-
-                <XAxis
-                  type="number"
-                  domain={[0, 100]}
-                  tick={{ fontSize: 12 }}
-                />
-
-                <Tooltip formatter={(value) => `${value}%`} />
-
-                <Bar dataKey="value" radius={[0, 5, 5, 0]}>
-                  {data.map((entry, index) => (
-                    <Cell
-                      key={index}
-                      fill={
-                        entry.name === "Positive"
-                          ? "#1e6658"
-                          : "#b0bec5"}
-                    />
-                  ))}
-
-                  <LabelList
-                    dataKey="value"
-                    position="right"
-                    style={{ fontWeight: "bold", fill: "#1e6658" }}
-                    formatter={(v) => `${v}%`}
+                {data.map((entry, index) => (
+                  <Cell
+                    key={index}
+                    fill={
+                      entry.name === "Positive"
+                        ? "#07876a"
+                        : "#CBD5E1"
+                    }
                   />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </Box>
-        </Box>
+                ))}
 
-      </Grid>
-    </Grid>
+                <LabelList
+                  dataKey="value"
+                  position="right"
+                  formatter={(value) => `${value}%`}
+                  style={{
+                    fontSize: "11.5px",
+                    fontWeight: 700,
+                    fill: "#475569",
+                  }}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 
