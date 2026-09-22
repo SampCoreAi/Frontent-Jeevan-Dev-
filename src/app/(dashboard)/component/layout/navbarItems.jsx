@@ -8,17 +8,14 @@ import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 
 export const navbarItems = {
   1: [
-   
     {
       icon: CalendarIcon,
       label: "Calendar",
       onClick: () => console.log("User Calendar"),
     },
-   
   ],
 
   2: [
-  
     {
       icon: CalendarIcon,
       label: "Calendar",
@@ -26,11 +23,8 @@ export const navbarItems = {
     },
   ],
 
-  3: [
-    
-  ],
-
-  4: [
-   
-  ],
+  3: [],
+  4: [],
+  5: [],
+  6: [],
 };
