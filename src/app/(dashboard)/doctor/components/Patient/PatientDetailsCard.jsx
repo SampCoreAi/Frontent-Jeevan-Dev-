@@ -3,7 +3,7 @@ import React from "react";
 import {
   Avatar,
   Box,
-  Divider,
+  Chip,
   Grid,
   Typography,
   useTheme,
@@ -36,24 +36,65 @@ const PatientDetailsCard = ({ patient }) => {
     });
   };
 
+  const formatTime = (time) => {
+    if (!time) return "Not provided";
+
+    if (
+      String(time).toLowerCase().includes("am") ||
+      String(time).toLowerCase().includes("pm")
+    ) {
+      return time;
+    }
+
+    const parts = String(time).split(":");
+
+    if (parts.length < 2) return time;
+
+    let hour = Number(parts[0]);
+    const minute = parts[1];
+
+    if (Number.isNaN(hour)) return time;
+
+    const period = hour >= 12 ? "PM" : "AM";
+    hour = hour % 12 || 12;
+
+    return `${hour}:${minute} ${period}`;
+  };
+
   const formatValue = (value, unit) => {
     return value !== null && value !== undefined && value !== ""
       ? `${value} ${unit}`
       : "Not provided";
   };
 
+  const fullName =
+    patient.full_name ||
+    patient.patientName ||
+    "Unknown Patient";
+
   const initials =
-    patient?.full_name
-      ?.trim()
-      ?.split(/\s+/)
-      ?.slice(0, 2)
-      ?.map((name) => name[0])
-      ?.join("")
-      ?.toUpperCase() || "P";
+    fullName
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((name) => name[0])
+      .join("")
+      .toUpperCase() || "P";
+
+  const status = String(
+    patient.status || "Not provided"
+  ).toUpperCase();
+
+  const getStatusColor = () => {
+    if (status === "COMPLETED") return "success";
+    if (status === "CANCELLED") return "error";
+    if (status === "IN_PROGRESS") return "warning";
+    return "default";
+  };
 
   const details = [
     {
-      label: "Patient ID",
+      label: "Appointment ID",
       value: displayValue(patient.appointment_id),
     },
     {
@@ -62,19 +103,26 @@ const PatientDetailsCard = ({ patient }) => {
     },
     {
       label: "Age",
-      value: displayValue(patient.age),
-    },
-    {
-      label: "Phone",
-      value: displayValue(patient.phone_number),
-    },
-    {
-      label: "Email",
-      value: displayValue(patient.email),
+      value:
+        patient.age !== null &&
+        patient.age !== undefined &&
+        patient.age !== ""
+          ? `${patient.age} years`
+          : "Not provided",
     },
     {
       label: "Blood Group",
       value: displayValue(patient.blood_group),
+    },
+    {
+      label: "Phone",
+      value: displayValue(
+        patient.phone_number || patient.phone
+      ),
+    },
+    {
+      label: "Email",
+      value: displayValue(patient.email),
     },
     {
       label: "Weight",
@@ -85,164 +133,177 @@ const PatientDetailsCard = ({ patient }) => {
       value: formatValue(patient.height, "cm"),
     },
     {
-      label: "Visit Type",
-      value: displayValue(patient.mode),
+      label: "Registration Date",
+      value: formatDate(patient.registration_date),
+    },
+    {
+      label: "Appointment Date",
+      value: formatDate(patient.slot_date),
+    },
+    {
+      label: "Start Time",
+      value: formatTime(patient.start_time),
     },
     {
       label: "Status",
       value: displayValue(patient.status),
     },
     {
-      label: "Registration Date",
-      value: formatDate(patient.registration_date),
+      label: "Visit Type",
+      value: displayValue(
+        patient.mode || patient.appointment_type
+      ),
     },
     {
-      label: "Last Appointment",
-      value: formatDate(patient.slot_date),
+      label: "Hospital",
+      value: displayValue(patient.hospital_name),
     },
   ];
 
-  return (
+  const DetailBox = ({ label, value }) => (
     <Box
       sx={{
-        width: "100%",
-        bgcolor: theme.palette.background.paper,
+        height: "100%",
+        minHeight: 58,
+        px: 1.5,
+        py: 1.1,
+        borderRadius: "8px",
+        bgcolor: theme.palette.action.hover,
+        border: `1px solid ${theme.palette.divider}`,
       }}
     >
-      <Box
+      <Typography
         sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 1.5,
-          pr: 4,
+          fontSize: "10.5px",
+          fontWeight: 500,
+          color: theme.palette.text.secondary,
+          lineHeight: 1.3,
         }}
       >
-        <Avatar
-          sx={{
-            width: 44,
-            height: 44,
-            bgcolor: "#EDF7F2",
-            color: theme.palette.primary.main,
-            fontSize: "13px",
-            fontWeight: 700,
-            border: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          {initials}
-        </Avatar>
+        {label}
+      </Typography>
 
-        <Box sx={{ minWidth: 0 }}>
-          <Typography
-            sx={{
-              fontSize: "13px",
-              fontWeight: 700,
-              color: theme.palette.text.primary,
-              lineHeight: 1.3,
-            }}
-          >
-            Patient Details
-          </Typography>
-
-          <Typography
-            sx={{
-              mt: 0.25,
-              fontSize: "12px",
-              color: theme.palette.text.secondary,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {displayValue(patient.full_name)}
-          </Typography>
-        </Box>
-      </Box>
-
-      <Divider sx={{ my: 1.5 }} />
-
-      <Grid container spacing={1}>
-        {details.map((item) => (
-          <Grid
-            key={item.label}
-            size={{ xs: 12, sm: 6, md: 4 }}
-          >
-            <Box
-              sx={{
-                height: "100%",
-                minHeight: 58,
-                px: 1.25,
-                py: 1,
-                borderRadius: 1.5,
-              }}
-            >
-              <Typography
-                sx={{
-                  fontSize: "11px",
-                  fontWeight: 500,
-                  color: theme.palette.text.secondary,
-                  lineHeight: 1.3,
-                }}
-              >
-                {item.label}
-              </Typography>
-
-              <Typography
-                sx={{
-                  mt: 0.4,
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  color: theme.palette.text.primary,
-                  lineHeight: 1.35,
-                  wordBreak: "break-word",
-                  textTransform:
-                    item.label === "Gender" ||
-                    item.label === "Visit Type" ||
-                    item.label === "Status"
-                      ? "capitalize"
-                      : "none",
-                }}
-              >
-                {item.value}
-              </Typography>
-            </Box>
-          </Grid>
-        ))}
-      </Grid>
-
-      <Box
+      <Typography
         sx={{
-          mt: 1.5,
-          p: 1.25,
-          bgcolor: "#EDF7F2",
-          border: `1px solid ${theme.palette.divider}`,
-          borderRadius: 1.5,
+          mt: 0.45,
+          fontSize: "13px",
+          fontWeight: 600,
+          color: theme.palette.text.primary,
+          lineHeight: 1.4,
+          wordBreak: "break-word",
         }}
       >
-        <Typography
-          sx={{
-            fontSize: "11px",
-            fontWeight: 600,
-            color: theme.palette.text.secondary,
-            mb: 0.4,
-          }}
-        >
-          Reason for Visit
-        </Typography>
-
-        <Typography
-          sx={{
-            fontSize: "13px",
-            fontWeight: 500,
-            color: theme.palette.text.primary,
-            lineHeight: 1.5,
-            wordBreak: "break-word",
-          }}
-        >
-          {displayValue(patient.reason_for_visit)}
-        </Typography>
-      </Box>
+        {value}
+      </Typography>
     </Box>
   );
+
+return (
+  <Box
+    sx={{
+      mt: 1,
+      width: "100%",
+      bgcolor: theme.palette.background.paper,
+    }}
+  >
+    <Grid container spacing={1.2}>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <Grid container spacing={1}>
+          <Grid size={{ xs: 12 }}>
+            <Box
+              sx={{
+                height: "125px",
+                px: 2,
+                py: 1.5,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
+                borderRadius: "8px",
+                bgcolor: `${theme.palette.primary.main}08`,
+                border: `1px solid ${theme.palette.primary.main}25`,
+              }}
+            >
+            </Box>
+          </Grid>
+
+          <Grid size={{ xs: 12 }}>
+            <DetailBox
+              label={details[6].label}
+              value={details[6].value}
+            />
+          </Grid>
+        </Grid>
+      </Grid>
+
+      <Grid size={{ xs: 12, md: 8 }}>
+        <Grid container spacing={1}>
+          {details.slice(0, 6).map((item) => (
+            <Grid
+              key={item.label}
+              size={{ xs: 12, sm: 6 }}
+            >
+              <DetailBox
+                label={item.label}
+                value={item.value}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      </Grid>
+
+      {details.slice(7).map((item) => (
+        <Grid
+          key={item.label}
+          size={{ xs: 12, sm: 6, md: 4 }}
+        >
+          <DetailBox
+            label={item.label}
+            value={item.value}
+          />
+        </Grid>
+      ))}
+
+      <Grid size={{ xs: 12, md: 8 }}>
+        <Box
+          sx={{
+            height: "100%",
+            minHeight: 58,
+            px: 1.5,
+            py: 1.1,
+            borderRadius: "8px",
+            bgcolor: `${theme.palette.primary.main}08`,
+            border: `1px solid ${theme.palette.primary.main}25`,
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "10.5px",
+              fontWeight: 500,
+              color: theme.palette.text.secondary,
+            }}
+          >
+            Reason for Visit
+          </Typography>
+
+          <Typography
+            sx={{
+              mt: 0.45,
+              fontSize: "13px",
+              fontWeight: 600,
+              color: theme.palette.text.primary,
+              lineHeight: 1.4,
+              wordBreak: "break-word",
+            }}
+          >
+            {displayValue(patient.reason_for_visit)}
+          </Typography>
+        </Box>
+      </Grid>
+    </Grid>
+  </Box>
+);
 };
 
 export default PatientDetailsCard;

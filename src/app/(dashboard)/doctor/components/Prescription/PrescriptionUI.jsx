@@ -18,7 +18,8 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import api from "../../../../../utils/axiosInstance";
-
+import { useRouter } from "next/navigation";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useReactToPrint } from "react-to-print";
 
 import PrescriptionHeader from "./PrescriptionHeader";
@@ -121,6 +122,9 @@ const PRINT_PAGE_STYLE = `
 ========================================================= */
 
 export default function PrescriptionUI(props) {
+   const router = useRouter();
+
+  
   const [labTestSummary, setLabTestSummary] = useState({ labName: "", tests: [] });
   const [labTestResetKey, setLabTestResetKey] = useState(0);
   const [patientReports, setPatientReports] = useState([]);
@@ -347,97 +351,138 @@ export default function PrescriptionUI(props) {
           TOP ACTION BUTTONS
       ====================================================== */}
 
-      <Box
+   <Box
+  sx={{
+    width: "100%",
+    minWidth: 0,
+    display: isDownloading ? "none" : "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: { xs: 1, sm: 1.5 },
+    mb: { xs: 1.2, sm: 1.5 },
+  }}
+>
+  <Button
+    variant="outlined"
+    startIcon={<ArrowBackIcon />}
+    onClick={() => router.push("/doctor/pages/patient")}
+    sx={{
+      minHeight: 34,
+      px: { xs: 1.2, sm: 1.5 },
+      borderRadius: 1.5,
+      fontSize: "12px",
+      fontWeight: 600,
+      textTransform: "none",
+      whiteSpace: "nowrap",
+    }}
+  >
+    Back
+  </Button>
+
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: { xs: "flex-start", sm: "flex-end" },
+      flexWrap: "wrap",
+      gap: { xs: 0.7, sm: 1 },
+      flex: { xs: "1 1 100%", sm: 1 },
+    }}
+  >
+    {!isPatient && (
+      <LabTestRequestForm
+        patientId={patientId}
+        storageKey={`doctor-lab-test-${
+          apiData?.appointment?.id ||
+          apiData?.appointment?.appointment_id ||
+          patientId ||
+          "unknown"
+        }`}
+        resetKey={labTestResetKey}
+        onSummaryChange={setLabTestSummary}
+      />
+    )}
+
+    {!isPatient && (
+      <Button
+        variant="outlined"
+        startIcon={<DescriptionOutlined />}
+        onClick={() => {
+          setReportsOpen(true);
+          refreshPatientLabData();
+        }}
         sx={{
-          width: "100%",
-          minWidth: 0,
-          display: isDownloading ? "none" : "flex",
-          justifyContent: "flex-end",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: { xs: 0.7, sm: 1 },
-          mb: { xs: 1.2, sm: 1.5 },
+          textTransform: "none",
+          borderRadius: 1.5,
+          minHeight: 34,
+          fontSize: "12px",
+          px: 1.25,
         }}
       >
-        {!isPatient && (
-          <LabTestRequestForm
-            patientId={patientId}
-            storageKey={`doctor-lab-test-${apiData?.appointment?.id || apiData?.appointment?.appointment_id || patientId || "unknown"}`}
-            resetKey={labTestResetKey}
-            onSummaryChange={setLabTestSummary}
-          />
-        )}
+        Lab Reports
+        {labReportRows.length ? ` (${labReportRows.length})` : ""}
+      </Button>
+    )}
 
-        {!isPatient && (
-          <Button
-            variant="outlined"
-            startIcon={<DescriptionOutlined />}
-            onClick={() => {
-              setReportsOpen(true);
-              refreshPatientLabData();
-            }}
-            sx={{ textTransform: "none", borderRadius: 1.5 }}
-          >
-            Lab Reports{labReportRows.length ? ` (${labReportRows.length})` : ""}
-          </Button>
-        )}
+    {!isPatient && (
+      <Button
+        onClick={handlePrint}
+        variant="contained"
+        disableElevation
+        sx={actionButtonSx(80)}
+      >
+        Print
+      </Button>
+    )}
 
-        {/* =========================
-            PRINT
-        ========================== */}
-
-        {/* PRINT (ab window.print() nahi, PDF wala design print hoga) */}
-        {!isPatient && (
-          <Button
-            onClick={handlePrint}
-            variant="contained"
-            disableElevation
-            sx={actionButtonSx(80)}
-          >
-            Print
-          </Button>
-        )}
-
-        {/* DOWNLOAD PDF */}
-        <Button
-          onClick={downloadPdf}
-          variant="contained"
-          disableElevation
-          sx={actionButtonSx(100)}
-        >
-          <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
-            Download PDF
-          </Box>
-          <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
-            PDF
-          </Box>
-        </Button>
-
-        {/* SAVE / UPDATE */}
-        {!isPatient && editable && isTodayAppointment && (
-          <Button
-            variant="contained"
-            disableElevation
-            onClick={handleSavePrescription}
-            sx={actionButtonSx(110)}
-          >
-            <Box
-              component="span"
-              sx={{ display: { xs: "none", sm: "inline" } }}
-            >
-              {apiData?.prescription
-                ? "Update Prescription"
-                : "Save Prescription"}
-            </Box>
-            <Box
-              component="span"
-              sx={{ display: { xs: "inline", sm: "none" } }}
-            >
-              {apiData?.prescription ? "Update" : "Save"}
-            </Box>
-          </Button>
-        )}
+    <Button
+      onClick={downloadPdf}
+      variant="contained"
+      disableElevation
+      sx={actionButtonSx(100)}
+    >
+      <Box
+        component="span"
+        sx={{ display: { xs: "none", sm: "inline" } }}
+      >
+        Download PDF
       </Box>
+
+      <Box
+        component="span"
+        sx={{ display: { xs: "inline", sm: "none" } }}
+      >
+        PDF
+      </Box>
+    </Button>
+
+    {!isPatient && editable && isTodayAppointment && (
+      <Button
+        variant="contained"
+        disableElevation
+        onClick={handleSavePrescription}
+        sx={actionButtonSx(110)}
+      >
+        <Box
+          component="span"
+          sx={{ display: { xs: "none", sm: "inline" } }}
+        >
+          {apiData?.prescription
+            ? "Update Prescription"
+            : "Save Prescription"}
+        </Box>
+
+        <Box
+          component="span"
+          sx={{ display: { xs: "inline", sm: "none" } }}
+        >
+          {apiData?.prescription ? "Update" : "Save"}
+        </Box>
+      </Button>
+    )}
+  </Box>
+</Box>
 
       <Dialog open={reportsOpen} onClose={() => setReportsOpen(false)} fullWidth maxWidth="sm" aria-labelledby="lab-reports-dialog-title">
         <DialogTitle id="lab-reports-dialog-title">Lab Reports</DialogTitle>

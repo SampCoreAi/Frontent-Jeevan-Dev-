@@ -828,27 +828,7 @@ const isTodayAppointment = appointmentDate
           </Button>
         )}
 
-        {!isPatient && (
-          <Button
-            variant="contained"
-            sx={{
-              mr: 1,
-              backgroundColor: PRIMARY_COLOR,
-              color: WHITE,
-
-              "&:hover": {
-                backgroundColor: PRIMARY_COLOR,
-              },
-
-              "&:focus": {
-                outline: "none",
-              },
-            }}
-            onClick={handleClick}
-          >
-            Past Record
-          </Button>
-        )}
+        
 
         <Button
           onClick={downloadPdf}

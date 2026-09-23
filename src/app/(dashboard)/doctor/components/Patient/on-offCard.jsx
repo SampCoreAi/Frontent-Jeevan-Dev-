@@ -776,25 +776,29 @@ return data;
               width: { xs: "100%", md: "auto" },
             }}
           >
-            <TextField
-              type="date"
-              label="Date"
-              size="small"
-              value={date}
-              onChange={(e) => {
-                setDate(e.target.value);
-                setPagination((prev) => ({
-                  ...prev,
-                  page: 0,
-                }));
-              }}
-              InputLabelProps={{ shrink: true }}
-              sx={{
-                ...fieldStyle,
-                width: { xs: "100%", sm: 165 },
-              }}
-            />
-
+           <TextField
+  type="date"
+  label="Date"
+  size="small"
+  value={date}
+  onChange={(e) => {
+    setDate(e.target.value);
+    setPagination((prev) => ({
+      ...prev,
+      page: 0,
+    }));
+  }}
+  InputLabelProps={{ shrink: true }}
+  sx={{
+    ...fieldStyle,
+    width: { xs: "100%", sm: 165 },
+    "& input::-webkit-calendar-picker-indicator": {
+      filter:
+        "invert(45%) sepia(60%) saturate(600%) hue-rotate(110deg) brightness(85%)",
+      cursor: "pointer",
+    },
+  }}
+/>
             <FormControl
               size="small"
               sx={{
