@@ -58,13 +58,26 @@ const normalizeLab = (lab = {}) => ({
     "-",
 });
 
+const normalizeMedicalStore = (store = {}) => ({
+  ...store,
+  id: store.id || store.store_id || store.medical_store_id || store.medicalStoreId,
+  name: store.name || store.store_name || store.medical_store_name || store.medicalStoreName || "-",
+  code: store.code || store.store_code || store.medical_store_code || store.medicalStoreCode || "-",
+  phone: store.phone || store.phone_number || store.contact_number || store.mobile || "-",
+  address: store.address || store.location || store.city || store.area || store.address_line || "-",
+  city: store.city || store.location || store.area || "-",
+});
+
 export default function DoctorLabPanel({ section = "connections" }) {
   const [labs, setLabs] = useState([]);
   const [connections, setConnections] = useState([]);
+  const [medicalStores, setMedicalStores] = useState([]);
+  const [medicalConnections, setMedicalConnections] = useState([]);
   const [requests, setRequests] = useState([]);
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [connectingId, setConnectingId] = useState(null);
+  const [connectingMedicalId, setConnectingMedicalId] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [connectionSearch, setConnectionSearch] = useState("");
   const [tableFilters, setTableFilters] = useState({
@@ -139,6 +152,45 @@ export default function DoctorLabPanel({ section = "connections" }) {
     }
   };
 
+  const loadMedicalStores = async () => {
+    const trimmed = medicalSearchText.trim();
+    if (!trimmed) {
+      setMedicalStores([]);
+      return;
+    }
+
+    try {
+      const response = await api.get("/api/medical-stores/search", {
+        params: {
+          q: trimmed,
+          search: trimmed,
+          name: trimmed,
+          city: trimmed,
+          address: trimmed,
+          location: trimmed,
+          code: trimmed,
+        },
+      });
+
+      const rows = getRows(response);
+      setMedicalStores(rows.length ? rows.map(normalizeMedicalStore) : []);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Unable to load medical stores."));
+      setMedicalStores([]);
+    }
+  };
+
+  const loadMedicalConnections = async () => {
+    try {
+      const response = await api.get("/api/medical-stores/doctor/connections");
+      const rows = getRows(response);
+      setMedicalConnections(rows);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Unable to load your medical connections."));
+      setMedicalConnections([]);
+    }
+  };
+
   const loadRequests = async () => {
     try {
       const response = await api.get("/api/lab-requests/doctor", {
@@ -183,6 +235,13 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
     return () => clearTimeout(timeout);
   }, [searchText, section]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (section === "connections") loadMedicalStores();
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [medicalSearchText, section]);
 
   useEffect(() => {
     const loadBySection = async () => {
@@ -255,6 +314,26 @@ export default function DoctorLabPanel({ section = "connections" }) {
       );
     } finally {
       setConnectingId(null);
+    }
+  };
+
+  const handleConnectMedicalStore = async (storeId) => {
+    try {
+      setConnectingMedicalId(storeId);
+      setError("");
+
+      const response = await api.post("/api/medical-stores/connect", { storeId });
+
+      if (response?.status === 200 || response?.status === 201) {
+        setNotice("Medical connection request sent successfully.");
+        setMedicalSearchText("");
+        setMedicalStores([]);
+        await loadMedicalConnections();
+      }
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Unable to send medical connection request."));
+    } finally {
+      setConnectingMedicalId(null);
     }
   };
 
@@ -352,6 +431,30 @@ export default function DoctorLabPanel({ section = "connections" }) {
   }, [reports, requests]);
 
   if (section === "connections") {
+    const connectionCardSx = {
+      border: "1px solid #dfeaf3",
+      borderRadius: 2,
+      background: "#fff",
+      p: 1.75,
+      boxShadow: "0 1px 0 rgba(15, 23, 42, 0.02)",
+    };
+
+    const compactButtonSx = {
+      minHeight: 30,
+      px: 1.25,
+      fontSize: "0.72rem",
+      fontWeight: 700,
+      textTransform: "none",
+      boxShadow: "none",
+      '&:hover': { boxShadow: 'none' },
+    };
+
+    const compactCellSx = {
+      fontSize: "12.5px",
+      color: "#1f2937",
+      py: 1.2,
+    };
+
     return (
       <Box
         sx={{

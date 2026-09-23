@@ -6,6 +6,8 @@ import {
   CircularProgress,
   MenuItem,
   Paper,
+  Chip,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -322,6 +324,61 @@ export function DataTable({
         </Box>
       ) : null}
     </Paper>
+  );
+}
+
+export function WorkspaceDashboard({
+  eyebrow,
+  title,
+  subtitle,
+  statusLabel,
+  stats = [],
+  profileFields,
+  quickActions,
+  profileButtonLabel = "View profile",
+  profilePath,
+  onNavigate,
+}) {
+  return (
+    <Box sx={{ width: "100%" }}>
+      <Paper elevation={0} sx={{ p: { xs: 2, sm: 2.5 }, mb: 2, border: `1px solid ${colors.border}`, borderRadius: "10px", bgcolor: colors.primaryLight }}>
+        <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} gap={1.5}>
+          <Box>
+            <Typography sx={{ color: colors.primary, fontSize: "10px", fontWeight: 800, letterSpacing: "0.12em" }}>{eyebrow}</Typography>
+            <Typography sx={{ color: colors.text, fontSize: { xs: "18px", sm: "21px" }, fontWeight: 800, mt: 0.5 }}>{title}</Typography>
+            <Typography sx={{ color: colors.secondary, fontSize: "12px", mt: 0.4 }}>{subtitle}</Typography>
+          </Box>
+          <Chip size="small" label={statusLabel || "UNKNOWN"} color={statusLabel === "ACTIVE" ? "success" : "default"} />
+        </Stack>
+      </Paper>
+
+      <SectionTitle title="Overview" description={subtitle} />
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(4, minmax(0, 1fr))" }, gap: 1.5, mb: 2 }}>
+        {stats.map(([label, value, color]) => (
+          <Paper key={label} elevation={0} sx={{ p: 1.75, minHeight: 92, border: `1px solid ${colors.border}`, borderRadius: "10px" }}>
+            <Typography sx={{ color: colors.secondary, fontSize: "12px", fontWeight: 600 }}>{label}</Typography>
+            <Typography sx={{ color: color || colors.primary, fontSize: "24px", fontWeight: 800, mt: 0.5 }}>{value}</Typography>
+          </Paper>
+        ))}
+      </Box>
+
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1.3fr 0.7fr" }, gap: 2 }}>
+        <Paper elevation={0} sx={{ p: { xs: 1.75, sm: 2.25 }, border: `1px solid ${colors.border}`, borderRadius: "10px" }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+            <Box><Typography sx={{ color: colors.text, fontWeight: 800 }}>{profileFields?.title}</Typography><Typography sx={{ color: colors.secondary, fontSize: "12px", mt: 0.35 }}>{profileFields?.description}</Typography></Box>
+            {profilePath ? <Button size="small" variant="outlined" onClick={() => onNavigate?.(profilePath)}>{profileButtonLabel}</Button> : null}
+          </Stack>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3, 1fr)" }, gap: 2 }}>
+            {(profileFields?.items || []).map(([label, value]) => <Box key={label}><Typography sx={{ color: colors.muted, fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</Typography><Typography sx={{ color: colors.text, fontSize: "13px", fontWeight: 650, mt: 0.35 }}>{value || "-"}</Typography></Box>)}
+          </Box>
+        </Paper>
+        <Paper elevation={0} sx={{ p: { xs: 1.75, sm: 2.25 }, border: `1px solid ${colors.border}`, borderRadius: "10px" }}>
+          <Typography sx={{ color: colors.text, fontWeight: 800 }}>Quick actions</Typography>
+          <Typography sx={{ color: colors.secondary, fontSize: "12px", mt: 0.35, mb: 1.5 }}>{quickActions?.description}</Typography>
+          <Stack spacing={1}>{(quickActions?.items || []).map((action) => <Button key={action.label} fullWidth variant={action.variant || "outlined"} onClick={() => onNavigate?.(action.route)} sx={{ justifyContent: "flex-start", ...(action.variant === "contained" ? { bgcolor: colors.primary, color: "#fff", "&:hover": { bgcolor: "#066f58" } } : {}) }}>{action.label}</Button>)}</Stack>
+        </Paper>
+      </Box>
+    </Box>
   );
 }
 

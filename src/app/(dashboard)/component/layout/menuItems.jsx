@@ -9,6 +9,7 @@ import {
   BadgeOutlined,
   ThumbUpOffAltOutlined,
   MedicalServicesOutlined,
+  LocalPharmacyOutlined,
   DescriptionOutlined,
   HistoryOutlined,
   GroupOutlined,
@@ -41,6 +42,11 @@ export const menuItems = {
       label: "Lab Reports",
       icon: <DescriptionOutlined />,
       route: "/users/pages/lab/reports",
+    },
+    {
+      label: "Medical",
+      icon: <LocalPharmacyOutlined />,
+      route: "/users/pages/medical",
     },
     {
       label: "Profile",
@@ -88,6 +94,11 @@ export const menuItems = {
       label: "Connections",
       icon: <GroupOutlined />,
       route: "/doctor/pages/lab/connections",
+    },
+    {
+      label: "Medical",
+      icon: <LocalPharmacyOutlined />,
+      route: "/doctor/pages/medical",
     },
     {
       label: "Reports",
@@ -213,6 +224,11 @@ export const menuItems = {
       route: "/admin/pages/labs",
     },
     {
+      label: "Medical",
+      icon: <LocalPharmacyOutlined />,
+      route: "/admin/pages/medical",
+    },
+    {
       label: "Patient",
       icon: <PeopleAltOutlined />,
       route: "/admin/pages/patient",
@@ -221,6 +237,40 @@ export const menuItems = {
       label: "Setting",
       icon: <SettingsOutlined />,
       route: "/admin/pages/setting",
+    },
+  ],
+
+  // Medical user
+  6: [
+    {
+      label: "Dashboard",
+      icon: <DashboardOutlined />,
+      route: "/medical/pages/dashboard",
+    },
+    {
+      label: "Connections",
+      icon: <GroupOutlined />,
+      route: "/medical/pages/connections",
+    },
+    {
+      label: "Medical Requests",
+      icon: <AssignmentOutlined />,
+      route: "/medical/pages/requests",
+    },
+    {
+      label: "History",
+      icon: <DescriptionOutlined />,
+      route: "/medical/pages/reports",
+    },
+    {
+      label: "Profile",
+      icon: <PersonOutlined />,
+      route: "/medical/pages/profile",
+    },
+    {
+      label: "Setting",
+      icon: <SettingsOutlined />,
+      route: "/medical/pages/setting",
     },
   ],
 };
