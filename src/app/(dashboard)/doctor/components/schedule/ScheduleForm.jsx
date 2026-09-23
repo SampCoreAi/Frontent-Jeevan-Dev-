@@ -241,13 +241,6 @@ export default function ScheduleForm({
       newErrors.location = "Hospital is required.";
     }
 
-    if (!formData?.startTime) {
-      newErrors.startTime = "Start time is required.";
-    }
-
-    if (!formData?.endTime) {
-      newErrors.endTime = "End time is required.";
-    }
 
     if (formData?.startTime && formData?.endTime) {
       const start = dayjs(formData.startTime, "h:mm A");
@@ -935,118 +928,7 @@ const commonTextFieldSx = {
             </TextField>
           </Grid>
 
-          {/* START TIME */}
-
-          <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-            <TimePicker
-              ampm
-              label="Start Time"
-              value={
-                formData?.startTime
-                  ? dayjs(
-                      formData.startTime,
-                      "h:mm A"
-                    )
-                  : null
-              }
-              onChange={(newValue) => {
-                updateField(
-                  "startTime",
-                  newValue?.isValid()
-                    ? newValue.format("h:mm A")
-                    : ""
-                );
-
-                clearError("endTime");
-              }}
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  size: "small",
-                  inputRef: startTimeRef,
-                  error: Boolean(errors.startTime),
-                  helperText: errors.startTime,
-                  onKeyDown: (e) =>
-                    handleEnter(e, endTimeRef),
-                  sx: timeFieldSx,
-                },
-
-                popper: {
-                  sx: timePickerPopupSx,
-                },
-
-                desktopPaper: {
-                  sx: timePickerPopupSx,
-                },
-
-                mobilePaper: {
-                  sx: timePickerPopupSx,
-                },
-
-                layout: {
-                  sx: timePickerPopupSx,
-                },
-              }}
-            />
-          </Grid>
-
-          {/* END TIME */}
-
-          <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-            <TimePicker
-              ampm
-              label="End Time"
-              value={
-                formData?.endTime
-                  ? dayjs(
-                      formData.endTime,
-                      "h:mm A"
-                    )
-                  : null
-              }
-              onChange={(newValue) => {
-                updateField(
-                  "endTime",
-                  newValue?.isValid()
-                    ? newValue.format("h:mm A")
-                    : ""
-                );
-              }}
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  size: "small",
-                  inputRef: endTimeRef,
-                  error: Boolean(errors.endTime),
-                  helperText: errors.endTime,
-                  onKeyDown: (e) =>
-                    handleEnter(
-                      e,
-                      slotDurationRef
-                    ),
-                  sx: timeFieldSx,
-                },
-
-                popper: {
-                  sx: timePickerPopupSx,
-                },
-
-                desktopPaper: {
-                  sx: timePickerPopupSx,
-                },
-
-                mobilePaper: {
-                  sx: timePickerPopupSx,
-                },
-
-                layout: {
-                  sx: timePickerPopupSx,
-                },
-              }}
-            />
-          </Grid>
-
-          {/* SLOT DURATION */}
+      
 
           <Grid size={{ xs: 6, sm: 6, md: 3 }}>
             <TextField

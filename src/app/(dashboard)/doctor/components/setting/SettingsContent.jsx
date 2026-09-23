@@ -7,6 +7,7 @@ import {
   Button,
   Card,
   CardContent,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -127,11 +128,14 @@ const fieldSx = {
 
 const SettingsContent = () => {
   const [active, setActive] = useState("account");
-  const [openForgotPassword, setOpenForgotPassword] = useState(false);
-  const [email, setEmail] = useState("");
+  const [userId, setUserId] = useState("");
+const [confirmPassword, setConfirmPassword] = useState("");
   const [openChangePassword, setOpenChangePassword] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [oldPassword, setOldPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+const [logoutLoading, setLogoutLoading] = useState(false);
+const [loginLoading, setLoginLoading] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [openSuccessDialog, setOpenSuccessDialog] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -139,10 +143,14 @@ const SettingsContent = () => {
   const [snackbarSeverity, setSnackbarSeverity] = useState("error");
   const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
 
-  const handleLogoutConfirm = () => {
+ const handleLogoutConfirm = () => {
+  setLogoutLoading(true);
+
+  setTimeout(() => {
     localStorage.clear();
     window.location.href = "/Home/pages/Login";
-  };
+  }, 300);
+};
 
   const showSnackbar = (message, severity = "error") => {
     setSnackbarMessage(message);
@@ -150,47 +158,63 @@ const SettingsContent = () => {
     setSnackbarOpen(true);
   };
 
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
+useEffect(() => {
+  const userData = localStorage.getItem("user");
 
-    if (userData) {
-      const user = JSON.parse(userData);
-      setUserEmail(user.email);
-    }
-  }, []);
+  if (userData) {
+    const user = JSON.parse(userData);
 
-  const handleClosePasswordDialog = () => {
-    setOpenChangePassword(false);
-    setOldPassword("");
-    setNewPassword("");
-  };
+    setUserId(user.id || user.userId || "");
+    setUserEmail(user.email || "");
+  }
+}, []);
 
-  const handleChangePassword = async () => {
-    try {
-      const token = localStorage.getItem("token");
+const handleClosePasswordDialog = () => {
+  setOpenChangePassword(false);
+  setOldPassword("");
+  setNewPassword("");
+  setConfirmPassword("");
+};
+const handleChangePassword = async () => {
+  if (!oldPassword || !newPassword || !confirmPassword) {
+    showSnackbar("Please fill all password fields", "error");
+    return;
+  }
 
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/change-password`,
-        {
-          oldPassword,
-          newPassword,
+  if (newPassword !== confirmPassword) {
+    showSnackbar("New password and confirm password do not match", "error");
+    return;
+  }
+
+  try {
+    setPasswordLoading(true);
+
+    const token = localStorage.getItem("token");
+
+    await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/change-password`,
+      {
+        oldPassword,
+        newPassword,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      }
+    );
 
-      handleClosePasswordDialog();
-      setOpenSuccessDialog(true);
-    } catch (error) {
-      showSnackbar(
-        error?.response?.data?.message || "Failed to change password",
-        "error"
-      );
-    }
-  };
+    handleClosePasswordDialog();
+    setOpenSuccessDialog(true);
+  } catch (error) {
+    showSnackbar(
+      error?.response?.data?.message || "Failed to change password",
+      "error"
+    );
+  } finally {
+    setPasswordLoading(false);
+  }
+};
 
   const changePasswordDialog = (
     <Dialog
@@ -270,34 +294,46 @@ const SettingsContent = () => {
             gap: 1.7,
           }}
         >
-          <TextField
-            fullWidth
-            label="Email"
-            value={userEmail}
-            disabled
-            size="small"
-            sx={fieldSx}
-          />
+       
+<TextField
+  fullWidth
+  label="Old Password"
+  type="password"
+  value={oldPassword}
+  onChange={(e) => setOldPassword(e.target.value)}
+  size="small"
+  sx={fieldSx}
+/>
 
-          <TextField
-            fullWidth
-            label="Old Password"
-            type="password"
-            value={oldPassword}
-            onChange={(e) => setOldPassword(e.target.value)}
-            size="small"
-            sx={fieldSx}
-          />
+<TextField
+  fullWidth
+  label="New Password"
+  type="password"
+  value={newPassword}
+  onChange={(e) => setNewPassword(e.target.value)}
+  size="small"
+  sx={fieldSx}
+/>
 
-          <TextField
-            fullWidth
-            label="New Password"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            size="small"
-            sx={fieldSx}
-          />
+<TextField
+  fullWidth
+  label="Confirm Password"
+  type="password"
+  value={confirmPassword}
+  onChange={(e) => setConfirmPassword(e.target.value)}
+  size="small"
+  error={
+    confirmPassword !== "" &&
+    newPassword !== confirmPassword
+  }
+  helperText={
+    confirmPassword !== "" &&
+    newPassword !== confirmPassword
+      ? "Passwords do not match"
+      : ""
+  }
+  sx={fieldSx}
+/>
         </Box>
       </DialogContent>
 
@@ -312,6 +348,7 @@ const SettingsContent = () => {
         <Button
           onClick={handleClosePasswordDialog}
           variant="outlined"
+            disabled={passwordLoading}
           sx={{
             ...actionButtonSx,
             color: "text.secondary",
@@ -324,19 +361,25 @@ const SettingsContent = () => {
         >
           Cancel
         </Button>
-
-        <Button
-          variant="contained"
-          onClick={handleChangePassword}
-          sx={{
-            ...actionButtonSx,
-            "&:hover": {
-              boxShadow: "none",
-            },
-          }}
-        >
-          Save Password
-        </Button>
+<Button
+  variant="contained"
+  onClick={handleChangePassword}
+  disabled={passwordLoading}
+  startIcon={
+    passwordLoading ? (
+      <CircularProgress size={15} color="inherit" />
+    ) : null
+  }
+  sx={{
+    ...actionButtonSx,
+    minWidth: 125,
+    "&:hover": {
+      boxShadow: "none",
+    },
+  }}
+>
+  {passwordLoading ? "Saving..." : "Save Password"}
+</Button>
       </DialogActions>
     </Dialog>
   );
@@ -593,20 +636,29 @@ const SettingsContent = () => {
                   Close
                 </Button>
 
-                <Button
-                  variant="contained"
-                  onClick={() => {
-                    localStorage.clear();
-                    window.location.href =
-                      "/Home/pages/Register";
-                  }}
-                  sx={{
-                    ...actionButtonSx,
-                    minWidth: 90,
-                  }}
-                >
-                  Login
-                </Button>
+               <Button
+  variant="contained"
+  disabled={loginLoading}
+  onClick={() => {
+    setLoginLoading(true);
+
+    setTimeout(() => {
+      localStorage.clear();
+      window.location.href = "/Home/pages/Login";
+    }, 300);
+  }}
+  startIcon={
+    loginLoading ? (
+      <CircularProgress size={15} color="inherit" />
+    ) : null
+  }
+  sx={{
+    ...actionButtonSx,
+    minWidth: 90,
+  }}
+>
+  {loginLoading ? "Loading..." : "Login"}
+</Button>
               </DialogActions>
             </Dialog>
           </Grid>
@@ -1131,17 +1183,23 @@ const SettingsContent = () => {
             Cancel
           </Button>
 
-          <Button
-            onClick={handleLogoutConfirm}
-            variant="contained"
-            color="error"
-            sx={{
-              ...actionButtonSx,
-              minWidth: 90,
-            }}
-          >
-            Log Out
-          </Button>
+         <Button
+  onClick={handleLogoutConfirm}
+  variant="contained"
+  color="error"
+  disabled={logoutLoading}
+  startIcon={
+    logoutLoading ? (
+      <CircularProgress size={15} color="inherit" />
+    ) : null
+  }
+  sx={{
+    ...actionButtonSx,
+    minWidth: 100,
+  }}
+>
+  {logoutLoading ? "Logging out..." : "Log Out"}
+</Button>
         </DialogActions>
       </Dialog>
 

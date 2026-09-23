@@ -62,8 +62,7 @@ export const createSchedule = createAsyncThunk(
   async (scheduleData, { rejectWithValue }) => {
     try {
       // Validate required fields
-      if (!scheduleData.location || !scheduleData.startTime || 
-          !scheduleData.endTime || !scheduleData.slotDuration) {
+      if (!scheduleData.location || !scheduleData.slotDuration) {
         throw new Error('Please fill all required fields: Location, Start Time, End Time, and Slot Duration');
       }
 

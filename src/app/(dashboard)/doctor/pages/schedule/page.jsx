@@ -88,13 +88,7 @@ export default function SchedulePage() {
         return false;
       }
 
-      if (!schedule.startTime || !schedule.endTime) {
-        showMessage(
-          "Start time and end time are required.",
-          "error"
-        );
-        return false;
-      }
+     
 
       try {
         if (index !== null) {
