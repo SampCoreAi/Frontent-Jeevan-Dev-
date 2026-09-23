@@ -80,7 +80,11 @@ const getTestNames = (value) => {
 };
 
 const normalizeReport = (report = {}) => ({
+  ...report,
+  id: report.id,
   requestId: getRequestId(report),
+  reportCode: report.reportCode || report.report_code || report.reportId || null,
+  reportId: report.reportId || report.report_code || report.id || null,
   downloadUrl: getReportUrl(report),
   labName: getValue(report.labName, report.lab_name),
   doctorName: getValue(report.doctorName, report.doctor_name),
@@ -442,24 +446,40 @@ gap: { xs: 2, md: 3 },
                 </TableCell>
 
                 <TableCell sx={cellSx}>
-                  {request.report?.downloadUrl ? (
-                    <Button
-                      size="small"
-                      href={request.report.downloadUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      variant="text"
-                      sx={{
-                        minWidth: "auto",
-                        p: 0,
-                        fontSize: "12.5px",
-                        fontWeight: 600,
-                        textTransform: "none",
-                        color: theme.palette.primary.main,
-                      }}
-                    >
-                      View
-                    </Button>
+                  {request.report ? (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                      <Box
+                        component="span"
+                        sx={{
+                          fontSize: "12.5px",
+                          fontWeight: 700,
+                          color: theme.palette.text.primary,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {request.report.reportCode || request.report.report_code || "-"}
+                      </Box>
+
+                      {request.report.downloadUrl ? (
+                        <Button
+                          size="small"
+                          href={request.report.downloadUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          variant="text"
+                          sx={{
+                            minWidth: "auto",
+                            p: 0,
+                            fontSize: "12.5px",
+                            fontWeight: 600,
+                            textTransform: "none",
+                            color: theme.palette.primary.main,
+                          }}
+                        >
+                          View
+                        </Button>
+                      ) : null}
+                    </Box>
                   ) : (
                     <Box
                       component="span"

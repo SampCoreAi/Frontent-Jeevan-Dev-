@@ -36,7 +36,6 @@ const initialForm = {
   email: "",
   phoneNumber: "",
   storeName: "",
-  storeCode: "",
   registrationNumber: "",
   address: "",
 };
@@ -169,7 +168,6 @@ export default function MedicalPage() {
     const email = form.email.trim();
     const phoneNumber = form.phoneNumber.trim();
     const storeName = form.storeName.trim();
-    const storeCode = form.storeCode.trim();
     const registrationNumber = form.registrationNumber.trim();
     const address = form.address.trim();
 
@@ -201,10 +199,6 @@ export default function MedicalPage() {
       errors.phoneNumber = "Enter a valid 10-digit mobile number.";
     }
 
-    if (storeCode && !/^[A-Za-z0-9_-]{2,30}$/.test(storeCode)) {
-      errors.storeCode = "Use 2-30 letters, numbers, _ or - only.";
-    }
-
     if (registrationNumber.length > 100) {
       errors.registrationNumber = "Registration number is too long.";
     }
@@ -231,13 +225,11 @@ export default function MedicalPage() {
         email: form.email.trim().toLowerCase(),
         phoneNumber: form.phoneNumber.trim(),
         storeName: form.storeName.trim(),
-        storeCode: form.storeCode.trim(),
         registrationNumber: form.registrationNumber.trim(),
         address: form.address.trim(),
       };
 
       if (!payload.phoneNumber) delete payload.phoneNumber;
-      if (!payload.storeCode) delete payload.storeCode;
       if (!payload.registrationNumber) delete payload.registrationNumber;
       if (!payload.address) delete payload.address;
 
@@ -391,10 +383,6 @@ export default function MedicalPage() {
       name: "storeName",
       label: "Medical store name",
       required: true,
-    },
-    {
-      name: "storeCode",
-      label: "Store code",
     },
     {
       name: "registrationNumber",

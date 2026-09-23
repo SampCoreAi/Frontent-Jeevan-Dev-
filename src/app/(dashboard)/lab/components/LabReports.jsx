@@ -19,6 +19,10 @@ export default function LabReports({
   page = 1,
   pageSize = 10,
   onPageChange,
+  showPrevious = false,
+  onShowCurrent,
+  onShowPrevious,
+  previousReportsCount = 0,
 }) {
   const safeReports = Array.isArray(reports) ? reports : [];
   const safePageSize = Number(pageSize) > 0 ? Number(pageSize) : 10;
@@ -113,7 +117,7 @@ export default function LabReports({
               color: "#172033",
             }}
           >
-            Reports
+            Lab Reports
           </Typography>
 
           <Typography
@@ -132,8 +136,67 @@ export default function LabReports({
           sx={{
             width: { xs: "100%", sm: "auto" },
             flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            justifyContent: "flex-end",
+            flexWrap: "wrap",
           }}
         >
+          {previousReportsCount > 0 ? (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.75,
+                flexWrap: "wrap",
+              }}
+            >
+              <Button
+                size="small"
+                variant={showPrevious ? "outlined" : "contained"}
+                onClick={onShowCurrent}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: 1.5,
+                  fontWeight: 700,
+                  fontSize: "11.5px",
+                  minHeight: 32,
+                  px: 1.25,
+                  bgcolor: showPrevious ? "transparent" : "#07876A",
+                  color: showPrevious ? "#0F172A" : "#FFFFFF",
+                  borderColor: showPrevious ? "#CBD5E1" : "#07876A",
+                  "&:hover": {
+                    bgcolor: showPrevious ? "#F8FAFC" : "#06715C",
+                  },
+                }}
+              >
+                Current Appointment Report
+              </Button>
+
+              <Button
+                size="small"
+                variant={showPrevious ? "contained" : "outlined"}
+                onClick={onShowPrevious}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: 1.5,
+                  fontWeight: 700,
+                  fontSize: "11.5px",
+                  minHeight: 32,
+                  px: 1.25,
+                  bgcolor: showPrevious ? "#07876A" : "transparent",
+                  color: showPrevious ? "#FFFFFF" : "#0F172A",
+                  borderColor: showPrevious ? "#07876A" : "#CBD5E1",
+                  "&:hover": {
+                    bgcolor: showPrevious ? "#06715C" : "#F8FAFC",
+                  },
+                }}
+              >
+                Old Reports
+              </Button>
+            </Box>
+          ) : null}
           <TableFilters {...filters} />
         </Box>
       </Box>
@@ -148,7 +211,7 @@ export default function LabReports({
         <DataTable
           columns={[
             "SNO",
-            "REPORT",
+            "REPORT ID",
             "PATIENT",
             "LAB",
             "TEST",
@@ -227,6 +290,15 @@ export default function LabReports({
               report.request_status ||
               "REPORT_UPLOADED";
 
+            const uploadedAt =
+              report.uploadedAt ||
+              report.uploaded_at ||
+              report.reportedAt ||
+              report.reported_at ||
+              report.createdAt ||
+              report.created_at ||
+              null;
+
             const statusStyle = getStatusStyle(status);
 
             return (
@@ -255,13 +327,12 @@ export default function LabReports({
                 <TableCell
                   sx={{
                     ...cellSx,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     color: "#1F2937",
+                    letterSpacing: 0.2,
                   }}
                 >
-                  {report.originalFileName ||
-                    report.original_file_name ||
-                    `Report #${report.id}`}
+                  {report.reportCode || report.report_code || "-"}
                 </TableCell>
 
                 <TableCell sx={cellSx}>
@@ -319,11 +390,8 @@ export default function LabReports({
                     color: "#64748B",
                   }}
                 >
-                  {report.createdAt || report.created_at
-                    ? new Date(
-                        report.createdAt ||
-                          report.created_at
-                      ).toLocaleDateString("en-IN", {
+                  {uploadedAt
+                    ? new Date(uploadedAt).toLocaleDateString("en-IN", {
                         day: "2-digit",
                         month: "short",
                         year: "numeric",

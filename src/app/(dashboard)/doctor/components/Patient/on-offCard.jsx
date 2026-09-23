@@ -25,12 +25,11 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useRouter, useSearchParams } from "next/navigation";
 import PatientDetailsCard from "./PatientDetailsCard";
 import CustomToolbar from "../../../doctorReceptionist/components/CustomToolbar";
-import { appointmentService, scheduleService } from "../../services/api";
+import { scheduleService } from "../../services/api";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import HistoryIcon from "@mui/icons-material/History";
 import LocalPharmacyOutlinedIcon from "@mui/icons-material/LocalPharmacyOutlined";
-import Tooltip from "@mui/material/Tooltip";
 import Menu from "@mui/material/Menu";
 import api from "../../../../../utils/axiosInstance";
 import MedicalInvoiceDialog from "../Medical/MedicalInvoiceDialog";
@@ -57,12 +56,7 @@ const [detailsRow, setDetailsRow] = useState(null);
   const [token, setToken] = useState("");
   const [viewOpen, setViewOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [medicalDialogOpen, setMedicalDialogOpen] = useState(false);
-  const [selectedMedicalRow, setSelectedMedicalRow] = useState(null);
-  const [medicalStoreDraft, setMedicalStoreDraft] = useState([]);
-  const [medicalStoreMap, setMedicalStoreMap] = useState({});
   const [approvedMedicalStores, setApprovedMedicalStores] = useState([]);
-  const [medicalSending, setMedicalSending] = useState(false);
   const [medicalDetailsOpen, setMedicalDetailsOpen] = useState(false);
   const [medicalDetailRows, setMedicalDetailRows] = useState([]);
   const [medicalDetailsLoading, setMedicalDetailsLoading] = useState(false);
@@ -390,72 +384,6 @@ const handleViewMedicalDetails = async () => {
     }));
   };
 
-  const openMedicalStoreDialog = (row) => {
-    if (!row) return;
-    const appointmentStatus = String(row?.status || "").toLowerCase();
-    if (appointmentStatus !== "in_progress" && appointmentStatus !== "completed") {
-      return;
-    }
-    setSelectedMedicalRow(row);
-    setMedicalStoreDraft(Array.isArray(medicalStoreMap[row?.id]) ? medicalStoreMap[row.id] : []);
-    setError("");
-    setMedicalDialogOpen(true);
-  };
-
-  const toggleMedicalStoreSelection = (storeId) => {
-    setMedicalStoreDraft((current) => {
-      if (current.includes(storeId)) {
-        return current.filter((id) => id !== storeId);
-      }
-      return [...current, storeId];
-    });
-  };
-
-  const handleSaveMedicalStoreSelection = async () => {
-    if (!selectedMedicalRow || !selectedMedicalRow.patientId) {
-      setError("Patient account could not be identified for this appointment.");
-      return;
-    }
-    if (!medicalStoreDraft.length) {
-      setError("Select at least one medical store.");
-      return;
-    }
-    try {
-      setMedicalSending(true);
-      const prescriptionResponse = await appointmentService.getPrescriptionByAppointmentId(selectedMedicalRow.id);
-      const prescriptionData = prescriptionResponse?.data || prescriptionResponse;
-      const medicines = (
-        prescriptionData?.prescription?.medicines
-        || prescriptionData?.data?.prescription?.medicines
-        || []
-      ).filter((medicine) => String(medicine?.medicine_name || medicine?.name || "").trim());
-
-      if (!medicines.length) {
-        setError("Prescription me koi medicine nahi likhi hai. Pehle prescription me medicine add karein.");
-        return;
-      }
-
-      await Promise.all(
-        medicalStoreDraft.map((storeId) => api.post("/api/medical-requests/create", {
-          patientId: selectedMedicalRow.patientId,
-          storeId,
-          appointmentId: selectedMedicalRow.id,
-          medicines,
-          note: medicines.map((medicine) => [medicine.dose, medicine.frequency, medicine.instructions].filter(Boolean).join(" · ")).filter(Boolean).join(" | ") || null,
-        }))
-      );
-      setMedicalStoreMap((current) => ({ ...current, [selectedMedicalRow.id]: [...medicalStoreDraft] }));
-      setMedicalDialogOpen(false);
-      setSelectedMedicalRow(null);
-      setMedicalStoreDraft([]);
-      setError("");
-    } catch (requestError) {
-      setError(requestError?.response?.data?.message || "Unable to send medical request.");
-    } finally {
-      setMedicalSending(false);
-    }
-  };
-
   const columns = useMemo(() => {
     const data = [
       {
@@ -606,54 +534,6 @@ const handleViewMedicalDetails = async () => {
         },
       });
     }
-data.push({
-  field: "medicalStore",
-  headerName: "Medical Store",
-  minWidth: 110,
-  sortable: false,
-  filterable: false,
-  renderCell: (params) => {
-    const appointmentStatus = String(params.row?.status || "").toLowerCase();
-    const canSelectMedicalStore = appointmentStatus === "in_progress" || appointmentStatus === "completed";
-    const selectedStoreIds = Array.isArray(medicalStoreMap[params.row.id]) ? medicalStoreMap[params.row.id] : [];
-    const selectedStoreNames = approvedMedicalStores
-      .filter((store) => selectedStoreIds.includes(store.id))
-      .map((store) => store.name);
-    const tooltipText = selectedStoreNames.length ? selectedStoreNames.join(", ") : "Select medical store";
-
-    return (
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minWidth: 0 }}>
-        <Tooltip title={tooltipText} arrow>
-          <span>
-            <IconButton
-              size="small"
-              disabled={!canSelectMedicalStore}
-              onClick={() => openMedicalStoreDialog(params.row)}
-              sx={{
-                width: 30,
-                height: 30,
-                borderRadius: 1.5,
-                bgcolor: canSelectMedicalStore ? "#eaf3ff" : "#f1f5f9",
-                color: canSelectMedicalStore ? "#1565c0" : "#94a3b8",
-                border: `1px solid ${canSelectMedicalStore ? "#bfdbfe" : "#e2e8f0"}`,
-                padding: 0,
-                "&:hover": {
-                  bgcolor: canSelectMedicalStore ? "#dbeafe" : "#f1f5f9",
-                },
-                "&.Mui-disabled": {
-                  color: "#94a3b8",
-                  backgroundColor: "#f1f5f9",
-                },
-              }}
-            >
-              <LocalPharmacyOutlinedIcon sx={{ fontSize: 17 }} />
-            </IconButton>
-          </span>
-        </Tooltip>
-      </Box>
-    );
-  },
-});
 
 data.push({
   field: "details",
@@ -684,7 +564,7 @@ data.push({
 });
 
 return data;
-  }, [roleId, theme, medicalStoreMap]);
+  }, [roleId, theme]);
 
   return (
     <>
@@ -994,72 +874,6 @@ return data;
 </Menu>
         </Box>
       </Paper>
-
-      <Dialog
-        open={medicalDialogOpen}
-        onClose={() => {
-          setMedicalDialogOpen(false);
-          setSelectedMedicalRow(null);
-          setMedicalStoreDraft([]);
-        }}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle sx={{ fontSize: "14px", fontWeight: 700, px: 2, py: 1.5 }}>
-          Select medical store
-        </DialogTitle>
-        <DialogContent dividers sx={{ px: 2, py: 1.5 }}>
-          <Box sx={{ display: "grid", gap: 1.1 }}>
-            {error ? <Alert severity="error" onClose={() => setError("")}>{error}</Alert> : null}
-            <Typography variant="body2" sx={{ color: "#64748b", mb: 0.5 }}>
-              Select a connected medical store. Medicines will be taken from the saved prescription for this patient.
-            </Typography>
-            {approvedMedicalStores.map((store) => (
-              <Box
-                key={store.id}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 1,
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 1.25,
-                  p: 1,
-                  background: medicalStoreDraft.includes(store.id) ? "#f0fdf4" : "#fff",
-                }}
-              >
-                <Box>
-                  <Typography sx={{ fontSize: "12.5px", fontWeight: 700, color: "#0f172a" }}>{store.name}</Typography>
-                  <Typography sx={{ fontSize: "10.5px", color: "#64748b" }}>
-                    {store.city} • {store.phone}
-                  </Typography>
-                </Box>
-                <Button
-                  size="small"
-                  variant={medicalStoreDraft.includes(store.id) ? "contained" : "outlined"}
-                  color={medicalStoreDraft.includes(store.id) ? "success" : "primary"}
-                  onClick={() => toggleMedicalStoreSelection(store.id)}
-                  sx={{ textTransform: "none", minWidth: 74, fontSize: "11.5px", px: 1 }}
-                >
-                  {medicalStoreDraft.includes(store.id) ? "Selected" : "Select"}
-                </Button>
-              </Box>
-            ))}
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 2, py: 1.5 }}>
-          <Button onClick={() => {
-            setMedicalDialogOpen(false);
-            setSelectedMedicalRow(null);
-            setMedicalStoreDraft([]);
-          }} sx={{ textTransform: "none" }}>
-            Cancel
-          </Button>
-          <Button variant="contained" onClick={handleSaveMedicalStoreSelection} disabled={medicalSending} sx={{ textTransform: "none" }}>
-            {medicalSending ? "Sending..." : "Send"}
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       <MedicalInvoiceDialog
         open={medicalDetailsOpen}

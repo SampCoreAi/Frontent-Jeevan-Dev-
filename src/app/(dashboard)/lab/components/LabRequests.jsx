@@ -56,6 +56,9 @@ const formatDateTimeInputValue = (value) => {
   return normalized.slice(0, 16);
 };
 
+const isCompleteDateTimeValue = (value) =>
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(String(value || ""));
+
 export default function LabRequests({
   reports = [],
   requests = [],
@@ -70,6 +73,9 @@ export default function LabRequests({
   onUploadReport,
   onDeleteReport,
   updateFeedback = { type: "", message: "" },
+  pendingUploadCount = 0,
+  showDelayedOnly = false,
+  onToggleDelayedUpload,
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -85,6 +91,7 @@ export default function LabRequests({
     status: null,
     note: "",
   });
+  const [dateDrafts, setDateDrafts] = useState({});
 
   const safeRequests = Array.isArray(requests) ? requests : [];
   const safeReports = Array.isArray(reports) ? reports : [];
@@ -310,10 +317,51 @@ export default function LabRequests({
         </Alert>
       ) : null}
 
-      <Box sx={{ mt: 1.5, mb: 1.5 }}>
+      <Box sx={{ mt: 1.5, mb: 1.5, width: "100%" }}>
         <TableFilters
           {...filters}
           statusOptions={REQUEST_STATUSES}
+          leftAction={
+            <Button
+              variant={showDelayedOnly ? "contained" : "outlined"}
+              size="small"
+              disabled={pendingUploadCount === 0}
+              onClick={onToggleDelayedUpload}
+              sx={{
+                height: 40,
+                minWidth: { xs: "100%", md: 190 },
+                borderRadius: "8px",
+                fontSize: "12px",
+                fontWeight: 700,
+                textTransform: "none",
+                bgcolor: showDelayedOnly ? "#0B5C8E" : "#FFFFFF",
+                color: showDelayedOnly ? "#FFFFFF" : "#0B5C8E",
+                borderColor: "#B8D1E2",
+                boxShadow: "none",
+                "&:hover": {
+                  bgcolor: showDelayedOnly ? "#094F79" : "#F4F9FC",
+                  boxShadow: "none",
+                },
+                "&.Mui-disabled": {
+                  bgcolor: "#F8FAFC",
+                  color: "#A7B4C4",
+                  borderColor: "#E2E8F0",
+                },
+              }}
+            >
+              {showDelayedOnly
+                ? `Showing ${pendingUploadCount} delayed`
+                : `Pending uploads (${pendingUploadCount})`}
+            </Button>
+          }
+          onReset={() => {
+            filters?.onSearch?.("");
+            filters?.onStatus?.("");
+            filters?.onDate?.("");
+            if (showDelayedOnly && onToggleDelayedUpload) {
+              onToggleDelayedUpload();
+            }
+          }}
         />
       </Box>
 
@@ -369,8 +417,8 @@ export default function LabRequests({
 
               <Pagination
                 count={totalPages}
-                page={currentPage}
-                onChange={(_, value) => onPageChange?.(value)}
+                page={Math.min(currentPage, totalPages) - 1}
+                onChange={(_, value) => onPageChange?.(value + 1)}
                 size="small"
                 color="primary"
                 siblingCount={isMobile ? 0 : 1}
@@ -410,6 +458,10 @@ export default function LabRequests({
             request.latestStatusNote ||
             request.status_note ||
             request.note;
+          const currentDateTimeValue = formatDateTimeInputValue(
+            request.expected_report_at || request.expectedReportAt || ""
+          );
+          const draftDateTimeValue = dateDrafts[request.id] ?? currentDateTimeValue;
 
           return (
             <TableRow
@@ -526,17 +578,26 @@ export default function LabRequests({
     <TextField
       size="small"
       type="datetime-local"
-      value={formatDateTimeInputValue(
-        request.expected_report_at ||
-          request.expectedReportAt
-      )}
-      onChange={(event) =>
+      value={draftDateTimeValue}
+      onChange={(event) => {
+        const nextValue = event.target.value || "";
+        setDateDrafts((current) => ({
+          ...current,
+          [request.id]: nextValue,
+        }));
+      }}
+      onBlur={() => {
+        const nextValue = dateDrafts[request.id] ?? currentDateTimeValue;
+        if (!isCompleteDateTimeValue(nextValue)) return;
+
+        if (nextValue === currentDateTimeValue) return;
+
         onStatusUpdate(
           request.id,
           request.status || "PENDING",
-          event.target.value || null
-        )
-      }
+          nextValue
+        );
+      }}
       disabled={updating || cancelled}
       InputLabelProps={{ shrink: true }}
       sx={{

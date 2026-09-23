@@ -65,9 +65,10 @@ export default function MedicalPanel({ section = "dashboard" }) {
   };
 
   const loadReports = async () => {
-    const response = await api.get("/api/medical-reports", {
+    const response = await api.get("/api/medical-requests/medical-store", {
       params: {
         search: tableFilters.search || undefined,
+        status: tableFilters.status || "COMPLETED",
         date: tableFilters.date || undefined,
       },
     });
@@ -82,7 +83,7 @@ export default function MedicalPanel({ section = "dashboard" }) {
       else if (section === "requests") await Promise.all([loadProfile(), loadRequests(), loadReports()]);
       else if (section === "reports") await Promise.all([loadProfile(), loadReports()]);
       else if (section === "profile") await loadProfile();
-      else await loadProfile();
+      else await Promise.all([loadProfile(), loadConnections(), loadRequests(), loadReports()]);
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to load medical dashboard data."));
     } finally {
@@ -139,22 +140,27 @@ export default function MedicalPanel({ section = "dashboard" }) {
         unitPrice: details.unitPrice,
         gstRate: details.gstRate,
         amount: details.amount,
-        medicines: details.invoiceItems,
       });
       const updatedRequest = response?.data?.data || {};
-      setRequests((items) => items.map((item) => item.id === requestId ? {
-        ...item,
-        ...updatedRequest,
-        status,
-        note,
-        total_amount: details.totalAmount ?? item.total_amount,
-        batch_number: details.batchNumber || item.batch_number,
-        expiry_date: details.expiryDate || item.expiry_date,
-        unit_price: details.unitPrice ?? item.unit_price,
-        gst_rate: details.gstRate ?? item.gst_rate,
-        amount: details.amount ?? item.amount,
-        invoice_number: updatedRequest.invoice_number || item.invoice_number,
-      } : item));
+      setRequests((items) => items.map((item) => {
+        if (item.id !== requestId) return item;
+        return {
+          ...item,
+          ...updatedRequest,
+          status,
+          note,
+          medicine_name: item.medicine_name ?? updatedRequest.medicine_name,
+          quantity: item.quantity ?? updatedRequest.quantity,
+          medicine_items: item.medicine_items ?? updatedRequest.medicine_items,
+          total_amount: details.totalAmount ?? item.total_amount ?? updatedRequest.total_amount,
+          batch_number: details.batchNumber || item.batch_number || updatedRequest.batch_number,
+          expiry_date: details.expiryDate || item.expiry_date || updatedRequest.expiry_date,
+          unit_price: details.unitPrice ?? item.unit_price ?? updatedRequest.unit_price,
+          gst_rate: details.gstRate ?? item.gst_rate ?? updatedRequest.gst_rate,
+          amount: details.amount ?? item.amount ?? updatedRequest.amount,
+          invoice_number: updatedRequest.invoice_number || item.invoice_number,
+        };
+      }));
       setNotice("Medical request status updated.");
     } catch (requestError) {
       const message = getErrorMessage(requestError, "Unable to update medical request.");

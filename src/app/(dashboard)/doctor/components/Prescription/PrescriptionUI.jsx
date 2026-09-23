@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   Box,
@@ -26,6 +26,7 @@ import PrescriptionFooter from "./PrescriptionFooter";
 import { PatientInfo, DiagnosisSection } from "./PatientInfo";
 import MedicineTable from "./MedicineTable";
 import LabTestRequestForm from "./LabTestRequestForm";
+import MedicalStoreRequestForm from "./MedicalStoreRequestForm";
 
 // 👇 Ye wahi PDF wala component hai jo download me use hota hai
 import PrescriptionPdfView from "./PrescriptionPdfView";
@@ -124,10 +125,15 @@ const PRINT_PAGE_STYLE = `
 export default function PrescriptionUI(props) {
   const [labTestSummary, setLabTestSummary] = useState({ labName: "", tests: [] });
   const [labTestResetKey, setLabTestResetKey] = useState(0);
+  const [currentPatientReports, setCurrentPatientReports] = useState([]);
+  const [oldPatientReports, setOldPatientReports] = useState([]);
+  const [currentPatientLabRequests, setCurrentPatientLabRequests] = useState([]);
+  const [oldPatientLabRequests, setOldPatientLabRequests] = useState([]);
   const [patientReports, setPatientReports] = useState([]);
   const [patientLabRequests, setPatientLabRequests] = useState([]);
   const [reportsLoading, setReportsLoading] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
+  const [labReportView, setLabReportView] = useState("current");
   const [cancellingRequestId, setCancellingRequestId] = useState(null);
   const [cancelRequest, setCancelRequest] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
@@ -149,6 +155,7 @@ export default function PrescriptionUI(props) {
     doctor,
     patient,
     patientId,
+    appointmentId,
     dateNow,
 
     diagnosis,
@@ -168,23 +175,146 @@ export default function PrescriptionUI(props) {
     qrImage,
   } = props;
 
+  const normalizeNumericId = (value) => {
+    if (value === null || value === undefined || value === "") return null;
+    const numeric = Number(value);
+    return Number.isNaN(numeric) ? null : numeric;
+  };
+
+  const getRecordAppointmentId = (record = {}) => {
+    const candidates = [
+      record.appointmentId,
+      record.appointment_id,
+      record.appointment?.id,
+      record.appointment?.appointment_id,
+      record.appointment?.appointmentId,
+      record.appointment_id ?? record.appointmentId,
+      apiData?.appointment_id,
+      apiData?.appointmentId,
+      apiData?.appointment?.id,
+      apiData?.appointment?.appointment_id,
+      apiData?.appointment?.appointmentId,
+    ];
+
+    for (const candidate of candidates) {
+      const normalized = normalizeNumericId(candidate);
+      if (normalized !== null) return normalized;
+    }
+
+    return null;
+  };
+
+  const getRecordSection = (record = {}) => {
+    const sectionFlag =
+      record.is_current ??
+      record.isCurrent ??
+      record.current ??
+      record.currentAppointment ??
+      record.is_current_appointment ??
+      record.isCurrentAppointment ??
+      record.section;
+
+    if (typeof sectionFlag === "boolean") {
+      return sectionFlag ? "current" : "old";
+    }
+
+    if (typeof sectionFlag === "string") {
+      const value = sectionFlag.toLowerCase();
+      if (["current", "current_appointment", "active", "true", "1", "yes"].includes(value)) return "current";
+      if (["old", "previous", "past", "historic", "history", "false", "0", "no"].includes(value)) return "old";
+    }
+
+    return null;
+  };
+
+  const activeAppointmentId = useMemo(() => {
+    const value =
+      appointmentId ||
+      apiData?.appointment_id ||
+      apiData?.appointmentId ||
+      apiData?.appointment?.id ||
+      apiData?.appointment?.appointment_id ||
+      apiData?.appointment?.appointmentId;
+
+    return normalizeNumericId(value);
+  }, [appointmentId, apiData]);
+
+  const matchesCurrentAppointment = (record = {}) => {
+    const explicitSection = getRecordSection(record);
+
+    if (explicitSection) {
+      return explicitSection === "current";
+    }
+
+    if (!activeAppointmentId) {
+      return true;
+    }
+
+    const recordAppointmentId = getRecordAppointmentId(record);
+
+    if (recordAppointmentId === null) {
+      return true;
+    }
+
+    return Number(recordAppointmentId) === Number(activeAppointmentId);
+  };
+
   const refreshPatientLabData = async () => {
     if (!patientId || isPatient) return;
 
     try {
       setReportsLoading(true);
-      const [reportsResponse, requestsResponse] = await Promise.all([
-        api.get("/api/lab-reports"),
-        api.get("/api/lab-requests/doctor"),
+
+      const currentRequestPromise = activeAppointmentId
+        ? api.get("/api/lab-requests/doctor", {
+            params: { appointment_id: activeAppointmentId },
+          })
+        : api.get("/api/lab-requests/doctor");
+      const oldRequestPromise = activeAppointmentId
+        ? api.get("/api/lab-requests/doctor", {
+            params: { exclude_appointment_id: activeAppointmentId },
+          })
+        : Promise.resolve({ data: { data: [] } });
+
+      const currentReportsPromise = activeAppointmentId
+        ? api.get("/api/lab-reports", {
+            params: { appointment_id: activeAppointmentId },
+          })
+        : api.get("/api/lab-reports");
+      const oldReportsPromise = activeAppointmentId
+        ? api.get("/api/lab-reports", {
+            params: { exclude_appointment_id: activeAppointmentId },
+          })
+        : Promise.resolve({ data: { data: [] } });
+
+      const [currentRequestsResponse, oldRequestsResponse, currentReportsResponse, oldReportsResponse] = await Promise.all([
+        currentRequestPromise,
+        oldRequestPromise,
+        currentReportsPromise,
+        oldReportsPromise,
       ]);
-      const reports = reportsResponse?.data?.data || [];
-      const requests = requestsResponse?.data?.data || [];
-      setPatientReports(
-        reports.filter((report) => Number(report.patientId || report.patient_id) === Number(patientId))
-      );
-      setPatientLabRequests(
-        requests.filter((request) => Number(request.patient_id || request.patientId) === Number(patientId))
-      );
+
+      const currentRequests = currentRequestsResponse?.data?.data || [];
+      const oldRequests = oldRequestsResponse?.data?.data || [];
+      const currentReports = currentReportsResponse?.data?.data || [];
+      const oldReports = oldReportsResponse?.data?.data || [];
+
+      const normalizePatientRecords = (items) =>
+        items.filter(
+          (item) => Number(item.patientId || item.patient_id || item.patient_id || item.patientId) === Number(patientId)
+        );
+
+      const nextCurrentRequests = normalizePatientRecords(currentRequests);
+      const nextOldRequests = normalizePatientRecords(oldRequests);
+      const nextCurrentReports = normalizePatientRecords(currentReports);
+      const nextOldReports = normalizePatientRecords(oldReports);
+
+      setCurrentPatientLabRequests(nextCurrentRequests);
+      setOldPatientLabRequests(nextOldRequests);
+      setCurrentPatientReports(nextCurrentReports);
+      setOldPatientReports(nextOldReports);
+      setPatientLabRequests([...nextCurrentRequests, ...nextOldRequests]);
+      setPatientReports([...nextCurrentReports, ...nextOldReports]);
     } catch (requestError) {
       setSnackbar((current) => ({
         ...current,
@@ -203,69 +333,141 @@ export default function PrescriptionUI(props) {
     const loadPatientReports = async () => {
       try {
         setReportsLoading(true);
-        const [reportsResponse, requestsResponse] = await Promise.all([
-          api.get("/api/lab-reports"),
-          api.get("/api/lab-requests/doctor"),
+
+        const currentRequestPromise = activeAppointmentId
+          ? api.get("/api/lab-requests/doctor", {
+              params: { appointment_id: activeAppointmentId },
+            })
+          : api.get("/api/lab-requests/doctor");
+        const oldRequestPromise = activeAppointmentId
+          ? api.get("/api/lab-requests/doctor", {
+              params: { exclude_appointment_id: activeAppointmentId },
+            })
+          : Promise.resolve({ data: { data: [] } });
+
+        const currentReportsPromise = activeAppointmentId
+          ? api.get("/api/lab-reports", {
+              params: { appointment_id: activeAppointmentId },
+            })
+          : api.get("/api/lab-reports");
+        const oldReportsPromise = activeAppointmentId
+          ? api.get("/api/lab-reports", {
+              params: { exclude_appointment_id: activeAppointmentId },
+            })
+          : Promise.resolve({ data: { data: [] } });
+
+        const [currentRequestsResponse, oldRequestsResponse, currentReportsResponse, oldReportsResponse] = await Promise.all([
+          currentRequestPromise,
+          oldRequestPromise,
+          currentReportsPromise,
+          oldReportsPromise,
         ]);
-        const reports = reportsResponse?.data?.data || [];
-        const requests = requestsResponse?.data?.data || [];
-        setPatientReports(
-          reports.filter((report) => Number(report.patientId || report.patient_id) === Number(patientId))
-        );
-        setPatientLabRequests(
-          requests.filter((request) => Number(request.patient_id || request.patientId) === Number(patientId))
-        );
+
+        const currentRequests = currentRequestsResponse?.data?.data || [];
+        const oldRequests = oldRequestsResponse?.data?.data || [];
+        const currentReports = currentReportsResponse?.data?.data || [];
+        const oldReports = oldReportsResponse?.data?.data || [];
+
+        const normalizePatientRecords = (items) =>
+          items.filter(
+            (item) => Number(item.patientId || item.patient_id || item.patient_id || item.patientId) === Number(patientId)
+          );
+
+        const nextCurrentRequests = normalizePatientRecords(currentRequests);
+        const nextOldRequests = normalizePatientRecords(oldRequests);
+        const nextCurrentReports = normalizePatientRecords(currentReports);
+        const nextOldReports = normalizePatientRecords(oldReports);
+
+        setCurrentPatientLabRequests(nextCurrentRequests);
+        setOldPatientLabRequests(nextOldRequests);
+        setCurrentPatientReports(nextCurrentReports);
+        setOldPatientReports(nextOldReports);
+        setPatientLabRequests([...nextCurrentRequests, ...nextOldRequests]);
+        setPatientReports([...nextCurrentReports, ...nextOldReports]);
       } catch {
-        setPatientReports([]);
+        setCurrentPatientLabRequests([]);
+        setOldPatientLabRequests([]);
+        setCurrentPatientReports([]);
+        setOldPatientReports([]);
         setPatientLabRequests([]);
+        setPatientReports([]);
       } finally {
         setReportsLoading(false);
       }
     };
 
     loadPatientReports();
-  }, [isPatient, patientId]);
+  }, [isPatient, patientId, activeAppointmentId]);
 
   const getRequestNote = (request = {}) => request.latest_status_note || request.latestStatusNote || request.status_note || request.note || request.reason || request.statusReason || "";
 
-  const labReportRows = patientLabRequests.flatMap((request) => {
-  let tests = request.requested_tests || "-";
+  const buildLabReportRows = (requests, reports) =>
+    requests.flatMap((request) => {
+      let tests = request.requested_tests || "-";
 
-  if (typeof tests === "string") {
-    try {
-      const parsed = JSON.parse(tests);
-      tests = Array.isArray(parsed) ? parsed : [tests];
-    } catch {
-      tests = [tests];
-    }
-  }
+      if (typeof tests === "string") {
+        try {
+          const parsed = JSON.parse(tests);
+          tests = Array.isArray(parsed) ? parsed : [tests];
+        } catch {
+          tests = [tests];
+        }
+      }
 
-  if (!Array.isArray(tests)) tests = [String(tests)];
+      if (!Array.isArray(tests)) tests = [String(tests)];
 
-  const matchedReport = patientReports.find(
-    (item) =>
-      Number(item.requestId || item.testRequestId || item.test_request_id) ===
-      Number(request.id)
-  );
+      const matchedReport = reports.find(
+        (item) =>
+          Number(item.requestId || item.testRequestId || item.test_request_id) ===
+          Number(request.id)
+      );
 
-  return tests.map((test, index) => ({
-    id: `${request.id}-${index}`,
-    labName: request.lab_name,
-    testName: test,
-    requestId: request.id,
-    status: request.status || "PENDING",
-    createdAt: request.created_at,
-    reportDate:
-      request.expected_report_at ||
-      request.expectedReportAt ||
-      matchedReport?.createdAt ||
-      matchedReport?.created_at ||
-      matchedReport?.uploadedAt ||
-      matchedReport?.uploaded_at ||
-      request.created_at,
-    report: matchedReport,
-  }));
-});
+      return tests.map((test, index) => ({
+        id: `${request.id}-${index}`,
+        labName: request.lab_name,
+        testName: test,
+        requestId: request.id,
+        status: request.status || "PENDING",
+        createdAt: request.created_at,
+        reportDate:
+          request.expected_report_at ||
+          request.expectedReportAt ||
+          matchedReport?.createdAt ||
+          matchedReport?.created_at ||
+          matchedReport?.uploadedAt ||
+          matchedReport?.uploaded_at ||
+          null,
+        report: matchedReport,
+      }));
+    });
+
+  const currentLabReportRows = useMemo(() => {
+    const rows = buildLabReportRows(currentPatientLabRequests, currentPatientReports);
+    return [...rows].sort((a, b) => {
+      const firstTime = Date.parse(a.reportDate || a.createdAt || 0) || 0;
+      const secondTime = Date.parse(b.reportDate || b.createdAt || 0) || 0;
+      return secondTime - firstTime;
+    });
+  }, [currentPatientLabRequests, currentPatientReports]);
+
+  const oldLabReportRows = useMemo(() => {
+    const rows = buildLabReportRows(oldPatientLabRequests, oldPatientReports);
+    return [...rows].sort((a, b) => {
+      const firstTime = Date.parse(a.reportDate || a.createdAt || 0) || 0;
+      const secondTime = Date.parse(b.reportDate || b.createdAt || 0) || 0;
+      return secondTime - firstTime;
+    });
+  }, [oldPatientLabRequests, oldPatientReports]);
+
+  const labReportRows = [...currentLabReportRows, ...oldLabReportRows];
+
+  const sortedLabReportRows = useMemo(() => {
+    return [...labReportRows].sort((a, b) => {
+      const firstTime = Date.parse(a.reportDate || a.createdAt || 0) || 0;
+      const secondTime = Date.parse(b.reportDate || b.createdAt || 0) || 0;
+      return secondTime - firstTime;
+    });
+  }, [labReportRows]);
 
   const cancelPendingRequest = async (requestId, reason = null) => {
     try {
@@ -361,9 +563,20 @@ export default function PrescriptionUI(props) {
         }}
       >
         {!isPatient && (
+          <MedicalStoreRequestForm
+            patientId={patientId}
+            appointmentId={appointmentId || apiData?.appointment?.id || apiData?.appointment?.appointment_id}
+            isTodayAppointment={isTodayAppointment}
+            hasSavedPrescription={Boolean(apiData?.prescription)}
+            canSend={Boolean(isTodayAppointment && apiData?.prescription)}
+          />
+        )}
+
+        {!isPatient && (
           <LabTestRequestForm
             patientId={patientId}
-            storageKey={`doctor-lab-test-${apiData?.appointment?.id || apiData?.appointment?.appointment_id || patientId || "unknown"}`}
+            appointmentId={appointmentId || apiData?.appointment?.id || apiData?.appointment?.appointment_id}
+            storageKey={`doctor-lab-test-${patientId || "unknown"}-${appointmentId || apiData?.appointment?.id || apiData?.appointment?.appointment_id || "no-appointment"}`}
             resetKey={labTestResetKey}
             onSummaryChange={setLabTestSummary}
           />
@@ -446,8 +659,50 @@ export default function PrescriptionUI(props) {
           {reportsLoading ? (
             <Box display="flex" justifyContent="center" py={3}><CircularProgress size={24} /></Box>
           ) : labReportRows.length ? (
-            <Box sx={{ display: "grid", gap: 0.75 }}>
-              {labReportRows.map((row) => (
+            <Box sx={{ display: "grid", gap: 1 }}>
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 0.5 }}>
+                <Button
+                  size="small"
+                  variant={labReportView === "current" ? "contained" : "outlined"}
+                  onClick={() => setLabReportView("current")}
+                  sx={{
+                    textTransform: "none",
+                    borderRadius: 1.5,
+                    minHeight: 32,
+                    fontWeight: 700,
+                    fontSize: "12px",
+                    bgcolor: labReportView === "current" ? "#07876A" : "transparent",
+                    color: labReportView === "current" ? "#fff" : "#0F172A",
+                    borderColor: "#CBD5E1",
+                  }}
+                >
+                  Current Appointment Report
+                </Button>
+
+                <Button
+                  size="small"
+                  variant={labReportView === "old" ? "contained" : "outlined"}
+                  onClick={() => setLabReportView("old")}
+                  sx={{
+                    textTransform: "none",
+                    borderRadius: 1.5,
+                    minHeight: 32,
+                    fontWeight: 700,
+                    fontSize: "12px",
+                    bgcolor: labReportView === "old" ? "#07876A" : "transparent",
+                    color: labReportView === "old" ? "#fff" : "#0F172A",
+                    borderColor: "#CBD5E1",
+                  }}
+                >
+                  Old Reports
+                </Button>
+              </Box>
+
+              {(labReportView === "current" ? currentLabReportRows : oldLabReportRows).length === 0 ? (
+                <Typography color="text.secondary" variant="body2">
+                  No {labReportView === "current" ? "current" : "old"} lab reports found.
+                </Typography>
+              ) : (labReportView === "current" ? currentLabReportRows : oldLabReportRows).map((row) => (
                 <Box key={row.id} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, minWidth: 0, py: 0.5, borderBottom: "1px solid", borderColor: "divider" }}>
                   <Box sx={{ minWidth: 0, flex: 1 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, display: "block", overflow: "hidden", textOverflow: "ellipsis" }}>

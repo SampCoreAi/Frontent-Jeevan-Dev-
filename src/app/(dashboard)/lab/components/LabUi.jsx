@@ -390,6 +390,8 @@ export function TableFilters({
   onStatus,
   onDate,
   statusOptions = [],
+  leftAction = null,
+  onReset,
 }) {
   const hasFilters = Boolean(search || status || date);
 
@@ -429,6 +431,7 @@ export function TableFilters({
     onSearch?.("");
     onStatus?.("");
     onDate?.("");
+    onReset?.();
   };
 
   return (
@@ -546,7 +549,9 @@ export function TableFilters({
           ml: { md: "auto" },
           pl: { md: 1.5 },
           display: "flex",
-          justifyContent: { xs: "flex-end", md: "center" },
+          alignItems: "center",
+          justifyContent: { xs: "flex-start", md: "center" },
+          gap: 1,
           borderLeft: {
             xs: "none",
             md: `1px solid ${colors.border}`,
@@ -554,6 +559,10 @@ export function TableFilters({
           flexShrink: 0,
         }}
       >
+        {leftAction ? (
+          <Box sx={{ display: "flex", alignItems: "center" }}>{leftAction}</Box>
+        ) : null}
+
         <Button
           disabled={!hasFilters}
           onClick={handleReset}

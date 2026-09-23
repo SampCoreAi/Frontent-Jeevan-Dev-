@@ -26,6 +26,7 @@ export default function LabPanel({ section = "dashboard" }) {
   const [notice, setNotice] = useState("");
   const [requestUpdateFeedback, setRequestUpdateFeedback] = useState({ type: "", message: "" });
   const [tableFilters, setTableFilters] = useState({ search: "", status: "", date: "" });
+  const [showDelayedOnly, setShowDelayedOnly] = useState(false);
   const [tablePage, setTablePage] = useState(1);
   const pageSize = 10;
 
@@ -53,7 +54,13 @@ export default function LabPanel({ section = "dashboard" }) {
 
   const loadRequests = async () => {
     const response = await api.get("/api/lab-requests/lab", {
-      params: { search: tableFilters.search || undefined, status: tableFilters.status || undefined, date: tableFilters.date || undefined },
+      params: {
+        search: tableFilters.search || undefined,
+        status: tableFilters.status || undefined,
+        date: tableFilters.date || undefined,
+        pendingUpload: showDelayedOnly || undefined,
+        delayedUpload: showDelayedOnly || undefined,
+      },
     });
     setRequests(getRows(response));
   };
@@ -72,7 +79,7 @@ export default function LabPanel({ section = "dashboard" }) {
       if (section === "connections") await Promise.all([loadProfile(), loadConnections()]);
       else if (section === "requests") await Promise.all([loadProfile(), loadRequests(), loadReports()]);
       else if (section === "reports") await Promise.all([loadProfile(), loadReports()]);
-      else await loadProfile();
+      else await Promise.all([loadProfile(), loadConnections(), loadRequests(), loadReports()]);
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to load lab data."));
     } finally {
@@ -82,11 +89,29 @@ export default function LabPanel({ section = "dashboard" }) {
 
   useEffect(() => {
     loadSection();
-  }, [section, tableFilters.date, tableFilters.search, tableFilters.status]);
+  }, [section, tableFilters.date, tableFilters.search, tableFilters.status, showDelayedOnly]);
 
   useEffect(() => {
     setTablePage(1);
-  }, [section, tableFilters.date, tableFilters.search, tableFilters.status]);
+  }, [section, tableFilters.date, tableFilters.search, tableFilters.status, showDelayedOnly]);
+
+  const isDelayedUploadPending = (request) => {
+    const status = String(request?.status || "").toUpperCase();
+    if (["REPORT_UPLOADED", "COMPLETED"].includes(status)) return false;
+
+    const rawDate = request?.expected_report_at || request?.expectedReportAt;
+    if (!rawDate) return false;
+
+    const parsedDate = new Date(rawDate);
+    if (Number.isNaN(parsedDate.getTime())) return false;
+
+    return parsedDate.getTime() <= Date.now();
+  };
+
+  const delayedUploadCount = useMemo(
+    () => requests.filter(isDelayedUploadPending).length,
+    [requests]
+  );
 
   const stats = useMemo(() => ({
     connections: connections.length,
@@ -174,7 +199,24 @@ export default function LabPanel({ section = "dashboard" }) {
   const content = section === "connections" ? (
     <LabConnections connections={connections} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} actionId={actionId} onStatusUpdate={updateConnection} />
   ) : section === "requests" ? (
-    <LabRequests reports={reports} requests={requests} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} actionId={actionId} onStatusUpdate={updateRequest} uploading={uploading} onUploadReport={uploadReport} onDeleteReport={deleteReport} updateFeedback={requestUpdateFeedback} />
+    <LabRequests
+      reports={reports}
+      requests={requests}
+      loading={loading}
+      filters={filterProps}
+      page={tablePage}
+      pageSize={pageSize}
+      onPageChange={setTablePage}
+      actionId={actionId}
+      onStatusUpdate={updateRequest}
+      uploading={uploading}
+      onUploadReport={uploadReport}
+      onDeleteReport={deleteReport}
+      updateFeedback={requestUpdateFeedback}
+      pendingUploadCount={delayedUploadCount}
+      showDelayedOnly={showDelayedOnly}
+      onToggleDelayedUpload={() => setShowDelayedOnly((value) => !value)}
+    />
   ) : section === "reports" ? (
     <LabReports reports={reports} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} />
   ) : section === "profile" ? (

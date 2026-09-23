@@ -216,25 +216,28 @@ const qrImage = doctor?.qr_url || null;
           appointmentId,
           payload
         );
-
-        setSnackbar({
-          open: true,
-          severity: "success",
-          message: "Prescription Updated Successfully",
-        });
-
       } else {
         await prescriptionService.createPrescription(
           payload
         );
+      }
 
         setSnackbar({
           open: true,
           severity: "success",
-          message: "Prescription Created Successfully",
+          message: apiData?.prescription
+            ? "Prescription Updated Successfully"
+            : "Prescription Created Successfully",
         });
 
-      }
+        try {
+          const res = await appointmentService.getPrescriptionByAppointmentId(appointmentId);
+          if (res?.data?.data) {
+            setApiData(res.data.data);
+          }
+        } catch (refreshError) {
+          console.log("Prescription refresh error:", refreshError.message);
+        }
     } catch (err) {
       console.log(err);
 
@@ -493,6 +496,7 @@ const downloadPdf = async () => {
       doctor={doctor}
       patient={patient}
       patientId={patientId}
+      appointmentId={appointmentId}
       dateNow={dateNow}
       diagnosis={diagnosis}
       setDiagnosis={setDiagnosis}

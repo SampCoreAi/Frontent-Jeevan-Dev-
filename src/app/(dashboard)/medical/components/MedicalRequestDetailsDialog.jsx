@@ -5,6 +5,7 @@ import { Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogT
 import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 
 export default function MedicalRequestDetailsDialog({ open, request, loading = false, onClose, onComplete }) {
+  const [prescriptionLines, setPrescriptionLines] = useState([]);
   const [invoiceLines, setInvoiceLines] = useState([]);
   const [note, setNote] = useState("");
   const [validation, setValidation] = useState("");
@@ -19,14 +20,22 @@ export default function MedicalRequestDetailsDialog({ open, request, loading = f
       } catch { }
       return [{ medicine_name: request.medicine_name, quantity: request.quantity || 1, dose: request.dose || request.note || "" }];
     })();
-    setInvoiceLines(items.map((item) => ({
+    const normalizedPrescription = items.map((item) => ({
+      ...item,
+      medicine_name: item.medicine_name || request.medicine_name || "-",
+      quantity: Number(item.quantity || 1),
+      dose: item.dose || item.note || "",
+    }));
+    const normalizedInvoice = normalizedPrescription.map((item) => ({
       ...item,
       batch_number: item.batch_number || request.batch_number || "",
       expiry_date: item.expiry_date || request.expiry_date || "",
-      quantity: item.quantity || 1,
+      quantity: Number(item.quantity || 1),
       unit_price: item.unit_price ?? request.unit_price ?? "",
       gst_rate: item.gst_rate ?? request.gst_rate ?? "",
-    })));
+    }));
+    setPrescriptionLines(normalizedPrescription);
+    setInvoiceLines(normalizedInvoice);
     setNote(request.note || "");
     setValidation("");
   }, [request]);
@@ -42,11 +51,37 @@ export default function MedicalRequestDetailsDialog({ open, request, loading = f
     return total + lineTotal + (lineTotal * Number(line.gst_rate || 0) / 100);
   }, 0);
 
+  const getMedicineKey = (medicine = {}) => String(medicine.medicine_name || medicine.name || "").trim().toLowerCase();
+
+  const availablePrescriptionAdditions = prescriptionLines.filter((prescriptionLine) => !invoiceLines.some((invoiceLine) => getMedicineKey(invoiceLine) === getMedicineKey(prescriptionLine)));
+
   const updateLine = (index, field, value) => {
     setInvoiceLines((lines) => lines.map((line, lineIndex) => lineIndex === index ? { ...line, [field]: value } : line));
   };
 
+  const handleRemoveLine = (index) => {
+    setInvoiceLines((lines) => lines.filter((_, lineIndex) => lineIndex !== index));
+  };
+
+  const handleAddBackLine = (prescriptionLine) => {
+    setInvoiceLines((lines) => [
+      ...lines,
+      {
+        ...prescriptionLine,
+        batch_number: "",
+        expiry_date: "",
+        quantity: Number(prescriptionLine.quantity || 1),
+        unit_price: "",
+        gst_rate: "",
+      },
+    ]);
+  };
+
   const handleComplete = () => {
+    if (!invoiceLines.length) {
+      setValidation("Invoice me kam se kam ek medicine hona chahiye.");
+      return;
+    }
     if (invoiceLines.some((line) => !String(line.batch_number).trim() || !line.expiry_date || !String(line.unit_price).trim() || !String(line.gst_rate).trim())) {
       setValidation("Har medicine ke batch, expiry, unit price aur GST details fill karein.");
       return;
@@ -91,21 +126,40 @@ export default function MedicalRequestDetailsDialog({ open, request, loading = f
             <Box sx={{ px: 2, py: 1.1, background: "#f1f5fa" }}>
               <Typography sx={{ color: "#173761", fontWeight: 800 }}>Doctor Prescription</Typography>
             </Box>
-            <Box sx={{ display: "grid", gridTemplateColumns: "0.35fr 2fr 1fr", px: 1.5, py: 1, background: "#173761", color: "#fff", fontSize: "0.72rem", fontWeight: 800 }}>
-              <span>#</span><span>Medicine</span><span>Requested Qty</span>
+            <Box sx={{ display: "grid", gridTemplateColumns: "0.35fr 2fr 1fr auto", px: 1.5, py: 1, background: "#173761", color: "#fff", fontSize: "0.72rem", fontWeight: 800 }}>
+              <span>#</span><span>Medicine</span><span>Requested Qty</span><span>Action</span>
             </Box>
-            {invoiceLines.map((medicine, index) => (
-              <Box key={`prescription-${medicine.medicine_name}-${index}`} sx={{ display: "grid", gridTemplateColumns: "0.35fr 2fr 1fr", px: 1.5, py: 1, fontSize: "0.82rem", borderTop: "1px solid #e0e8f2" }}>
-                <span>{index + 1}</span><Typography sx={{ fontSize: "0.82rem", fontWeight: 650 }}>{medicine.medicine_name || "-"}</Typography><Typography sx={{ fontSize: "0.82rem", fontWeight: 700 }}>{medicine.quantity || 1}</Typography>
-              </Box>
-            ))}
+            {prescriptionLines.map((medicine, index) => {
+              const isRemoved = !invoiceLines.some((invoiceLine) => getMedicineKey(invoiceLine) === getMedicineKey(medicine));
+              return (
+                <Box key={`prescription-${medicine.medicine_name}-${index}`} sx={{ display: "grid", gridTemplateColumns: "0.35fr 2fr 1fr auto", px: 1.5, py: 1, fontSize: "0.82rem", borderTop: "1px solid #e0e8f2", alignItems: "center" }}>
+                  <span>{index + 1}</span>
+                  <Typography sx={{ fontSize: "0.82rem", fontWeight: 650 }}>{medicine.medicine_name || "-"}</Typography>
+                  <Typography sx={{ fontSize: "0.82rem", fontWeight: 700 }}>{Number(medicine.quantity || 1)}</Typography>
+                  {isRemoved ? (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      color="primary"
+                      onClick={() => handleAddBackLine(medicine)}
+                      disabled={isCompleted || loading}
+                      sx={{ minWidth: 0, px: 1.2, py: 0.5, fontSize: "0.7rem", textTransform: "none", borderRadius: 999 }}
+                    >
+                      Add
+                    </Button>
+                  ) : (
+                    <Typography sx={{ fontSize: "0.7rem", color: "#0b7a4f", fontWeight: 700 }}>Added</Typography>
+                  )}
+                </Box>
+              );
+            })}
           </Box>
           <Box sx={{ border: "1px solid #cbd8e7", borderRadius: 1, overflow: "hidden" }}>
             <Box sx={{ px: 2, py: 1.25, background: "#f1f5fa" }}><Typography sx={{ color: "#173761", fontWeight: 800 }}>Medicine Details</Typography></Box>
-            <Box sx={{ display: "grid", gridTemplateColumns: "0.3fr 1.5fr 1fr 1fr 0.55fr 0.9fr 0.6fr 1fr", px: 1.5, py: 1, background: "#173761", color: "#fff", fontSize: "0.68rem", fontWeight: 800 }}><span>#</span><span>Medicine</span><span>Batch No</span><span>Expiry</span><span>Qty</span><span>Unit Price</span><span>GST %</span><span>Amount</span></Box>
+            <Box sx={{ display: "grid", gridTemplateColumns: "0.3fr 1.5fr 1fr 1fr 0.55fr 0.9fr 0.6fr 0.9fr 0.5fr", px: 1.5, py: 1, background: "#173761", color: "#fff", fontSize: "0.68rem", fontWeight: 800 }}><span>#</span><span>Medicine</span><span>Batch No</span><span>Expiry</span><span>Qty</span><span>Unit Price</span><span>GST %</span><span>Amount</span><span>Action</span></Box>
             {invoiceLines.map((medicine, index) => {
               const lineTotal = Number(medicine.quantity || 0) * Number(medicine.unit_price || 0) * (1 + Number(medicine.gst_rate || 0) / 100);
-              return <Box key={`${medicine.medicine_name}-${index}`} sx={{ display: "grid", gridTemplateColumns: "0.3fr 1.5fr 1fr 1fr 0.55fr 0.9fr 0.6fr 1fr", px: 1.5, py: 1.25, gap: 0.5, fontSize: "0.8rem", alignItems: "center", borderTop: index ? "1px solid #e0e8f2" : "none" }}>
+              return <Box key={`${medicine.medicine_name}-${index}`} sx={{ display: "grid", gridTemplateColumns: "0.3fr 1.5fr 1fr 1fr 0.55fr 0.9fr 0.6fr 0.9fr 0.5fr", px: 1.5, py: 1.25, gap: 0.5, fontSize: "0.8rem", alignItems: "center", borderTop: index ? "1px solid #e0e8f2" : "none" }}>
                 <span>{index + 1}</span><span>{medicine.medicine_name || "-"}</span>
                 <TextField size="small" value={medicine.batch_number} onChange={(event) => updateLine(index, "batch_number", event.target.value)} disabled={isCompleted || loading} />
                 <TextField size="small" type="date" value={medicine.expiry_date} onChange={(event) => updateLine(index, "expiry_date", event.target.value)} disabled={isCompleted || loading} InputLabelProps={{ shrink: true }} />
@@ -113,6 +167,16 @@ export default function MedicalRequestDetailsDialog({ open, request, loading = f
                 <TextField size="small" type="number" value={medicine.unit_price} onChange={(event) => updateLine(index, "unit_price", event.target.value)} disabled={isCompleted || loading} inputProps={{ min: 0 }} />
                 <TextField size="small" type="number" value={medicine.gst_rate} onChange={(event) => updateLine(index, "gst_rate", event.target.value)} disabled={isCompleted || loading} inputProps={{ min: 0 }} />
                 <Typography fontWeight={700}>₹{lineTotal.toFixed(2)}</Typography>
+                <Button
+                  variant="text"
+                  color="error"
+                  size="small"
+                  onClick={() => handleRemoveLine(index)}
+                  disabled={isCompleted || loading}
+                  sx={{ minWidth: 0, px: 0.5, py: 0.25, fontSize: "0.72rem", fontWeight: 700 }}
+                >
+                  Remove
+                </Button>
               </Box>
             })}
           </Box>

@@ -68,6 +68,26 @@ const normalizeMedicalStore = (store = {}) => ({
   city: store.city || store.location || store.area || "-",
 });
 
+const normalizeConnectionRow = (connection = {}) => {
+  const type = connection.type || (connection.lab_code ? "LAB" : connection.store_code ? "PHARMACY" : "LAB");
+
+  return {
+    ...connection,
+    connection_id: connection.connection_id || connection.id,
+    type,
+    name:
+      connection.name ||
+      connection.lab_name ||
+      connection.store_name ||
+      connection.partner_name ||
+      "-",
+    code: connection.code || connection.lab_code || connection.store_code || "-",
+    status: connection.status || "PENDING",
+    requested_at: connection.requested_at || connection.created_at || null,
+    approved_at: connection.approved_at || null,
+  };
+};
+
 export default function DoctorLabPanel({ section = "connections" }) {
   const [labs, setLabs] = useState([]);
   const [connections, setConnections] = useState([]);
@@ -79,6 +99,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
   const [connectingId, setConnectingId] = useState(null);
   const [connectingMedicalId, setConnectingMedicalId] = useState(null);
   const [searchText, setSearchText] = useState("");
+  const [medicalSearchText, setMedicalSearchText] = useState("");
   const [connectionSearch, setConnectionSearch] = useState("");
   const [tableFilters, setTableFilters] = useState({
     search: "",
@@ -86,6 +107,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
     date: "",
   });
   const [tablePage, setTablePage] = useState(1);
+  const [showPreviousReports, setShowPreviousReports] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -140,13 +162,14 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
   const loadConnections = async () => {
     try {
-      const response = await api.get("/api/labs/doctor/connections");
-      setConnections(getRows(response));
+      const response = await api.get("/api/doctors/connections");
+      const rows = response?.data?.data || [];
+      setConnections(rows.map(normalizeConnectionRow));
     } catch (requestError) {
       setError(
         getErrorMessage(
           requestError,
-          "Unable to load your lab connections."
+          "Unable to load your connections."
         )
       );
     }
@@ -298,7 +321,10 @@ export default function DoctorLabPanel({ section = "connections" }) {
       setConnectingId(labId);
       setError("");
 
-      await api.post("/api/labs/connect", { labId });
+      await api.post("/api/doctors/connections", {
+        type: "LAB",
+        targetId: labId,
+      });
 
       setNotice("Lab connection request sent successfully.");
       setSearchText("");
@@ -322,13 +348,16 @@ export default function DoctorLabPanel({ section = "connections" }) {
       setConnectingMedicalId(storeId);
       setError("");
 
-      const response = await api.post("/api/medical-stores/connect", { storeId });
+      const response = await api.post("/api/doctors/connections", {
+        type: "PHARMACY",
+        targetId: storeId,
+      });
 
       if (response?.status === 200 || response?.status === 201) {
         setNotice("Medical connection request sent successfully.");
         setMedicalSearchText("");
         setMedicalStores([]);
-        await loadMedicalConnections();
+        await loadConnections();
       }
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to send medical connection request."));
@@ -365,8 +394,9 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
     return connections.filter((connection) => {
       const searchableText = [
-        connection.lab_name,
-        connection.lab_code,
+        connection.name,
+        connection.code,
+        connection.type,
         connection.status,
       ]
         .filter(Boolean)
@@ -398,6 +428,43 @@ export default function DoctorLabPanel({ section = "connections" }) {
       )
     );
 
+    const normalizedReports = reports.map((report) => {
+      const uploadedAt =
+        report.uploadedAt ||
+        report.uploaded_at ||
+        report.reportedAt ||
+        report.reported_at ||
+        report.createdAt ||
+        report.created_at ||
+        null;
+
+      const patientKey =
+        report.patientId ||
+        report.patient_id ||
+        report.patientName ||
+        report.patient_name ||
+        "unknown";
+
+      const appointmentId =
+        report.appointmentId ||
+        report.appointment_id ||
+        report.appointment?.id ||
+        report.appointment?.appointment_id ||
+        null;
+
+      return {
+        ...report,
+        patientKey,
+        appointmentId,
+        reportCode:
+          report.reportCode ||
+          report.report_code ||
+          null,
+        createdAt: uploadedAt,
+        uploadedAt,
+      };
+    });
+
     const pendingRequests = requests
       .filter(
         (request) =>
@@ -416,19 +483,114 @@ export default function DoctorLabPanel({ section = "connections" }) {
           } catch {}
         }
 
+        const patientKey =
+          request.patient_id ||
+          request.patientId ||
+          request.patient_name ||
+          request.patientName ||
+          "unknown";
+
+        const appointmentId =
+          request.appointmentId ||
+          request.appointment_id ||
+          request.appointment?.id ||
+          request.appointment?.appointment_id ||
+          null;
+
         return {
           id: `request-${request.id}`,
           requestId: request.id,
+          patientKey,
+          appointmentId,
           patientName: request.patient_name,
           labName: request.lab_name,
           testName: requestedTests,
           status: request.status || "PENDING",
-          createdAt: request.created_at,
+          createdAt: null,
+          uploadedAt: request.expected_report_at || request.expectedReportAt || null,
+          expected_report_at: request.expected_report_at || request.expectedReportAt || null,
+          expectedReportAt: request.expected_report_at || request.expectedReportAt || null,
+          reportCode: null,
         };
       });
 
-    return [...reports, ...pendingRequests];
+    return [...normalizedReports, ...pendingRequests];
   }, [reports, requests]);
+
+  const getReportDateTimestamp = (row = {}) => {
+    const value =
+      row.expected_report_at ||
+      row.expectedReportAt ||
+      row.uploadedAt ||
+      row.uploaded_at ||
+      row.reportedAt ||
+      row.reported_at ||
+      row.createdAt ||
+      row.created_at ||
+      null;
+
+    if (!value) return 0;
+
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+
+  const getReportGroupKey = (row = {}) => {
+    const appointmentId =
+      row.appointmentId ||
+      row.appointment_id ||
+      row.appointment?.id ||
+      row.appointment?.appointment_id ||
+      null;
+
+    if (appointmentId) {
+      return `appointment:${String(appointmentId)}`;
+    }
+
+    return `patient:${String(row.patientKey || row.patientId || row.patient_id || "unknown")}`;
+  };
+
+  const sortedReportRows = useMemo(
+    () =>
+      [...reportRows].sort((a, b) => {
+        return getReportDateTimestamp(b) - getReportDateTimestamp(a);
+      }),
+    [reportRows]
+  );
+
+  const latestReportRows = useMemo(() => {
+    const latestByGroup = new Map();
+
+    sortedReportRows.forEach((row) => {
+      const key = getReportGroupKey(row);
+      const previous = latestByGroup.get(key);
+
+      if (!previous || getReportDateTimestamp(row) > getReportDateTimestamp(previous)) {
+        latestByGroup.set(key, row);
+      }
+    });
+
+    return [...latestByGroup.values()];
+  }, [sortedReportRows]);
+
+  const previousReportRows = useMemo(() => {
+    const latestByGroup = new Map();
+
+    sortedReportRows.forEach((row) => {
+      const key = getReportGroupKey(row);
+      const previous = latestByGroup.get(key);
+
+      if (!previous || getReportDateTimestamp(row) > getReportDateTimestamp(previous)) {
+        latestByGroup.set(key, row);
+      }
+    });
+
+    return sortedReportRows.filter((row) => {
+      const key = getReportGroupKey(row);
+      const latestRow = latestByGroup.get(key);
+      return latestRow && latestRow.id !== row.id;
+    });
+  }, [sortedReportRows]);
 
   if (section === "connections") {
     const connectionCardSx = {
@@ -498,14 +660,14 @@ export default function DoctorLabPanel({ section = "connections" }) {
                   color: "text.secondary",
                 }}
               >
-                Track your lab connection requests and current status.
+                Track your lab and pharmacy connection requests and current status.
               </Typography>
             </Box>
 
             <TextField
   size="small"
-  label="Find Lab"
-  placeholder="Enter a lab code to find and connect with a lab"
+  label="Find Partner"
+  placeholder="Enter a name or code to find a lab or pharmacy"
   value={connectionSearch}
   onChange={(event) => setConnectionSearch(event.target.value)}
   InputProps={{
@@ -552,9 +714,101 @@ export default function DoctorLabPanel({ section = "connections" }) {
 />
           </Box>
 
+          <Box
+            sx={{
+              display: "grid",
+              gap: 2,
+              mb: 2,
+              gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+            }}
+          >
+            <Box sx={{ ...connectionCardSx, minHeight: 180 }}>
+              <Typography sx={{ fontSize: "12.5px", fontWeight: 700, color: "text.primary", mb: 1 }}>
+                Search Lab
+              </Typography>
+
+              <TextField
+                size="small"
+                fullWidth
+                label="Lab name or code"
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+                sx={{ mb: 1.2, ...compactCellSx }}
+              />
+
+              <Box sx={{ display: "grid", gap: 1 }}>
+                {labs.length ? (
+                  labs.slice(0, 4).map((lab) => (
+                    <Box key={lab.id} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, border: "1px solid #e2e8f0", borderRadius: 1.5, p: 1 }}>
+                      <Box>
+                        <Typography sx={{ fontSize: "12.5px", fontWeight: 700, color: "text.primary" }}>{lab.lab_name || "Lab"}</Typography>
+                        <Typography sx={{ fontSize: "10.5px", color: "text.secondary" }}>{lab.lab_code || "-"}</Typography>
+                      </Box>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleConnectLab(lab.id)}
+                        disabled={connectingId === lab.id}
+                        sx={{ ...compactButtonSx, minWidth: 72 }}
+                      >
+                        {connectingId === lab.id ? "Sending..." : "Connect"}
+                      </Button>
+                    </Box>
+                  ))
+                ) : (
+                  <Typography sx={{ fontSize: "12.5px", color: "text.secondary" }}>
+                    Search by lab name or code to find available labs.
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+
+            <Box sx={{ ...connectionCardSx, minHeight: 180 }}>
+              <Typography sx={{ fontSize: "12.5px", fontWeight: 700, color: "text.primary", mb: 1 }}>
+                Search Pharmacy
+              </Typography>
+
+              <TextField
+                size="small"
+                fullWidth
+                label="Pharmacy name or code"
+                value={medicalSearchText}
+                onChange={(event) => setMedicalSearchText(event.target.value)}
+                sx={{ mb: 1.2, ...compactCellSx }}
+              />
+
+              <Box sx={{ display: "grid", gap: 1 }}>
+                {medicalStores.length ? (
+                  medicalStores.slice(0, 4).map((store) => (
+                    <Box key={store.id} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, border: "1px solid #e2e8f0", borderRadius: 1.5, p: 1 }}>
+                      <Box>
+                        <Typography sx={{ fontSize: "12.5px", fontWeight: 700, color: "text.primary" }}>{store.name || store.store_name || "Pharmacy"}</Typography>
+                        <Typography sx={{ fontSize: "10.5px", color: "text.secondary" }}>{store.code || store.store_code || "-"}</Typography>
+                      </Box>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleConnectMedicalStore(store.id)}
+                        disabled={connectingMedicalId === store.id}
+                        sx={{ ...compactButtonSx, minWidth: 72 }}
+                      >
+                        {connectingMedicalId === store.id ? "Sending..." : "Connect"}
+                      </Button>
+                    </Box>
+                  ))
+                ) : (
+                  <Typography sx={{ fontSize: "12.5px", color: "text.secondary" }}>
+                    Search by pharmacy name or code to find available stores.
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+          </Box>
+
           <DataTable
             columns={[
-              "LAB",
+              "NAME",
+              "TYPE",
               "CODE",
               "STATUS",
               "REQUESTED",
@@ -564,7 +818,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
             emptyMessage={
               connectionSearch
                 ? "No matching connections found."
-                : "No lab connections found."
+                : "No lab or pharmacy connections found."
             }
             footer={
               <Pagination
@@ -584,9 +838,9 @@ export default function DoctorLabPanel({ section = "connections" }) {
             }
           >
             {visibleConnections.length
-              ? visibleConnections.map((connection) => (
+              ? visibleConnections.map((connection, index) => (
                   <TableRow
-                    key={connection.connection_id}
+                    key={`${connection.type || "connection"}-${connection.connection_id ?? connection.id ?? connection.lab_id ?? connection.store_id ?? index}`}
                     hover
                   >
                     <TableCell
@@ -595,7 +849,16 @@ export default function DoctorLabPanel({ section = "connections" }) {
                         fontWeight: 600,
                       }}
                     >
-                      {connection.lab_name || "-"}
+                      {connection.name || "-"}
+                    </TableCell>
+
+                    <TableCell
+                      sx={{
+                        color: "text.primary",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {connection.type === "PHARMACY" ? "Pharmacy" : "Lab"}
                     </TableCell>
 
                     <TableCell
@@ -603,7 +866,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
                         color: "text.primary",
                       }}
                     >
-                      {connection.lab_code || "-"}
+                      {connection.code || "-"}
                     </TableCell>
 
                     <TableCell>
@@ -848,7 +1111,11 @@ export default function DoctorLabPanel({ section = "connections" }) {
     return (
       <Box sx={{ mt: { xs: 7, md: 8 },px:4,py:2 , backgroundColor:"white" }}>
         <LabReports
-          reports={reportRows}
+          reports={showPreviousReports ? previousReportRows : latestReportRows}
+          previousReportsCount={previousReportRows.length}
+          showPrevious={showPreviousReports}
+          onShowCurrent={() => setShowPreviousReports(false)}
+          onShowPrevious={() => setShowPreviousReports(true)}
           loading={loading}
           filters={filterProps}
           page={tablePage}

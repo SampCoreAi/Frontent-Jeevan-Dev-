@@ -35,7 +35,7 @@ const normalizeLab = (lab = {}) => ({
   code: lab.lab_code || lab.code || "",
 });
 
-export default function LabTestRequestForm({ patientId, storageKey, resetKey, onSummaryChange }) {
+export default function LabTestRequestForm({ patientId, appointmentId, storageKey, resetKey, onSummaryChange }) {
   const [open, setOpen] = useState(false);
   const [labs, setLabs] = useState([]);
   const [testInput, setTestInput] = useState("");
@@ -155,7 +155,6 @@ export default function LabTestRequestForm({ patientId, storageKey, resetKey, on
     ];
 
     if (pendingTests.length) {
-      setSent(false);
       setDraftAssignments(finalAssignments);
     }
     setTestInput("");
@@ -163,10 +162,11 @@ export default function LabTestRequestForm({ patientId, storageKey, resetKey, on
       setError("Please add at least one lab test.");
       return;
     }
-    if (finalAssignments.some((assignment) => !assignment.labId)) {
+    if (finalAssignments.some((assignment) => !String(assignment.labId || "").trim())) {
       setError("Select a lab for every test before completing.");
       return;
     }
+    setSent(false);
     setAssignments(finalAssignments);
     setOpen(false);
   };
@@ -182,11 +182,11 @@ export default function LabTestRequestForm({ patientId, storageKey, resetKey, on
       ...pendingTests.map((test) => ({ test, labId: "" })),
     ];
 
-    if (!patientId) {
+    if (!patientId || Number.isNaN(Number(patientId))) {
       setError("Patient details are not available for this appointment.");
       return;
     }
-    if (!finalAssignments.length || finalAssignments.some((item) => !item.labId)) {
+    if (!finalAssignments.length || finalAssignments.some((item) => !String(item.labId || "").trim())) {
       setError("Select a lab for every test before sending.");
       return;
     }
@@ -199,6 +199,7 @@ export default function LabTestRequestForm({ patientId, storageKey, resetKey, on
             await api.post("/api/lab-requests/create", {
               labId: Number(assignment.labId),
               patientId: Number(patientId),
+              appointment_id: appointmentId ? Number(appointmentId) : undefined,
               tests: [assignment.test],
               doctorNote: "Lab test requested from prescription pad.",
               priority,
@@ -243,6 +244,14 @@ export default function LabTestRequestForm({ patientId, storageKey, resetKey, on
     });
   }, [assignments, labs, onSummaryChange]);
 
+  const canSendToLab =
+    Boolean(patientId) &&
+    !Number.isNaN(Number(patientId)) &&
+    assignments.length > 0 &&
+    assignments.every((assignment) => String(assignment.labId || "").trim()) &&
+    !open &&
+    !sent;
+
   return (
     <>
       <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -250,6 +259,7 @@ export default function LabTestRequestForm({ patientId, storageKey, resetKey, on
           variant="outlined"
           startIcon={<ScienceOutlined />}
           onClick={() => {
+            setSent(false);
             setDraftAssignments(assignments);
             setOpen(true);
           }}
@@ -257,7 +267,7 @@ export default function LabTestRequestForm({ patientId, storageKey, resetKey, on
         >
           Lab Test
         </Button>
-        {assignments.length && assignments.every((assignment) => assignment.labId) && !open && !sent ? (
+        {canSendToLab ? (
           <Button size="small" variant="contained" onClick={handleSend} disabled={sending} sx={{ textTransform: "none", minHeight: 32, px: 1.25, fontSize: "12px" }}>
             {sending ? "Sending..." : "Send to Lab"}
           </Button>

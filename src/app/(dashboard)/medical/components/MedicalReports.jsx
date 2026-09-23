@@ -4,7 +4,9 @@ import { Button, Chip, Pagination, Stack, TableCell, TableRow } from "@mui/mater
 import { DataTable, SectionTitle, TableFilters } from "../../lab/components/LabUi";
 
 export default function MedicalReports({ reports = [], loading = false, filters, page = 1, pageSize = 10, onPageChange }) {
-  const safeReports = Array.isArray(reports) ? reports : [];
+  const safeReports = Array.isArray(reports)
+    ? reports.filter((report) => String(report?.status || "").toUpperCase() === "COMPLETED")
+    : [];
   const totalPages = Math.max(1, Math.ceil(safeReports.length / pageSize));
   const currentPage = Math.min(Math.max(Number(page) || 1, 1), totalPages);
   const visible = safeReports.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -27,7 +29,7 @@ export default function MedicalReports({ reports = [], loading = false, filters,
   return (
     <>
       <SectionTitle title="History" description="Track medication delivery history and patient order records." />
-      <TableFilters {...filters} statusOptions={["PENDING", "APPROVED", "PROCESSING", "READY_FOR_PICKUP", "COMPLETED", "REJECTED", "CANCELLED"]} />
+      <TableFilters {...filters} statusOptions={["COMPLETED"]} />
       <DataTable
         columns={["SNO", "PATIENT", "DOCTOR", "TYPE", "STATUS", "DATE"]}
         loading={loading}
@@ -37,7 +39,7 @@ export default function MedicalReports({ reports = [], loading = false, filters,
         {visible.map((report, index) => {
           const patientName = report?.patient_name || report?.patientName || report?.patient || "-";
           const doctorName = report?.doctor_name || report?.doctorName || report?.doctor || "-";
-          const reportType = report?.report_type || report?.type || report?.medicine_name || report?.medicineName || "Medical";
+          const reportType = report?.type || report?.report_type || "Medicine";
           const status = String(report?.status || "COMPLETED").toUpperCase();
 
           return (
