@@ -212,7 +212,7 @@ registration_number: apiData.registration_number || "",
 
   rating: apiData.avgRating || 0,
  avatarUrl: apiData.img_key
-  ? `${S3_BUCKET_URL}/${apiData.img_key}`
+  ? `${S3_BUCKET_URL}${apiData.img_key}`
   : "",
 };
 };

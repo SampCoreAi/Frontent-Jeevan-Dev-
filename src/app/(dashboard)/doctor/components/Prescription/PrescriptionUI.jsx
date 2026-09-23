@@ -27,7 +27,6 @@ import { PatientInfo, DiagnosisSection } from "./PatientInfo";
 import MedicineTable from "./MedicineTable";
 import LabTestRequestForm from "./LabTestRequestForm";
 
-// 👇 Ye wahi PDF wala component hai jo download me use hota hai
 import PrescriptionPdfView from "./PrescriptionPdfView";
 
 import {
