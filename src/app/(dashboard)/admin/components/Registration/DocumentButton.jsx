@@ -41,16 +41,7 @@ const DocumentButton = ({ title, path, getFileUrl }) => {
         >
           {title}
         </Typography>
-        <Typography
-          sx={{
-            fontSize: "0.72rem",
-            color: "#64748b",
-            mt: 0.3,
-            wordBreak: "break-all",
-          }}
-        >
-          {path}
-        </Typography>
+        
       </Box>
       <Button
         component="a"

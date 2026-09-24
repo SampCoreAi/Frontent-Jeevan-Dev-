@@ -70,8 +70,7 @@ export const createSchedule = createAsyncThunk(
   location_id: null,
  hospital_name: scheduleData.location,
 
-  start_time: scheduleData.startTime,
-  end_time: scheduleData.endTime,
+  
   slot_duration: Number(scheduleData.slotDuration),
   break_minutes: Number(scheduleData.breakDuration) || 0,
 

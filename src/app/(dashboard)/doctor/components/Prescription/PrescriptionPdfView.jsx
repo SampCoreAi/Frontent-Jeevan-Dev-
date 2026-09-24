@@ -1,14 +1,7 @@
 "use client";
+
 import React from "react";
 import dayjs from "dayjs";
-
-/**
- * Prescription PDF view (A4 @ 96dpi = 794 x 1123)
- * - Screen wale design jaisa look
- * - "Diagnosis: ..." ek line me
- * - Medicines: naam left, "freq · instr · duration" right (form / Add Medicine hata diya)
- * - Koi fixed height / ellipsis / overflow hidden nahi -> download me text upar-niche nahi hota
- */
 
 const C = {
   ink: "#172033",
@@ -33,11 +26,15 @@ export default function PrescriptionPdfView({
   remark,
   followUpDate,
   qrImage,
+  compact = false,
 }) {
   const validMedicines = medicines.filter((row) => row?.name?.trim());
 
   const hospital =
-    doctor?.hospital_detail?.[0] || doctor?.hospitalDetail?.[0] || {};
+    doctor?.hospital_detail?.[0] ||
+    doctor?.hospitalDetail?.[0] ||
+    {};
+
   const availability = doctor?.availability?.[0] || {};
 
   const doctorName = doctor?.name
@@ -47,7 +44,9 @@ export default function PrescriptionPdfView({
     : "Doctor";
 
   const hospitalName =
-    hospital?.hospitalName || hospital?.hospital_name || "Hospital";
+    hospital?.hospitalName ||
+    hospital?.hospital_name ||
+    "Hospital";
 
   const hospitalAddress = [
     hospital?.flatPlotNo,
@@ -66,63 +65,106 @@ export default function PrescriptionPdfView({
   return (
     <div
       style={{
-        width: "794px",
-        minHeight: "1120px",
+        width: compact ? "100%" : "794px",
+        maxWidth: compact ? "100%" : "794px",
+        minHeight: compact ? "auto" : "1120px",
         backgroundColor: "#ffffff",
-        padding: "30px 36px 26px",
+        padding: compact ? "16px 18px" : "30px 36px 26px",
         boxSizing: "border-box",
         color: C.ink,
         fontFamily: FONT,
         display: "flex",
         flexDirection: "column",
+        overflow: "hidden",
       }}
     >
-      {/* ───────── Header ───────── */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "stretch",
-          gap: "16px",
-          paddingBottom: "14px",
+          gap: compact ? "10px" : "16px",
+          paddingBottom: compact ? "10px" : "14px",
           borderBottom: `1px solid ${C.muted}`,
         }}
       >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.5 }}>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          <div
+            style={{
+              fontSize: compact ? "12.5px" : "16px",
+              fontWeight: 700,
+              lineHeight: 1.4,
+              wordBreak: "break-word",
+            }}
+          >
             {doctorName}
           </div>
+
           {doctor?.qualification && (
-            <div style={{ fontSize: "13px", color: C.muted, lineHeight: 1.5 }}>
+            <div
+              style={{
+                fontSize: compact ? "10.5px" : "13px",
+                color: C.muted,
+                lineHeight: 1.45,
+              }}
+            >
               {doctor.qualification}
             </div>
           )}
-          <div style={{ fontSize: "13px", color: C.muted, lineHeight: 1.5 }}>
-            Registration Number: {doctor?.registration_number || "—"}
+
+          <div
+            style={{
+              fontSize: compact ? "10.5px" : "13px",
+              color: C.muted,
+              lineHeight: 1.45,
+              wordBreak: "break-word",
+            }}
+          >
+            Registration Number:{" "}
+            {doctor?.registration_number || "—"}
           </div>
         </div>
 
-        <div style={{ width: "1px", backgroundColor: "rgba(0,0,0,0.14)" }} />
+        <div
+          style={{
+            width: "1px",
+            backgroundColor: "rgba(0,0,0,0.14)",
+            flexShrink: 0,
+          }}
+        />
 
-        <div style={{ flex: 1, minWidth: 0, textAlign: "right" }}>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            textAlign: "right",
+          }}
+        >
           <div
             style={{
-              fontSize: "16px",
+              fontSize: compact ? "12.5px" : "16px",
               fontWeight: 700,
               color: C.brand,
-              lineHeight: 1.5,
+              lineHeight: 1.4,
+              wordBreak: "break-word",
             }}
           >
             {hospitalName}
           </div>
+
           {hospitalAddress && (
             <div
               style={{
                 marginLeft: "auto",
-                maxWidth: "360px",
-                fontSize: "12px",
+                maxWidth: compact ? "260px" : "360px",
+                fontSize: compact ? "10px" : "12px",
                 color: C.muted,
-                lineHeight: 1.55,
+                lineHeight: 1.45,
                 wordBreak: "break-word",
               }}
             >
@@ -132,85 +174,134 @@ export default function PrescriptionPdfView({
         </div>
       </div>
 
-      {/* ───────── Patient information ───────── */}
       <div
         style={{
-          marginTop: "14px",
+          marginTop: compact ? "10px" : "14px",
           border: `1px solid ${C.border}`,
-          borderRadius: "8px",
+          borderRadius: "7px",
           overflow: "hidden",
         }}
       >
         <div
           style={{
             backgroundColor: C.brandTint,
-            padding: "8px 12px",
+            padding: compact ? "6px 9px" : "8px 12px",
             color: C.brand,
             fontWeight: 700,
-            fontSize: "13px",
-            lineHeight: 1.5,
+            fontSize: compact ? "11px" : "13px",
+            lineHeight: 1.4,
             borderBottom: `1px solid ${C.border}`,
           }}
         >
           Patient Information
         </div>
 
-        <InfoRow bordered>
-          <InfoCell label="Patient Name" value={patient?.name} />
-          <InfoCell label="Age" value={patient?.age} />
-          <InfoCell label="Date/Time" value={dateNow} />
+        <InfoRow bordered compact={compact}>
+          <InfoCell
+            compact={compact}
+            label="Patient Name"
+            value={patient?.name}
+          />
+
+          <InfoCell
+            compact={compact}
+            label="Age"
+            value={patient?.age}
+          />
+
+          <InfoCell
+            compact={compact}
+            label="Date/Time"
+            value={dateNow}
+          />
         </InfoRow>
 
-        <InfoRow>
-          <InfoCell label="Gender" value={patient?.gender} />
+        <InfoRow compact={compact}>
           <InfoCell
-            label="Weight"
-            value={patient?.weight ? `${patient.weight} kg` : null}
+            compact={compact}
+            label="Gender"
+            value={patient?.gender}
           />
+
           <InfoCell
+            compact={compact}
+            label="Weight"
+            value={
+              patient?.weight
+                ? `${patient.weight} kg`
+                : null
+            }
+          />
+
+          <InfoCell
+            compact={compact}
             label="Height"
-            value={patient?.height ? `${patient.height} cm` : null}
+            value={
+              patient?.height
+                ? `${patient.height} cm`
+                : null
+            }
           />
         </InfoRow>
       </div>
 
-      {/* ───────── Diagnosis (ek line: label + jo doctor ne likha) ───────── */}
       <div
         style={{
-          marginTop: "16px",
-          fontSize: "14px",
-          lineHeight: 1.6,
+          marginTop: compact ? "11px" : "16px",
+          fontSize: compact ? "11px" : "14px",
+          lineHeight: 1.5,
           wordBreak: "break-word",
         }}
       >
-        <span style={{ fontWeight: 700 }}>Diagnosis :- </span>
-        <span style={{ color: diagnosis ? C.ink : C.faint }}>
+        <span
+          style={{
+            fontWeight: 700,
+          }}
+        >
+          Diagnosis :-{" "}
+        </span>
+
+        <span
+          style={{
+            color: diagnosis ? C.ink : C.faint,
+          }}
+        >
           {diagnosis || "No diagnosis added."}
         </span>
       </div>
 
-      {/* ───────── Prescription ───────── */}
       {validMedicines.length > 0 && (
-        <div style={{ marginTop: "18px" }}>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: "8px" }}>
+        <div
+          style={{
+            marginTop: compact ? "12px" : "18px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              gap: compact ? "5px" : "8px",
+            }}
+          >
             <span
               style={{
                 color: C.rx,
                 fontFamily: "Georgia, serif",
-                fontSize: "28px",
+                fontSize: compact ? "22px" : "28px",
                 fontStyle: "italic",
-                lineHeight: 1.15,
+                lineHeight: 1.1,
               }}
             >
               ℞
             </span>
+
             <span
               style={{
-                fontSize: "12px",
+                fontSize: compact ? "10px" : "12px",
                 fontWeight: 700,
-                letterSpacing: "0.6px",
+                letterSpacing: compact ? "0.3px" : "0.6px",
                 color: C.faint,
-                lineHeight: 1.8,
+                lineHeight: 1.7,
               }}
             >
               PRESCRIPTION
@@ -218,14 +309,20 @@ export default function PrescriptionPdfView({
           </div>
 
           {validMedicines.map((medicine, index) => {
-            const medicineName = [medicine?.name, medicine?.dose, medicine?.unit]
+            const medicineName = [
+              medicine?.name,
+              medicine?.dose,
+              medicine?.unit,
+            ]
               .filter(Boolean)
               .join(" ");
 
             const instruction = [
               medicine?.freq,
               medicine?.instr,
-              medicine?.duration ? formatDuration(medicine.duration) : null,
+              medicine?.duration
+                ? formatDuration(medicine.duration)
+                : null,
             ]
               .filter(Boolean)
               .join(" · ");
@@ -235,34 +332,49 @@ export default function PrescriptionPdfView({
                 key={`pdf-med-${index}`}
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "30px minmax(0,1fr) minmax(0,46%)",
-                  columnGap: "8px",
+                  gridTemplateColumns: compact
+                    ? "20px minmax(0,1fr) minmax(110px,40%)"
+                    : "30px minmax(0,1fr) minmax(0,46%)",
+                  columnGap: compact ? "6px" : "8px",
                   alignItems: "center",
-                  padding: "11px 0",
+                  padding: compact
+                    ? "7px 0"
+                    : "11px 0",
                   borderBottom: `1px solid ${C.line}`,
                   breakInside: "avoid",
                   pageBreakInside: "avoid",
                 }}
               >
-                <div style={{ fontSize: "13px", color: C.faint, lineHeight: 1.5 }}>
-                  {index + 1}.
-                </div>
                 <div
                   style={{
-                    fontSize: "15px",
+                    fontSize: compact ? "10px" : "13px",
+                    color: C.faint,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {index + 1}.
+                </div>
+
+                <div
+                  style={{
+                    fontSize: compact ? "11px" : "15px",
                     fontWeight: 700,
-                    lineHeight: 1.5,
+                    lineHeight: 1.4,
                     wordBreak: "break-word",
+                    minWidth: 0,
                   }}
                 >
                   {medicineName}
                 </div>
+
                 <div
                   style={{
                     textAlign: "right",
-                    fontSize: "13px",
+                    fontSize: compact ? "10px" : "13px",
                     color: C.muted,
-                    lineHeight: 1.5,
+                    lineHeight: 1.4,
+                    wordBreak: "break-word",
+                    minWidth: 0,
                   }}
                 >
                   {instruction || "—"}
@@ -273,28 +385,50 @@ export default function PrescriptionPdfView({
         </div>
       )}
 
-      {/* spacer: neeche ka part hamesha page ke bottom me rahe */}
-      <div style={{ flex: 1, minHeight: "40px" }} />
+      <div
+        style={{
+          flex: compact ? "none" : 1,
+          minHeight: compact ? "16px" : "40px",
+        }}
+      />
 
-      {/* ───────── Remark + Next follow-up ───────── */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(0,1fr) 220px",
-          gap: "16px",
+          gridTemplateColumns: compact
+            ? "minmax(0,1fr) minmax(120px,32%)"
+            : "minmax(0,1fr) 220px",
+          gap: compact ? "10px" : "16px",
           breakInside: "avoid",
           pageBreakInside: "avoid",
         }}
       >
         <div>
-          <FieldLabel>Remark</FieldLabel>
-          <FieldBox muted={!remark}>{remark || "Not provided"}</FieldBox>
+          <FieldLabel compact={compact}>
+            Remark
+          </FieldLabel>
+
+          <FieldBox
+            compact={compact}
+            muted={!remark}
+          >
+            {remark || "Not provided"}
+          </FieldBox>
         </div>
+
         <div>
-          <FieldLabel>Next Follow-up</FieldLabel>
-          <FieldBox muted={!followUpDate}>
+          <FieldLabel compact={compact}>
+            Next Follow-up
+          </FieldLabel>
+
+          <FieldBox
+            compact={compact}
+            muted={!followUpDate}
+          >
             {followUpDate
-              ? dayjs(followUpDate).format("DD-MMM-YYYY")
+              ? dayjs(followUpDate).format(
+                  "DD-MMM-YYYY"
+                )
               : "Not provided"}
           </FieldBox>
         </div>
@@ -304,28 +438,35 @@ export default function PrescriptionPdfView({
         style={{
           height: "1px",
           backgroundColor: C.line,
-          marginTop: "20px",
+          marginTop: compact ? "14px" : "20px",
         }}
       />
 
-      {/* ───────── QR + Signature ───────── */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-end",
-          marginTop: "16px",
+          gap: "12px",
+          marginTop: compact ? "12px" : "16px",
           breakInside: "avoid",
           pageBreakInside: "avoid",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: compact ? "8px" : "12px",
+            minWidth: 0,
+          }}
+        >
           <div
             style={{
-              width: "88px",
-              height: "88px",
+              width: compact ? "64px" : "88px",
+              height: compact ? "64px" : "88px",
               flexShrink: 0,
-              padding: "5px",
+              padding: compact ? "4px" : "5px",
               border: `1px solid ${C.border}`,
               borderRadius: "6px",
               boxSizing: "border-box",
@@ -346,9 +487,13 @@ export default function PrescriptionPdfView({
             ) : (
               <div
                 style={{
-                  paddingTop: "28px",
-                  fontSize: "10px",
-                  lineHeight: 1.5,
+                  paddingTop: compact
+                    ? "20px"
+                    : "28px",
+                  fontSize: compact
+                    ? "8px"
+                    : "10px",
+                  lineHeight: 1.4,
                   textAlign: "center",
                   color: C.faint,
                 }}
@@ -359,31 +504,83 @@ export default function PrescriptionPdfView({
           </div>
 
           {qrImage && (
-            <div>
-              <div style={{ fontSize: "13px", fontWeight: 700, lineHeight: 1.5 }}>
+            <div
+              style={{
+                minWidth: 0,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: compact
+                    ? "10.5px"
+                    : "13px",
+                  fontWeight: 700,
+                  lineHeight: 1.4,
+                }}
+              >
                 Connect with Doctor
               </div>
-              <div style={{ fontSize: "11px", color: C.muted, lineHeight: 1.5 }}>
+
+              <div
+                style={{
+                  fontSize: compact
+                    ? "9px"
+                    : "11px",
+                  color: C.muted,
+                  lineHeight: 1.4,
+                }}
+              >
                 Scan QR code
               </div>
             </div>
           )}
         </div>
 
-        <div style={{ width: "240px", textAlign: "right" }}>
-         
-          <div style={{ height: "36px" }} />
-          <div style={{ borderTop: `1px solid ${C.muted}`, paddingTop: "8px" }}>
-            <div style={{ fontSize: "14px", fontWeight: 700, lineHeight: 1.5 }}>
+        <div
+          style={{
+            width: compact ? "180px" : "240px",
+            maxWidth: "45%",
+            textAlign: "right",
+            minWidth: 0,
+          }}
+        >
+          <div
+            style={{
+              height: compact ? "24px" : "36px",
+            }}
+          />
+
+          <div
+            style={{
+              borderTop: `1px solid ${C.muted}`,
+              paddingTop: compact
+                ? "6px"
+                : "8px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: compact
+                  ? "11px"
+                  : "14px",
+                fontWeight: 700,
+                lineHeight: 1.4,
+                wordBreak: "break-word",
+              }}
+            >
               {doctorName}
             </div>
+
             {doctor?.specialization && (
               <div
                 style={{
-                  fontSize: "12px",
+                  fontSize: compact
+                    ? "9.5px"
+                    : "12px",
                   color: C.brand,
                   fontWeight: 700,
-                  lineHeight: 1.5,
+                  lineHeight: 1.4,
+                  wordBreak: "break-word",
                 }}
               >
                 {doctor.specialization}
@@ -393,60 +590,96 @@ export default function PrescriptionPdfView({
         </div>
       </div>
 
-      {/* ───────── Footer ───────── */}
       <div
         style={{
-          marginTop: "16px",
-          paddingTop: "10px",
+          marginTop: compact ? "12px" : "16px",
+          paddingTop: compact ? "8px" : "10px",
           borderTop: `1px solid ${C.line}`,
           textAlign: "center",
           breakInside: "avoid",
           pageBreakInside: "avoid",
         }}
       >
-        <div style={{ fontSize: "10px", color: C.muted, lineHeight: 1.6 }}>
+        <div
+          style={{
+            fontSize: compact ? "8.5px" : "10px",
+            color: C.muted,
+            lineHeight: 1.5,
+            wordBreak: "break-word",
+          }}
+        >
           {doctor?.mobile && (
             <>
-              For Appointment: <b style={{ color: C.ink }}>+91 {doctor.mobile}</b>
+              For Appointment:{" "}
+              <b
+                style={{
+                  color: C.ink,
+                }}
+              >
+                +91 {doctor.mobile}
+              </b>
             </>
           )}
-          {doctor?.mobile && hospitalAddress && "  |  "}
+
+          {doctor?.mobile &&
+            hospitalAddress &&
+            " | "}
+
           {hospitalAddress}
         </div>
 
-        {availability?.startTime && availability?.endTime && (
-          <div style={{ fontSize: "10px", color: C.muted, lineHeight: 1.6 }}>
-            Timings: {availability.startTime} - {availability.endTime}
-            {availability?.day ? ` | ${availability.day}` : ""}
-          </div>
-        )}
+        {availability?.startTime &&
+          availability?.endTime && (
+            <div
+              style={{
+                fontSize: compact
+                  ? "8.5px"
+                  : "10px",
+                color: C.muted,
+                lineHeight: 1.5,
+              }}
+            >
+              Timings: {availability.startTime} -{" "}
+              {availability.endTime}
+
+              {availability?.day
+                ? ` | ${availability.day}`
+                : ""}
+            </div>
+          )}
 
         <div
           style={{
             marginTop: "4px",
-            fontSize: "9px",
+            fontSize: compact ? "8px" : "9px",
             fontStyle: "italic",
             color: C.faint,
-            lineHeight: 1.6,
+            lineHeight: 1.5,
           }}
         >
-          This prescription is digitally generated and is valid as prescribed by
-          the doctor.
+          This prescription is digitally generated and
+          is valid as prescribed by the doctor.
         </div>
       </div>
     </div>
   );
 }
 
-/* ───────── Small building blocks ───────── */
-
-function InfoRow({ children, bordered = false }) {
+function InfoRow({
+  children,
+  bordered = false,
+  compact = false,
+}) {
   return (
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "1.25fr 0.75fr 1.4fr",
-        borderBottom: bordered ? `1px solid ${C.line}` : "none",
+        gridTemplateColumns: compact
+          ? "minmax(0,1.25fr) minmax(65px,0.65fr) minmax(0,1.3fr)"
+          : "1.25fr 0.75fr 1.4fr",
+        borderBottom: bordered
+          ? `1px solid ${C.line}`
+          : "none",
       }}
     >
       {children}
@@ -454,33 +687,62 @@ function InfoRow({ children, bordered = false }) {
   );
 }
 
-// label + value ek hi block me, padding se height -> clip nahi hota
-function InfoCell({ label, value }) {
+function InfoCell({
+  label,
+  value,
+  compact = false,
+}) {
   return (
     <div
       style={{
-        padding: "9px 12px",
-        fontSize: "13px",
-        lineHeight: 1.5,
+        padding: compact
+          ? "7px 8px"
+          : "9px 12px",
+        fontSize: compact
+          ? "10px"
+          : "13px",
+        lineHeight: 1.4,
         minWidth: 0,
         wordBreak: "break-word",
       }}
     >
-      <span style={{ color: C.label, fontWeight: 600 }}>{label}: </span>
-      <span style={{ color: C.ink, fontWeight: 700 }}>{value || "—"}</span>
+      <span
+        style={{
+          color: C.label,
+          fontWeight: 600,
+        }}
+      >
+        {label}:{" "}
+      </span>
+
+      <span
+        style={{
+          color: C.ink,
+          fontWeight: 700,
+        }}
+      >
+        {value || "—"}
+      </span>
     </div>
   );
 }
 
-function FieldLabel({ children }) {
+function FieldLabel({
+  children,
+  compact = false,
+}) {
   return (
     <div
       style={{
-        marginBottom: "6px",
-        fontSize: "12px",
+        marginBottom: compact
+          ? "4px"
+          : "6px",
+        fontSize: compact
+          ? "9.5px"
+          : "12px",
         fontWeight: 600,
         color: C.label,
-        lineHeight: 1.5,
+        lineHeight: 1.4,
       }}
     >
       {children}
@@ -488,18 +750,30 @@ function FieldLabel({ children }) {
   );
 }
 
-function FieldBox({ children, muted = false }) {
+function FieldBox({
+  children,
+  muted = false,
+  compact = false,
+}) {
   return (
     <div
       style={{
-        padding: "10px 12px",
-        minHeight: "42px",
+        padding: compact
+          ? "7px 9px"
+          : "10px 12px",
+        minHeight: compact
+          ? "34px"
+          : "42px",
         boxSizing: "border-box",
         border: `1px solid ${C.border}`,
         borderRadius: "6px",
-        fontSize: "13px",
-        lineHeight: 1.5,
-        color: muted ? C.faint : C.ink,
+        fontSize: compact
+          ? "10px"
+          : "13px",
+        lineHeight: 1.4,
+        color: muted
+          ? C.faint
+          : C.ink,
         wordBreak: "break-word",
       }}
     >
@@ -510,7 +784,12 @@ function FieldBox({ children, muted = false }) {
 
 function formatDuration(value) {
   if (!value) return "";
+
   const text = String(value).trim();
-  if (/^\d+$/.test(text)) return `${text} days`;
+
+  if (/^\d+$/.test(text)) {
+    return `${text} days`;
+  }
+
   return text;
 }

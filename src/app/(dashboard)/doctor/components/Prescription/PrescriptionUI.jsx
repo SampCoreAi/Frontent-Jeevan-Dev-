@@ -592,59 +592,59 @@ export default function PrescriptionUI(props) {
       flex: { xs: "1 1 100%", sm: 1 },
     }}
   >
-    {!isPatient && (
-      <LabTestRequestForm
-        patientId={patientId}
-        storageKey={`doctor-lab-test-${
-          apiData?.appointment?.id ||
-          apiData?.appointment?.appointment_id ||
-          patientId ||
-          "unknown"
-        }`}
-        resetKey={labTestResetKey}
-        onSummaryChange={setLabTestSummary}
-      />
-    )}
+   
 
     {!isPatient && (
-      <Button
-        variant="outlined"
-        startIcon={<DescriptionOutlined />}
-        onClick={() => {
-          setReportsOpen(true);
-          refreshPatientLabData();
-        }}
-        sx={{
-          textTransform: "none",
-          borderRadius: 1.5,
-          minHeight: 34,
-          fontSize: "12px",
-          px: 1.25,
-        }}
-      >
-        {!isPatient && (
-          <MedicalStoreRequestForm
-            patientId={patientId}
-            appointmentId={appointmentId || apiData?.appointment?.id || apiData?.appointment?.appointment_id}
-            isTodayAppointment={isTodayAppointment}
-            hasSavedPrescription={Boolean(apiData?.prescription)}
-            canSend={Boolean(isTodayAppointment && apiData?.prescription)}
-          />
-        )}
+  <>
+    <MedicalStoreRequestForm
+      patientId={patientId}
+      appointmentId={
+        appointmentId ||
+        apiData?.appointment?.id ||
+        apiData?.appointment?.appointment_id
+      }
+      isTodayAppointment={isTodayAppointment}
+      hasSavedPrescription={Boolean(apiData?.prescription)}
+      canSend={Boolean(isTodayAppointment && apiData?.prescription)}
+    />
 
-        {!isPatient && (
-          <LabTestRequestForm
-            patientId={patientId}
-            appointmentId={appointmentId || apiData?.appointment?.id || apiData?.appointment?.appointment_id}
-            storageKey={`doctor-lab-test-${patientId || "unknown"}-${appointmentId || apiData?.appointment?.id || apiData?.appointment?.appointment_id || "no-appointment"}`}
-            resetKey={labTestResetKey}
-            onSummaryChange={setLabTestSummary}
-          />
-        )}
-        Lab Reports
-        {labReportRows.length ? ` (${labReportRows.length})` : ""}
-      </Button>
-    )}
+    <LabTestRequestForm
+      patientId={patientId}
+      appointmentId={
+        appointmentId ||
+        apiData?.appointment?.id ||
+        apiData?.appointment?.appointment_id
+      }
+      storageKey={`doctor-lab-test-${patientId || "unknown"}-${
+        appointmentId ||
+        apiData?.appointment?.id ||
+        apiData?.appointment?.appointment_id ||
+        "no-appointment"
+      }`}
+      resetKey={labTestResetKey}
+      onSummaryChange={setLabTestSummary}
+    />
+
+    <Button
+      variant="outlined"
+      startIcon={<DescriptionOutlined />}
+      onClick={() => {
+        setReportsOpen(true);
+        refreshPatientLabData();
+      }}
+      sx={{
+        textTransform: "none",
+        borderRadius: 1.5,
+        minHeight: 34,
+        fontSize: "12px",
+        px: 1.25,
+      }}
+    >
+      Lab Reports
+      {labReportRows.length ? ` (${labReportRows.length})` : ""}
+    </Button>
+  </>
+)}
 
     {!isPatient && (
       <Button

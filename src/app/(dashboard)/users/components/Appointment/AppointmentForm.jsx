@@ -773,7 +773,6 @@ const handleValidatedBooking = () => {
               // label cut hone ka fix
               pt: 1.3,
 
-              pb: 1,
 
               // Firefox
               scrollbarWidth: "none",
@@ -793,160 +792,191 @@ const handleValidatedBooking = () => {
                 HOSPITAL + DATE
             ====================================== */}
 
-            <Box
-              sx={{
-                display: "grid",
-
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "1fr 1fr",
-                },
-
-                gap: 1.2,
-
-                // Extra top room for floating labels
-                pt: 0.5,
-
-                alignItems: "start",
-
-                overflow: "visible",
-              }}
-            >
-              {/* HOSPITAL */}
-
-              {allSchedules.length > 0 && (
-                <TextField
-                  select
-
-                  required
-
-                  fullWidth
-
-                  label="Hospital / Location"
-
-                  value={
-                    currentSchedule
-                      ? getHospitalLabel(
-                          currentSchedule
-                        )
-                      : ""
-                  }
-
-                  onChange={
-                    handleHospitalChange
-                  }
-
-                  error={
-                    !!errors?.hospital
-                  }
-
-                  helperText={
-                    errors?.hospital
-                  }
-
-                  sx={compactFieldSx}
-
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LocalHospitalOutlinedIcon
-                          sx={{
-                            fontSize: 17,
-
-                            color:
-                              "text.secondary",
-                          }}
-                        />
-                      </InputAdornment>
-                    ),
-                  }}
-                >
-                  {uniqueHospitals.map(
-                    (schedule) => {
-                      const hospital =
-                        getHospitalLabel(
-                          schedule
-                        );
-
-                      return (
-                        <MenuItem
-                          key={hospital}
-                          value={hospital}
-                          sx={{
-                            fontSize:
-                              "11px",
-                          }}
-                        >
-                          {hospital}
-                        </MenuItem>
-                      );
-                    }
-                  )}
-                </TextField>
-              )}
-
-              {/* DATE */}
-
-              <LocalizationProvider
-                dateAdapter={AdapterDayjs}
-              >
-                <DatePicker
-                  label="Select Date"
-
-                  value={selectedDate}
-
-                  onChange={
-                    handleDateChange
-                  }
-
-                  shouldDisableDate={
-                    shouldDisableDate
-                  }
-
-                  minDate={finalMinDate}
-
-                  // Custom date with green dot
-                  slots={{
-                    day: AvailableDay,
-                  }}
-
-                  slotProps={{
-  textField: {
-    required: true,
-    fullWidth: true,
-    error: !!errors?.date,
-    helperText: errors?.date,
-
-    sx: {
-      ...compactFieldSx,
-
-      // Sirf Date field ko Hospital ke equal
-      "& .MuiOutlinedInput-root": {
-        height: "48px",
-        minHeight: "48px",
-        borderRadius: 2,
-        backgroundColor: "background.paper",
-      },
-
-      "& .MuiOutlinedInput-input": {
-        fontSize: "11.5px",
-        fontWeight: 500,
-        py: 0,
-      },
-
-      "& .MuiInputLabel-root": {
-        fontSize: "11.5px",
-      },
-
-      "& .MuiSvgIcon-root": {
-        fontSize: "17px",
-      },
+          <Box
+  sx={{
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+    gap: 1.2,
+    pt: 0.5,
+    alignItems: "start",
+    overflow: "visible",
+    "& > *": {
+      minWidth: 0,
+      width: "100%",
     },
-  },
-}}
-                />
-              </LocalizationProvider>
-            </Box>
+  }}
+>
+  {/* HOSPITAL */}
+  {allSchedules.length > 0 && (
+    <TextField
+      select
+      required
+      fullWidth
+      label="Hospital / Location"
+      value={
+        currentSchedule
+          ? getHospitalLabel(currentSchedule)
+          : ""
+      }
+      onChange={handleHospitalChange}
+      error={!!errors?.hospital}
+      helperText={errors?.hospital}
+      sx={{
+        ...compactFieldSx,
+
+        "& .MuiOutlinedInput-root": {
+          height: "52px !important",
+          minHeight: "52px !important",
+          maxHeight: "52px !important",
+          boxSizing: "border-box",
+          borderRadius: 2,
+          backgroundColor: "background.paper",
+
+          "& fieldset": {
+            borderColor: "#b1b1b1",
+          },
+
+          "&:hover fieldset": {
+            borderColor: "#b1b1b1",
+          },
+
+          "&.Mui-focused fieldset": {
+            borderColor: "#b1b1b1",
+            borderWidth: "1px",
+          },
+        },
+
+        "& .MuiSelect-select": {
+          height: "52px !important",
+          minHeight: "52px !important",
+          maxHeight: "52px !important",
+          boxSizing: "border-box",
+          display: "flex",
+          alignItems: "center",
+          paddingTop: 0,
+          paddingBottom: 0,
+        },
+
+        "& .MuiInputAdornment-root": {
+          height: "52px",
+          display: "flex",
+          alignItems: "center",
+        },
+      }}
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <LocalHospitalOutlinedIcon
+              sx={{
+                fontSize: 18,
+                color: "text.secondary",
+              }}
+            />
+          </InputAdornment>
+        ),
+      }}
+    >
+      {uniqueHospitals.map((schedule) => {
+        const hospital = getHospitalLabel(schedule);
+
+        return (
+          <MenuItem
+            key={hospital}
+            value={hospital}
+            sx={{
+              fontSize: "11px",
+            }}
+          >
+            {hospital}
+          </MenuItem>
+        );
+      })}
+    </TextField>
+  )}
+
+  {/* DATE */}
+  <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <DatePicker
+      label="Select Date"
+      value={selectedDate}
+      onChange={handleDateChange}
+      shouldDisableDate={shouldDisableDate}
+      minDate={finalMinDate}
+      slots={{
+        day: AvailableDay,
+      }}
+      slotProps={{
+        textField: {
+          required: true,
+          fullWidth: true,
+          error: !!errors?.date,
+          helperText: errors?.date,
+
+          sx: {
+            ...compactFieldSx,
+
+            "& .MuiOutlinedInput-root": {
+              height: "52px !important",
+              minHeight: "52px !important",
+              maxHeight: "52px !important",
+              boxSizing: "border-box",
+              borderRadius: 2,
+              backgroundColor: "background.paper",
+
+              "& fieldset": {
+                borderColor: "#b1b1b1",
+              },
+
+              "&:hover fieldset": {
+                borderColor: "#b1b1b1",
+              },
+
+              "&.Mui-focused fieldset": {
+                borderColor: "#b1b1b1",
+                borderWidth: "1px",
+              },
+            },
+
+            "& .MuiOutlinedInput-input": {
+              height: "52px !important",
+              minHeight: "52px !important",
+              boxSizing: "border-box",
+              padding: "0 14px !important",
+              display: "flex",
+              alignItems: "center",
+              fontSize: "11.5px",
+              fontWeight: 500,
+              lineHeight: "normal",
+            },
+
+            "& .MuiInputAdornment-root": {
+              height: "52px",
+              marginLeft: "auto",
+              display: "flex",
+              alignItems: "center",
+            },
+
+            "& .MuiIconButton-root": {
+              width: 44,
+              height: 52,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            },
+
+            "& .MuiSvgIcon-root": {
+              fontSize: 20,
+            },
+
+            "& .MuiInputLabel-root": {
+              fontSize: "11.5px",
+            },
+          },
+        },
+      }}
+    />
+  </LocalizationProvider>
+</Box>
 
             {/* ======================================
                 REASON
@@ -1009,19 +1039,34 @@ const handleValidatedBooking = () => {
                 ),
               }}
 
-              sx={{
-                ...compactFieldSx,
+             sx={{
+  ...compactFieldSx,
 
-                "& .MuiFormHelperText-root":
-                  {
-                    textAlign:
-                      errors?.reason
-                        ? "left"
-                        : "right",
+  "& .MuiOutlinedInput-root": {
+    height: 48,
+    minHeight: 48,
+    borderRadius: 2,
+    backgroundColor: "background.paper",
 
-                    fontSize: "8.5px",
-                  },
-              }}
+    "& fieldset": {
+      borderColor: "#b1b1b1",
+    },
+
+    "&:hover fieldset": {
+      borderColor: "#b1b1b1",
+    },
+
+    "&.Mui-focused fieldset": {
+      borderColor: "#b1b1b1",
+      borderWidth: "1px",
+    },
+  },
+
+  "& .MuiFormHelperText-root": {
+    textAlign: errors?.reason ? "left" : "right",
+    fontSize: "8.5px",
+  },
+}}
             />
 
             {/* ======================================

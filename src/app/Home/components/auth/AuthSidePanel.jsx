@@ -1,20 +1,24 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Grid, Typography, Button } from "@mui/material";
+import {
+  Grid,
+  Typography,
+  Button,
+} from "@mui/material";
 
-export default function AuthSidePanel({ isSignup, onToggle }) {
+export default function AuthSidePanel({
+  isSignup,
+}) {
   const router = useRouter();
 
   const handleNavigate = (path) => {
-    onToggle?.();
     router.push(path);
   };
 
   return (
     <Grid
       sx={{
-        // Global theme
         backgroundColor: "primary.main",
         color: "primary.contrastText",
 
@@ -37,10 +41,6 @@ export default function AuthSidePanel({ isSignup, onToggle }) {
     >
       {!isSignup ? (
         <>
-          {/* =========================
-              SIGN UP SIDE
-          ========================= */}
-
           <Typography
             variant="h4"
             fontWeight={700}
@@ -66,21 +66,25 @@ export default function AuthSidePanel({ isSignup, onToggle }) {
 
           <Button
             variant="outlined"
-            onClick={() => handleNavigate("/Home/pages/Register")}
+            onClick={() =>
+              handleNavigate(
+                "/Home/pages/Register"
+              )
+            }
             sx={{
               color: "primary.contrastText",
-              borderColor: "primary.contrastText",
-
+              borderColor:
+                "primary.contrastText",
               borderRadius: 1,
-
               px: 4,
               py: 1,
-
               fontWeight: 600,
 
               "&:hover": {
-                borderColor: "primary.contrastText",
-                backgroundColor: "rgba(255,255,255,0.10)",
+                borderColor:
+                  "primary.contrastText",
+                backgroundColor:
+                  "rgba(255,255,255,0.10)",
               },
             }}
           >
@@ -89,10 +93,6 @@ export default function AuthSidePanel({ isSignup, onToggle }) {
         </>
       ) : (
         <>
-          {/* =========================
-              LOGIN SIDE
-          ========================= */}
-
           <Typography
             variant="h4"
             fontWeight={700}
@@ -118,21 +118,25 @@ export default function AuthSidePanel({ isSignup, onToggle }) {
 
           <Button
             variant="outlined"
-            onClick={() => handleNavigate("/Home/pages/Login")}
+            onClick={() =>
+              handleNavigate(
+                "/Home/pages/Login"
+              )
+            }
             sx={{
               color: "primary.contrastText",
-              borderColor: "primary.contrastText",
-
+              borderColor:
+                "primary.contrastText",
               borderRadius: 1,
-
               px: 4,
               py: 1,
-
               fontWeight: 600,
 
               "&:hover": {
-                borderColor: "primary.contrastText",
-                backgroundColor: "rgba(255,255,255,0.10)",
+                borderColor:
+                  "primary.contrastText",
+                backgroundColor:
+                  "rgba(255,255,255,0.10)",
               },
             }}
           >

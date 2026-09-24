@@ -37,6 +37,7 @@ export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [bookingLoadingId, setBookingLoadingId] = useState(null);
+  const [detailsLoadingId, setDetailsLoadingId] = useState(null);
   const [hoveredCard, setHoveredCard] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedDoctorId, setSelectedDoctorId] = useState(null);
@@ -53,20 +54,21 @@ export default function SearchPage() {
     feeRange: [],
     gender: [],
   });
-const applyFilters = async (pageNo = 1) => {
+  const applyFilters = async (pageNo = 1) => {
   try {
     setLoading(true);
     setError("");
     setResultMode("filter");
 
-    const params = {
-      page: pageNo,
-      limit: itemsPerPage,
-    };
+    const limit = itemsPerPage;
+    const offset = (pageNo - 1) * itemsPerPage;
 
-    if (searchQuery.trim()) {
-      params.search = searchQuery.trim();
-    }
+    const params = {
+      search: searchQuery.trim(),
+      city: currentCity || "",
+      limit,
+      offset,
+    };
 
     if (selectedFilters.specialization.length > 0) {
       params.specialization =
@@ -103,31 +105,37 @@ const applyFilters = async (pageNo = 1) => {
         selectedFilters.gender.join(",");
     }
 
+    console.log("Filter API params:", params);
+
     const res = await api.get(
       "/api/doctors/doctor/search",
-      { params }
+      {
+        params,
+      }
     );
 
     setResults(mapDoctors(res?.data?.data || []));
     setTotalDoctors(res?.data?.count || 0);
     setPage(pageNo);
-  } catch (err) {
-    console.error("Filter doctors error:", err);
+  }  catch (err) {
+  console.error(
+    "Filter doctors error:",
+    err?.response?.data || err
+  );
 
-    if (err?.response?.status === 404) {
-      setResults([]);
-      setTotalDoctors(0);
-      setError("");
-      return;
-    }
-
-    setError(
-      err?.response?.data?.message ||
-        "Unable to filter doctors."
-    );
-  } finally {
-    setLoading(false);
+  if (err?.response?.status === 404) {
+    setResults([]);
+    setTotalDoctors(0);
+    setError("");
+    return;
   }
+
+  setError(
+    "We couldn't apply your filters. Please try again."
+  );
+} finally {
+  setLoading(false);
+}
 };
   const [isMobile, setIsMobile] = useState(false);
   const [isLaptopUp, setIsLaptopUp] = useState(false);
@@ -180,7 +188,6 @@ const applyFilters = async (pageNo = 1) => {
       } catch (locationError) {
         console.log("Location Error:", locationError);
 
-
         if (locationError?.code === 1) {
           setLocationStatus("blocked");
         } else {
@@ -205,13 +212,11 @@ const applyFilters = async (pageNo = 1) => {
         },
       });
 
-
       setResults(mapDoctors(res?.data?.data || []));
       setTotalDoctors(res?.data?.count || 0);
       setPage(pageNo);
     } catch (err) {
       console.error("Nearby doctors error:", err);
-
 
       if (err?.response?.status === 404) {
         setResults([]);
@@ -221,7 +226,7 @@ const applyFilters = async (pageNo = 1) => {
 
       setError(
         err?.response?.data?.message ||
-        "Unable to load doctors. Please try again."
+          "Unable to load doctors. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -263,7 +268,7 @@ const applyFilters = async (pageNo = 1) => {
 
       setError(
         err?.response?.data?.message ||
-        "Unable to load doctors. Please try again."
+          "Unable to load doctors. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -273,51 +278,56 @@ const applyFilters = async (pageNo = 1) => {
   // -----------------------------------------
   // Search
   // -----------------------------------------
-  const searchDoctors = async (query, pageNo = 1) => {
-    if (!query?.trim()) {
-      setSearchQuery("");
-      loadAllDoctors(1);
-      return;
-    }
+const searchDoctors = async (query, pageNo = 1) => {
+  if (!query?.trim()) {
+    setSearchQuery("");
+    loadAllDoctors(1);
+    return;
+  }
 
-    try {
-      setLoading(true);
-      setError("");
-      setResultMode("search");
-      setSearchQuery(query.trim());
+  try {
+    setLoading(true);
+    setError("");
+    setResultMode("search");
+    setSearchQuery(query.trim());
 
-      const limit = itemsPerPage;
-      const offset = (pageNo - 1) * itemsPerPage;
+    const limit = itemsPerPage;
+    const offset = (pageNo - 1) * itemsPerPage;
 
-      const res = await api.get("/api/doctors/doctor/search", {
-        params: {
-          search: query.trim(),
-          limit,
-          offset,
-        },
-      });
+    const res = await api.get("/api/doctors/doctor/search", {
+      params: {
+        search: query.trim(),
+        city: currentCity || "",
+        limit,
+        offset,
+      },
+    });
 
-      setResults(mapDoctors(res?.data?.data || []));
-      setTotalDoctors(res?.data?.count || 0);
-      setPage(pageNo);
-    } catch (err) {
-      console.error("Doctor search error:", err);
+    setResults(mapDoctors(res?.data?.data || []));
+    setTotalDoctors(res?.data?.count || 0);
+    setPage(pageNo);
+ } catch (err) {
+  console.error(
+    "Doctor search error:",
+    err?.response?.data || err
+  );
 
-      if (err?.response?.status === 404) {
-        setResults([]);
-        setTotalDoctors(0);
-        setError("");
-        return;
-      }
+  if (err?.response?.status === 404) {
+    setResults([]);
+    setTotalDoctors(0);
+    setError("");
+    return;
+  }
 
-      setError(
-        err?.response?.data?.message ||
-        "Unable to search for doctors. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  setError(
+    query?.toLowerCase() === "emergency"
+      ? "We couldn't find emergency doctors right now. Please try again."
+      : "We couldn't complete your search. Please try again."
+  );
+} finally {
+  setLoading(false);
+}
+};
 
   // -----------------------------------------
   // Initial Load
@@ -347,24 +357,24 @@ const applyFilters = async (pageNo = 1) => {
   // -----------------------------------------
   // Pagination
   // -----------------------------------------
-const handlePageChange = (newPage) => {
-  setPage(newPage);
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
 
-  if (resultMode === "nearby") {
-    searchDoctorsByCity(newPage);
-  } else if (resultMode === "all") {
-    loadAllDoctors(newPage);
-  } else if (resultMode === "search") {
-    searchDoctors(searchQuery, newPage);
-  } else if (resultMode === "filter") {
-    applyFilters(newPage);
-  }
+    if (resultMode === "nearby") {
+      searchDoctorsByCity(newPage);
+    } else if (resultMode === "all") {
+      loadAllDoctors(newPage);
+    } else if (resultMode === "search") {
+      searchDoctors(searchQuery, newPage);
+    } else if (resultMode === "filter") {
+      applyFilters(newPage);
+    }
 
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-};
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
   // -----------------------------------------
   // Navigation
@@ -376,45 +386,58 @@ const handlePageChange = (newPage) => {
   };
 
   const handleViewDetails = (doctorId) => {
-    router.push(`/users/pages/DoctorDetail?id=${doctorId}`);
-  };
+  if (detailsLoadingId) return;
 
+  setDetailsLoadingId(doctorId);
+  router.push(`/users/pages/DoctorDetail?id=${doctorId}`);
+};
   // -----------------------------------------
   // Filtered data
   // -----------------------------------------
-const filteredResults = [...results].sort(
-  (a, b) =>
-    Number(b.isCurrentlyAvailable) -
-    Number(a.isCurrentlyAvailable)
-);
+  const filteredResults = [...results].sort(
+    (a, b) => Number(b.isCurrentlyAvailable) - Number(a.isCurrentlyAvailable),
+  );
 
   const pageCount = Math.ceil(totalDoctors / itemsPerPage);
   const styles = {
     container: {
       backgroundColor: "white",
-      boxShadow: "0 4px 12px #0f7468",
-      borderRadius: "1px",
+
       marginTop: "68px",
-      
-  minHeight: "calc(100vh - 68px)",
+      minHeight: "calc(100vh - 68px)",
 
-      padding: isMobile ? "16px" : "32px",
+      padding: isMobile
+        ? "14px 12px 28px"
+        : isLaptopUp
+          ? "24px 32px 40px"
+          : "20px 24px 36px",
 
-      width: "auto",
+      width: "100%",
       maxWidth: "100%",
       minWidth: 0,
+
       boxSizing: "border-box",
       overflowX: "hidden",
     },
+
     card: {
       width: "100%",
       minWidth: 0,
+
       boxSizing: "border-box",
-      border: "2px solid #028275",
-      borderRadius: "8px",
-      padding: "16px",
-      transition: "all 0.2s ease",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+
+      backgroundColor: "#FFFFFF",
+
+      border: "1px solid #E4E9E7",
+      borderRadius: "12px",
+
+      padding: isMobile ? "14px" : "16px",
+
+      transition:
+        "border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease",
+
+      boxShadow: "0 1px 3px rgba(16, 24, 40, 0.04)",
+
       cursor: "pointer",
     },
 
@@ -423,57 +446,108 @@ const filteredResults = [...results].sort(
 
       gridTemplateColumns: isMobile
         ? "1fr"
-        : "repeat(auto-fit, minmax(300px, 1fr))",
+        : isLaptopUp
+          ? "repeat(3, minmax(0, 1fr))"
+          : "repeat(2, minmax(0, 1fr))",
 
-      gap: "20px",
+      gap: isMobile ? "12px" : "16px",
 
       width: "100%",
       minWidth: 0,
+
       boxSizing: "border-box",
+
+      alignItems: "stretch",
     },
 
     avatar: {
-      width: "100px",
-      height: "100px",
-      borderRadius: "8px",
+      width: isMobile ? "72px" : "82px",
+      height: isMobile ? "72px" : "82px",
+
+      borderRadius: "10px",
+
       objectFit: "cover",
+
+      flexShrink: 0,
+
+      border: "1px solid #E5E7EB",
+
+      backgroundColor: "#F5F7F6",
     },
 
     btnPrimary: {
-      backgroundColor: "#028275",
-      color: "#fff",
-      padding: "10px 18px",
-      borderRadius: "6px",
-      border: "none",
+      backgroundColor: "#07876A",
+      color: "#FFFFFF",
+
+      padding: isMobile ? "8px 12px" : "8px 14px",
+
+      minHeight: "34px",
+
+      borderRadius: "7px",
+
+      border: "1px solid #07876A",
+
       cursor: "pointer",
+
+      fontSize: "12px",
       fontWeight: 600,
-      transition: "background-color 0.2s",
+
+      transition: "all 0.2s ease",
+
+      whiteSpace: "nowrap",
+
+      boxShadow: "none",
     },
 
     btnOutline: {
-      backgroundColor: "transparent",
-      color: "#028275",
-      padding: "8px 16px",
-      borderRadius: "6px",
-      border: "2px solid #028275",
+      backgroundColor: "#FFFFFF",
+      color: "#07876A",
+
+      padding: isMobile ? "8px 12px" : "8px 14px",
+
+      minHeight: "34px",
+
+      borderRadius: "7px",
+
+      border: "1px solid #B8DCD3",
+
       cursor: "pointer",
-      fontWeight: 500,
-      transition: "all 0.2s",
+
+      fontSize: "12px",
+      fontWeight: 600,
+
+      transition: "all 0.2s ease",
+
+      whiteSpace: "nowrap",
     },
 
     skeleton: {
       background:
-        "linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)",
+        "linear-gradient(90deg, #F4F6F5 25%, #E9EEEC 50%, #F4F6F5 75%)",
+
       backgroundSize: "200% 100%",
-      borderRadius: "4px",
+
+      borderRadius: "8px",
+
+      animation: "shimmer 1.5s infinite",
     },
 
     emptyBox: {
+      width: "100%",
+
       textAlign: "center",
-      padding: isMobile ? "40px 15px" : "60px 20px",
-      border: "1px solid #e0e0e0",
+
+      padding: isMobile ? "40px 16px" : "55px 24px",
+
+      border: "1px solid #E4E9E7",
+
       borderRadius: "12px",
-      background: "#fafafa",
+
+      backgroundColor: "#FFFFFF",
+
+      boxSizing: "border-box",
+
+      boxShadow: "0 1px 3px rgba(16, 24, 40, 0.03)",
     },
   };
 
@@ -514,14 +588,14 @@ const filteredResults = [...results].sort(
     if (locationStatus === "blocked" && resultMode === "nearby") {
       return (
         <EmptyState
-         icon={
-    <LocationOnIcon
-      sx={{
-        fontSize: 56,
-        color: "#EA4335",
-      }}
-    />
-  }
+          icon={
+            <LocationOnIcon
+              sx={{
+                fontSize: 56,
+                color: "#EA4335",
+              }}
+            />
+          }
           title="Location Permission Blocked"
           description="Location permission is blocked in your browser."
           subDescription="Click below to see the steps to allow it."
@@ -534,20 +608,17 @@ const filteredResults = [...results].sort(
       );
     }
 
-    if (
-      locationStatus === "denied" &&
-      resultMode === "nearby"
-    ) {
+    if (locationStatus === "denied" && resultMode === "nearby") {
       return (
         <EmptyState
           icon={
-    <LocationOnIcon
-      sx={{
-        fontSize: 56,
-        color: "#EA4335",
-      }}
-    />
-  }
+            <LocationOnIcon
+              sx={{
+                fontSize: 56,
+                color: "#EA4335",
+              }}
+            />
+          }
           title="Location Not Available"
           description="We could not detect your current location."
           subDescription="Turn on your device location and click Retry Location."
@@ -560,39 +631,34 @@ const filteredResults = [...results].sort(
       );
     }
 
-   if (results.length === 0 && resultMode === "nearby") {
-  return (
-    <EmptyState
-      icon={
-        <LocationOnIcon
-          sx={{
-            fontSize: 58,
-            color: "#EA4335",
-          }}
+    if (results.length === 0 && resultMode === "nearby") {
+      return (
+        <EmptyState
+          icon={
+            <LocationOnIcon
+              sx={{
+                fontSize: 58,
+                color: "#EA4335",
+              }}
+            />
+          }
+          title="No Doctors Found Nearby"
+          description={
+            <>
+              We couldn't find any doctors near{" "}
+              <strong>{currentCity || "your location"}</strong>.
+            </>
+          }
+          subDescription="Try searching for a doctor by name or specialty, or view all available doctors."
+          primaryText="View All Doctors"
+          onPrimary={() => loadAllDoctors(1)}
+          secondaryText="Search Doctors"
+          styles={styles}
         />
-      }
-      title="No Doctors Found Nearby"
-      description={
-        <>
-          We couldn't find any doctors near{" "}
-          <strong>{currentCity || "your location"}</strong>.
-        </>
-      }
-      subDescription="Try searching for a doctor by name or specialty, or view all available doctors."
-      primaryText="View All Doctors"
-      onPrimary={() => loadAllDoctors(1)}
-      secondaryText="Search Doctors"
-     
-      styles={styles}
-    />
-  );
-}
+      );
+    }
 
-
-    if (
-      results.length === 0 &&
-      resultMode === "all"
-    ) {
+    if (results.length === 0 && resultMode === "all") {
       return (
         <EmptyState
           title="No Doctors Available"
@@ -602,10 +668,7 @@ const filteredResults = [...results].sort(
       );
     }
 
-    if (
-      results.length === 0 &&
-      resultMode === "search"
-    ) {
+    if (results.length === 0 && resultMode === "search") {
       return (
         <EmptyState
           title="No Doctors Found"
@@ -631,15 +694,16 @@ const filteredResults = [...results].sort(
 
     return (
       <>
-        <DoctorGrid
-          doctors={filteredResults}
-          hoveredCard={hoveredCard}
-          setHoveredCard={setHoveredCard}
-          bookingLoadingId={bookingLoadingId}
-          onBook={handleBookAppointment}
-          onViewDetails={handleViewDetails}
-          styles={styles}
-        />
+       <DoctorGrid
+  doctors={filteredResults}
+  hoveredCard={hoveredCard}
+  setHoveredCard={setHoveredCard}
+  bookingLoadingId={bookingLoadingId}
+  detailsLoadingId={detailsLoadingId}
+  onBook={handleBookAppointment}
+  onViewDetails={handleViewDetails}
+  styles={styles}
+/>
 
         <SearchPagination
           pageCount={pageCount}
@@ -653,19 +717,19 @@ const filteredResults = [...results].sort(
   return (
     <div style={styles.container}>
       {/* Search + Filter */}
-  
+
       <div
         style={{
           width: "100%",
           marginBottom: isMobile ? "24px" : "36px",
         }}
       >
-      <SearchBar
-  onSearch={searchDoctors}
-  onFilterClick={() => setFilterOpen(true)}
-  onNearbyClick={() => searchDoctorsByCity(1)}
-  onEmergencyClick={() => searchDoctors("emergency", 1)}
-/>
+        <SearchBar
+          onSearch={searchDoctors}
+          onFilterClick={() => setFilterOpen(true)}
+          onNearbyClick={() => searchDoctorsByCity(1)}
+          onEmergencyClick={() => searchDoctors("emergency", 1)}
+        />
       </div>
 
       {renderContent()}
@@ -689,15 +753,15 @@ const filteredResults = [...results].sort(
           },
         }}
       >
-       <FiltersSidebar
-  selectedFilters={selectedFilters}
-  setSelectedFilters={setSelectedFilters}
-  onClose={() => setFilterOpen(false)}
-  onApply={() => {
-    setFilterOpen(false);
-    applyFilters(1);
-  }}
-/>
+        <FiltersSidebar
+          selectedFilters={selectedFilters}
+          setSelectedFilters={setSelectedFilters}
+          onClose={() => setFilterOpen(false)}
+          onApply={() => {
+            setFilterOpen(false);
+            applyFilters(1);
+          }}
+        />
       </Drawer>
 
       <style jsx>{`

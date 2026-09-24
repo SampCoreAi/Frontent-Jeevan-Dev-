@@ -3,10 +3,11 @@
 import DoctorCard from "./DoctorCard";
 
 export default function DoctorGrid({
-  doctors,
+  doctors = [],
   hoveredCard,
   setHoveredCard,
   bookingLoadingId,
+  detailsLoadingId,
   onBook,
   onViewDetails,
 }) {
@@ -21,6 +22,7 @@ export default function DoctorGrid({
             hoveredCard={hoveredCard}
             setHoveredCard={setHoveredCard}
             bookingLoadingId={bookingLoadingId}
+            detailsLoadingId={detailsLoadingId}
             onBook={onBook}
             onViewDetails={onViewDetails}
           />
@@ -37,7 +39,6 @@ export default function DoctorGrid({
           box-sizing: border-box;
         }
 
-        /* Medium laptop / tablet */
         @media (max-width: 1200px) {
           .doctor-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -45,7 +46,6 @@ export default function DoctorGrid({
           }
         }
 
-        /* Mobile */
         @media (max-width: 700px) {
           .doctor-grid {
             grid-template-columns: 1fr;
