@@ -210,22 +210,71 @@ return (
       <Grid size={{ xs: 12, md: 4 }}>
         <Grid container spacing={1}>
           <Grid size={{ xs: 12 }}>
-            <Box
-              sx={{
-                height: "125px",
-                px: 2,
-                py: 1.5,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center",
-                borderRadius: "8px",
-                bgcolor: `${theme.palette.primary.main}08`,
-                border: `1px solid ${theme.palette.primary.main}25`,
-              }}
-            >
-            </Box>
+            <Grid size={{ xs: 12 }}>
+  <Box
+    sx={{
+      height: "125px",
+      width: "100%",
+      borderRadius: "8px",
+      overflow: "hidden",
+      bgcolor: theme.palette.action.hover,
+      border: `1px solid ${theme.palette.divider}`,
+    }}
+  >
+    {patient?.image?.url ? (
+      <Box
+        component="a"
+        href={
+          patient.image.url.startsWith("http")
+            ? patient.image.url
+            : `${process.env.NEXT_PUBLIC_S3_BUCKET_URL}${patient.image.url}`
+        }
+        target="_blank"
+        rel="noopener noreferrer"
+        sx={{
+          display: "block",
+          width: "100%",
+          height: "100%",
+          cursor: "pointer",
+        }}
+      >
+        <Box
+          component="img"
+          src={
+            patient.image.url.startsWith("http")
+              ? patient.image.url
+              : `${process.env.NEXT_PUBLIC_S3_BUCKET_URL}${patient.image.url}`
+          }
+          alt="Patient"
+          sx={{
+            width: "100%",
+            height: "100%",
+            display: "block",
+            objectFit: "cover",
+            transition: "transform 0.2s ease",
+            "&:hover": {
+              transform: "scale(1.03)",
+            },
+          }}
+        />
+      </Box>
+    ) : (
+      <Box
+        sx={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: theme.palette.text.secondary,
+          fontSize: "12px",
+        }}
+      >
+        No image
+      </Box>
+    )}
+  </Box>
+</Grid>
           </Grid>
 
           <Grid size={{ xs: 12 }}>

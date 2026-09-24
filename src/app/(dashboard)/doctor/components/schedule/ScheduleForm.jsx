@@ -18,6 +18,7 @@ import {
   MenuItem,
   Box,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 
 import { useTheme } from "@mui/material/styles";
@@ -56,6 +57,7 @@ export default function ScheduleForm({
   setEditIndex,
   hospitals = [],
   availability = [],
+  loading = false,
 }) {
   const muiTheme = useTheme();
 
@@ -824,39 +826,59 @@ const commonTextFieldSx = {
             </Typography>
           </Box>
 
-          <Button
-            onClick={handleSave}
-            variant="contained"
-            sx={{
-              flexShrink: 0,
-              height: 36,
-              minWidth: {
-                xs: 105,
-                sm: 135,
-              },
-              px: {
-                xs: 1.5,
-                sm: 2.5,
-              },
-              borderRadius: "7px",
-              backgroundColor: PRIMARY_COLOR,
-              color: "#fff",
-              textTransform: "none",
-              fontSize: "12px",
-              fontWeight: 600,
-              boxShadow: "none",
+         <Button
+  onClick={handleSave}
+  variant="contained"
+  disabled={loading}
+  startIcon={
+    loading ? (
+      <CircularProgress
+        size={15}
+        thickness={5}
+        sx={{ color: "inherit" }}
+      />
+    ) : null
+  }
+  sx={{
+    flexShrink: 0,
+    height: 36,
+    minWidth: {
+      xs: 105,
+      sm: 135,
+    },
+    px: {
+      xs: 1.5,
+      sm: 2.5,
+    },
+    borderRadius: "7px",
+    backgroundColor: PRIMARY_COLOR,
+    color: "#fff",
+    textTransform: "none",
+    fontSize: "12px",
+    fontWeight: 600,
+    boxShadow: "none",
 
-              "&:hover": {
-                backgroundColor: PRIMARY_COLOR,
-                boxShadow: "none",
-                opacity: 0.92,
-              },
-            }}
-          >
-            {editIndex !== null
-              ? "Update Schedule"
-              : "Save Schedule"}
-          </Button>
+    "&:hover": {
+      backgroundColor: PRIMARY_COLOR,
+      boxShadow: "none",
+      opacity: 0.92,
+    },
+
+    "&.Mui-disabled": {
+      backgroundColor: PRIMARY_COLOR,
+      color: "#fff",
+      opacity: 0.7,
+    },
+  }}
+>
+  {loading
+    ? editIndex !== null
+      ? "Updating..."
+      : "Saving..."
+    : editIndex !== null
+      ? "Update Schedule"
+      : "Save Schedule"}
+</Button>
         </Box>
 
         <Divider sx={{ mb: 2 }} />

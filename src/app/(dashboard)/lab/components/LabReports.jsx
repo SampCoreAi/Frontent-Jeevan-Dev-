@@ -132,73 +132,7 @@ export default function LabReports({
           </Typography>
         </Box>
 
-        <Box
-          sx={{
-            width: { xs: "100%", sm: "auto" },
-            flexShrink: 0,
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            justifyContent: "flex-end",
-            flexWrap: "wrap",
-          }}
-        >
-          {previousReportsCount > 0 ? (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 0.75,
-                flexWrap: "wrap",
-              }}
-            >
-              <Button
-                size="small"
-                variant={showPrevious ? "outlined" : "contained"}
-                onClick={onShowCurrent}
-                sx={{
-                  textTransform: "none",
-                  borderRadius: 1.5,
-                  fontWeight: 700,
-                  fontSize: "11.5px",
-                  minHeight: 32,
-                  px: 1.25,
-                  bgcolor: showPrevious ? "transparent" : "#07876A",
-                  color: showPrevious ? "#0F172A" : "#FFFFFF",
-                  borderColor: showPrevious ? "#CBD5E1" : "#07876A",
-                  "&:hover": {
-                    bgcolor: showPrevious ? "#F8FAFC" : "#06715C",
-                  },
-                }}
-              >
-                Current Appointment Report
-              </Button>
-
-              <Button
-                size="small"
-                variant={showPrevious ? "contained" : "outlined"}
-                onClick={onShowPrevious}
-                sx={{
-                  textTransform: "none",
-                  borderRadius: 1.5,
-                  fontWeight: 700,
-                  fontSize: "11.5px",
-                  minHeight: 32,
-                  px: 1.25,
-                  bgcolor: showPrevious ? "#07876A" : "transparent",
-                  color: showPrevious ? "#FFFFFF" : "#0F172A",
-                  borderColor: showPrevious ? "#07876A" : "#CBD5E1",
-                  "&:hover": {
-                    bgcolor: showPrevious ? "#06715C" : "#F8FAFC",
-                  },
-                }}
-              >
-                Old Reports
-              </Button>
-            </Box>
-          ) : null}
-          <TableFilters {...filters} />
-        </Box>
+       
       </Box>
 
       <Box

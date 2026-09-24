@@ -883,327 +883,343 @@ export default function PatientLabPanel() {
         )}
       </Menu>
 
-      <Dialog
-        open={detailsOpen}
-        onClose={handleCloseDetails}
-        fullWidth
-        maxWidth="sm"
-        PaperProps={{
-          sx: {
-            borderRadius: 2.5,
-            border:
-              "1px solid #E2E8F0",
-            boxShadow:
-              "0 18px 50px rgba(15,23,42,0.12)",
-          },
+    <Dialog
+  open={detailsOpen}
+  onClose={handleCloseDetails}
+  fullWidth
+  maxWidth="md"
+  PaperProps={{
+    sx: {
+      borderRadius: 2.5,
+      border: "1px solid #E2E8F0",
+      boxShadow: "0 18px 50px rgba(15,23,42,0.12)",
+    },
+  }}
+>
+  <DialogTitle
+    sx={{
+      px: 2.5,
+      py: 1.7,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      borderBottom: "1px solid",
+      borderColor: "divider",
+    }}
+  >
+    <Box>
+      <Typography
+        sx={{
+          fontSize: "15px",
+          fontWeight: 700,
+          color: "text.primary",
         }}
       >
-        <DialogTitle
+        Lab Test Details
+      </Typography>
+
+      <Typography
+        sx={{
+          mt: 0.2,
+          fontSize: "12.5px",
+          color: "text.secondary",
+        }}
+      >
+        Complete test and report information
+      </Typography>
+    </Box>
+
+    <IconButton size="small" onClick={handleCloseDetails}>
+      <CloseIcon sx={{ fontSize: 19 }} />
+    </IconButton>
+  </DialogTitle>
+
+  <DialogContent
+    sx={{
+      p: 2.5,
+    }}
+  >
+    {selectedRow && (
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            md: "repeat(2, 1fr)",
+          },
+          gap: 2,
+        }}
+      >
+        <Box
           sx={{
-            px: 2.5,
-            py: 2,
-            display: "flex",
-            alignItems: "center",
-            justifyContent:
-              "space-between",
-            borderBottom:
-              "1px solid",
+            border: "1px solid",
             borderColor: "divider",
+            borderRadius: 2,
+            p: 2,
+            bgcolor: "background.paper",
           }}
         >
-          <Box>
-            <Typography
-              sx={{
-                fontSize: "15px",
-                fontWeight: 700,
-                color: "text.primary",
-              }}
-            >
-              Lab Test Details
-            </Typography>
-
-            <Typography
-              sx={{
-                mt: 0.3,
-                fontSize: "12.5px",
-                color:
-                  "text.secondary",
-              }}
-            >
-              Complete test and report
-              information
-            </Typography>
-          </Box>
-
-          <IconButton
-            size="small"
-            onClick={
-              handleCloseDetails
-            }
-          >
-            <CloseIcon
-              sx={{
-                fontSize: 19,
-              }}
-            />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent
-          sx={{
-            px: 2.5,
-            py: 2,
-          }}
-        >
-          {selectedRow && (
-            <Stack spacing={2}>
-              <Box>
-                <Typography
-                  sx={{
-                    mb: 0.7,
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    color:
-                      "text.primary",
-                  }}
-                >
-                  Test Information
-                </Typography>
-
-                <DetailItem
-                  label="Test"
-                  value={
-                    selectedRow.testName
-                  }
-                />
-
-                <DetailItem
-                  label="Status"
-                  value={getUserStatus(
-                    selectedRow.status
-                  )}
-                />
-
-                <DetailItem
-                  label="Expected Result"
-                  value={formatDateTime(
-                    selectedRow.expected_report_at ||
-                      selectedRow.expectedReportAt
-                  )}
-                />
-
-                <DetailItem
-                  label="Requested On"
-                  value={formatDateTime(
-                    selectedRow.created_at ||
-                      selectedRow.createdAt
-                  )}
-                />
-
-                <DetailItem
-                  label="Remarks"
-                  value={
-                    getRequestNote(
-                      selectedRow
-                    ) || "-"
-                  }
-                />
-              </Box>
-
-              <Divider />
-
-              <Box>
-                <Typography
-                  sx={{
-                    mb: 0.7,
-                    fontSize: "13px",
-                    fontWeight: 700,
-                  }}
-                >
-                  Lab Information
-                </Typography>
-
-                <DetailItem
-                  label="Lab"
-                  value={
-                    selectedRow.labName
-                  }
-                />
-
-                <DetailItem
-                  label="Lab Code"
-                  value={getValue(
-                    selectedRow.lab_code,
-                    selectedRow.labCode
-                  )}
-                />
-
-                <DetailItem
-                  label="Address"
-                  value={getValue(
-                    selectedRow.lab_address,
-                    selectedRow.labAddress
-                  )}
-                />
-
-                <DetailItem
-                  label="Phone"
-                  value={getValue(
-                    selectedRow.lab_phone,
-                    selectedRow.labPhone
-                  )}
-                />
-              </Box>
-
-              <Divider />
-
-              <Box>
-                <Typography
-                  sx={{
-                    mb: 0.7,
-                    fontSize: "13px",
-                    fontWeight: 700,
-                  }}
-                >
-                  Doctor Information
-                </Typography>
-
-                <DetailItem
-                  label="Doctor"
-                  value={
-                    selectedRow.doctorName
-                  }
-                />
-
-                <DetailItem
-                  label="Doctor Note"
-                  value={getValue(
-                    selectedRow.doctor_note,
-                    selectedRow.doctorNote
-                  )}
-                />
-
-                <DetailItem
-                  label="Priority"
-                  value={getValue(
-                    selectedRow.priority
-                  )}
-                />
-              </Box>
-
-              {selectedRow.reports
-                ?.length > 0 && (
-                <>
-                  <Divider />
-
-                  <Box>
-                    <Typography
-                      sx={{
-                        mb: 1,
-                        fontSize: "13px",
-                        fontWeight: 700,
-                      }}
-                    >
-                      Reports
-                    </Typography>
-
-                    <Stack spacing={1}>
-                      {selectedRow.reports.map(
-                        (report) => (
-                          <Box
-                            key={
-                              report.id
-                            }
-                            sx={{
-                              p: 1.5,
-                              border:
-                                "1px solid",
-                              borderColor:
-                                "divider",
-                              borderRadius:
-                                2,
-                            }}
-                          >
-                            <DetailItem
-                              label="Report Code"
-                              value={
-                                report.reportCode
-                              }
-                            />
-
-                            <DetailItem
-                              label="File"
-                              value={
-                                report.fileName ||
-                                "-"
-                              }
-                            />
-
-                            <DetailItem
-                              label="Uploaded"
-                              value={formatDateTime(
-                                report.uploadedAt
-                              )}
-                            />
-
-                            {report.downloadUrl && (
-                              <Button
-                                href={
-                                  report.downloadUrl
-                                }
-                                target="_blank"
-                                rel="noreferrer"
-                                size="small"
-                                variant="outlined"
-                                startIcon={
-                                  <DescriptionOutlinedIcon />
-                                }
-                                sx={{
-                                  mt: 1,
-                                  fontSize:
-                                    "12.5px",
-                                  textTransform:
-                                    "none",
-                                }}
-                              >
-                                View Report
-                              </Button>
-                            )}
-                          </Box>
-                        )
-                      )}
-                    </Stack>
-                  </Box>
-                </>
-              )}
-            </Stack>
-          )}
-        </DialogContent>
-
-        <DialogActions
-          sx={{
-            px: 2.5,
-            py: 1.5,
-            borderTop: "1px solid",
-            borderColor: "divider",
-          }}
-        >
-          <Button
-            onClick={
-              handleCloseDetails
-            }
-            variant="outlined"
-            size="small"
+          <Typography
             sx={{
-              fontSize: "12.5px",
-              textTransform: "none",
+              fontSize: "13px",
+              fontWeight: 700,
+              color: "text.primary",
+              mb: 1,
             }}
           >
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
+            Test Information
+          </Typography>
 
+          <Divider sx={{ mb: 0.5 }} />
+
+          <DetailItem
+            label="Test"
+            value={selectedRow.testName}
+          />
+
+          <DetailItem
+            label="Status"
+            value={getUserStatus(selectedRow.status)}
+          />
+
+          <DetailItem
+            label="Expected Result"
+            value={formatDateTime(
+              selectedRow.expected_report_at ||
+                selectedRow.expectedReportAt
+            )}
+          />
+
+          <DetailItem
+            label="Requested On"
+            value={formatDateTime(
+              selectedRow.created_at ||
+                selectedRow.createdAt
+            )}
+          />
+
+          <DetailItem
+            label="Remarks"
+            value={getRequestNote(selectedRow) || "-"}
+          />
+        </Box>
+
+        <Box
+          sx={{
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 2,
+            p: 2,
+            bgcolor: "background.paper",
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "13px",
+              fontWeight: 700,
+              color: "text.primary",
+              mb: 1,
+            }}
+          >
+            Lab Information
+          </Typography>
+
+          <Divider sx={{ mb: 0.5 }} />
+
+          <DetailItem
+            label="Lab"
+            value={selectedRow.labName}
+          />
+
+          <DetailItem
+            label="Lab Code"
+            value={getValue(
+              selectedRow.lab_code,
+              selectedRow.labCode
+            )}
+          />
+
+          <DetailItem
+            label="Address"
+            value={getValue(
+              selectedRow.lab_address,
+              selectedRow.labAddress
+            )}
+          />
+
+          <DetailItem
+            label="Phone"
+            value={getValue(
+              selectedRow.lab_phone,
+              selectedRow.labPhone
+            )}
+          />
+        </Box>
+
+        <Box
+          sx={{
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 2,
+            p: 2,
+            bgcolor: "background.paper",
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "13px",
+              fontWeight: 700,
+              color: "text.primary",
+              mb: 1,
+            }}
+          >
+            Doctor Information
+          </Typography>
+
+          <Divider sx={{ mb: 0.5 }} />
+
+          <DetailItem
+            label="Doctor"
+            value={selectedRow.doctorName}
+          />
+
+          <DetailItem
+            label="Doctor Note"
+            value={getValue(
+              selectedRow.doctor_note,
+              selectedRow.doctorNote
+            )}
+          />
+
+          <DetailItem
+            label="Priority"
+            value={getValue(selectedRow.priority)}
+          />
+        </Box>
+
+        <Box
+          sx={{
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 2,
+            p: 2,
+            bgcolor: "background.paper",
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "13px",
+              fontWeight: 700,
+              color: "text.primary",
+              mb: 1,
+            }}
+          >
+            Report Information
+          </Typography>
+
+          <Divider sx={{ mb: 0.5 }} />
+
+          {selectedRow.reports?.length > 0 ? (
+            <Stack spacing={1.5}>
+              {selectedRow.reports.map((report, index) => (
+                <Box
+                  key={report.id}
+                  sx={{
+                    pb:
+                      index !== selectedRow.reports.length - 1
+                        ? 1.5
+                        : 0,
+                    borderBottom:
+                      index !== selectedRow.reports.length - 1
+                        ? "1px solid"
+                        : "none",
+                    borderColor: "divider",
+                  }}
+                >
+                  <DetailItem
+                    label="Report Code"
+                    value={report.reportCode || "-"}
+                  />
+
+                  <DetailItem
+                    label="File"
+                    value={report.fileName || "-"}
+                  />
+
+                  <DetailItem
+                    label="Uploaded"
+                    value={formatDateTime(report.uploadedAt)}
+                  />
+
+                  {report.downloadUrl && (
+                    <Button
+                      href={report.downloadUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      size="small"
+                      variant="outlined"
+                      startIcon={
+                        <DescriptionOutlinedIcon
+                          sx={{ fontSize: 17 }}
+                        />
+                      }
+                      sx={{
+                        mt: 1,
+                        fontSize: "12.5px",
+                        textTransform: "none",
+                      }}
+                    >
+                      View Report
+                    </Button>
+                  )}
+                </Box>
+              ))}
+            </Stack>
+          ) : (
+            <Box
+              sx={{
+                minHeight: 120,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: "12.5px",
+                  color: "text.secondary",
+                }}
+              >
+                Report not available yet
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Box>
+    )}
+  </DialogContent>
+
+  <DialogActions
+    sx={{
+      px: 2.5,
+      py: 1.5,
+      borderTop: "1px solid",
+      borderColor: "divider",
+    }}
+  >
+    <Button
+      onClick={handleCloseDetails}
+      variant="outlined"
+      size="small"
+      sx={{
+        fontSize: "12.5px",
+        textTransform: "none",
+      }}
+    >
+      Close
+    </Button>
+  </DialogActions>
+</Dialog>
       <Snackbar
         open={Boolean(error)}
         autoHideDuration={6000}

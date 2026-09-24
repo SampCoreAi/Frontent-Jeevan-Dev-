@@ -7,7 +7,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   InputAdornment,
   Pagination,
   Snackbar,
@@ -16,7 +15,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { DataTable, SectionTitle, TableFilters } from "../../lab/components/LabUi";
+import {
+  DataTable,
+  SectionTitle,
+  TableFilters,
+} from "../../lab/components/LabUi";
 import LabReports from "../../lab/components/LabReports";
 import { SearchIcon } from "lucide-react";
 
@@ -44,11 +47,7 @@ const normalizeLab = (lab = {}) => ({
   lab_name: lab.lab_name || lab.name || lab.labName || lab.lab || "-",
   lab_code: lab.lab_code || lab.code || lab.labCode || "-",
   phone_number:
-    lab.phone_number ||
-    lab.phone ||
-    lab.contact_number ||
-    lab.mobile ||
-    "-",
+    lab.phone_number || lab.phone || lab.contact_number || lab.mobile || "-",
   address:
     lab.address ||
     lab.location ||
@@ -60,16 +59,43 @@ const normalizeLab = (lab = {}) => ({
 
 const normalizeMedicalStore = (store = {}) => ({
   ...store,
-  id: store.id || store.store_id || store.medical_store_id || store.medicalStoreId,
-  name: store.name || store.store_name || store.medical_store_name || store.medicalStoreName || "-",
-  code: store.code || store.store_code || store.medical_store_code || store.medicalStoreCode || "-",
-  phone: store.phone || store.phone_number || store.contact_number || store.mobile || "-",
-  address: store.address || store.location || store.city || store.area || store.address_line || "-",
+  id:
+    store.id ||
+    store.store_id ||
+    store.medical_store_id ||
+    store.medicalStoreId,
+  name:
+    store.name ||
+    store.store_name ||
+    store.medical_store_name ||
+    store.medicalStoreName ||
+    "-",
+  code:
+    store.code ||
+    store.store_code ||
+    store.medical_store_code ||
+    store.medicalStoreCode ||
+    "-",
+  phone:
+    store.phone ||
+    store.phone_number ||
+    store.contact_number ||
+    store.mobile ||
+    "-",
+  address:
+    store.address ||
+    store.location ||
+    store.city ||
+    store.area ||
+    store.address_line ||
+    "-",
   city: store.city || store.location || store.area || "-",
 });
 
 const normalizeConnectionRow = (connection = {}) => {
-  const type = connection.type || (connection.lab_code ? "LAB" : connection.store_code ? "PHARMACY" : "LAB");
+  const type =
+    connection.type ||
+    (connection.lab_code ? "LAB" : connection.store_code ? "PHARMACY" : "LAB");
 
   return {
     ...connection,
@@ -81,7 +107,8 @@ const normalizeConnectionRow = (connection = {}) => {
       connection.store_name ||
       connection.partner_name ||
       "-",
-    code: connection.code || connection.lab_code || connection.store_code || "-",
+    code:
+      connection.code || connection.lab_code || connection.store_code || "-",
     status: connection.status || "PENDING",
     requested_at: connection.requested_at || connection.created_at || null,
     approved_at: connection.approved_at || null,
@@ -95,19 +122,24 @@ export default function DoctorLabPanel({ section = "connections" }) {
   const [medicalConnections, setMedicalConnections] = useState([]);
   const [requests, setRequests] = useState([]);
   const [reports, setReports] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [connectingId, setConnectingId] = useState(null);
   const [connectingMedicalId, setConnectingMedicalId] = useState(null);
+
   const [searchText, setSearchText] = useState("");
   const [medicalSearchText, setMedicalSearchText] = useState("");
   const [connectionSearch, setConnectionSearch] = useState("");
+
   const [tableFilters, setTableFilters] = useState({
     search: "",
     status: "",
     date: "",
   });
+
   const [tablePage, setTablePage] = useState(1);
   const [showPreviousReports, setShowPreviousReports] = useState(false);
+
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -164,19 +196,18 @@ export default function DoctorLabPanel({ section = "connections" }) {
     try {
       const response = await api.get("/api/doctors/connections");
       const rows = response?.data?.data || [];
+
       setConnections(rows.map(normalizeConnectionRow));
     } catch (requestError) {
       setError(
-        getErrorMessage(
-          requestError,
-          "Unable to load your connections."
-        )
+        getErrorMessage(requestError, "Unable to load your connections."),
       );
     }
   };
 
   const loadMedicalStores = async () => {
     const trimmed = medicalSearchText.trim();
+
     if (!trimmed) {
       setMedicalStores([]);
       return;
@@ -196,9 +227,11 @@ export default function DoctorLabPanel({ section = "connections" }) {
       });
 
       const rows = getRows(response);
+
       setMedicalStores(rows.length ? rows.map(normalizeMedicalStore) : []);
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to load medical stores."));
+
       setMedicalStores([]);
     }
   };
@@ -206,10 +239,18 @@ export default function DoctorLabPanel({ section = "connections" }) {
   const loadMedicalConnections = async () => {
     try {
       const response = await api.get("/api/medical-stores/doctor/connections");
+
       const rows = getRows(response);
+
       setMedicalConnections(rows);
     } catch (requestError) {
-      setError(getErrorMessage(requestError, "Unable to load your medical connections."));
+      setError(
+        getErrorMessage(
+          requestError,
+          "Unable to load your medical connections.",
+        ),
+      );
+
       setMedicalConnections([]);
     }
   };
@@ -226,9 +267,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
       setRequests(getRows(response));
     } catch (requestError) {
-      setError(
-        getErrorMessage(requestError, "Unable to load lab requests.")
-      );
+      setError(getErrorMessage(requestError, "Unable to load lab requests."));
     }
   };
 
@@ -243,9 +282,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
       setReports(getRows(response));
     } catch (requestError) {
-      setError(
-        getErrorMessage(requestError, "Unable to load lab reports.")
-      );
+      setError(getErrorMessage(requestError, "Unable to load lab reports."));
     }
   };
 
@@ -261,8 +298,11 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (section === "connections") loadMedicalStores();
+      if (section === "connections") {
+        loadMedicalStores();
+      }
     }, 300);
+
     return () => clearTimeout(timeout);
   }, [medicalSearchText, section]);
 
@@ -281,10 +321,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
         }
       } catch (requestError) {
         setError(
-          getErrorMessage(
-            requestError,
-            "Unable to load doctor lab data."
-          )
+          getErrorMessage(requestError, "Unable to load doctor lab data."),
         );
       } finally {
         setLoading(false);
@@ -292,12 +329,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
     };
 
     loadBySection();
-  }, [
-    section,
-    tableFilters.date,
-    tableFilters.search,
-    tableFilters.status,
-  ]);
+  }, [section, tableFilters.date, tableFilters.search, tableFilters.status]);
 
   useEffect(() => {
     setTablePage(1);
@@ -333,10 +365,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
       await loadConnections();
     } catch (requestError) {
       setError(
-        getErrorMessage(
-          requestError,
-          "Unable to send lab connection request."
-        )
+        getErrorMessage(requestError, "Unable to send lab connection request."),
       );
     } finally {
       setConnectingId(null);
@@ -355,12 +384,19 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
       if (response?.status === 200 || response?.status === 201) {
         setNotice("Medical connection request sent successfully.");
+
         setMedicalSearchText("");
         setMedicalStores([]);
+
         await loadConnections();
       }
     } catch (requestError) {
-      setError(getErrorMessage(requestError, "Unable to send medical connection request."));
+      setError(
+        getErrorMessage(
+          requestError,
+          "Unable to send medical connection request.",
+        ),
+      );
     } finally {
       setConnectingMedicalId(null);
     }
@@ -375,7 +411,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
       onStatus: handleFilter("status"),
       onDate: handleFilter("date"),
     }),
-    [tableFilters]
+    [tableFilters],
   );
 
   const getRequestNote = (request = {}) =>
@@ -409,23 +445,21 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
   const visibleConnections = filteredConnections.slice(
     (tablePage - 1) * pageSize,
-    tablePage * pageSize
+    tablePage * pageSize,
   );
 
   const visibleRequests = requests.slice(
     (tablePage - 1) * pageSize,
-    tablePage * pageSize
+    tablePage * pageSize,
   );
 
   const reportRows = useMemo(() => {
     const uploadedRequestIds = new Set(
       reports.map((report) =>
         Number(
-          report.requestId ||
-            report.testRequestId ||
-            report.test_request_id
-        )
-      )
+          report.requestId || report.testRequestId || report.test_request_id,
+        ),
+      ),
     );
 
     const normalizedReports = reports.map((report) => {
@@ -456,20 +490,14 @@ export default function DoctorLabPanel({ section = "connections" }) {
         ...report,
         patientKey,
         appointmentId,
-        reportCode:
-          report.reportCode ||
-          report.report_code ||
-          null,
+        reportCode: report.reportCode || report.report_code || null,
         createdAt: uploadedAt,
         uploadedAt,
       };
     });
 
     const pendingRequests = requests
-      .filter(
-        (request) =>
-          !uploadedRequestIds.has(Number(request.id))
-      )
+      .filter((request) => !uploadedRequestIds.has(Number(request.id)))
       .map((request) => {
         let requestedTests = request.requested_tests || "-";
 
@@ -507,9 +535,12 @@ export default function DoctorLabPanel({ section = "connections" }) {
           testName: requestedTests,
           status: request.status || "PENDING",
           createdAt: null,
-          uploadedAt: request.expected_report_at || request.expectedReportAt || null,
-          expected_report_at: request.expected_report_at || request.expectedReportAt || null,
-          expectedReportAt: request.expected_report_at || request.expectedReportAt || null,
+          uploadedAt:
+            request.expected_report_at || request.expectedReportAt || null,
+          expected_report_at:
+            request.expected_report_at || request.expectedReportAt || null,
+          expectedReportAt:
+            request.expected_report_at || request.expectedReportAt || null,
           reportCode: null,
         };
       });
@@ -532,6 +563,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
     if (!value) return 0;
 
     const parsed = Date.parse(value);
+
     return Number.isNaN(parsed) ? 0 : parsed;
   };
 
@@ -547,15 +579,17 @@ export default function DoctorLabPanel({ section = "connections" }) {
       return `appointment:${String(appointmentId)}`;
     }
 
-    return `patient:${String(row.patientKey || row.patientId || row.patient_id || "unknown")}`;
+    return `patient:${String(
+      row.patientKey || row.patientId || row.patient_id || "unknown",
+    )}`;
   };
 
   const sortedReportRows = useMemo(
     () =>
-      [...reportRows].sort((a, b) => {
-        return getReportDateTimestamp(b) - getReportDateTimestamp(a);
-      }),
-    [reportRows]
+      [...reportRows].sort(
+        (a, b) => getReportDateTimestamp(b) - getReportDateTimestamp(a),
+      ),
+    [reportRows],
   );
 
   const latestReportRows = useMemo(() => {
@@ -565,7 +599,10 @@ export default function DoctorLabPanel({ section = "connections" }) {
       const key = getReportGroupKey(row);
       const previous = latestByGroup.get(key);
 
-      if (!previous || getReportDateTimestamp(row) > getReportDateTimestamp(previous)) {
+      if (
+        !previous ||
+        getReportDateTimestamp(row) > getReportDateTimestamp(previous)
+      ) {
         latestByGroup.set(key, row);
       }
     });
@@ -580,7 +617,10 @@ export default function DoctorLabPanel({ section = "connections" }) {
       const key = getReportGroupKey(row);
       const previous = latestByGroup.get(key);
 
-      if (!previous || getReportDateTimestamp(row) > getReportDateTimestamp(previous)) {
+      if (
+        !previous ||
+        getReportDateTimestamp(row) > getReportDateTimestamp(previous)
+      ) {
         latestByGroup.set(key, row);
       }
     });
@@ -588,6 +628,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
     return sortedReportRows.filter((row) => {
       const key = getReportGroupKey(row);
       const latestRow = latestByGroup.get(key);
+
       return latestRow && latestRow.id !== row.id;
     });
   }, [sortedReportRows]);
@@ -608,7 +649,9 @@ export default function DoctorLabPanel({ section = "connections" }) {
       fontWeight: 700,
       textTransform: "none",
       boxShadow: "none",
-      '&:hover': { boxShadow: 'none' },
+      "&:hover": {
+        boxShadow: "none",
+      },
     };
 
     const compactCellSx = {
@@ -627,23 +670,34 @@ export default function DoctorLabPanel({ section = "connections" }) {
           bgcolor: "background.paper",
         }}
       >
-       
         <Box sx={{ mt: 3 }}>
           <Box
             sx={{
               width: "100%",
               display: "flex",
-              alignItems: { xs: "stretch", sm: "center" },
+              alignItems: {
+                xs: "stretch",
+                sm: "center",
+              },
               justifyContent: "space-between",
-              flexDirection: { xs: "column", sm: "row" },
-              gap: { xs: 1.5, sm: 2 },
+              flexDirection: {
+                xs: "column",
+                sm: "row",
+              },
+              gap: {
+                xs: 1.5,
+                sm: 2,
+              },
               mb: 1.5,
             }}
           >
             <Box sx={{ minWidth: 0 }}>
               <Typography
                 sx={{
-                  fontSize: { xs: "15px", sm: "18px" },
+                  fontSize: {
+                    xs: "15px",
+                    sm: "18px",
+                  },
                   fontWeight: 700,
                   lineHeight: 1.3,
                   color: "text.primary",
@@ -660,150 +714,320 @@ export default function DoctorLabPanel({ section = "connections" }) {
                   color: "text.secondary",
                 }}
               >
-                Track your lab and pharmacy connection requests and current status.
+                Track your lab and pharmacy connection requests and current
+                status.
               </Typography>
             </Box>
 
             <TextField
-  size="small"
-  label="Find Partner"
-  placeholder="Enter a name or code to find a lab or pharmacy"
-  value={connectionSearch}
-  onChange={(event) => setConnectionSearch(event.target.value)}
-  InputProps={{
-    startAdornment: (
-      <InputAdornment position="start">
-        <SearchIcon
-          sx={{
-            fontSize: 18,
-            color: "text.secondary",
-          }}
-        />
-      </InputAdornment>
-    ),
-  }}
+              size="small"
+              label="Find Partner"
+              placeholder="Enter a name or code to find a lab or pharmacy"
+              value={connectionSearch}
+              onChange={(event) => setConnectionSearch(event.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon
+                      sx={{
+                        fontSize: 18,
+                        color: "text.secondary",
+                      }}
+                    />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                width: {
+                  xs: "100%",
+                  sm: 320,
+                  md: 360,
+                },
+                flexShrink: 0,
+
+                "& .MuiOutlinedInput-root": {
+                  height: 40,
+                  fontSize: "12.5px",
+                  bgcolor: "background.paper",
+                  borderRadius: "8px",
+
+                  "& fieldset": {
+                    borderColor: "#757575",
+                  },
+
+                  "&:hover fieldset": {
+                    borderColor: "primary.main",
+                  },
+
+                  "&.Mui-focused fieldset": {
+                    borderColor: "primary.main",
+                    borderWidth: "1px",
+                  },
+                },
+
+                "& .MuiInputLabel-root": {
+                  fontSize: "12.5px",
+                },
+
+                "& .MuiFormHelperText-root": {
+                  mx: 0.5,
+                  mt: 0.5,
+                  fontSize: "10.5px",
+                  color: "text.secondary",
+                },
+              }}
+            />
+          </Box>
+
+       <Box
   sx={{
-    width: { xs: "100%", sm: 320, md: 360 },
-    flexShrink: 0,
-    "& .MuiOutlinedInput-root": {
-      height: 40,
-      fontSize: "12.5px",
-      bgcolor: "background.paper",
-      borderRadius: "8px",
-      "& fieldset": {
-        borderColor: "#757575",
-      },
-      "&:hover fieldset": {
-        borderColor: "primary.main",
-      },
-      "&.Mui-focused fieldset": {
-        borderColor: "primary.main",
-        borderWidth: "1px",
-      },
+    display: "grid",
+    gridTemplateColumns: {
+      xs: "1fr",
+      md: "repeat(2, minmax(0, 1fr))",
     },
-    "& .MuiInputLabel-root": {
-      fontSize: "12.5px",
-    },
-    "& .MuiFormHelperText-root": {
-      mx: 0.5,
-      mt: 0.5,
-      fontSize: "10.5px",
-      color: "text.secondary",
-    },
+    gap: 2,
+    mb: 2,
   }}
-/>
-          </Box>
+>
+  {/* Search Lab */}
+  <Box
+    sx={{
+      border: "1px solid #dfe7e7",
+      borderRadius: 2,
+      p: { xs: 1.5, sm: 2 },
+      bgcolor: "#fff",
+      minWidth: 0,
+    }}
+  >
+    <Typography
+      sx={{
+        fontSize: "13px",
+        fontWeight: 700,
+        color: "#111827",
+        mb: 1.1,
+      }}
+    >
+      Search Lab
+    </Typography>
 
-          <Box
-            sx={{
-              display: "grid",
-              gap: 2,
-              mb: 2,
-              gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
-            }}
-          >
-            <Box sx={{ ...connectionCardSx, minHeight: 180 }}>
-              <Typography sx={{ fontSize: "12.5px", fontWeight: 700, color: "text.primary", mb: 1 }}>
-                Search Lab
-              </Typography>
+    <TextField
+      size="small"
+      fullWidth
+      label="Lab name or code"
+      value={searchText}
+      onChange={(event) => setSearchText(event.target.value)}
+      sx={{
+        mb: 1,
+        "& .MuiOutlinedInput-root": {
+          height: 50,
+          borderRadius: 1.5,
+          fontSize: "13px",
+        },
+        "& .MuiInputLabel-root": {
+          fontSize: "13px",
+        },
+      }}
+    />
 
-              <TextField
-                size="small"
-                fullWidth
-                label="Lab name or code"
-                value={searchText}
-                onChange={(event) => setSearchText(event.target.value)}
-                sx={{ mb: 1.2, ...compactCellSx }}
-              />
+    <Box>
+      {labs.length ? (
+        <Box
+          sx={{
+            display: "grid",
+            gap: 0.8,
+          }}
+        >
+          {labs.slice(0, 4).map((lab) => (
+            <Box
+              key={lab.id}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 1,
+                border: "1px solid #e5e7eb",
+                borderRadius: 1.5,
+                px: 1.2,
+                py: 0.9,
+              }}
+            >
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  sx={{
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: "#111827",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {lab.lab_name || "Lab"}
+                </Typography>
 
-              <Box sx={{ display: "grid", gap: 1 }}>
-                {labs.length ? (
-                  labs.slice(0, 4).map((lab) => (
-                    <Box key={lab.id} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, border: "1px solid #e2e8f0", borderRadius: 1.5, p: 1 }}>
-                      <Box>
-                        <Typography sx={{ fontSize: "12.5px", fontWeight: 700, color: "text.primary" }}>{lab.lab_name || "Lab"}</Typography>
-                        <Typography sx={{ fontSize: "10.5px", color: "text.secondary" }}>{lab.lab_code || "-"}</Typography>
-                      </Box>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => handleConnectLab(lab.id)}
-                        disabled={connectingId === lab.id}
-                        sx={{ ...compactButtonSx, minWidth: 72 }}
-                      >
-                        {connectingId === lab.id ? "Sending..." : "Connect"}
-                      </Button>
-                    </Box>
-                  ))
-                ) : (
-                  <Typography sx={{ fontSize: "12.5px", color: "text.secondary" }}>
-                    Search by lab name or code to find available labs.
-                  </Typography>
-                )}
+                <Typography
+                  sx={{
+                    fontSize: "10.5px",
+                    color: "text.secondary",
+                  }}
+                >
+                  {lab.lab_code || "-"}
+                </Typography>
               </Box>
-            </Box>
 
-            <Box sx={{ ...connectionCardSx, minHeight: 180 }}>
-              <Typography sx={{ fontSize: "12.5px", fontWeight: 700, color: "text.primary", mb: 1 }}>
-                Search Pharmacy
-              </Typography>
-
-              <TextField
+              <Button
                 size="small"
-                fullWidth
-                label="Pharmacy name or code"
-                value={medicalSearchText}
-                onChange={(event) => setMedicalSearchText(event.target.value)}
-                sx={{ mb: 1.2, ...compactCellSx }}
-              />
-
-              <Box sx={{ display: "grid", gap: 1 }}>
-                {medicalStores.length ? (
-                  medicalStores.slice(0, 4).map((store) => (
-                    <Box key={store.id} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, border: "1px solid #e2e8f0", borderRadius: 1.5, p: 1 }}>
-                      <Box>
-                        <Typography sx={{ fontSize: "12.5px", fontWeight: 700, color: "text.primary" }}>{store.name || store.store_name || "Pharmacy"}</Typography>
-                        <Typography sx={{ fontSize: "10.5px", color: "text.secondary" }}>{store.code || store.store_code || "-"}</Typography>
-                      </Box>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => handleConnectMedicalStore(store.id)}
-                        disabled={connectingMedicalId === store.id}
-                        sx={{ ...compactButtonSx, minWidth: 72 }}
-                      >
-                        {connectingMedicalId === store.id ? "Sending..." : "Connect"}
-                      </Button>
-                    </Box>
-                  ))
-                ) : (
-                  <Typography sx={{ fontSize: "12.5px", color: "text.secondary" }}>
-                    Search by pharmacy name or code to find available stores.
-                  </Typography>
-                )}
-              </Box>
+                variant="outlined"
+                onClick={() => handleConnectLab(lab.id)}
+                disabled={connectingId === lab.id}
+                sx={{
+                  minWidth: 72,
+                  height: 30,
+                  flexShrink: 0,
+                  fontSize: "11px",
+                  textTransform: "none",
+                }}
+              >
+                {connectingId === lab.id ? "Sending..." : "Connect"}
+              </Button>
             </Box>
-          </Box>
+          ))}
+        </Box>
+      ) : (
+        <Typography
+          sx={{
+            fontSize: "12px",
+            color: "#64748b",
+            lineHeight: 1.4,
+          }}
+        >
+          Search by lab name or code to find available labs.
+        </Typography>
+      )}
+    </Box>
+  </Box>
+
+  {/* Search Pharmacy */}
+  <Box
+    sx={{
+      border: "1px solid #dfe7e7",
+      borderRadius: 2,
+      p: { xs: 1.5, sm: 2 },
+      bgcolor: "#fff",
+      minWidth: 0,
+    }}
+  >
+    <Typography
+      sx={{
+        fontSize: "13px",
+        fontWeight: 700,
+        color: "#111827",
+        mb: 1.1,
+      }}
+    >
+      Search Pharmacy
+    </Typography>
+
+    <TextField
+      size="small"
+      fullWidth
+      label="Pharmacy name or code"
+      value={medicalSearchText}
+      onChange={(event) => setMedicalSearchText(event.target.value)}
+      sx={{
+        mb: 1,
+        "& .MuiOutlinedInput-root": {
+          height: 50,
+          borderRadius: 1.5,
+          fontSize: "13px",
+        },
+        "& .MuiInputLabel-root": {
+          fontSize: "13px",
+        },
+      }}
+    />
+
+    <Box>
+      {medicalStores.length ? (
+        <Box
+          sx={{
+            display: "grid",
+            gap: 0.8,
+          }}
+        >
+          {medicalStores.slice(0, 4).map((store) => (
+            <Box
+              key={store.id}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 1,
+                border: "1px solid #e5e7eb",
+                borderRadius: 1.5,
+                px: 1.2,
+                py: 0.9,
+              }}
+            >
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  sx={{
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: "#111827",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {store.name || store.store_name || "Pharmacy"}
+                </Typography>
+
+                <Typography
+                  sx={{
+                    fontSize: "10.5px",
+                    color: "text.secondary",
+                  }}
+                >
+                  {store.code || store.store_code || "-"}
+                </Typography>
+              </Box>
+
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => handleConnectMedicalStore(store.id)}
+                disabled={connectingMedicalId === store.id}
+                sx={{
+                  minWidth: 72,
+                  height: 30,
+                  flexShrink: 0,
+                  fontSize: "11px",
+                  textTransform: "none",
+                }}
+              >
+                {connectingMedicalId === store.id
+                  ? "Sending..."
+                  : "Connect"}
+              </Button>
+            </Box>
+          ))}
+        </Box>
+      ) : (
+        <Typography
+          sx={{
+            fontSize: "12px",
+            color: "#64748b",
+            lineHeight: 1.4,
+          }}
+        >
+          Search by pharmacy name or code to find available stores.
+        </Typography>
+      )}
+    </Box>
+  </Box>
+</Box>
 
           <DataTable
             columns={[
@@ -824,14 +1048,10 @@ export default function DoctorLabPanel({ section = "connections" }) {
               <Pagination
                 count={Math.max(
                   1,
-                  Math.ceil(
-                    filteredConnections.length / pageSize
-                  )
+                  Math.ceil(filteredConnections.length / pageSize),
                 )}
                 page={tablePage}
-                onChange={(_, value) =>
-                  setTablePage(value)
-                }
+                onChange={(_, value) => setTablePage(value)}
                 size="small"
                 color="primary"
               />
@@ -840,7 +1060,13 @@ export default function DoctorLabPanel({ section = "connections" }) {
             {visibleConnections.length
               ? visibleConnections.map((connection, index) => (
                   <TableRow
-                    key={`${connection.type || "connection"}-${connection.connection_id ?? connection.id ?? connection.lab_id ?? connection.store_id ?? index}`}
+                    key={`${connection.type || "connection"}-${
+                      connection.connection_id ??
+                      connection.id ??
+                      connection.lab_id ??
+                      connection.store_id ??
+                      index
+                    }`}
                     hover
                   >
                     <TableCell
@@ -872,15 +1098,13 @@ export default function DoctorLabPanel({ section = "connections" }) {
                     <TableCell>
                       <Chip
                         size="small"
-                        label={
-                          connection.status || "PENDING"
-                        }
+                        label={connection.status || "PENDING"}
                         color={
                           connection.status === "APPROVED"
                             ? "success"
                             : connection.status === "REJECTED"
-                            ? "error"
-                            : "warning"
+                              ? "error"
+                              : "warning"
                         }
                       />
                     </TableCell>
@@ -891,9 +1115,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
                       }}
                     >
                       {connection.requested_at
-                        ? new Date(
-                            connection.requested_at
-                          ).toLocaleDateString()
+                        ? new Date(connection.requested_at).toLocaleDateString()
                         : "-"}
                     </TableCell>
 
@@ -903,9 +1125,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
                       }}
                     >
                       {connection.approved_at
-                        ? new Date(
-                            connection.approved_at
-                          ).toLocaleDateString()
+                        ? new Date(connection.approved_at).toLocaleDateString()
                         : "-"}
                     </TableCell>
                   </TableRow>
@@ -919,10 +1139,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
           autoHideDuration={6000}
           onClose={() => setError("")}
         >
-          <Alert
-            severity="error"
-            onClose={() => setError("")}
-          >
+          <Alert severity="error" onClose={() => setError("")}>
             {error}
           </Alert>
         </Snackbar>
@@ -932,10 +1149,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
           autoHideDuration={3500}
           onClose={() => setNotice("")}
         >
-          <Alert
-            severity="success"
-            onClose={() => setNotice("")}
-          >
+          <Alert severity="success" onClose={() => setNotice("")}>
             {notice}
           </Alert>
         </Snackbar>
@@ -985,14 +1199,9 @@ export default function DoctorLabPanel({ section = "connections" }) {
           emptyMessage="No lab requests found."
           footer={
             <Pagination
-              count={Math.max(
-                1,
-                Math.ceil(requests.length / pageSize)
-              )}
+              count={Math.max(1, Math.ceil(requests.length / pageSize))}
               page={tablePage}
-              onChange={(_, value) =>
-                setTablePage(value)
-              }
+              onChange={(_, value) => setTablePage(value)}
               size="small"
               color="primary"
             />
@@ -1007,13 +1216,13 @@ export default function DoctorLabPanel({ section = "connections" }) {
                       fontWeight: 600,
                     }}
                   >
-                    {request.patient_name ||
-                      request.patient_id ||
-                      "-"}
+                    {request.patient_name || request.patient_id || "-"}
                   </TableCell>
 
                   <TableCell
-                    sx={{ color: "text.primary" }}
+                    sx={{
+                      color: "text.primary",
+                    }}
                   >
                     {request.lab_name || "-"}
                   </TableCell>
@@ -1025,9 +1234,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
                       whiteSpace: "normal",
                     }}
                   >
-                    {Array.isArray(
-                      request.requested_tests
-                    )
+                    {Array.isArray(request.requested_tests)
                       ? request.requested_tests.join(", ")
                       : request.requested_tests || "-"}
                   </TableCell>
@@ -1035,13 +1242,9 @@ export default function DoctorLabPanel({ section = "connections" }) {
                   <TableCell>
                     <Chip
                       size="small"
-                      label={
-                        request.priority || "NORMAL"
-                      }
+                      label={request.priority || "NORMAL"}
                       color={
-                        request.priority === "URGENT"
-                          ? "error"
-                          : "default"
+                        request.priority === "URGENT" ? "error" : "default"
                       }
                     />
                   </TableCell>
@@ -1049,16 +1252,14 @@ export default function DoctorLabPanel({ section = "connections" }) {
                   <TableCell>
                     <Chip
                       size="small"
-                      label={
-                        request.status || "PENDING"
-                      }
+                      label={request.status || "PENDING"}
                       color={
                         request.status === "COMPLETED"
                           ? "success"
                           : request.status === "REJECTED" ||
-                            request.status === "CANCELLED"
-                          ? "error"
-                          : "warning"
+                              request.status === "CANCELLED"
+                            ? "error"
+                            : "warning"
                       }
                     />
                   </TableCell>
@@ -1072,18 +1273,17 @@ export default function DoctorLabPanel({ section = "connections" }) {
                   >
                     {request.status === "REJECTED" ||
                     request.status === "CANCELLED"
-                      ? getRequestNote(request) ||
-                        "No reason provided."
+                      ? getRequestNote(request) || "No reason provided."
                       : "-"}
                   </TableCell>
 
                   <TableCell
-                    sx={{ color: "text.secondary" }}
+                    sx={{
+                      color: "text.secondary",
+                    }}
                   >
                     {request.created_at
-                      ? new Date(
-                          request.created_at
-                        ).toLocaleDateString()
+                      ? new Date(request.created_at).toLocaleDateString()
                       : "-"}
                   </TableCell>
                 </TableRow>
@@ -1096,10 +1296,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
           autoHideDuration={6000}
           onClose={() => setError("")}
         >
-          <Alert
-            severity="error"
-            onClose={() => setError("")}
-          >
+          <Alert severity="error" onClose={() => setError("")}>
             {error}
           </Alert>
         </Snackbar>
@@ -1109,7 +1306,14 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
   if (section === "reports") {
     return (
-      <Box sx={{ mt: { xs: 7, md: 8 },px:4,py:2 , backgroundColor:"white" }}>
+      <Box
+        sx={{
+          mt: { xs: 7, md: 8 },
+          px: 4,
+          py: 2,
+          backgroundColor: "white",
+        }}
+      >
         <LabReports
           reports={showPreviousReports ? previousReportRows : latestReportRows}
           previousReportsCount={previousReportRows.length}
@@ -1128,10 +1332,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
           autoHideDuration={6000}
           onClose={() => setError("")}
         >
-          <Alert
-            severity="error"
-            onClose={() => setError("")}
-          >
+          <Alert severity="error" onClose={() => setError("")}>
             {error}
           </Alert>
         </Snackbar>
