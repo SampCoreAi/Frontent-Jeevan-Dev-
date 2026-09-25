@@ -9,6 +9,7 @@ import LabProfile from "./LabProfile";
 import LabConnections from "./LabConnections";
 import LabRequests from "./LabRequests";
 import LabReports from "./LabReports";
+import LabTechnicians from "./LabTechnicians";
 
 const getRows = (response) => response.data?.data || [];
 const getErrorMessage = (error, fallback) => error.response?.data?.message || error.message || fallback;
@@ -19,6 +20,7 @@ export default function LabPanel({ section = "dashboard" }) {
   const [connections, setConnections] = useState([]);
   const [requests, setRequests] = useState([]);
   const [reports, setReports] = useState([]);
+  const [technicians, setTechnicians] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -28,6 +30,8 @@ export default function LabPanel({ section = "dashboard" }) {
   const [tableFilters, setTableFilters] = useState({ search: "", status: "", date: "" });
   const [showDelayedOnly, setShowDelayedOnly] = useState(false);
   const [tablePage, setTablePage] = useState(1);
+  const [requestPagination, setRequestPagination] = useState(null);
+  const [reportPagination, setReportPagination] = useState(null);
   const pageSize = 10;
 
   const loadProfile = async () => {
@@ -58,18 +62,32 @@ export default function LabPanel({ section = "dashboard" }) {
         search: tableFilters.search || undefined,
         status: tableFilters.status || undefined,
         date: tableFilters.date || undefined,
+        page: tablePage,
+        pageSize,
         pendingUpload: showDelayedOnly || undefined,
         delayedUpload: showDelayedOnly || undefined,
       },
     });
     setRequests(getRows(response));
+    setRequestPagination(response.data?.pagination || null);
   };
 
   const loadReports = async () => {
     const response = await api.get("/api/lab-reports", {
-      params: { search: tableFilters.search || undefined, date: tableFilters.date || undefined },
+      params: {
+        search: tableFilters.search || undefined,
+        date: tableFilters.date || undefined,
+        page: tablePage,
+        pageSize,
+      },
     });
     setReports(getRows(response));
+    setReportPagination(response.data?.pagination || null);
+  };
+
+  const loadTechnicians = async () => {
+    const response = await api.get("/api/lab-technicians");
+    setTechnicians(getRows(response));
   };
 
   const loadSection = async () => {
@@ -77,7 +95,8 @@ export default function LabPanel({ section = "dashboard" }) {
       setLoading(true);
       setError("");
       if (section === "connections") await Promise.all([loadProfile(), loadConnections()]);
-      else if (section === "requests") await Promise.all([loadProfile(), loadRequests(), loadReports()]);
+      else if (section === "technicians") await Promise.all([loadProfile(), loadTechnicians()]);
+      else if (section === "requests") await Promise.all([loadProfile(), loadRequests(), loadReports(), loadTechnicians()]);
       else if (section === "reports") await Promise.all([loadProfile(), loadReports()]);
       else await Promise.all([loadProfile(), loadConnections(), loadRequests(), loadReports()]);
     } catch (requestError) {
@@ -89,7 +108,7 @@ export default function LabPanel({ section = "dashboard" }) {
 
   useEffect(() => {
     loadSection();
-  }, [section, tableFilters.date, tableFilters.search, tableFilters.status, showDelayedOnly]);
+  }, [section, tableFilters.date, tableFilters.search, tableFilters.status, showDelayedOnly, tablePage]);
 
   useEffect(() => {
     setTablePage(1);
@@ -97,7 +116,7 @@ export default function LabPanel({ section = "dashboard" }) {
 
   const isDelayedUploadPending = (request) => {
     const status = String(request?.status || "").toUpperCase();
-    if (["REPORT_UPLOADED", "COMPLETED"].includes(status)) return false;
+    if (["REPORT_READY", "REPORT_UPLOADED", "COMPLETED"].includes(status)) return false;
 
     const rawDate = request?.expected_report_at || request?.expectedReportAt;
     if (!rawDate) return false;
@@ -154,6 +173,72 @@ export default function LabPanel({ section = "dashboard" }) {
     }
   };
 
+  const updateReportDate = async (requestId, expectedReportAt) => {
+    try {
+      setActionId(requestId);
+      await api.patch(`/api/lab-requests/${requestId}/report-date`, { expectedReportAt });
+      setRequests((items) => items.map((item) => (
+        item.id === requestId ? { ...item, expected_report_at: expectedReportAt } : item
+      )));
+      setRequestUpdateFeedback({ type: "success", message: "Report delivery time updated successfully." });
+    } catch (requestError) {
+      const message = getErrorMessage(requestError, "Unable to update report delivery time.");
+      setRequestUpdateFeedback({ type: "error", message: `Update failed: ${message}` });
+      setError(message);
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const updateCollectionDetails = async (requestId, collectionSlot, collectionInstructions, collectionToken) => {
+    try {
+      setActionId(requestId);
+      await api.patch(`/api/lab-requests/${requestId}/collection-details`, {
+        collectionSlot: collectionSlot || null,
+        collectionInstructions: collectionInstructions?.trim() || null,
+        collectionToken: collectionToken?.trim() || null,
+      });
+      setRequests((items) => items.map((item) => (
+        item.id === requestId
+          ? {
+              ...item,
+              collection_slot: collectionSlot || null,
+              collection_instructions: collectionInstructions?.trim() || null,
+              collection_token: collectionToken?.trim() || null,
+            }
+          : item
+      )));
+      setRequestUpdateFeedback({ type: "success", message: "Collection details updated successfully." });
+      return true;
+    } catch (requestError) {
+      const message = getErrorMessage(requestError, "Unable to update collection details.");
+      setRequestUpdateFeedback({ type: "error", message: `Update failed: ${message}` });
+      setError(message);
+      return false;
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const assignTechnician = async (requestId, technicianEmail) => {
+    try {
+      setActionId(requestId);
+      await api.patch(`/api/lab-technicians/${requestId}/assign`, { technicianEmail });
+      await loadRequests();
+      setNotice("Technician assigned and task email sent.");
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Unable to assign technician."));
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const createTechnician = async (payload) => {
+    await api.post("/api/lab-technicians", payload);
+    await loadTechnicians();
+    setNotice("Technician added and login credentials sent by email.");
+  };
+
   const uploadReport = async (requestId, file) => {
     try {
       setUploading(true);
@@ -165,9 +250,12 @@ export default function LabPanel({ section = "dashboard" }) {
       });
       setNotice("Report uploaded successfully.");
       await Promise.all([loadRequests(), loadReports()]);
+      return { success: true };
     } catch (requestError) {
-      setError(getErrorMessage(requestError, "Unable to upload report."));
-      throw requestError;
+      return {
+        success: false,
+        message: getErrorMessage(requestError, "Unable to upload report."),
+      };
     } finally {
       setUploading(false);
     }
@@ -207,8 +295,11 @@ export default function LabPanel({ section = "dashboard" }) {
       page={tablePage}
       pageSize={pageSize}
       onPageChange={setTablePage}
+      pagination={requestPagination}
       actionId={actionId}
       onStatusUpdate={updateRequest}
+      onReportDateUpdate={updateReportDate}
+            onCollectionDetailsUpdate={updateCollectionDetails}
       uploading={uploading}
       onUploadReport={uploadReport}
       onDeleteReport={deleteReport}
@@ -216,11 +307,15 @@ export default function LabPanel({ section = "dashboard" }) {
       pendingUploadCount={delayedUploadCount}
       showDelayedOnly={showDelayedOnly}
       onToggleDelayedUpload={() => setShowDelayedOnly((value) => !value)}
+        technicians={technicians}
+        onAssignTechnician={assignTechnician}
     />
   ) : section === "reports" ? (
-    <LabReports reports={reports} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} />
+    <LabReports reports={reports} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} pagination={reportPagination} />
   ) : section === "profile" ? (
     <LabProfile profile={profile} />
+  ) : section === "technicians" ? (
+    <LabTechnicians technicians={technicians} loading={loading} onCreate={createTechnician} />
   ) : (
     <LabDashboard profile={profile} stats={stats} onNavigate={(path) => router.push(path)} />
   );

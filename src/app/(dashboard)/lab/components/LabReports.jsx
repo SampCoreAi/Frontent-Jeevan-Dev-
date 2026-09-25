@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import {
   Box,
   Button,
@@ -8,6 +9,11 @@ import {
   Stack,
   TableCell,
   TableRow,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
   Typography,
 } from "@mui/material";
 import { DataTable, TableFilters } from "./LabUi";
@@ -19,18 +25,17 @@ export default function LabReports({
   page = 1,
   pageSize = 10,
   onPageChange,
+  pagination,
   showPrevious = false,
   onShowCurrent,
   onShowPrevious,
   previousReportsCount = 0,
+  onReview,
 }) {
   const safeReports = Array.isArray(reports) ? reports : [];
   const safePageSize = Number(pageSize) > 0 ? Number(pageSize) : 10;
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(safeReports.length / safePageSize)
-  );
+  const totalPages = pagination?.totalPages || Math.max(1, Math.ceil(safeReports.length / safePageSize));
 
   const currentPage = Math.min(
     Math.max(Number(page) || 1, 1),
@@ -43,39 +48,34 @@ export default function LabReports({
     safeReports.length
   );
 
-  const visible = safeReports.slice(startIndex, endIndex);
+  const visible = pagination ? safeReports : safeReports.slice(startIndex, endIndex);
+  const [reviewReport, setReviewReport] = React.useState(null);
+  const [reviewComment, setReviewComment] = React.useState("");
+  const [reviewSaving, setReviewSaving] = React.useState(false);
 
   const getStatusStyle = (status) => {
     const value = String(status || "").toUpperCase();
 
     if (value === "COMPLETED") {
       return {
-        bgcolor: "#ECFDF3",
         color: "#15803D",
-        borderColor: "#BBF7D0",
       };
     }
 
     if (value === "REJECTED" || value === "CANCELLED") {
       return {
-        bgcolor: "#FEF2F2",
         color: "#DC2626",
-        borderColor: "#FECACA",
       };
     }
 
     if (value === "REPORT_UPLOADED") {
       return {
-        bgcolor: "#EFF6FF",
         color: "#0369A1",
-        borderColor: "#BAE6FD",
       };
     }
 
     return {
-      bgcolor: "#F8FAFC",
       color: "#64748B",
-      borderColor: "#E2E8F0",
     };
   };
 
@@ -132,7 +132,19 @@ export default function LabReports({
           </Typography>
         </Box>
 
-       
+        <Box
+          sx={{
+            width: { xs: "100%", sm: "auto" },
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            justifyContent: "flex-end",
+            flexWrap: "wrap",
+          }}
+        >
+          <TableFilters {...filters} />
+        </Box>
       </Box>
 
       <Box
@@ -150,6 +162,7 @@ export default function LabReports({
             "LAB",
             "TEST",
             "STATUS",
+            "REVIEW",
             "UPLOADED",
             "DOWNLOAD",
           ]}
@@ -306,9 +319,9 @@ export default function LabReports({
                     variant="outlined"
                     sx={{
                       height: 23,
-                      bgcolor: statusStyle.bgcolor,
                       color: statusStyle.color,
-                      borderColor: statusStyle.borderColor,
+                      bgcolor: "transparent",
+                      border: 0,
                       fontSize: "9.5px",
                       fontWeight: 700,
                       "& .MuiChip-label": {
@@ -316,6 +329,28 @@ export default function LabReports({
                       },
                     }}
                   />
+                </TableCell>
+
+                <TableCell sx={{ ...cellSx, minWidth: 170 }}>
+                  <Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap">
+                    <Chip
+                      size="small"
+                      label={String(report.reviewStatus || report.review_status || "AWAITING_REVIEW").replaceAll("_", " ")}
+                      sx={{ height: 23, fontSize: "9.5px", fontWeight: 700, bgcolor: "transparent", border: 0, color: (report.reviewStatus || report.review_status) === "REVIEWED" ? "#15803D" : "#B45309" }}
+                    />
+                    {onReview && report.downloadUrl && Number.isInteger(Number(report.id)) ? (
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          setReviewReport(report);
+                          setReviewComment(report.doctorComment || report.doctor_comment || "");
+                        }}
+                        sx={{ minWidth: 0, px: 0.5, fontSize: "11px", textTransform: "none" }}
+                      >
+                        Review
+                      </Button>
+                    ) : null}
+                  </Stack>
                 </TableCell>
 
                 <TableCell
@@ -370,6 +405,47 @@ export default function LabReports({
           })}
         </DataTable>
       </Box>
+
+      <Dialog
+        open={Boolean(reviewReport)}
+        onClose={() => !reviewSaving && setReviewReport(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>Doctor interpretation and next steps</DialogTitle>
+        <DialogContent sx={{ display: "grid", gap: 1.5 }}>
+          <Typography variant="body2" color="text.secondary">
+            {reviewReport?.reportCode || reviewReport?.report_code || "Selected report"}
+          </Typography>
+          <TextField
+            label="What the result means and what to do next"
+            multiline
+            minRows={4}
+            value={reviewComment}
+            onChange={(event) => setReviewComment(event.target.value)}
+            placeholder="Explain what the report shows, whether it looks normal or concerning, and what the patient should do next."
+            fullWidth
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReviewReport(null)} disabled={reviewSaving} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            disabled={reviewSaving || !reviewReport}
+            onClick={async () => {
+              setReviewSaving(true);
+              const saved = await onReview(reviewReport.id, reviewComment.trim() || null);
+              setReviewSaving(false);
+              if (saved !== false) setReviewReport(null);
+            }}
+            sx={{ textTransform: "none" }}
+          >
+            {reviewSaving ? "Saving..." : "Save interpretation"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

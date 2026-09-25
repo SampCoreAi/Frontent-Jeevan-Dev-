@@ -451,7 +451,7 @@ export function TableFilters({
 
       <TextField
         size="small"
-        placeholder="Search lab, doctor or test"
+        placeholder="Search name, order ID, test or technician"
         value={search}
         onChange={(event) => onSearch?.(event.target.value)}
         sx={{

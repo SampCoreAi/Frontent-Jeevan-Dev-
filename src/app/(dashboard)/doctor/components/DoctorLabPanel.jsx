@@ -286,6 +286,23 @@ export default function DoctorLabPanel({ section = "connections" }) {
     }
   };
 
+  const reviewReport = async (reportId, comment) => {
+    try {
+      const numericReportId = Number(reportId);
+      if (!Number.isInteger(numericReportId) || numericReportId < 1) {
+        setError("This report does not have a valid report ID yet.");
+        return false;
+      }
+      await api.patch(`/api/lab-reports/${numericReportId}/review`, { comment });
+      await loadReports();
+      setNotice("Lab report marked as reviewed.");
+      return true;
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Unable to review lab report."));
+      return false;
+    }
+  };
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (section === "connections") {
@@ -1175,10 +1192,15 @@ export default function DoctorLabPanel({ section = "connections" }) {
           {...filterProps}
           statusOptions={[
             "PENDING",
+            "REQUESTED",
             "APPROVED",
+            "ACCEPTED",
             "REJECTED",
+            "SAMPLE_SCHEDULED",
             "SAMPLE_COLLECTED",
+            "RECOLLECTION_REQUIRED",
             "PROCESSING",
+            "REPORT_READY",
             "REPORT_UPLOADED",
             "COMPLETED",
             "CANCELLED",
@@ -1187,6 +1209,8 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
         <DataTable
           columns={[
+            "ORDER ID",
+            "SAMPLE",
             "PATIENT",
             "LAB",
             "TESTS",
@@ -1210,6 +1234,14 @@ export default function DoctorLabPanel({ section = "connections" }) {
           {visibleRequests.length
             ? visibleRequests.map((request) => (
                 <TableRow key={request.id} hover>
+                  <TableCell sx={{ color: "#0B5C8E", fontWeight: 700 }}>
+                    {request.order_id || request.orderId || "-"}
+                  </TableCell>
+
+                  <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>
+                    {request.sample_type || request.sampleType || "-"}
+                  </TableCell>
+
                   <TableCell
                     sx={{
                       color: "text.primary",
@@ -1315,16 +1347,13 @@ export default function DoctorLabPanel({ section = "connections" }) {
         }}
       >
         <LabReports
-          reports={showPreviousReports ? previousReportRows : latestReportRows}
-          previousReportsCount={previousReportRows.length}
-          showPrevious={showPreviousReports}
-          onShowCurrent={() => setShowPreviousReports(false)}
-          onShowPrevious={() => setShowPreviousReports(true)}
+          reports={reportRows}
           loading={loading}
           filters={filterProps}
           page={tablePage}
           pageSize={pageSize}
           onPageChange={setTablePage}
+          onReview={reviewReport}
         />
 
         <Snackbar

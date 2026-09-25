@@ -123,14 +123,18 @@ const PRINT_PAGE_STYLE = `
 ========================================================= */
 
 export default function PrescriptionUI(props) {
-   const router = useRouter();
+  const router = useRouter();
 
-  
-  const [labTestSummary, setLabTestSummary] = useState({ labName: "", tests: [] });
+  const [labTestSummary, setLabTestSummary] = useState({
+    labName: "",
+    tests: [],
+  });
   const [labTestResetKey, setLabTestResetKey] = useState(0);
   const [currentPatientReports, setCurrentPatientReports] = useState([]);
   const [oldPatientReports, setOldPatientReports] = useState([]);
-  const [currentPatientLabRequests, setCurrentPatientLabRequests] = useState([]);
+  const [currentPatientLabRequests, setCurrentPatientLabRequests] = useState(
+    [],
+  );
   const [oldPatientLabRequests, setOldPatientLabRequests] = useState([]);
   const [patientReports, setPatientReports] = useState([]);
   const [patientLabRequests, setPatientLabRequests] = useState([]);
@@ -140,6 +144,8 @@ export default function PrescriptionUI(props) {
   const [cancellingRequestId, setCancellingRequestId] = useState(null);
   const [cancelRequest, setCancelRequest] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [repeatRequest, setRepeatRequest] = useState(null);
+  const [repeatingRequestId, setRepeatingRequestId] = useState(null);
 
   const {
     isPatient,
@@ -223,8 +229,30 @@ export default function PrescriptionUI(props) {
 
     if (typeof sectionFlag === "string") {
       const value = sectionFlag.toLowerCase();
-      if (["current", "current_appointment", "active", "true", "1", "yes"].includes(value)) return "current";
-      if (["old", "previous", "past", "historic", "history", "false", "0", "no"].includes(value)) return "old";
+      if (
+        [
+          "current",
+          "current_appointment",
+          "active",
+          "true",
+          "1",
+          "yes",
+        ].includes(value)
+      )
+        return "current";
+      if (
+        [
+          "old",
+          "previous",
+          "past",
+          "historic",
+          "history",
+          "false",
+          "0",
+          "no",
+        ].includes(value)
+      )
+        return "old";
     }
 
     return null;
@@ -290,7 +318,12 @@ export default function PrescriptionUI(props) {
           })
         : Promise.resolve({ data: { data: [] } });
 
-      const [currentRequestsResponse, oldRequestsResponse, currentReportsResponse, oldReportsResponse] = await Promise.all([
+      const [
+        currentRequestsResponse,
+        oldRequestsResponse,
+        currentReportsResponse,
+        oldReportsResponse,
+      ] = await Promise.all([
         currentRequestPromise,
         oldRequestPromise,
         currentReportsPromise,
@@ -304,7 +337,13 @@ export default function PrescriptionUI(props) {
 
       const normalizePatientRecords = (items) =>
         items.filter(
-          (item) => Number(item.patientId || item.patient_id || item.patient_id || item.patientId) === Number(patientId)
+          (item) =>
+            Number(
+              item.patientId ||
+                item.patient_id ||
+                item.patient_id ||
+                item.patientId,
+            ) === Number(patientId),
         );
 
       const nextCurrentRequests = normalizePatientRecords(currentRequests);
@@ -323,7 +362,9 @@ export default function PrescriptionUI(props) {
         ...current,
         open: true,
         severity: "error",
-        message: requestError?.response?.data?.message || "Unable to refresh lab reports.",
+        message:
+          requestError?.response?.data?.message ||
+          "Unable to refresh lab reports.",
       }));
     } finally {
       setReportsLoading(false);
@@ -359,7 +400,12 @@ export default function PrescriptionUI(props) {
             })
           : Promise.resolve({ data: { data: [] } });
 
-        const [currentRequestsResponse, oldRequestsResponse, currentReportsResponse, oldReportsResponse] = await Promise.all([
+        const [
+          currentRequestsResponse,
+          oldRequestsResponse,
+          currentReportsResponse,
+          oldReportsResponse,
+        ] = await Promise.all([
           currentRequestPromise,
           oldRequestPromise,
           currentReportsPromise,
@@ -373,7 +419,13 @@ export default function PrescriptionUI(props) {
 
         const normalizePatientRecords = (items) =>
           items.filter(
-            (item) => Number(item.patientId || item.patient_id || item.patient_id || item.patientId) === Number(patientId)
+            (item) =>
+              Number(
+                item.patientId ||
+                  item.patient_id ||
+                  item.patient_id ||
+                  item.patientId,
+              ) === Number(patientId),
           );
 
         const nextCurrentRequests = normalizePatientRecords(currentRequests);
@@ -402,7 +454,14 @@ export default function PrescriptionUI(props) {
     loadPatientReports();
   }, [isPatient, patientId, activeAppointmentId]);
 
-  const getRequestNote = (request = {}) => request.latest_status_note || request.latestStatusNote || request.status_note || request.note || request.reason || request.statusReason || "";
+  const getRequestNote = (request = {}) =>
+    request.latest_status_note ||
+    request.latestStatusNote ||
+    request.status_note ||
+    request.note ||
+    request.reason ||
+    request.statusReason ||
+    "";
 
   const buildLabReportRows = (requests, reports) =>
     requests.flatMap((request) => {
@@ -421,8 +480,9 @@ export default function PrescriptionUI(props) {
 
       const matchedReport = reports.find(
         (item) =>
-          Number(item.requestId || item.testRequestId || item.test_request_id) ===
-          Number(request.id)
+          Number(
+            item.requestId || item.testRequestId || item.test_request_id,
+          ) === Number(request.id),
       );
 
       return tests.map((test, index) => ({
@@ -430,6 +490,7 @@ export default function PrescriptionUI(props) {
         labName: request.lab_name,
         testName: test,
         requestId: request.id,
+        orderId: request.order_id || request.orderId || null,
         status: request.status || "PENDING",
         createdAt: request.created_at,
         reportDate:
@@ -445,7 +506,10 @@ export default function PrescriptionUI(props) {
     });
 
   const currentLabReportRows = useMemo(() => {
-    const rows = buildLabReportRows(currentPatientLabRequests, currentPatientReports);
+    const rows = buildLabReportRows(
+      currentPatientLabRequests,
+      currentPatientReports,
+    );
     return [...rows].sort((a, b) => {
       const firstTime = Date.parse(a.reportDate || a.createdAt || 0) || 0;
       const secondTime = Date.parse(b.reportDate || b.createdAt || 0) || 0;
@@ -475,19 +539,53 @@ export default function PrescriptionUI(props) {
   const cancelPendingRequest = async (requestId, reason = null) => {
     try {
       setCancellingRequestId(requestId);
-      await api.patch(`/api/lab-requests/${requestId}/cancel`, { note: reason || null });
-      setPatientLabRequests((current) => current.map((request) => (
-        request.id === requestId ? { ...request, status: "CANCELLED" } : request
-      )));
+      await api.patch(`/api/lab-requests/${requestId}/cancel`, {
+        note: reason || null,
+      });
+      setPatientLabRequests((current) =>
+        current.map((request) =>
+          request.id === requestId
+            ? { ...request, status: "CANCELLED" }
+            : request,
+        ),
+      );
     } catch (requestError) {
       setSnackbar((current) => ({
         ...current,
         open: true,
         severity: "error",
-        message: requestError?.response?.data?.message || "Unable to cancel lab request.",
+        message:
+          requestError?.response?.data?.message ||
+          "Unable to cancel lab request.",
       }));
     } finally {
       setCancellingRequestId(null);
+    }
+  };
+
+  const repeatLabRequest = async () => {
+    if (!repeatRequest) return;
+
+    try {
+      setRepeatingRequestId(repeatRequest.requestId);
+      await api.post(`/api/lab-requests/${repeatRequest.requestId}/repeat`, {});
+      setSnackbar((current) => ({
+        ...current,
+        open: true,
+        severity: "success",
+        message: "Repeat lab test request created successfully.",
+      }));
+      setRepeatRequest(null);
+      await refreshPatientLabData();
+    } catch (requestError) {
+      setSnackbar((current) => ({
+        ...current,
+        open: true,
+        severity: "error",
+        message: requestError?.response?.data?.message || "Unable to repeat lab test request.",
+      }));
+    } finally {
+      setRepeatingRequestId(null);
     }
   };
   /* ---------- PRINT ---------- */
@@ -510,15 +608,12 @@ export default function PrescriptionUI(props) {
         width: "100%",
         maxWidth: "100%",
         minWidth: 0,
-        p:2,
-        mt:1,
+        p: 2,
+        mt: 1,
         bgcolor: "#F4F7F6",
         boxSizing: "border-box",
         overflowX: "hidden",
         overflowY: "visible",
-
-        /* ---------- GLOBAL INPUT THEME ---------- */
-
         "& .MuiInputLabel-root.Mui-focused": {
           color: PRIMARY_COLOR,
         },
@@ -549,167 +644,169 @@ export default function PrescriptionUI(props) {
         },
       }}
     >
-      {/* =====================================================
-          TOP ACTION BUTTONS
-      ====================================================== */}
-
-   <Box
-  sx={{
-    width: "100%",
-    minWidth: 0,
-    display: isDownloading ? "none" : "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: { xs: 1, sm: 1.5 },
-    mb: { xs: 1.2, sm: 1.5 },
-  }}
->
-  <Button
-    variant="outlined"
-    startIcon={<ArrowBackIcon />}
-    onClick={() => router.push("/doctor/pages/patient")}
-    sx={{
-      minHeight: 34,
-      px: { xs: 1.2, sm: 1.5 },
-      borderRadius: 1.5,
-      fontSize: "12px",
-      fontWeight: 600,
-      textTransform: "none",
-      whiteSpace: "nowrap",
-    }}
-  >
-    Back
-  </Button>
-
-  <Box
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: { xs: "flex-start", sm: "flex-end" },
-      flexWrap: "wrap",
-      gap: { xs: 0.7, sm: 1 },
-      flex: { xs: "1 1 100%", sm: 1 },
-    }}
-  >
-   
-
-    {!isPatient && (
-  <>
-    <MedicalStoreRequestForm
-      patientId={patientId}
-      appointmentId={
-        appointmentId ||
-        apiData?.appointment?.id ||
-        apiData?.appointment?.appointment_id
-      }
-      isTodayAppointment={isTodayAppointment}
-      hasSavedPrescription={Boolean(apiData?.prescription)}
-      canSend={Boolean(isTodayAppointment && apiData?.prescription)}
-    />
-
-    <LabTestRequestForm
-      patientId={patientId}
-      appointmentId={
-        appointmentId ||
-        apiData?.appointment?.id ||
-        apiData?.appointment?.appointment_id
-      }
-      storageKey={`doctor-lab-test-${patientId || "unknown"}-${
-        appointmentId ||
-        apiData?.appointment?.id ||
-        apiData?.appointment?.appointment_id ||
-        "no-appointment"
-      }`}
-      resetKey={labTestResetKey}
-      onSummaryChange={setLabTestSummary}
-    />
-
-    <Button
-      variant="outlined"
-      startIcon={<DescriptionOutlined />}
-      onClick={() => {
-        setReportsOpen(true);
-        refreshPatientLabData();
-      }}
-      sx={{
-        textTransform: "none",
-        borderRadius: 1.5,
-        minHeight: 34,
-        fontSize: "12px",
-        px: 1.25,
-      }}
-    >
-      Lab Reports
-      {labReportRows.length ? ` (${labReportRows.length})` : ""}
-    </Button>
-  </>
-)}
-
-    {!isPatient && (
-      <Button
-        onClick={handlePrint}
-        variant="contained"
-        disableElevation
-        sx={actionButtonSx(80)}
-      >
-        Print
-      </Button>
-    )}
-
-    <Button
-      onClick={downloadPdf}
-      variant="contained"
-      disableElevation
-      sx={actionButtonSx(100)}
-    >
       <Box
-        component="span"
-        sx={{ display: { xs: "none", sm: "inline" } }}
+        sx={{
+          width: "100%",
+          minWidth: 0,
+          display: isDownloading ? "none" : "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: { xs: 1, sm: 1.5 },
+          mb: { xs: 1.2, sm: 1.5 },
+        }}
       >
-        Download PDF
-      </Box>
-
-      <Box
-        component="span"
-        sx={{ display: { xs: "inline", sm: "none" } }}
-      >
-        PDF
-      </Box>
-    </Button>
-
-    {!isPatient && editable && isTodayAppointment && (
-      <Button
-        variant="contained"
-        disableElevation
-        onClick={handleSavePrescription}
-        sx={actionButtonSx(110)}
-      >
-        <Box
-          component="span"
-          sx={{ display: { xs: "none", sm: "inline" } }}
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => router.push("/doctor/pages/patient")}
+          sx={{
+            minHeight: 34,
+            px: { xs: 1.2, sm: 1.5 },
+            borderRadius: 1.5,
+            fontSize: "12px",
+            fontWeight: 600,
+            textTransform: "none",
+            whiteSpace: "nowrap",
+          }}
         >
-          {apiData?.prescription
-            ? "Update Prescription"
-            : "Save Prescription"}
-        </Box>
+          Back
+        </Button>
 
         <Box
-          component="span"
-          sx={{ display: { xs: "inline", sm: "none" } }}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: { xs: "flex-start", sm: "flex-end" },
+            flexWrap: "wrap",
+            gap: { xs: 0.7, sm: 1 },
+            flex: { xs: "1 1 100%", sm: 1 },
+          }}
         >
-          {apiData?.prescription ? "Update" : "Save"}
-        </Box>
-      </Button>
-    )}
-  </Box>
-</Box>
+          {!isPatient && (
+            <>
+              <MedicalStoreRequestForm
+                patientId={patientId}
+                appointmentId={
+                  appointmentId ||
+                  apiData?.appointment?.id ||
+                  apiData?.appointment?.appointment_id
+                }
+                isTodayAppointment={isTodayAppointment}
+                hasSavedPrescription={Boolean(apiData?.prescription)}
+                canSend={Boolean(isTodayAppointment && apiData?.prescription)}
+              />
 
-      <Dialog open={reportsOpen} onClose={() => setReportsOpen(false)} fullWidth maxWidth="sm" aria-labelledby="lab-reports-dialog-title">
+              <LabTestRequestForm
+                patientId={patientId}
+                appointmentId={
+                  appointmentId ||
+                  apiData?.appointment?.id ||
+                  apiData?.appointment?.appointment_id
+                }
+                storageKey={`doctor-lab-test-${patientId || "unknown"}-${
+                  appointmentId ||
+                  apiData?.appointment?.id ||
+                  apiData?.appointment?.appointment_id ||
+                  "no-appointment"
+                }`}
+                resetKey={labTestResetKey}
+                onSummaryChange={setLabTestSummary}
+              />
+
+              <Button
+                variant="outlined"
+                startIcon={<DescriptionOutlined />}
+                onClick={() => {
+                  setReportsOpen(true);
+                  refreshPatientLabData();
+                }}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: 1.5,
+                  minHeight: 34,
+                  fontSize: "12px",
+                  px: 1.25,
+                }}
+              >
+                Lab Reports
+                {labReportRows.length ? ` (${labReportRows.length})` : ""}
+              </Button>
+            </>
+          )}
+
+          {!isPatient && (
+            <Button
+              onClick={handlePrint}
+              variant="contained"
+              disableElevation
+              sx={actionButtonSx(80)}
+            >
+              Print
+            </Button>
+          )}
+
+          <Button
+            onClick={downloadPdf}
+            variant="contained"
+            disableElevation
+            sx={actionButtonSx(100)}
+          >
+            <Box
+              component="span"
+              sx={{ display: { xs: "none", sm: "inline" } }}
+            >
+              Download PDF
+            </Box>
+
+            <Box
+              component="span"
+              sx={{ display: { xs: "inline", sm: "none" } }}
+            >
+              PDF
+            </Box>
+          </Button>
+
+          {!isPatient && editable && isTodayAppointment && (
+            <Button
+              variant="contained"
+              disableElevation
+              onClick={handleSavePrescription}
+              sx={actionButtonSx(110)}
+            >
+              <Box
+                component="span"
+                sx={{ display: { xs: "none", sm: "inline" } }}
+              >
+                {apiData?.prescription
+                  ? "Update Prescription"
+                  : "Save Prescription"}
+              </Box>
+
+              <Box
+                component="span"
+                sx={{ display: { xs: "inline", sm: "none" } }}
+              >
+                {apiData?.prescription ? "Update" : "Save"}
+              </Box>
+            </Button>
+          )}
+        </Box>
+      </Box>
+
+      <Dialog
+        open={reportsOpen}
+        onClose={() => setReportsOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        aria-labelledby="lab-reports-dialog-title"
+      >
         <DialogTitle id="lab-reports-dialog-title">Lab Reports</DialogTitle>
         <DialogContent dividers>
           {reportsLoading ? (
-            <Box display="flex" justifyContent="center" py={3}><CircularProgress size={24} /></Box>
+            <Box display="flex" justifyContent="center" py={3}>
+              <CircularProgress size={24} />
+            </Box>
           ) : labReportRows.length ? (
             <Box sx={{ display: "grid", gap: 1 }}>
               <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 0.5 }}>
@@ -750,103 +847,170 @@ export default function PrescriptionUI(props) {
                 </Button>
               </Box>
 
-              {(labReportView === "current" ? currentLabReportRows : oldLabReportRows).length === 0 ? (
-                <Typography color="text.secondary" variant="body2">
-                  No {labReportView === "current" ? "current" : "old"} lab reports found.
-                </Typography>
-              ) : (labReportView === "current" ? currentLabReportRows : oldLabReportRows).map((row) => (
-                <Box key={row.id} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, minWidth: 0, py: 0.5, borderBottom: "1px solid", borderColor: "divider" }}>
+              {(labReportView === "current" ? currentLabReportRows : oldLabReportRows).map((row) => (
+                <Box
+                  key={row.id}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 1,
+                    minWidth: 0,
+                    py: 0.5,
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                  }}
+                >
                   <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, display: "block", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 700,
+                        display: "block",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
                       {row.labName || "Lab"} - {row.testName}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: "11px", display: "block" }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ fontSize: "11px", display: "block" }}
+                    >
                       Created: {row.createdAt ? new Date(row.createdAt).toLocaleString() : "-"}
                     </Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ fontSize: "11px", display: "block" }}
+                    >
+                      Order ID: {row.orderId || "-"}
+                    </Typography>
                     <Box
-  sx={{
-    mt: 0.5,
-    display: "flex",
-    alignItems: "center",
-    gap: 0.7,
-    flexWrap: "wrap",
-  }}
->
-  <Box
-    component="span"
-    sx={{
-      px: 1,
-      py: 0.3,
-      borderRadius: "6px",
-      fontSize: "10.5px",
-      fontWeight: 700,
-      lineHeight: 1.4,
-      bgcolor:
-        row.status === "COMPLETED"
-          ? "#E8F5E9"
-          : row.status === "REPORT_UPLOADED"
-          ? "#E3F2FD"
-          : row.status === "PROCESSING"
-          ? "#EDE7F6"
-          : row.status === "SAMPLE_COLLECTED"
-          ? "#E0F7FA"
-          : row.status === "APPROVED"
-          ? "#E8F5E9"
-          : row.status === "CANCELLED"
-          ? "#FFEBEE"
-          : row.status === "REJECTED"
-          ? "#FFF3E0"
-          : "#FFF8E1",
-      color:
-        row.status === "COMPLETED"
-          ? "#2E7D32"
-          : row.status === "REPORT_UPLOADED"
-          ? "#1565C0"
-          : row.status === "PROCESSING"
-          ? "#6A1B9A"
-          : row.status === "SAMPLE_COLLECTED"
-          ? "#00838F"
-          : row.status === "APPROVED"
-          ? "#2E7D32"
-          : row.status === "CANCELLED"
-          ? "#D32F2F"
-          : row.status === "REJECTED"
-          ? "#E65100"
-          : "#F57F17",
-    }}
-  >
-    {row.status?.replaceAll("_", " ")}
-  </Box>
+                      sx={{
+                        mt: 0.5,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.7,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <Box
+                        component="span"
+                        sx={{
+                          px: 1,
+                          py: 0.3,
+                          borderRadius: "6px",
+                          fontSize: "10.5px",
+                          fontWeight: 700,
+                          lineHeight: 1.4,
+                          bgcolor:
+                            row.status === "COMPLETED"
+                              ? "#E8F5E9"
+                              : row.status === "REPORT_UPLOADED"
+                                ? "#E3F2FD"
+                                : row.status === "PROCESSING"
+                                  ? "#EDE7F6"
+                                  : row.status === "SAMPLE_COLLECTED"
+                                    ? "#E0F7FA"
+                                    : row.status === "APPROVED"
+                                      ? "#E8F5E9"
+                                      : row.status === "CANCELLED"
+                                        ? "#FFEBEE"
+                                        : row.status === "REJECTED"
+                                          ? "#FFF3E0"
+                                          : "#FFF8E1",
+                          color:
+                            row.status === "COMPLETED"
+                              ? "#2E7D32"
+                              : row.status === "REPORT_UPLOADED"
+                                ? "#1565C0"
+                                : row.status === "PROCESSING"
+                                  ? "#6A1B9A"
+                                  : row.status === "SAMPLE_COLLECTED"
+                                    ? "#00838F"
+                                    : row.status === "APPROVED"
+                                      ? "#2E7D32"
+                                      : row.status === "CANCELLED"
+                                        ? "#D32F2F"
+                                        : row.status === "REJECTED"
+                                          ? "#E65100"
+                                          : "#F57F17",
+                        }}
+                      >
+                        {row.status?.replaceAll("_", " ")}
+                      </Box>
 
-  {row.reportDate && (
-    <Typography
-      variant="caption"
-      color="text.secondary"
-      sx={{ fontSize: "11px" }}
-    >
-      Report Date: {new Date(row.reportDate).toLocaleString()}
-    </Typography>
-  )}
-</Box>
+                      {row.reportDate && (
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: "11px" }}>
+                          Report Date: {new Date(row.reportDate).toLocaleString()}
+                        </Typography>
+                      )}
+                    </Box>
+
                     {(row.status === "REJECTED" || row.status === "CANCELLED") && (
-                      <Typography variant="caption" color={row.status === "CANCELLED" ? "error.main" : "warning.main"} sx={{ fontSize: "11px", display: "block", fontWeight: 600 }}>
+                      <Typography
+                        variant="caption"
+                        color={row.status === "CANCELLED" ? "error.main" : "warning.main"}
+                        sx={{ fontSize: "11px", display: "block", fontWeight: 600 }}
+                      >
                         Reason: {getRequestNote(patientLabRequests.find((request) => Number(request.id) === Number(row.requestId))) || "No reason provided."}
                       </Typography>
                     )}
                   </Box>
+
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0 }}>
                     {row.report?.downloadUrl ? (
-                      <Button size="small" href={row.report.downloadUrl} target="_blank" rel="noreferrer" sx={{ textTransform: "none", flexShrink: 0, fontSize: "12px", minHeight: 32, minWidth: 0, px: 1 }}>
+                      <Button
+                        size="small"
+                        href={row.report.downloadUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        sx={{
+                          textTransform: "none",
+                          flexShrink: 0,
+                          fontSize: "12px",
+                          minHeight: 32,
+                          minWidth: 0,
+                          px: 1,
+                        }}
+                      >
                         Open Report
+                      </Button>
+                    ) : null}
+                    {["COMPLETED", "REJECTED"].includes(row.status) ? (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => setRepeatRequest(row)}
+                        disabled={repeatingRequestId === row.requestId}
+                        sx={{
+                          textTransform: "none",
+                          flexShrink: 0,
+                          fontSize: "12px",
+                          minHeight: 32,
+                          minWidth: 0,
+                          px: 1,
+                        }}
+                      >
+                        Repeat Test
                       </Button>
                     ) : null}
                     {row.status === "PENDING" ? (
                       <Button
-                      size="small"
-                      color="error"
-                      onClick={() => setCancelRequest(row)}
-                      disabled={cancellingRequestId === row.requestId}
-                      sx={{ textTransform: "none", flexShrink: 0, fontSize: "12px", minHeight: 32, minWidth: 0, px: 1 }}
+                        size="small"
+                        color="error"
+                        onClick={() => setCancelRequest(row)}
+                        disabled={cancellingRequestId === row.requestId}
+                        sx={{
+                          textTransform: "none",
+                          flexShrink: 0,
+                          fontSize: "12px",
+                          minHeight: 32,
+                          minWidth: 0,
+                          px: 1,
+                        }}
                       >
                         {cancellingRequestId === row.requestId ? "Cancelling..." : "Cancel"}
                       </Button>
@@ -856,11 +1020,15 @@ export default function PrescriptionUI(props) {
               ))}
             </Box>
           ) : (
-            <Typography color="text.secondary" variant="body2">No lab test requests found for this patient.</Typography>
+            <Typography color="text.secondary" variant="body2">
+              No lab test requests found for this patient.
+            </Typography>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setReportsOpen(false)} sx={{ textTransform: "none" }}>Close</Button>
+          <Button onClick={() => setReportsOpen(false)} sx={{ textTransform: "none" }}>
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -870,7 +1038,9 @@ export default function PrescriptionUI(props) {
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, pb: 1 }}>Cancel lab test request?</DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, pb: 1 }}>
+          Cancel lab test request?
+        </DialogTitle>
         <DialogContent sx={{ display: "grid", gap: 1.25, pt: 1.5, px: 2 }}>
           <Typography variant="body2" color="text.secondary">
             {cancelRequest?.testName} sent to {cancelRequest?.labName || "the selected lab"} will be cancelled. The lab will see the cancelled request in its history.
@@ -906,9 +1076,32 @@ export default function PrescriptionUI(props) {
         </DialogActions>
       </Dialog>
 
-      {/* =====================================================
-          PRESCRIPTION PAPER (screen par editable UI)
-      ====================================================== */}
+      <Dialog
+        open={Boolean(repeatRequest)}
+        onClose={() => !repeatingRequestId && setRepeatRequest(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, pb: 1 }}>
+          Repeat lab test?
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1.5, px: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            A new request will be created using the previous lab, patient, sample type, and test details.
+          </Typography>
+          <Typography sx={{ mt: 1, fontSize: 12, fontWeight: 700 }}>
+            {repeatRequest?.testName || "Selected lab test"} · {repeatRequest?.labName || "Lab"}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Button onClick={() => setRepeatRequest(null)} disabled={Boolean(repeatingRequestId)} sx={{ textTransform: "none" }}>
+            Keep Existing
+          </Button>
+          <Button onClick={repeatLabRequest} variant="contained" disabled={Boolean(repeatingRequestId)} sx={{ textTransform: "none" }}>
+            {repeatingRequestId ? "Creating..." : "Create Repeat"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Paper
         ref={pdfRef}
@@ -918,10 +1111,7 @@ export default function PrescriptionUI(props) {
           maxWidth: 960,
           minWidth: 0,
           mx: "auto",
-          p: {
-            xs: isDownloading ? 2.5 : 1.5,
-            sm: 3,
-          },
+          p: { xs: isDownloading ? 2.5 : 1.5, sm: 3 },
           bgcolor: "#FFFFFF",
           borderRadius: { xs: 1, sm: 1.5 },
           border: isDownloading ? "none" : "1px solid",
@@ -935,12 +1125,10 @@ export default function PrescriptionUI(props) {
           overflow: "visible",
         }}
       >
-        {/* HEADER */}
         <Box sx={{ width: "100%", minWidth: 0 }}>
           <PrescriptionHeader doctor={doctor} />
         </Box>
 
-        {/* PATIENT INFORMATION */}
         <Box sx={{ width: "100%", minWidth: 0 }}>
           <PatientInfo
             patient={patient}
@@ -949,7 +1137,6 @@ export default function PrescriptionUI(props) {
           />
         </Box>
 
-        {/* DIAGNOSIS */}
         <Box sx={{ width: "100%", minWidth: 0 }}>
           <DiagnosisSection
             diagnosis={diagnosis}
@@ -971,7 +1158,14 @@ export default function PrescriptionUI(props) {
                 whiteSpace: "nowrap",
               }}
             >
-              <Typography sx={{ fontSize: "14px", fontWeight: 700, color: "primary.main", flexShrink: 0 }}>
+              <Typography
+                sx={{
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "primary.main",
+                  flexShrink: 0,
+                }}
+              >
                 Test Name
               </Typography>
               {labTestSummary.labName && (
@@ -984,10 +1178,8 @@ export default function PrescriptionUI(props) {
               </Typography>
             </Box>
           )}
-
         </Box>
 
-        {/* MEDICINE TABLE */}
         <Box
           sx={{
             width: "100%",
@@ -1027,7 +1219,6 @@ export default function PrescriptionUI(props) {
           </Box>
         </Box>
 
-        {/* FOOTER */}
         <Box
           sx={{
             mt: { xs: 2, sm: 2.5 },
@@ -1052,12 +1243,6 @@ export default function PrescriptionUI(props) {
         </Box>
       </Paper>
 
-      {/* =====================================================
-          PRINT ONLY VIEW
-          - Screen se bahar rakha hai (display:none NAHI, warna print blank aayega)
-          - Yehi PDF wala design print hota hai
-      ====================================================== */}
-
       <Box
         aria-hidden="true"
         sx={{
@@ -1080,10 +1265,6 @@ export default function PrescriptionUI(props) {
           />
         </div>
       </Box>
-
-      {/* =====================================================
-          SNACKBAR
-      ====================================================== */}
 
       <Snackbar
         open={snackbar?.open || false}
