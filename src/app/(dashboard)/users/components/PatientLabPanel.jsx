@@ -548,29 +548,14 @@ export default function PatientLabPanel() {
   return (
     <Box
       sx={{
-        mt: {
-          xs: 7,
-          md: 8,
-        },
-
+        mt: { xs: 7, md: 8 },
         width: "100%",
         minWidth: 0,
-
-        px: {
-          xs: 1.5,
-          sm: 2,
-          md: 4,
-        },
-
+        px: { xs: 1.5, sm: 2, md: 4 },
         backgroundColor: "white",
-
         display: "grid",
         alignContent: "start",
-
-        gap: {
-          xs: 2,
-          md: 3,
-        },
+        gap: { xs: 2, md: 3 },
       }}
     >
       <TableFilters
@@ -588,7 +573,6 @@ export default function PatientLabPanel() {
           "REPORT_READY",
           "REPORT_UPLOADED",
           "COMPLETED",
-          "REJECTED",
           "CANCELLED",
         ]}
       />
@@ -599,23 +583,10 @@ export default function PatientLabPanel() {
           minWidth: 0,
           overflowX: "auto",
           borderRadius: 2,
-
-          "& th": {
-            fontSize: "12.5px",
-            whiteSpace: "nowrap",
-          },
-
-          "& td": {
-            fontSize: "12.5px",
-          },
-
-          "& .MuiChip-label": {
-            fontSize: "12.5px",
-          },
-
-          "& .MuiButton-root": {
-            fontSize: "12.5px",
-          },
+          "& th": { fontSize: "12.5px", whiteSpace: "nowrap" },
+          "& td": { fontSize: "12.5px" },
+          "& .MuiChip-label": { fontSize: "12.5px" },
+          "& .MuiButton-root": { fontSize: "12.5px" },
         }}
       >
         <DataTable
@@ -633,10 +604,7 @@ export default function PatientLabPanel() {
             "REPORT BY",
             "COLLECTION DATE & TIME",
             "TOKEN",
-            "TEST",
-            "LAB",
             "STATUS",
-            "EXPECTED RESULT",
             "REMARKS",
             "REPORT",
             "",
@@ -648,31 +616,25 @@ export default function PatientLabPanel() {
               <Pagination
                 count={pageCount}
                 page={tablePage}
-                onChange={(_, value) =>
-                  setTablePage(value)
-                }
-                size={
-                  isMobile
-                    ? "small"
-                    : "medium"
-                }
+                onChange={(_, value) => setTablePage(value)}
+                size={isMobile ? "small" : "medium"}
                 color="primary"
-                siblingCount={
-                  isMobile ? 0 : 1
-                }
+                siblingCount={isMobile ? 0 : 1}
                 boundaryCount={1}
               />
             ) : null
           }
         >
-          {visibleRows.map(
-            (request, index) => {
-              const status =
-                request.status ||
-                "PENDING";
+          {visibleRows.map((request, index) => {
+            const status = request.status || "PENDING";
+            const remark = getRequestNote(request);
+            const report = request.report;
 
-              const remark =
-                getRequestNote(request);
+            return (
+              <TableRow key={request.id || `${request.labName || "lab"}-${index}`} hover>
+                <TableCell sx={{ ...cellSx, fontWeight: 700, color: "#0B5C8E" }}>
+                  {index + 1 + (tablePage - 1) * pageSize}
+                </TableCell>
 
                 <TableCell sx={{ ...cellSx, fontWeight: 700, color: "#0B5C8E" }}>
                   {request.order_id || request.orderId || "-"}
@@ -682,14 +644,8 @@ export default function PatientLabPanel() {
                   {request.sample_type || request.sampleType || "-"}
                 </TableCell>
 
-                <TableCell
-                  sx={{
-                    ...cellSx,
-                    fontWeight: 600,
-                    minWidth: 130,
-                  }}
-                >
-                  {request.labName}
+                <TableCell sx={{ ...cellSx, minWidth: 130, fontWeight: 600 }}>
+                  {request.labName || "-"}
                 </TableCell>
 
                 <TableCell
@@ -704,13 +660,8 @@ export default function PatientLabPanel() {
                   {getValue(request.lab_address, request.labAddress)}
                 </TableCell>
 
-                <TableCell
-                  sx={{
-                    ...cellSx,
-                    minWidth: 130,
-                  }}
-                >
-                  {request.doctorName}
+                <TableCell sx={{ ...cellSx, minWidth: 130 }}>
+                  {request.doctorName || "-"}
                 </TableCell>
 
                 <TableCell
@@ -722,7 +673,7 @@ export default function PatientLabPanel() {
                     wordBreak: "break-word",
                   }}
                 >
-                  {request.testName}
+                  {request.testName || "-"}
                 </TableCell>
 
                 <TableCell sx={cellSx}>
@@ -735,35 +686,24 @@ export default function PatientLabPanel() {
                       bgcolor: "transparent",
                       border: 0,
                       color: request.priority === "URGENT" ? "#DC2626" : "#64748B",
-              const report =
-                request.report;
-
-              return (
-                <TableRow
-                  key={
-                    request.id ||
-                    `${request.labName}-${index}`
-                  }
-                  hover
-                >
-                  <TableCell
-                    sx={{
-                      ...cellSx,
-                      minWidth: 150,
-                      maxWidth: 230,
-                      fontWeight: 600,
                     }}
-                  >
-                    {request.testName}
-                  </TableCell>
+                  />
+                </TableCell>
 
                 <TableCell sx={cellSx}>
-                  {request.report ? (
+                  {report ? (
                     <Chip
                       size="small"
-                      label={String(request.report.reviewStatus || "AWAITING_REVIEW").replaceAll("_", " ")}
-                      color={request.report.reviewStatus === "REVIEWED" ? "success" : "warning"}
-                      sx={{ height: 24, fontSize: "12px", fontWeight: 700, bgcolor: "transparent", border: 0, color: request.report.reviewStatus === "REVIEWED" ? "#15803D" : "#B45309" }}
+                      label={String(report.reviewStatus || "AWAITING_REVIEW").replaceAll("_", " ")}
+                      color={report.reviewStatus === "REVIEWED" ? "success" : "warning"}
+                      sx={{
+                        height: 24,
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        bgcolor: "transparent",
+                        border: 0,
+                        color: report.reviewStatus === "REVIEWED" ? "#15803D" : "#B45309",
+                      }}
                     />
                   ) : (
                     "-"
@@ -779,619 +719,125 @@ export default function PatientLabPanel() {
                     wordBreak: "break-word",
                   }}
                 >
-                  {request.report?.doctorComment || "Doctor interpretation is not available yet."}
+                  {report?.doctorComment || "Doctor interpretation is not available yet."}
                 </TableCell>
 
-                <TableCell
-                  sx={{
-                    ...secondaryCellSx,
-                    minWidth: 150,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {formatDateTime(
-                    request.expected_report_at || request.expectedReportAt,
-                  )}
+                <TableCell sx={{ ...secondaryCellSx, minWidth: 150, whiteSpace: "nowrap" }}>
+                  {formatDateTime(request.expected_report_at || request.expectedReportAt)}
                 </TableCell>
 
-                <TableCell
-                  sx={{
-                    ...secondaryCellSx,
-                    minWidth: 160,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {formatDateTime(
-                    request.collection_slot || request.collectionSlot,
-                  )}
+                <TableCell sx={{ ...secondaryCellSx, minWidth: 160, whiteSpace: "nowrap" }}>
+                  {formatDateTime(request.collection_slot || request.collectionSlot)}
                 </TableCell>
 
                 <TableCell sx={{ ...cellSx, minWidth: 80 }}>
                   <Chip
                     size="small"
                     label={request.collection_token || request.collectionToken || "Not assigned"}
-                    sx={{ height: 24, fontSize: "12.5px", fontWeight: 700, bgcolor: "transparent", border: 0, color: request.collection_token || request.collectionToken ? "#0B5C8E" : "#64748B" }}
-                  />
-                </TableCell>
-
-                <TableCell sx={cellSx}>
-                  <Chip
-                    size="small"
-                    label={status}
                     sx={{
                       height: 24,
                       fontSize: "12.5px",
+                      fontWeight: 700,
                       bgcolor: "transparent",
                       border: 0,
-                      color: status === "COMPLETED" ? "#15803D" : status === "REJECTED" || status === "CANCELLED" ? "#DC2626" : status === "PENDING" ? "#B45309" : "#0B5C8E",
-                  <TableCell
-                    sx={{
-                      ...cellSx,
-                      minWidth: 130,
+                      color: request.collection_token || request.collectionToken ? "#0B5C8E" : "#64748B",
                     }}
-                  >
-                    {request.labName}
-                  </TableCell>
+                  />
+                </TableCell>
 
-                  <TableCell
-                    sx={{
-                      ...cellSx,
-                      minWidth: 145,
-                    }}
-                  >
-                    <Chip
-                      size="small"
-                      label={getUserStatus(
-                        status
-                      )}
-                      color={getStatusColor(
-                        status
-                      )}
-                      sx={{
-                        height: 24,
-                        fontSize: "12.5px",
-                        fontWeight: 500,
-                      }}
-                    />
-                  </TableCell>
+                <TableCell sx={{ ...cellSx, minWidth: 145 }}>
+                  <Chip
+                    size="small"
+                    label={getUserStatus(status)}
+                    color={getStatusColor(status)}
+                    sx={{ height: 24, fontSize: "12.5px", fontWeight: 500 }}
+                  />
+                </TableCell>
 
-                  <TableCell
+                <TableCell
+                  sx={{
+                    ...secondaryCellSx,
+                    minWidth: 150,
+                    maxWidth: 220,
+                  }}
+                >
+                  <Typography
+                    title={remark || ""}
                     sx={{
-                      ...secondaryCellSx,
-                      minWidth: 165,
+                      fontSize: "12.5px",
+                      color: "text.secondary",
+                      maxWidth: 190,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {formatDateTime(
-                      request.expected_report_at ||
-                        request.expectedReportAt
-                    )}
-                  </TableCell>
+                    {remark || "-"}
+                  </Typography>
+                </TableCell>
 
-                  <TableCell
-                    sx={{
-                      ...secondaryCellSx,
-                      minWidth: 150,
-                      maxWidth: 220,
-                    }}
-                  >
-                    <Typography
-                      title={remark || ""}
-                      sx={{
-                        fontSize: "12.5px",
-                        color:
-                          "text.secondary",
-                        maxWidth: 190,
-                        overflow: "hidden",
-                        textOverflow:
-                          "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {remark || "-"}
-                    </Typography>
-                  </TableCell>
-
-                  <TableCell
-                    sx={{
-                      ...cellSx,
-                      minWidth: 110,
-                    }}
-                  >
-                    {report?.downloadUrl ? (
-                      <Button
-                        size="small"
-                        variant="text"
-                        href={
-                          report.downloadUrl
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                        startIcon={
-                          <DescriptionOutlinedIcon
-                            sx={{
-                              fontSize: 17,
-                            }}
-                          />
-                        }
-                        sx={{
-                          p: 0,
-                          minWidth: "auto",
-                          fontSize: "12.5px",
-                          fontWeight: 600,
-                          textTransform: "none",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        View Report
-                      </Button>
-                    ) : (
-                      <Typography
-                        sx={{
-                          fontSize: "12.5px",
-                          color:
-                            "text.secondary",
-                          whiteSpace:
-                            "nowrap",
-                        }}
-                      >
-                        Not Ready
-                      </Typography>
-                    )}
-                  </TableCell>
-
-                  <TableCell
-                    align="right"
-                    sx={{
-                      ...cellSx,
-                      width: 50,
-                    }}
-                  >
-                    <IconButton
-                      size="small"
-                      onClick={(event) =>
-                        handleMenuOpen(
-                          event,
-                          request
-                        )
-                      }
-                      sx={{
-                        width: 30,
-                        height: 30,
-                      }}
-                    >
-                      <MoreVertIcon
-                        sx={{
-                          fontSize: 19,
-                        }}
-                      />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              );
-            }
-          )}
-        </DataTable>
-      </Box>
-
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        PaperProps={{
-          sx: {
-            minWidth: 155,
-            borderRadius: 2,
-            border:
-              "1px solid #E2E8F0",
-            boxShadow:
-              "0 8px 24px rgba(15,23,42,0.08)",
-          },
-        }}
-      >
-        <MenuItem
-          onClick={handleViewDetails}
-          sx={{
-            gap: 1,
-            fontSize: "12.5px",
-            py: 1,
-          }}
-        >
-          <VisibilityOutlinedIcon
-            sx={{
-              fontSize: 18,
-            }}
-          />
-
-          View Details
-        </MenuItem>
-
-        {menuRow?.report?.downloadUrl && (
-          <MenuItem
-            component="a"
-            href={
-              menuRow.report.downloadUrl
-            }
-            target="_blank"
-            rel="noreferrer"
-            onClick={handleMenuClose}
-            sx={{
-              gap: 1,
-              fontSize: "12.5px",
-              py: 1,
-            }}
-          >
-            <DescriptionOutlinedIcon
-              sx={{
-                fontSize: 18,
-              }}
-            />
-
-            View Report
-          </MenuItem>
-        )}
-      </Menu>
-
-    <Dialog
-  open={detailsOpen}
-  onClose={handleCloseDetails}
-  fullWidth
-  maxWidth="md"
-  PaperProps={{
-    sx: {
-      borderRadius: 2.5,
-      border: "1px solid #E2E8F0",
-      boxShadow: "0 18px 50px rgba(15,23,42,0.12)",
-    },
-  }}
->
-  <DialogTitle
-    sx={{
-      px: 2.5,
-      py: 1.7,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      borderBottom: "1px solid",
-      borderColor: "divider",
-    }}
-  >
-    <Box>
-      <Typography
-        sx={{
-          fontSize: "15px",
-          fontWeight: 700,
-          color: "text.primary",
-        }}
-      >
-        Lab Test Details
-      </Typography>
-
-      <Typography
-        sx={{
-          mt: 0.2,
-          fontSize: "12.5px",
-          color: "text.secondary",
-        }}
-      >
-        Complete test and report information
-      </Typography>
-    </Box>
-
-    <IconButton size="small" onClick={handleCloseDetails}>
-      <CloseIcon sx={{ fontSize: 19 }} />
-    </IconButton>
-  </DialogTitle>
-
-  <DialogContent
-    sx={{
-      p: 2.5,
-    }}
-  >
-    {selectedRow && (
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "1fr",
-            md: "repeat(2, 1fr)",
-          },
-          gap: 2,
-        }}
-      >
-        <Box
-          sx={{
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 2,
-            p: 2,
-            bgcolor: "background.paper",
-          }}
-        >
-          <Typography
-            sx={{
-              fontSize: "13px",
-              fontWeight: 700,
-              color: "text.primary",
-              mb: 1,
-            }}
-          >
-            Test Information
-          </Typography>
-
-          <Divider sx={{ mb: 0.5 }} />
-
-          <DetailItem
-            label="Test"
-            value={selectedRow.testName}
-          />
-
-          <DetailItem
-            label="Status"
-            value={getUserStatus(selectedRow.status)}
-          />
-
-          <DetailItem
-            label="Expected Result"
-            value={formatDateTime(
-              selectedRow.expected_report_at ||
-                selectedRow.expectedReportAt
-            )}
-          />
-
-          <DetailItem
-            label="Requested On"
-            value={formatDateTime(
-              selectedRow.created_at ||
-                selectedRow.createdAt
-            )}
-          />
-
-          <DetailItem
-            label="Remarks"
-            value={getRequestNote(selectedRow) || "-"}
-          />
-        </Box>
-
-        <Box
-          sx={{
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 2,
-            p: 2,
-            bgcolor: "background.paper",
-          }}
-        >
-          <Typography
-            sx={{
-              fontSize: "13px",
-              fontWeight: 700,
-              color: "text.primary",
-              mb: 1,
-            }}
-          >
-            Lab Information
-          </Typography>
-
-          <Divider sx={{ mb: 0.5 }} />
-
-          <DetailItem
-            label="Lab"
-            value={selectedRow.labName}
-          />
-
-          <DetailItem
-            label="Lab Code"
-            value={getValue(
-              selectedRow.lab_code,
-              selectedRow.labCode
-            )}
-          />
-
-          <DetailItem
-            label="Address"
-            value={getValue(
-              selectedRow.lab_address,
-              selectedRow.labAddress
-            )}
-          />
-
-          <DetailItem
-            label="Phone"
-            value={getValue(
-              selectedRow.lab_phone,
-              selectedRow.labPhone
-            )}
-          />
-        </Box>
-
-        <Box
-          sx={{
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 2,
-            p: 2,
-            bgcolor: "background.paper",
-          }}
-        >
-          <Typography
-            sx={{
-              fontSize: "13px",
-              fontWeight: 700,
-              color: "text.primary",
-              mb: 1,
-            }}
-          >
-            Doctor Information
-          </Typography>
-
-          <Divider sx={{ mb: 0.5 }} />
-
-          <DetailItem
-            label="Doctor"
-            value={selectedRow.doctorName}
-          />
-
-          <DetailItem
-            label="Doctor Note"
-            value={getValue(
-              selectedRow.doctor_note,
-              selectedRow.doctorNote
-            )}
-          />
-
-          <DetailItem
-            label="Priority"
-            value={getValue(selectedRow.priority)}
-          />
-        </Box>
-
-        <Box
-          sx={{
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 2,
-            p: 2,
-            bgcolor: "background.paper",
-          }}
-        >
-          <Typography
-            sx={{
-              fontSize: "13px",
-              fontWeight: 700,
-              color: "text.primary",
-              mb: 1,
-            }}
-          >
-            Report Information
-          </Typography>
-
-          <Divider sx={{ mb: 0.5 }} />
-
-          {selectedRow.reports?.length > 0 ? (
-            <Stack spacing={1.5}>
-              {selectedRow.reports.map((report, index) => (
-                <Box
-                  key={report.id}
-                  sx={{
-                    pb:
-                      index !== selectedRow.reports.length - 1
-                        ? 1.5
-                        : 0,
-                    borderBottom:
-                      index !== selectedRow.reports.length - 1
-                        ? "1px solid"
-                        : "none",
-                    borderColor: "divider",
-                  }}
-                >
-                  <DetailItem
-                    label="Report Code"
-                    value={report.reportCode || "-"}
-                  />
-
-                  <DetailItem
-                    label="File"
-                    value={report.fileName || "-"}
-                  />
-
-                  <DetailItem
-                    label="Uploaded"
-                    value={formatDateTime(report.uploadedAt)}
-                  />
-
-                  {report.downloadUrl && (
+                <TableCell sx={{ ...cellSx, minWidth: 110 }}>
+                  {report?.downloadUrl ? (
                     <Button
+                      size="small"
+                      variant="text"
                       href={report.downloadUrl}
                       target="_blank"
                       rel="noreferrer"
-                      size="small"
-                      variant="outlined"
-                      startIcon={
-                        <DescriptionOutlinedIcon
-                          sx={{ fontSize: 17 }}
-                        />
-                      }
+                      startIcon={<DescriptionOutlinedIcon sx={{ fontSize: 17 }} />}
                       sx={{
-                        mt: 1,
+                        p: 0,
+                        minWidth: "auto",
                         fontSize: "12.5px",
+                        fontWeight: 600,
                         textTransform: "none",
+                        whiteSpace: "nowrap",
                       }}
                     >
                       View Report
                     </Button>
+                  ) : (
+                    <Typography sx={{ fontSize: "12.5px", color: "text.secondary", whiteSpace: "nowrap" }}>
+                      Not Ready
+                    </Typography>
                   )}
-                </Box>
-              ))}
-            </Stack>
-          ) : (
-            <Box
-              sx={{
-                minHeight: 120,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Typography
-                sx={{
-                  fontSize: "12.5px",
-                  color: "text.secondary",
-                }}
-              >
-                Report not available yet
-              </Typography>
-            </Box>
-          )}
-        </Box>
-      </Box>
-    )}
-  </DialogContent>
+                </TableCell>
 
-  <DialogActions
-    sx={{
-      px: 2.5,
-      py: 1.5,
-      borderTop: "1px solid",
-      borderColor: "divider",
-    }}
-  >
-    <Button
-      onClick={handleCloseDetails}
-      variant="outlined"
-      size="small"
-      sx={{
-        fontSize: "12.5px",
-        textTransform: "none",
-      }}
-    >
-      Close
-    </Button>
-  </DialogActions>
-</Dialog>
-      <Snackbar
-        open={Boolean(error)}
-        autoHideDuration={6000}
-        onClose={() =>
-          setError("")
-        }
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "center",
-        }}
-      >
-        <Alert
-          severity="error"
-          onClose={() =>
-            setError("")
-          }
-          sx={{
-            fontSize: "12.5px",
-          }}
-        >
-          {error}
-        </Alert>
-      </Snackbar>
+                <TableCell align="right" sx={{ ...cellSx, width: 50 }}>
+                  <IconButton size="small" onClick={(event) => handleMenuOpen(event, request)} sx={{ width: 30, height: 30 }}>
+                    <MoreVertIcon sx={{ fontSize: 19 }} />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </DataTable>
+      </Box>
+
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+        <MenuItem onClick={handleViewDetails}>View details</MenuItem>
+      </Menu>
+
+      <Dialog open={detailsOpen} onClose={handleCloseDetails} fullWidth maxWidth="sm">
+        <DialogTitle>Lab Test Details</DialogTitle>
+        <DialogContent dividers>
+          {selectedRow ? (
+            <Box sx={{ display: "grid", gap: 1 }}>
+              <DetailItem label="Order ID" value={selectedRow.order_id || selectedRow.orderId || "-"} />
+              <DetailItem label="Sample" value={selectedRow.sample_type || selectedRow.sampleType || "-"} />
+              <DetailItem label="Lab" value={selectedRow.labName || "-"} />
+              <DetailItem label="Doctor" value={selectedRow.doctorName || "-"} />
+              <DetailItem label="Tests" value={selectedRow.testName || "-"} />
+              <DetailItem label="Status" value={getUserStatus(selectedRow.status || "PENDING")} />
+              <DetailItem label="Remark" value={getRequestNote(selectedRow) || "-"} />
+              <DetailItem label="Report" value={selectedRow.report?.downloadUrl ? "Available" : "Not Ready"} />
+            </Box>
+          ) : null}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDetails}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
