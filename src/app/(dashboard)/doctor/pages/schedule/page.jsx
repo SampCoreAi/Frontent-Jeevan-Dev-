@@ -62,16 +62,33 @@ export default function SchedulePage() {
     });
   }, []);
 
-  useEffect(() => {
-    dispatch(fetchHospitals());
+useEffect(() => {
+  dispatch(fetchHospitals());
 
+  dispatch(
+    fetchSchedules({
+      page: 1,
+      limit: 20,
+    })
+  );
+
+  return () => {
     dispatch(
-      fetchSchedules({
-        page: 1,
-        limit: 20,
+      setFormData({
+        location: "",
+        hospitalId: null,
+    
+        slotDuration: "",
+        breakDuration: "",
+        startDate: "",
+        endDate: "",
+        activeDays: [],
       })
     );
-  }, [dispatch]);
+
+    dispatch(setEditIndex(null));
+  };
+}, [dispatch]);
 
   const handleSaveSchedule = useCallback(
     async (schedule, index = null) => {
@@ -88,13 +105,7 @@ export default function SchedulePage() {
         return false;
       }
 
-      if (!schedule.startTime || !schedule.endTime) {
-        showMessage(
-          "Start time and end time are required.",
-          "error"
-        );
-        return false;
-      }
+     
 
       try {
         if (index !== null) {

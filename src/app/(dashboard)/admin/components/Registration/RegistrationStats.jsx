@@ -1,34 +1,52 @@
 "use client";
 
 import React from "react";
-import { Box, Paper, Typography } from "@mui/material";
+import {
+  Box,
+  Paper,
+  Typography,
+  useTheme,
+} from "@mui/material";
+
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
+import EditNoteOutlinedIcon from "@mui/icons-material/EditNoteOutlined";
+import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 
 const RegistrationStats = ({ stats }) => {
+  const theme = useTheme();
+
   const cards = [
     {
       label: "Total Registered",
       value: stats?.total_registered || 0,
-      color: "#1e6658",
+      icon: GroupsOutlinedIcon,
+      color: theme.palette.primary.main,
     },
     {
-      label: "Total Submitted",
+      label: "Submitted",
       value: stats?.total_submitted || 0,
-      color: "#2563eb",
+      icon: SendOutlinedIcon,
+      color: theme.palette.info.main,
     },
     {
-      label: "Total Draft",
+      label: "Draft",
       value: stats?.total_draft || 0,
-      color: "#d97706",
+      icon: EditNoteOutlinedIcon,
+      color: theme.palette.warning.main,
     },
     {
-      label: "Total Verified",
+      label: "Verified",
       value: stats?.total_verified || 0,
-      color: "#16a34a",
+      icon: VerifiedOutlinedIcon,
+      color: theme.palette.success.main,
     },
     {
-      label: "Total Rejected",
+      label: "Rejected",
       value: stats?.total_rejected || 0,
-      color: "#dc2626",
+      icon: CancelOutlinedIcon,
+      color: theme.palette.error.main,
     },
   ];
 
@@ -36,55 +54,94 @@ const RegistrationStats = ({ stats }) => {
     <Box
       sx={{
         display: "grid",
+
         gridTemplateColumns: {
-          xs: "1fr",
-          sm: "repeat(2, 1fr)",
-          md: "repeat(3, 1fr)",
+          xs: "repeat(2, 1fr)",
+          sm: "repeat(3, 1fr)",
           lg: "repeat(5, 1fr)",
         },
-        gap: 2,
-        mb: 3,
+
+        gap: 1.5,
+        mb: 2.5,
       }}
     >
-      {cards.map((card) => (
-        <Paper
-          key={card.label}
-          elevation={0}
-          sx={{
-            p: 2.5,
-            borderRadius: "14px",
-            border: "1px solid #e2e8f0",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
-            transition: "all 0.2s ease",
+      {cards.map((card) => {
+        const Icon = card.icon;
 
-            "&:hover": {
-              transform: "translateY(-2px)",
-              boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
-            },
-          }}
-        >
-          <Typography
+        return (
+          <Paper
+            key={card.label}
+            elevation={0}
             sx={{
-              color: "#64748b",
-              fontSize: "0.85rem",
-              fontWeight: 500,
+              p: { xs: 1.5, sm: 2 },
+              borderRadius: 2,
+
+              border: "1px solid",
+              borderColor: "divider",
+
+              bgcolor: "background.paper",
+
+              display: "flex",
+              alignItems: "center",
+              gap: 1.4,
+
+              transition: "0.2s ease",
+
+              "&:hover": {
+                borderColor: `${card.color}50`,
+                transform: "translateY(-1px)",
+              },
             }}
           >
-            {card.label}
-          </Typography>
+            <Box
+              sx={{
+                width: 38,
+                height: 38,
+                flexShrink: 0,
 
-          <Typography
-            sx={{
-              mt: 0.5,
-              fontSize: "1.8rem",
-              fontWeight: 700,
-              color: card.color,
-            }}
-          >
-            {card.value}
-          </Typography>
-        </Paper>
-      ))}
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+
+                borderRadius: 1.5,
+
+                bgcolor: `${card.color}10`,
+                color: card.color,
+              }}
+            >
+              <Icon sx={{ fontSize: 20 }} />
+            </Box>
+
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                noWrap
+                sx={{
+                  fontSize: "11px",
+                  color: "text.secondary",
+                  fontWeight: 500,
+                }}
+              >
+                {card.label}
+              </Typography>
+
+              <Typography
+                sx={{
+                  mt: 0.1,
+                  fontSize: {
+                    xs: "18px",
+                    sm: "21px",
+                  },
+                  lineHeight: 1.2,
+                  fontWeight: 700,
+                  color: "text.primary",
+                }}
+              >
+                {card.value}
+              </Typography>
+            </Box>
+          </Paper>
+        );
+      })}
     </Box>
   );
 };

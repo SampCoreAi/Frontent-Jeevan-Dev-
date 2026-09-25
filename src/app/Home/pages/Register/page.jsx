@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Grid, Container, Snackbar, Alert } from "@mui/material";
+import {
+  Grid,
+  Container,
+  Snackbar,
+  Alert,
+} from "@mui/material";
 import Navbar from "../../components/Navbar";
 import { useRouter } from "next/navigation";
 import Footer from "../../components/Footer";
@@ -15,40 +20,94 @@ export default function RegisterPage() {
     message: "",
     severity: "success",
   });
- const router = useRouter();
-  const showMessage = (message, severity = "success") => {
-    setSnackbar({ open: true, message, severity });
+
+  const router = useRouter();
+
+  const showMessage = (
+    message,
+    severity = "success"
+  ) => {
+    setSnackbar({
+      open: true,
+      message,
+      severity,
+    });
   };
 
   const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
+    setSnackbar({
+      ...snackbar,
+      open: false,
+    });
+  };
+
+  const handleRegisterSuccess = (message) => {
+    showMessage(
+      message ||
+        "Registration successful. Please check your email.",
+      "success"
+    );
+
+    setTimeout(() => {
+      router.push("/Home/pages/Login");
+    }, 2000);
   };
 
   return (
-    <Grid sx={{ backgroundColor: "background.third", minHeight: "100vh" }}>
+    <Grid
+      sx={{
+        backgroundColor: "background.third",
+        minHeight: "100vh",
+      }}
+    >
       <Navbar />
-      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-        <Grid container justifyContent="center" alignItems="center">
+
+      <Container
+        maxWidth="md"
+        sx={{
+          mt: 4,
+          mb: 4,
+        }}
+      >
+        <Grid
+          container
+          justifyContent="center"
+          alignItems="center"
+        >
           <Grid
             sx={{
               width: "100%",
               maxWidth: 850,
-              height: { xs: "auto", md: 550 },
+
+              height: {
+                xs: "auto",
+                md: 550,
+              },
+
               position: "relative",
+
               display: "flex",
-              flexDirection: { xs: "column", md: "row" },
+
+              flexDirection: {
+                xs: "column",
+                md: "row",
+              },
+
               borderRadius: 0.5,
               overflow: "hidden",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+
+              boxShadow:
+                "0 8px 20px rgba(0,0,0,0.15)",
             }}
           >
-            <AuthSidePanel isSignup={true} onToggle={() => router.push("/login")} />
-            
-            <AuthCard
-              icon="/img/icon.png"
-              
-            >
-              <RegisterForm showMessage={showMessage} />
+           <AuthSidePanel isSignup={true} />
+            <AuthCard icon="/img/icon.png">
+              <RegisterForm
+                showMessage={showMessage}
+                onSuccess={
+                  handleRegisterSuccess
+                }
+              />
             </AuthCard>
           </Grid>
         </Grid>
@@ -60,12 +119,17 @@ export default function RegisterPage() {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
       >
         <Alert
           onClose={handleCloseSnackbar}
           severity={snackbar.severity}
-          sx={{ width: "100%" }}
+          sx={{
+            width: "100%",
+          }}
         >
           {snackbar.message}
         </Alert>

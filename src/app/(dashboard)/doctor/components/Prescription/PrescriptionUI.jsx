@@ -651,31 +651,140 @@ export default function PrescriptionUI(props) {
           TOP ACTION BUTTONS
       ====================================================== */}
 
-      <Box
-        sx={{
-          width: "100%",
-          minWidth: 0,
-          display: isDownloading ? "none" : "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: { xs: 1, sm: 1.5 },
-          mb: { xs: 1.2, sm: 1.5 },
-        }}
+   <Box
+  sx={{
+    width: "100%",
+    minWidth: 0,
+    display: isDownloading ? "none" : "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: { xs: 1, sm: 1.5 },
+    mb: { xs: 1.2, sm: 1.5 },
+  }}
+>
+  <Button
+    variant="outlined"
+    startIcon={<ArrowBackIcon />}
+    onClick={() => router.push("/doctor/pages/patient")}
+    sx={{
+      minHeight: 34,
+      px: { xs: 1.2, sm: 1.5 },
+      borderRadius: 1.5,
+      fontSize: "12px",
+      fontWeight: 600,
+      textTransform: "none",
+      whiteSpace: "nowrap",
+    }}
+  >
+    Back
+  </Button>
+
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: { xs: "flex-start", sm: "flex-end" },
+      flexWrap: "wrap",
+      gap: { xs: 0.7, sm: 1 },
+      flex: { xs: "1 1 100%", sm: 1 },
+    }}
+  >
+
+    {!isPatient && (
+  <>
+    <MedicalStoreRequestForm
+      patientId={patientId}
+      appointmentId={
+        appointmentId ||
+        apiData?.appointment?.id ||
+        apiData?.appointment?.appointment_id
+      }
+      isTodayAppointment={isTodayAppointment}
+      hasSavedPrescription={Boolean(apiData?.prescription)}
+      canSend={Boolean(isTodayAppointment && apiData?.prescription)}
+    />
+
+    <LabTestRequestForm
+      patientId={patientId}
+      appointmentId={
+        appointmentId ||
+        apiData?.appointment?.id ||
+        apiData?.appointment?.appointment_id
+      }
+      storageKey={`doctor-lab-test-${patientId || "unknown"}-${
+        appointmentId ||
+        apiData?.appointment?.id ||
+        apiData?.appointment?.appointment_id ||
+        "no-appointment"
+      }`}
+      resetKey={labTestResetKey}
+      onSummaryChange={setLabTestSummary}
+    />
+
+    <Button
+      variant="outlined"
+      startIcon={<DescriptionOutlined />}
+      onClick={() => {
+        setReportsOpen(true);
+        refreshPatientLabData();
+      }}
+      sx={{
+        textTransform: "none",
+        borderRadius: 1.5,
+        minHeight: 34,
+        fontSize: "12px",
+        px: 1.25,
+      }}
+    >
+      Lab Reports
+      {labReportRows.length ? ` (${labReportRows.length})` : ""}
+    </Button>
+  </>
+)}
+
+    {!isPatient && (
+      <Button
+        onClick={handlePrint}
+        variant="contained"
+        disableElevation
+        sx={actionButtonSx(80)}
       >
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={() => router.push("/doctor/pages/patient")}
-          sx={{
-            minHeight: 34,
-            px: { xs: 1.2, sm: 1.5 },
-            borderRadius: 1.5,
-            fontSize: "12px",
-            fontWeight: 600,
-            textTransform: "none",
-            whiteSpace: "nowrap",
-          }}
+        Print
+      </Button>
+    )}
+
+    <Button
+      onClick={downloadPdf}
+      variant="contained"
+      disableElevation
+      sx={actionButtonSx(100)}
+    >
+      <Box
+        component="span"
+        sx={{ display: { xs: "none", sm: "inline" } }}
+      >
+        Download PDF
+      </Box>
+
+      <Box
+        component="span"
+        sx={{ display: { xs: "inline", sm: "none" } }}
+      >
+        PDF
+      </Box>
+    </Button>
+
+    {!isPatient && editable && isTodayAppointment && (
+      <Button
+        variant="contained"
+        disableElevation
+        onClick={handleSavePrescription}
+        sx={actionButtonSx(110)}
+      >
+        <Box
+          component="span"
+          sx={{ display: { xs: "none", sm: "inline" } }}
         >
           Back
         </Button>

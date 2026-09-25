@@ -15,7 +15,7 @@ import {
   Typography,
   Zoom,
 } from "@mui/material";
-
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import dayjs from "dayjs";
 
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -575,309 +575,191 @@ const CardHistory = ({
                       RIGHT
                   ===================================== */}
 
-                  <Box
-                    sx={{
-                      display: "flex",
+           {/* TOKEN + CODE */}
 
-                      flexDirection: {
-                        xs: "row",
-                        md: "column",
-                      },
+{(item.status || "").toUpperCase() !== "CANCELLED" && (
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      gap: 0.7,
+      flexWrap: "wrap",
+    }}
+  >
+    {/* TOKEN - NOT COPYABLE */}
+    <Chip
+      icon={
+        <VerifiedIcon
+          sx={{
+            fontSize: 15,
+            color: "primary.main",
+          }}
+        />
+      }
+      label={
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0.4,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "text.secondary",
+            }}
+          >
+            Token:
+          </Typography>
 
-                      alignItems: {
-                        xs: "center",
-                        md: "flex-end",
-                      },
+          <Typography
+            sx={{
+              fontSize: "11px",
+              fontWeight: 700,
+              fontFamily: "monospace",
+              color: "primary.main",
+            }}
+          >
+            {item.token}
+          </Typography>
+        </Box>
+      }
+      sx={{
+        bgcolor: "background.default",
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: "6px",
+        height: 30,
+        boxShadow: "none",
+        cursor: "default",
 
-                      justifyContent: {
-                        xs: "space-between",
-                        md: "center",
-                      },
+        "& .MuiChip-label": {
+          px: 0.7,
+        },
 
-                      flexWrap: "wrap",
+        "& .MuiChip-icon": {
+          ml: "6px",
+        },
+      }}
+    />
 
-                      ml: {
-                        md: "auto",
-                      },
+    {/* CODE - COPYABLE */}
+    <Tooltip
+      title={isCopied ? "Copied!" : "Copy code"}
+      arrow
+      placement="top"
+    >
+      <Chip
+        icon={
+          isCopied ? (
+            <CheckIcon
+              sx={{
+                fontSize: 15,
+                color: "success.main",
+              }}
+            />
+          ) : (
+            <ContentCopyIcon
+              sx={{
+                fontSize: 14,
+                color: "primary.main",
+              }}
+            />
+          )
+        }
+        label={
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.4,
+              whiteSpace: "nowrap",
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "text.secondary",
+              }}
+            >
+              Code:
+            </Typography>
 
-                      width: {
-                        xs: "100%",
-                        md: "auto",
-                      },
+            <Typography
+              sx={{
+                fontSize: "11px",
+                fontWeight: 700,
+                fontFamily: "monospace",
+                color: isCopied
+                  ? "success.main"
+                  : "primary.main",
+              }}
+            >
+              {item.code}
+            </Typography>
+          </Box>
+        }
+        onClick={async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
 
-                      gap: 0.7,
+          try {
+            await navigator.clipboard.writeText(
+              String(item.code || "")
+            );
 
-                      minWidth: 0,
-                    }}
-                  >
-                    {/* =================================
-                        TOKEN + CODE
-                    ================================= */}
+            setCopiedId(item.id);
 
-                    {(item.status || "")
-                      .toUpperCase() !==
-                      "CANCELLED" && (
-                      <Tooltip
-                        title="Click to copy Token & Code"
-                        arrow
-                        placement="left"
-                      >
-                        <Chip
-                          icon={
-                            <VerifiedIcon
-                              sx={{
-                                fontSize: 15,
+            setTimeout(() => {
+              setCopiedId(null);
+            }, 1500);
+          } catch (error) {
+            console.error("Failed to copy code:", error);
+          }
+        }}
+        sx={{
+          bgcolor: isCopied
+            ? "secondary.light"
+            : "background.default",
 
-                                color: isCopied
-                                  ? "success.main"
-                                  : "primary.main",
+          border: "1px solid",
 
-                                transition:
-                                  "transform 0.18s ease",
+          borderColor: isCopied
+            ? "success.main"
+            : "divider",
 
-                                transform:
-                                  isTokenHovered
-                                    ? "scale(1.1)"
-                                    : "scale(1)",
-                              }}
-                            />
-                          }
-                          label={
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
+          borderRadius: "6px",
+          height: 30,
+          cursor: "pointer",
+          boxShadow: "none",
 
-                                gap: {
-                                  xs: 0.6,
-                                  sm: 0.8,
-                                },
+          transition: "all 0.18s ease",
 
-                                minWidth: 0,
+          "& .MuiChip-label": {
+            px: 0.7,
+          },
 
-                                whiteSpace:
-                                  "nowrap",
-                              }}
-                            >
-                              {/* TOKEN */}
+          "& .MuiChip-icon": {
+            ml: "6px",
+          },
 
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  alignItems:
-                                    "center",
-                                  gap: 0.3,
-                                }}
-                              >
-                                <Typography
-                                  sx={{
-                                    fontSize:
-                                      "11px",
+          "&:hover": {
+            bgcolor: "secondary.light",
+            borderColor: "primary.light",
+          },
 
-                                    fontWeight:
-                                      600,
-
-                                    color:
-                                      "text.secondary",
-                                  }}
-                                >
-                                  Token:
-                                </Typography>
-
-                                <Typography
-                                  sx={{
-                                    fontSize:
-                                      "11px",
-
-                                    fontWeight:
-                                      700,
-
-                                    fontFamily:
-                                      "monospace",
-
-                                    color:
-                                      "primary.main",
-                                  }}
-                                >
-                                  {item.token}
-                                </Typography>
-                              </Box>
-
-                              {/* DIVIDER */}
-
-                              <Box
-                                sx={{
-                                  width: "1px",
-                                  height: 14,
-
-                                  bgcolor:
-                                    "divider",
-
-                                  flexShrink: 0,
-                                }}
-                              />
-
-                              {/* CODE */}
-
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  alignItems:
-                                    "center",
-                                  gap: 0.3,
-                                }}
-                              >
-                                <Typography
-                                  sx={{
-                                    fontSize:
-                                      "11px",
-
-                                    fontWeight:
-                                      600,
-
-                                    color:
-                                      "text.secondary",
-                                  }}
-                                >
-                                  Code:
-                                </Typography>
-
-                                <Typography
-                                  sx={{
-                                    fontSize:
-                                      "11px",
-
-                                    fontWeight:
-                                      700,
-
-                                    fontFamily:
-                                      "monospace",
-
-                                    color:
-                                      "primary.main",
-                                  }}
-                                >
-                                  {item.code}
-                                </Typography>
-                              </Box>
-
-                              {isCopied && (
-                                <CheckIcon
-                                  sx={{
-                                    fontSize: 13,
-
-                                    color:
-                                      "success.main",
-                                  }}
-                                />
-                              )}
-                            </Box>
-                          }
-                          onClick={(e) => {
-                            e.stopPropagation();
-
-                            copyTokenAndCode(
-                              item.token,
-                              item.code,
-                              item.id
-                            );
-                          }}
-                          onMouseEnter={() =>
-                            setHoveredToken(
-                              item.id
-                            )
-                          }
-                          onMouseLeave={() =>
-                            setHoveredToken(null)
-                          }
-                          sx={{
-                            bgcolor: isCopied
-                              ? "secondary.light"
-                              : "background.default",
-
-                            border: "1px solid",
-
-                            borderColor: isCopied
-                              ? "primary.main"
-                              : "divider",
-
-                            borderRadius: "6px",
-
-                            cursor: "pointer",
-
-                            maxWidth: "100%",
-
-                            height: 30,
-
-                            boxShadow: "none",
-
-                            transition:
-                              "all 0.18s ease",
-
-                            "& .MuiChip-label": {
-                              px: 0.7,
-                              overflow: "hidden",
-                            },
-
-                            "& .MuiChip-icon": {
-                              ml: "6px",
-                            },
-
-                            "&:hover": {
-                              bgcolor:
-                                "secondary.light",
-
-                              borderColor:
-                                "primary.light",
-                            },
-
-                            "&:active": {
-                              transform:
-                                "scale(0.98)",
-                            },
-                          }}
-                        />
-                      </Tooltip>
-                    )}
-
-                    {/* =================================
-                        CANCEL
-                    ================================= */}
-
-                    {isUpcoming && (
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-
-                          setCancelId(item.id);
-                          setConfirmOpen(true);
-                        }}
-                        sx={{
-                          minWidth: 68,
-
-                          minHeight: 30,
-
-                          px: 1.2,
-
-                          fontSize: "12px",
-
-                          fontWeight: 600,
-
-                          textTransform: "none",
-
-                          borderRadius: "6px",
-
-                          flexShrink: 0,
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    )}
-                  </Box>
+          "&:active": {
+            transform: "scale(0.98)",
+          },
+        }}
+      />
+    </Tooltip>
+  </Box>
+)}
                 </Box>
 
                 {/* =========================================

@@ -13,6 +13,7 @@ export default function DoctorCard({
   hoveredCard,
   setHoveredCard,
   bookingLoadingId,
+  detailsLoadingId,
   onBook,
   onViewDetails,
 }) {
@@ -20,7 +21,7 @@ export default function DoctorCard({
 
   const isHovered = hoveredCard === index;
   const isBooking = bookingLoadingId === doctor.id;
-
+  const isViewingDetails = detailsLoadingId === doctor.id;
   return (
     <div
       className="doctor-card"
@@ -67,9 +68,7 @@ export default function DoctorCard({
           ? `0 8px 22px ${theme.palette.primary.main}1F`
           : "0 2px 8px rgba(15, 23, 42, 0.05)",
 
-        transform: isHovered
-          ? "translateY(-2px)"
-          : "translateY(0)",
+        transform: isHovered ? "translateY(-2px)" : "translateY(0)",
       }}
       onMouseEnter={() => setHoveredCard(index)}
       onMouseLeave={() => setHoveredCard(null)}
@@ -140,9 +139,7 @@ export default function DoctorCard({
                   minWidth: 0,
                 }}
               >
-                <h3>
-                  {doctor.fullName}
-                </h3>
+                <h3>{doctor.fullName}</h3>
 
                 <VerifiedIcon
                   sx={{
@@ -158,22 +155,29 @@ export default function DoctorCard({
                   {doctor.specialization || "Specialist"}
                 </div>
 
-              <div
-  className={`mobile-available-badge ${
-    doctor.isCurrentlyAvailable ? "is-available" : "is-unavailable"
-  }`}
->
-  <span className="available-dot" />
-  {doctor.isCurrentlyAvailable ? "Available" : "Unavailable"}
-</div>
+                <span className="specialization-divider">•</span>
+
+                <span className="username">@{doctor.username || "doctor"}</span>
+
+                <div
+                  className={`mobile-available-badge ${
+                    doctor.isCurrentlyAvailable
+                      ? "is-available"
+                      : "is-unavailable"
+                  }`}
+                >
+                  <span className="available-dot" />
+                  {doctor.isCurrentlyAvailable ? "Available" : "Unavailable"}
+                </div>
               </div>
             </div>
 
             {/* AVAILABLE */}
 
             <div
-              className={`available-badge ${doctor.isCurrentlyAvailable ? "is-available" : "is-unavailable"
-                }`}
+              className={`available-badge ${
+                doctor.isCurrentlyAvailable ? "is-available" : "is-unavailable"
+              }`}
             >
               <span className="available-dot" />
               {doctor.isCurrentlyAvailable ? "Available" : "Unavailable"}
@@ -183,26 +187,6 @@ export default function DoctorCard({
           {/* ================= USERNAME + TRUST + HOSPITAL ================= */}
 
           <div className="doctor-meta-row">
-            <div className="username-section">
-              <span className="username">
-                @{doctor.username || "doctor"}
-              </span>
-
-              {doctor.isVerified && (
-                <span className="verified-profile">
-                  <VerifiedUserOutlinedIcon
-                    sx={{
-                      fontSize: "15px",
-                    }}
-                  />
-
-                  Verified Profile
-                </span>
-              )}
-            </div>
-
-            <span className="meta-divider" />
-
             <div className="hospital-section">
               <LocationOnOutlinedIcon
                 sx={{
@@ -227,16 +211,12 @@ export default function DoctorCard({
       {/* ================= DETAILS ================= */}
 
       <div className="doctor-info-grid">
-        <InfoBox
-          label="Qualification"
-          value={doctor.qualification || "N/A"}
-        />
+        <InfoBox label="Qualification" value={doctor.qualification || "N/A"} />
 
         <InfoBox
           label="Experience"
           value={
-            doctor.experience !== undefined &&
-              doctor.experience !== null
+            doctor.experience !== undefined && doctor.experience !== null
               ? `${doctor.experience} Years`
               : "N/A"
           }
@@ -248,32 +228,22 @@ export default function DoctorCard({
             <div className="rating-value">
               <span className="star">★</span>
 
-              <span>
-                {doctor.rating || doctor.avgRating || "0.0"}/5
-              </span>
+              <span>{doctor.rating || doctor.avgRating || "0.0"}/5</span>
 
-              <span className="reviews">
-                ({doctor.totalFeedbacks ?? 0})
-              </span>
+              <span className="reviews">({doctor.totalFeedbacks ?? 0})</span>
             </div>
           }
         />
 
-        <InfoBox
-          label="Gender"
-          value={formatGender(doctor.gender)}
-        />
+        <InfoBox label="Gender" value={formatGender(doctor.gender)} />
 
-        <InfoBox
-          label="Age"
-          value={doctor.age || "N/A"}
-        />
+        <InfoBox label="Age" value={doctor.age || "N/A"} />
 
         <InfoBox
           label="Consultation Fee"
           value={
             doctor.consultationFee !== undefined &&
-              doctor.consultationFee !== null
+            doctor.consultationFee !== null
               ? `₹${doctor.consultationFee}`
               : "N/A"
           }
@@ -304,15 +274,26 @@ export default function DoctorCard({
         <button
           className="details-button"
           onClick={() => onViewDetails(doctor.id)}
+          disabled={isViewingDetails}
         >
-          View Details
-
-          <ArrowForwardRoundedIcon
-            sx={{
-              fontSize: "17px",
-              transition: "transform 0.2s ease",
-            }}
-          />
+          {isViewingDetails ? (
+            <CircularProgress
+              size={17}
+              sx={{
+                color: "primary.main",
+              }}
+            />
+          ) : (
+            <>
+              View Details
+              <ArrowForwardRoundedIcon
+                sx={{
+                  fontSize: "17px",
+                  transition: "transform 0.2s ease",
+                }}
+              />
+            </>
+          )}
         </button>
       </div>
 
@@ -321,10 +302,6 @@ export default function DoctorCard({
       ====================================================== */}
 
       <style jsx>{`
-        /* ===========================
-           DESKTOP / LAPTOP
-        ============================ */
-
         .doctor-top {
           display: flex;
           align-items: stretch;
@@ -332,29 +309,19 @@ export default function DoctorCard({
           min-width: 0;
         }
 
-        /* ===========================
-           AVATAR
-        ============================ */
-
         .doctor-avatar {
           width: 62px;
           min-width: 72px;
-
           height: auto;
           min-height: 62px;
-
           border-radius: 14px;
           overflow: hidden;
-
           background: var(--secondary-light);
           border: 1px solid var(--divider);
-
           display: flex;
           align-items: center;
           justify-content: center;
-
           color: var(--secondary-dark);
-
           font-size: 23px;
           font-weight: 700;
         }
@@ -365,10 +332,6 @@ export default function DoctorCard({
           object-fit: cover;
           display: block;
         }
-
-        /* ===========================
-           MAIN INFO
-        ============================ */
 
         .doctor-main-info {
           flex: 1;
@@ -384,53 +347,66 @@ export default function DoctorCard({
 
         .doctor-heading {
           min-width: 0;
+          flex: 1;
         }
 
         .doctor-heading h3 {
           margin: 0;
-
           color: var(--text-primary);
-
           font-size: 15px;
           line-height: 1.25;
           font-weight: 700;
-
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
 
+        .specialization-row {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          min-width: 0;
+          margin-top: 3px;
+        }
+
         .specialization {
-          margin-top: 2px;
-
+          margin: 0;
           color: var(--secondary);
-
           font-size: 13px;
           line-height: 1.3;
           font-weight: 500;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
-        /* ===========================
-           AVAILABLE
-        ============================ */
+        .specialization-divider {
+          color: var(--divider);
+          font-size: 12px;
+          flex-shrink: 0;
+        }
+
+        .username {
+          color: var(--text-secondary);
+          font-size: 10px;
+          line-height: 1.3;
+          font-weight: 500;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
 
         .available-badge {
           display: flex;
           align-items: center;
           gap: 5px;
-
           padding: 5px 9px;
-
           border-radius: 20px;
-
           background: var(--success-light);
           border: 1px solid var(--primary-light);
-
           color: var(--success-dark);
-
           font-size: 11px;
           font-weight: 700;
-
           white-space: nowrap;
           flex-shrink: 0;
         }
@@ -438,165 +414,94 @@ export default function DoctorCard({
         .available-dot {
           width: 6px;
           height: 6px;
-
           border-radius: 50%;
-
           background: var(--success);
-        }
-
-        /* ===========================
-           USERNAME + HOSPITAL
-        ============================ */
-
-        .doctor-meta-row {
-          margin-top: 3px;
-
-          display: flex;
-          align-items: center;
-          gap: 9px;
-
-          min-width: 0;
-
-          font-size: 12px;
-        }
-
-        .username-section {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-
-          min-width: 0;
           flex-shrink: 0;
         }
 
-        .username {
+        .available-badge.is-unavailable,
+        .mobile-available-badge.is-unavailable {
+          background: #fef2f2;
+          border-color: #fecaca;
+          color: #dc2626;
+        }
+
+        .available-badge.is-unavailable .available-dot,
+        .mobile-available-badge.is-unavailable .available-dot {
+          background: #dc2626;
+        }
+
+        .mobile-available-badge {
+          display: none;
+        }
+
+        .doctor-meta-row {
+          margin-top: 6px;
+          display: flex;
+          align-items: center;
+          min-width: 0;
+          width: 100%;
+          font-size: 12px;
+        }
+
+        .hospital-section {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          min-width: 0;
+          width: 100%;
+        }
+
+        .hospital-name {
           color: var(--text-secondary);
+          font-size: 12px;
           font-weight: 500;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .verified-profile {
           display: inline-flex;
           align-items: center;
           gap: 3px;
-
           color: var(--success-dark);
-
           font-size: 10px;
           font-weight: 600;
-
           white-space: nowrap;
         }
-
-        .meta-divider {
-          width: 1px;
-          height: 14px;
-
-          background: var(--divider);
-
-          flex-shrink: 0;
-        }
-
-<<<<<<< HEAD
-      .available-badge.is-unavailable,
-.mobile-available-badge.is-unavailable {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #dc2626;
-}
-
-.available-badge.is-unavailable .available-dot,
-.mobile-available-badge.is-unavailable .available-dot {
-  background: #dc2626;
-}
-=======
->>>>>>> origin/main
-        .hospital-section {
-          display: flex;
-          align-items: center;
-          gap: 3px;
-
-          min-width: 0;
-        }
-
-        .hospital-name {
-          color: var(--text-secondary);
-
-          font-size: 12px;
-          font-weight: 500;
-
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        /* ===========================
-           DIVIDER
-        ============================ */
 
         .card-divider {
           height: 1px;
-
           background: var(--divider);
-
           margin: 13px 0;
         }
 
-        /* ===========================
-           INFO GRID
-        ============================ */
-
         .doctor-info-grid {
           display: grid;
-
-          grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 8px;
         }
 
-        /* ===========================
-           BUTTONS
-        ============================ */
-
         .doctor-card-actions {
           display: grid;
-
           grid-template-columns: 1fr 1fr;
-
           gap: 9px;
-
           margin-top: 13px;
         }
 
         .book-button,
         .details-button {
           height: 40px;
-
           border-radius: 8px;
-
           font-size: 13px;
           font-weight: 650;
-
           cursor: pointer;
-
           transition: all 0.2s ease;
         }
 
-        /* ===========================
-           BOOK BUTTON
-        ============================ */
-.specialization-row {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
-
-.mobile-available-badge {
-  display: none;
-}
         .book-button {
           border: none;
-
           background: var(--primary);
           color: var(--primary-contrast);
         }
@@ -608,39 +513,35 @@ export default function DoctorCard({
         .book-button:disabled {
           background: var(--primary-light);
           color: var(--primary-contrast);
-
           cursor: not-allowed;
         }
-
-        /* ===========================
-           DETAILS BUTTON
-        ============================ */
 
         .details-button {
           display: flex;
           align-items: center;
           justify-content: center;
-
           gap: 6px;
-
           background: var(--background-paper);
-
           border: 1px solid var(--primary);
-
           color: var(--primary-dark);
         }
 
-        .details-button:hover {
+        .details-button:hover:not(:disabled) {
           background: var(--secondary-light);
         }
 
-        .details-button:hover :global(svg) {
+        .details-button:hover:not(:disabled) :global(svg) {
           transform: translateX(3px);
         }
 
-        /* ===========================
-           TABLET
-        ============================ */
+        .details-button:disabled {
+          cursor: not-allowed;
+          opacity: 0.7;
+        }
+
+        .details-button:disabled:hover {
+          background: var(--background-paper);
+        }
 
         @media (max-width: 900px) {
           .doctor-card {
@@ -657,150 +558,129 @@ export default function DoctorCard({
             font-size: 16px;
           }
 
-          .doctor-meta-row {
-            flex-wrap: wrap;
-            gap: 5px 8px;
-          }
-
-          .meta-divider {
-            display: none;
-          }
-
           .hospital-section {
-            flex-basis: 100%;
+            width: 100%;
           }
         }
 
-        /* ===========================
-           MOBILE
-        ============================ */
-
         @media (max-width: 600px) {
-  .doctor-card {
-    padding: 13px !important;
-    border-radius: 11px !important;
-  }
+          .doctor-card {
+            padding: 13px !important;
+            border-radius: 11px !important;
+          }
 
-  .doctor-top {
-    gap: 10px;
-  }
+          .doctor-top {
+            gap: 10px;
+          }
 
-  .doctor-avatar {
-    width: 62px;
-    height: 62px;
-    min-width: 62px;
+          .doctor-avatar {
+            width: 62px;
+            height: 62px;
+            min-width: 62px;
+            border-radius: 12px;
+            font-size: 20px;
+          }
 
-    border-radius: 12px;
-    font-size: 20px;
-  }
+          .doctor-heading {
+            flex: 1;
+            min-width: 0;
+          }
 
-  .doctor-heading {
-    flex: 1;
-    min-width: 0;
-  }
+          .doctor-heading h3 {
+            font-size: 15px;
+          }
 
-  .doctor-heading h3 {
-    font-size: 15px;
-  }
+          .doctor-heading-row > .available-badge {
+            display: none;
+          }
 
-  /* Desktop available hide */
-  .doctor-heading-row > .available-badge {
-    display: none;
-  }
+          .specialization-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 3px;
+            min-width: 0;
+          }
 
-  /* Specialization + Available same line */
-  .specialization-row {
-    display: flex;
-    align-items: center;
-    gap: 7px;
+          .specialization {
+            margin: 0;
+            font-size: 12px;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
 
-    margin-top: 3px;
+          .specialization-divider {
+            font-size: 11px;
+          }
 
-    min-width: 0;
-  }
+          .username {
+            font-size: 11px;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
 
-  .specialization {
-    margin-top: 0;
+          .mobile-available-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 7px;
+            border-radius: 20px;
+            background: var(--success-light);
+            border: 1px solid var(--primary-light);
+            color: var(--success-dark);
+            font-size: 9px;
+            font-weight: 700;
+            white-space: nowrap;
+            flex-shrink: 0;
+          }
 
-    font-size: 12px;
+          .mobile-available-badge .available-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--success);
+          }
 
-    min-width: 0;
+          .mobile-available-badge.is-unavailable .available-dot {
+            background: #dc2626;
+          }
 
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+          .doctor-meta-row {
+            margin-top: 5px;
+          }
 
-  /* Mobile Available show */
-  .mobile-available-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+          .hospital-name {
+            font-size: 11px;
+          }
 
-    padding: 3px 7px;
+          .verified-profile {
+            font-size: 9px;
+          }
 
-    border-radius: 20px;
+          .card-divider {
+            margin: 11px 0;
+          }
 
-    background: var(--success-light);
-    border: 1px solid var(--primary-light);
+          .doctor-info-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 7px;
+          }
 
-    color: var(--success-dark);
+          .doctor-card-actions {
+            gap: 7px;
+            margin-top: 11px;
+          }
 
-    font-size: 9px;
-    font-weight: 700;
-
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .mobile-available-badge .available-dot {
-    width: 5px;
-    height: 5px;
-
-    border-radius: 50%;
-
-    background: var(--success);
-  }
-
-  .doctor-meta-row {
-    margin-top: 5px;
-  }
-
-  .username {
-    font-size: 11px;
-  }
-
-  .verified-profile {
-    font-size: 9px;
-  }
-
-  .hospital-name {
-    font-size: 11px;
-  }
-
-  .card-divider {
-    margin: 11px 0;
-  }
-
-  .doctor-info-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 7px;
-  }
-
-  .doctor-card-actions {
-    gap: 7px;
-    margin-top: 11px;
-  }
-
-  .book-button,
-  .details-button {
-    height: 39px;
-    font-size: 12px;
-  }
-}
-        /* ===========================
-           SMALL MOBILE
-        ============================ */
+          .book-button,
+          .details-button {
+            height: 39px;
+            font-size: 12px;
+          }
+        }
 
         @media (max-width: 390px) {
           .doctor-avatar {
@@ -809,8 +689,21 @@ export default function DoctorCard({
             min-width: 56px;
           }
 
-          .available-badge {
-            padding: 4px 6px;
+          .specialization-row {
+            gap: 5px;
+          }
+
+          .specialization {
+            font-size: 11.5px;
+          }
+
+          .username {
+            font-size: 10.5px;
+          }
+
+          .mobile-available-badge {
+            padding: 3px 5px;
+            font-size: 8.5px;
           }
 
           .doctor-card-actions {
@@ -826,23 +719,12 @@ export default function DoctorCard({
    INFO BOX
 ========================================================= */
 
-function InfoBox({
-  label,
-  value,
-  highlight = false,
-}) {
+function InfoBox({ label, value, highlight = false }) {
   const theme = useTheme();
 
   return (
-    <div
-      className="info-box"
-      style={{
-        
-      }}
-    >
-      <div className="info-label">
-        {label}
-      </div>
+    <div className="info-box" style={{}}>
+      <div className="info-label">{label}</div>
 
       <div
         className="info-value"
@@ -939,8 +821,5 @@ function formatGender(gender) {
 
   const value = String(gender).toLowerCase();
 
-  return (
-    value.charAt(0).toUpperCase() +
-    value.slice(1)
-  );
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

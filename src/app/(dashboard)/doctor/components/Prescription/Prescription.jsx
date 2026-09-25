@@ -130,15 +130,15 @@ export default function Prescription({
 
   useEffect(() => {
     if (apiData?.prescription?.medicines) {
-      const formatted =
-        apiData.prescription.medicines.map((m) => ({
-          name: m.medicine_name,
-          dose: m.dose,
-          unit: "Tablet",
-          freq: m.frequency,
-          instr: m.instructions,
-        }));
-
+     const formatted =
+  apiData.prescription.medicines.map((m) => ({
+    name: m.medicine_name || "",
+    dose: m.dose || "",
+    unit: m.unit || "",
+    freq: m.frequency || "",
+    instr: m.instructions || "",
+    duration: m.duration || "",
+  }));
       setRows(formatted);
     }
   }, [apiData]);
@@ -479,64 +479,197 @@ const downloadPdf = async () => {
   }
 };
 
- return (
+return (
   <>
-    <PrescriptionUI
-      isPatient={isPatient}
-      editable={editable}
-      isTodayAppointment={isTodayAppointment}
-      isDownloading={false}
-      snackbar={snackbar}
-      apiData={apiData}
-      setSnackbar={setSnackbar}
-      handleSavePrescription={handleSavePrescription}
-      handleClick={handleClick}
-      downloadPdf={downloadPdf}
-      pdfRef={pdfRef}
-      doctor={doctor}
-      patient={patient}
-      patientId={patientId}
-      appointmentId={appointmentId}
-      dateNow={dateNow}
-      diagnosis={diagnosis}
-      setDiagnosis={setDiagnosis}
-      rows={rows}
-      setRows={setRows}
-      addRow={addRow}
-      removeRow={removeRow}
-      remark={remark}
-      setRemark={setRemark}
-      followUpDate={followUpDate}
-      setFollowUpDate={setFollowUpDate}
-      qrImage={qrImage}
-    />
-
-    {/* ===============================================
-        PDF ONLY VIEW
-    =============================================== */}
-
-    <div
-      style={{
-        position: "fixed",
-        left: "-10000px",
-        top: 0,
-        width: "794px",
-        pointerEvents: "none",
-      }}
-    >
-      <div ref={pdfDownloadRef}>
-        <PrescriptionPdfView
-          doctor={doctor}
-          patient={patient}
-          dateNow={dateNow}
-          diagnosis={diagnosis}
-          medicines={rows}
-          remark={remark}
-          followUpDate={followUpDate}
-          qrImage={qrImage}
-        />
+    {loading ? (
+      <div
+        style={{
+          width: "100%",
+          minHeight: "250px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "13px",
+          color: "#596575",
+        }}
+      >
+        Loading prescription...
       </div>
-    </div>
+    ) : !apiData ? (
+      <div
+        style={{
+          width: "100%",
+          minHeight: "250px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "13px",
+          color: "#596575",
+        }}
+      >
+        Prescription not available.
+      </div>
+    ) : isPatient ? (
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+          boxSizing: "border-box",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "10px",
+            padding: "8px 10px",
+            backgroundColor: "#ffffff",
+            border: "1px solid #E2E8F0",
+            borderRadius: "8px",
+            boxSizing: "border-box",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "#172033",
+              }}
+            >
+              Prescription
+            </div>
+
+            <div
+              style={{
+                marginTop: "2px",
+                fontSize: "11px",
+                color: "#596575",
+              }}
+            >
+              View or download your prescription
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={downloadPdf}
+            disabled={isDownloading}
+            style={{
+              minWidth: "120px",
+              height: "34px",
+              padding: "0 14px",
+              border: "none",
+              borderRadius: "6px",
+              backgroundColor: "#07876A",
+              color: "#ffffff",
+              fontSize: "12px",
+              fontWeight: 600,
+              cursor: isDownloading
+                ? "not-allowed"
+                : "pointer",
+              opacity: isDownloading ? 0.65 : 1,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {isDownloading
+              ? "Downloading..."
+              : "Download PDF"}
+          </button>
+        </div>
+
+        <div
+          style={{
+            width: "100%",
+            overflowX: "auto",
+            backgroundColor: "#ffffff",
+            border: "1px solid #E2E8F0",
+            borderRadius: "8px",
+            boxSizing: "border-box",
+          }}
+        >
+          <div
+            style={{
+              width: "794px",
+              maxWidth: "100%",
+              margin: "0 auto",
+            }}
+          >
+            <PrescriptionPdfView
+              doctor={doctor}
+              patient={patient}
+              dateNow={dateNow}
+              diagnosis={diagnosis}
+              medicines={rows}
+              remark={remark}
+              followUpDate={followUpDate}
+              qrImage={qrImage}
+              compact={true}
+            />
+          </div>
+        </div>
+      </div>
+    ) : (
+      <PrescriptionUI
+        isPatient={isPatient}
+        editable={editable}
+        isTodayAppointment={isTodayAppointment}
+        isDownloading={isDownloading}
+        snackbar={snackbar}
+        apiData={apiData}
+        setSnackbar={setSnackbar}
+        handleSavePrescription={handleSavePrescription}
+        handleClick={handleClick}
+        downloadPdf={downloadPdf}
+        pdfRef={pdfRef}
+        doctor={doctor}
+        patient={patient}
+        patientId={patientId}
+        appointmentId={appointmentId}
+        dateNow={dateNow}
+        diagnosis={diagnosis}
+        setDiagnosis={setDiagnosis}
+        rows={rows}
+        setRows={setRows}
+        addRow={addRow}
+        removeRow={removeRow}
+        remark={remark}
+        setRemark={setRemark}
+        followUpDate={followUpDate}
+        setFollowUpDate={setFollowUpDate}
+        qrImage={qrImage}
+      />
+    )}
+
+    {apiData && (
+      <div
+        style={{
+          position: "fixed",
+          left: "-10000px",
+          top: 0,
+          width: "794px",
+          pointerEvents: "none",
+          backgroundColor: "#ffffff",
+        }}
+      >
+        <div ref={pdfDownloadRef}>
+          <PrescriptionPdfView
+            doctor={doctor}
+            patient={patient}
+            dateNow={dateNow}
+            diagnosis={diagnosis}
+            medicines={rows}
+            remark={remark}
+            followUpDate={followUpDate}
+            qrImage={qrImage}
+          />
+        </div>
+      </div>
+    )}
   </>
 );
 }

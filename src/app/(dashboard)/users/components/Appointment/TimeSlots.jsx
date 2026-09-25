@@ -98,86 +98,119 @@ const TimeSlots = ({
   // ============================================
   // EMPTY STATE
   // ============================================
-
-  const EmptyState = ({
-    icon,
-    title,
-    description,
-  }) => (
+const EmptyState = ({ icon, title, description }) => (
+  <Box
+    sx={{
+      width: "100%",
+      minHeight: 300,
+      px: { xs: 2, sm: 4 },
+      py: 3,
+      border: "1px solid",
+      borderColor: "rgba(30, 102, 88, 0.14)",
+      borderRadius: 3,
+      background:
+        "linear-gradient(145deg, rgba(30, 102, 88, 0.045), rgba(255, 255, 255, 0.7))",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      position: "relative",
+      overflow: "hidden",
+      boxSizing: "border-box",
+    }}
+  >
+    {/* Background decoration */}
     <Box
       sx={{
-        minHeight: 115,
+        position: "absolute",
+        width: 180,
+        height: 180,
+        borderRadius: "50%",
+        background: "rgba(30, 102, 88, 0.035)",
+        top: -90,
+        right: -70,
+        pointerEvents: "none",
+      }}
+    />
 
+    <Box
+      sx={{
+        position: "absolute",
+        width: 140,
+        height: 140,
+        borderRadius: "50%",
+        background: "rgba(30, 102, 88, 0.025)",
+        bottom: -70,
+        left: -50,
+        pointerEvents: "none",
+      }}
+    />
+
+    {/* Main content */}
+    <Box
+      sx={{
+        position: "relative",
+        zIndex: 1,
+        width: "100%",
+        maxWidth: 420,
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-
-        px: 2,
-        py: 2,
-
-        border: "1px dashed",
-        borderColor: "divider",
-
-        borderRadius: 2,
-
-        backgroundColor: "background.default",
+        textAlign: "center",
       }}
     >
+      {/* Icon */}
       <Box
         sx={{
+          width: { xs: 58, sm: 64 },
+          height: { xs: 58, sm: 64 },
+          borderRadius: "18px",
           display: "flex",
           alignItems: "center",
-          gap: 1.5,
-
-          maxWidth: 380,
+          justifyContent: "center",
+          background:
+            "linear-gradient(145deg, rgba(30, 102, 88, 0.12), rgba(30, 102, 88, 0.06))",
+          color: "primary.main",
+          border: "1px solid rgba(30, 102, 88, 0.12)",
+          boxShadow: "0 8px 22px rgba(30, 102, 88, 0.08)",
+          mb: 2,
+          "& svg": {
+            fontSize: { xs: 28, sm: 30 },
+          },
         }}
       >
-        <Box
-          sx={{
-            width: 40,
-            height: 40,
-            minWidth: 40,
-
-            borderRadius: "50%",
-
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-
-            backgroundColor: "secondary.light",
-            color: "primary.main",
-          }}
-        >
-          {icon}
-        </Box>
-
-        <Box>
-          <Typography
-            sx={{
-              fontSize: "12.5px",
-              fontWeight: 700,
-              color: "text.primary",
-              lineHeight: 1.3,
-            }}
-          >
-            {title}
-          </Typography>
-
-          <Typography
-            sx={{
-              mt: 0.3,
-              fontSize: "10.5px",
-              color: "text.secondary",
-              lineHeight: 1.45,
-            }}
-          >
-            {description}
-          </Typography>
-        </Box>
+        {icon}
       </Box>
-    </Box>
-  );
 
+      {/* Title */}
+      <Typography
+        sx={{
+          fontSize: { xs: "15px", sm: "16px" },
+          fontWeight: 700,
+          color: "text.primary",
+          lineHeight: 1.4,
+          letterSpacing: "-0.01em",
+          mb: 0.75,
+        }}
+      >
+        {title}
+      </Typography>
+
+      {/* Description */}
+      <Typography
+        sx={{
+          fontSize: { xs: "11px", sm: "12px" },
+          fontWeight: 400,
+          color: "text.secondary",
+          lineHeight: 1.6,
+          maxWidth: 340,
+        }}
+      >
+        {description}
+      </Typography>
+    </Box>
+  </Box>
+);
   return (
     <Box
       sx={{

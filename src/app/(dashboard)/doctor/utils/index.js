@@ -27,13 +27,7 @@ export const validateScheduleForm = (formData) => {
     errors.location = 'Location is required';
   }
   
-  if (!formData.startTime) {
-    errors.startTime = 'Start time is required';
-  }
-  
-  if (!formData.endTime) {
-    errors.endTime = 'End time is required';
-  }
+
   
   if (!formData.slotDuration) {
     errors.slotDuration = 'Slot duration is required';

@@ -48,7 +48,7 @@ export default function LoginPage() {
               boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
             }}
           >
-            <AuthSidePanel isSignup={false} onToggle={() => router.push("/register")} />
+            <AuthSidePanel isSignup={false} />
             
             <AuthCard
               icon="/img/icon.png"

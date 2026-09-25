@@ -18,7 +18,6 @@ export default function AuthCard({
           md: "50%",
         },
 
-        // GLOBAL THEME
         backgroundColor: "background.paper",
 
         display: "flex",
@@ -35,7 +34,6 @@ export default function AuthCard({
 
         boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
 
-        // TOP GREEN LINE
         "&::before": {
           content: '""',
           position: "absolute",
@@ -49,7 +47,6 @@ export default function AuthCard({
           zIndex: 1,
         },
 
-        // BOTTOM GREEN LINE
         "&::after": {
           content: '""',
           position: "absolute",
@@ -90,10 +87,6 @@ export default function AuthCard({
             px: 2,
           }}
         >
-          {/* =========================
-              ICON / LOGO
-          ========================= */}
-
           {icon && (
             <motion.div
               initial={{
@@ -138,10 +131,6 @@ export default function AuthCard({
             </motion.div>
           )}
 
-          {/* =========================
-              TITLE
-          ========================= */}
-
           {title && (
             <Typography
               variant="h4"
@@ -156,17 +145,12 @@ export default function AuthCard({
 
                 letterSpacing: "-0.5px",
 
-                // FROM GLOBAL THEME
                 color: "primary.main",
               }}
             >
               {title}
             </Typography>
           )}
-
-          {/* =========================
-              SUBTITLE
-          ========================= */}
 
           {subtitle && (
             <Typography
@@ -185,10 +169,6 @@ export default function AuthCard({
               {subtitle}
             </Typography>
           )}
-
-          {/* =========================
-              FORM CONTENT
-          ========================= */}
 
           <Fade in timeout={600}>
             <Box

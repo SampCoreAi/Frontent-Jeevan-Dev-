@@ -19,6 +19,7 @@ export default function MedicineTable({
 
   const [medicineSearchOpen, setMedicineSearchOpen] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
+  const [draftRowIndex, setDraftRowIndex] = useState(null);
 
   // ============================================================
   // OPTIONS
@@ -65,17 +66,21 @@ export default function MedicineTable({
   // ============================================================
 
   const currentRowIndex =
-    rows.length > 0 ? rows.length - 1 : -1;
+  draftRowIndex !== null &&
+  draftRowIndex >= 0 &&
+  draftRowIndex < rows.length
+    ? draftRowIndex
+    : -1;
 
-  const currentRow =
-    currentRowIndex >= 0
-      ? rows[currentRowIndex]
-      : null;
+const currentRow =
+  currentRowIndex >= 0
+    ? rows[currentRowIndex]
+    : null;
 
-  const committedRows =
-    rows.length > 1
-      ? rows.slice(0, -1).filter(isRowFilled)
-      : [];
+const committedRows =
+  draftRowIndex !== null
+    ? rows.filter((_, index) => index !== draftRowIndex && isRowFilled(rows[index]))
+    : rows.filter(isRowFilled);
 
 const downloadRows = rows.filter(
   (row) => row?.name?.trim()

@@ -52,33 +52,42 @@ export default function PatientHistoryPage() {
           "/api/appointments/getAllappoinment/my"
         );
 
-        const formatted = res.data.data.map((item) => ({
-          id: item.id,
+     const formatted = res.data.data.map((item) => ({
+  id: item.id,
 
-          title:
-            item.appointment_type === "online"
-              ? "Online Consultation"
-              : "Offline Visit",
+  title:
+    item.appointment_type === "online"
+      ? "Online Consultation"
+      : "Offline Visit",
 
-          date: dayjs(item.slot_date).format("MMM D, YYYY"),
-          dateObj: dayjs(item.slot_date),
+  date: item.slot_date
+    ? dayjs(item.slot_date).format("MMM D, YYYY")
+    : "-",
 
-          doctor: item.doctor_name,
-          department: item.doctor_department,
+  dateObj: item.slot_date
+    ? dayjs(item.slot_date)
+    : null,
 
-          time: formatTimeRange(
-            item.start_time,
-            item.end_time
-          ),
+  doctor: item.doctor_name || "-",
+  department: item.doctor_department || "-",
 
-          startTime: item.start_time,
-          status: item.status,
+  startTime: item.start_time || "",
+  endTime: item.end_time || "",
 
-          token: item.token_number,
-          code: item.code,
+  time:
+    item.start_time && item.end_time
+      ? `${item.start_time} - ${item.end_time}`
+      : item.start_time || item.end_time || "-",
 
-          address: item.hospital_name || "N/A",
-        }));
+  reasonForVisit: item.reason_for_visit || "-",
+
+  status: item.status || "-",
+
+  token: item.token_number || "-",
+  code: item.code || "-",
+
+  hospital_name: item.hospital_name || "N/A",
+}));
 
         setConsultationHistory(formatted);
       } catch (err) {

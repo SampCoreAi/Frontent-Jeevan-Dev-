@@ -3,179 +3,345 @@
 import { useState } from "react";
 import {
   Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Chip,
+  CircularProgress,
   IconButton,
-  TablePagination,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+  Tooltip,
+  useTheme,
 } from "@mui/material";
-import { Download } from "@mui/icons-material";
+import { DataGrid } from "@mui/x-data-grid";
+import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 
 export default function QRTable({
-  qrData,
+  qrData = [],
   page,
   setPage,
   rowsPerPage,
   setRowsPerPage,
   total,
+  loading,
+  showMessage,
 }) {
-  const [statusFilter, setStatusFilter] = useState("AVAILABLE");
+  const theme = useTheme();
+  const [downloadingId, setDownloadingId] = useState(null);
 
-  const filteredData = (qrData || []).filter(
-    (item) => item.status === statusFilter
-  );
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
 
-  const handleDownload = async (imageUrl, fileName) => {
+    if (
+      imagePath.startsWith("http://") ||
+      imagePath.startsWith("https://")
+    ) {
+      return imagePath;
+    }
+
+    const baseUrl =
+      process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+
+    return `${baseUrl}/${imagePath.replace(/^\//, "")}`;
+  };
+
+  const handleDownload = async (item) => {
     try {
-      const response = await fetch(imageUrl);
+      if (!item?.qr_image) {
+        showMessage?.("QR image not available.", "error");
+        return;
+      }
+
+      setDownloadingId(item.id);
+
+      const response = await fetch(getImageUrl(item.qr_image));
 
       if (!response.ok) {
-        throw new Error(`Image fetch failed: ${response.status}`);
+        throw new Error("Unable to download QR.");
       }
 
       const blob = await response.blob();
-
-      if (!blob.type.startsWith("image/")) {
-        throw new Error("Server did not return a valid image");
-      }
-
       const url = window.URL.createObjectURL(blob);
 
       const link = document.createElement("a");
       link.href = url;
-      link.download = fileName;
+      link.download = `${item.qr_code}.png`;
 
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
-      }, 1000);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("QR Download Error:", error);
+      showMessage?.(
+        error?.message || "QR download failed.",
+        "error"
+      );
+    } finally {
+      setDownloadingId(null);
     }
   };
 
-  return (
-    <Box>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "flex-end",
-          mb: 2,
-        }}
-      >
-        <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel>Status</InputLabel>
+  const columns = [
+    {
+      field: "qr_code",
+      headerName: "QR Code",
+      flex: 1.5,
+      minWidth: 180,
+    },
 
-          <Select
-            value={statusFilter}
-            label="Status"
-            onChange={(e) => setStatusFilter(e.target.value)}
+    {
+      field: "status",
+      headerName: "Status",
+      flex: 1,
+      minWidth: 140,
+
+      renderCell: (params) => {
+        const available = params.value === "AVAILABLE";
+
+        return (
+          <Chip
+            label={available ? "Available" : "Assigned"}
+            size="small"
+            sx={{
+              height: 25,
+              fontSize: "11px",
+              fontWeight: 600,
+              borderRadius: 1,
+
+              color: available
+                ? theme.palette.success.main
+                : theme.palette.primary.main,
+
+              bgcolor: available
+                ? `${theme.palette.success.main}12`
+                : `${theme.palette.primary.main}12`,
+            }}
+          />
+        );
+      },
+    },
+
+    {
+      field: "doctor_user_id",
+      headerName: "Doctor ID",
+      flex: 1,
+      minWidth: 140,
+
+      valueGetter: (value) => value ?? "Not assigned",
+    },
+
+    {
+      field: "action",
+      headerName: "Action",
+      width: 110,
+      sortable: false,
+      filterable: false,
+      align: "center",
+      headerAlign: "center",
+
+      renderCell: (params) => {
+        const downloading =
+          downloadingId === params.row.id;
+
+        return (
+          <Tooltip
+            title={
+              downloading
+                ? "Downloading..."
+                : "Download QR"
+            }
           >
-            <MenuItem value="AVAILABLE">Available</MenuItem>
-            <MenuItem value="ASSIGNED">Assigned</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+            <span>
+              <IconButton
+                size="small"
+                disabled={
+                  downloading || !params.row.qr_image
+                }
+                onClick={() =>
+                  handleDownload(params.row)
+                }
+                sx={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 1.2,
+                  color: "primary.main",
+                  bgcolor: `${theme.palette.primary.main}10`,
 
-      <TableContainer
-        component={Paper}
-        sx={{
-          boxShadow: "0 4px 12px rgba(15, 116, 104, 0.15)",
-          borderRadius: 2,
-        }}
-      >
-        <Table>
-          <TableHead>
-            <TableRow sx={{ backgroundColor: "#f5faf8" }}>
-              <TableCell sx={{ fontWeight: 600 }}>QR Code</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Doctor ID</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Action</TableCell>
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {filteredData.map((item) => (
-              <TableRow key={item.id} hover>
-                <TableCell>{item.qr_code}</TableCell>
-
-                <TableCell>
-                  <Chip
-                    label={item.status}
-                    size="small"
-                    sx={{
-                      borderRadius: 1,
-                      color: "#0f7468",
-                      backgroundColor: "#e1f5ef",
-                      fontWeight: 500,
-                      fontSize: "0.75rem",
-                    }}
+                  "&:hover": {
+                    bgcolor: `${theme.palette.primary.main}18`,
+                  },
+                }}
+              >
+                {downloading ? (
+                  <CircularProgress
+                    size={16}
+                    color="inherit"
                   />
-                </TableCell>
+                ) : (
+                  <DownloadRoundedIcon
+                    sx={{ fontSize: 18 }}
+                  />
+                )}
+              </IconButton>
+            </span>
+          </Tooltip>
+        );
+      },
+    },
+  ];
 
-                <TableCell>
-                  {item.doctor_user_id ?? "-"}
-                </TableCell>
+  return (
+    <Box
+      sx={{
+        width: "100%",
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: 2,
+        overflow: "hidden",
+        bgcolor: "background.paper",
+      }}
+    >
+      <DataGrid
+        rows={qrData}
+        columns={columns}
 
-                <TableCell>
-                  <IconButton
-                    onClick={() =>
-                      handleDownload(
-                        `${process.env.NEXT_PUBLIC_API_URL}/${item.qr_image}`,
-                        `${item.qr_code}.png`
-                      )
-                    }
-                    sx={{
-                      color: "#0f7468",
-                      backgroundColor: "#e1f5ef",
-                      "&:hover": {
-                        backgroundColor: "#c8ede3",
-                      },
-                      borderRadius: 1,
-                      p: 1,
-                    }}
-                    size="small"
-                  >
-                    <Download fontSize="small" />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
+        loading={loading}
 
-            {filteredData.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  No QR Codes Found
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+        rowCount={total}
 
-      <TablePagination
-        component="div"
-        count={total}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        rowsPerPageOptions={[5, 10, 20]}
-        onPageChange={(event, newPage) => setPage(newPage)}
-        onRowsPerPageChange={(event) => {
-          setRowsPerPage(parseInt(event.target.value, 10));
-          setPage(0);
+        paginationMode="server"
+
+        paginationModel={{
+          page,
+          pageSize: rowsPerPage,
         }}
+
+        onPaginationModelChange={(model) => {
+          if (model.pageSize !== rowsPerPage) {
+            setRowsPerPage(model.pageSize);
+            setPage(0);
+            return;
+          }
+
+          setPage(model.page);
+        }}
+
+        pageSizeOptions={[5, 10, 20]}
+
+        disableRowSelectionOnClick
+
+       sx={{
+  border: 0,
+
+  // =========================
+  // COLUMN HEADER
+  // =========================
+  "& .MuiDataGrid-columnHeaders": {
+    bgcolor: "action.hover",
+    borderBottom: "1px solid",
+    borderColor: "divider",
+  },
+
+  "& .MuiDataGrid-columnHeader": {
+    bgcolor: "action.hover",
+
+    "&:focus": {
+      outline: "none",
+    },
+
+    "&:focus-within": {
+      outline: "none",
+    },
+  },
+
+  "& .MuiDataGrid-columnHeaderTitle": {
+    fontSize: "12px",
+    fontWeight: 700,
+    color: "text.secondary",
+  },
+
+  // =========================
+  // 3 DOT MENU ALWAYS SHOW
+  // =========================
+  "& .MuiDataGrid-menuIcon": {
+    visibility: "visible !important",
+    width: "auto !important",
+    opacity: "1 !important",
+  },
+
+  "& .MuiDataGrid-menuIconButton": {
+    opacity: "1 !important",
+    visibility: "visible !important",
+
+    width: 28,
+    height: 28,
+    borderRadius: 1,
+
+    color: "text.secondary",
+
+    "&:hover": {
+      bgcolor: "action.selected",
+      color: "primary.main",
+    },
+  },
+
+  // =========================
+  // SORT ICON
+  // =========================
+  "& .MuiDataGrid-sortIcon": {
+    opacity: "1 !important",
+    color: "text.secondary",
+  },
+
+  // =========================
+  // CELLS
+  // =========================
+  "& .MuiDataGrid-cell": {
+    fontSize: "13px",
+    color: "text.primary",
+    borderColor: "divider",
+
+    "&:focus": {
+      outline: "none",
+    },
+
+    "&:focus-within": {
+      outline: "none",
+    },
+  },
+
+  // =========================
+  // ROW
+  // =========================
+  "& .MuiDataGrid-row": {
+    "&:hover": {
+      bgcolor: "action.hover",
+    },
+  },
+
+  // =========================
+  // FOOTER
+  // =========================
+  "& .MuiDataGrid-footerContainer": {
+    minHeight: 52,
+    borderTop: "1px solid",
+    borderColor: "divider",
+  },
+
+  "& .MuiTablePagination-root": {
+    color: "text.secondary",
+  },
+
+  "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows":
+    {
+      fontSize: "12px",
+    },
+
+  // =========================
+  // REMOVE DEFAULT BLUE OUTLINE
+  // =========================
+  "& .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-cell:focus":
+    {
+      outline: "none",
+    },
+}}
       />
     </Box>
   );
