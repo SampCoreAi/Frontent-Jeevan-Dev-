@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Alert, Box, CircularProgress, MenuItem, Pagination, Select, Stack, TableCell, TableRow, Typography } from "@mui/material";
 import api from "../../../../utils/axiosInstance";
 import { DataTable, SectionTitle, TableFilters } from "./LabUi";
+import LabAddTestDialog from "./LabAddTestDialog";
+import { createWalkInLabTestRequest } from "../services/labRequestApi";
 
 const statuses = ["PENDING", "REQUESTED", "APPROVED", "ACCEPTED", "REJECTED", "SAMPLE_SCHEDULED", "SAMPLE_COLLECTED", "RECOLLECTION_REQUIRED", "PROCESSING", "REPORT_READY", "REPORT_UPLOADED", "COMPLETED", "CANCELLED"];
 const technicianTransitions = {
@@ -66,9 +68,35 @@ export default function TechnicianDashboard() {
     }
   };
 
+  const createTestRequest = async (requestDetails) => {
+    try {
+      const created = await createWalkInLabTestRequest(requestDetails);
+      return {
+        success: true,
+        patientId: created.patientId,
+        requestId: created.requestId,
+        orderId: created.orderId,
+        request: created.request,
+      };
+    } catch (requestError) {
+      const message = requestError?.response?.data?.message || requestError?.message || "Unable to create test request.";
+      setError(message);
+      return { success: false, message };
+    }
+  };
+
   return (
     <Box sx={{ pt: 12, px: 3, pb: 4 }}>
-      <SectionTitle title="Technician Dashboard" description="Review assigned lab work and keep each task status current." />
+      <SectionTitle
+        title="Technician Dashboard"
+        description="Review assigned lab work and keep each task status current."
+        action={
+          <LabAddTestDialog
+            onCreateRequest={createTestRequest}
+            successMessage="The request was sent to your lab. It will appear in your assigned tasks after the lab assigns it."
+          />
+        }
+      />
       {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
       <TableFilters
         search={filters.search}

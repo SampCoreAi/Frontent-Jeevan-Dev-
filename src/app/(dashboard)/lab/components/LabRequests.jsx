@@ -29,6 +29,7 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import LabAddTestDialog from "./LabAddTestDialog";
 import { DataTable, SectionTitle, TableFilters } from "./LabUi";
 
 const REQUEST_STATUSES = [
@@ -50,7 +51,7 @@ const REQUEST_STATUSES = [
 const STATUS_TRANSITIONS = {
   PENDING: ["APPROVED", "REJECTED", "CANCELLED"],
   REQUESTED: ["ACCEPTED", "REJECTED", "CANCELLED"],
-  APPROVED: ["SAMPLE_COLLECTED", "REJECTED", "CANCELLED"],
+  APPROVED: ["SAMPLE_SCHEDULED", "REJECTED", "CANCELLED"],
   ACCEPTED: ["SAMPLE_SCHEDULED", "SAMPLE_COLLECTED", "CANCELLED"],
   SAMPLE_SCHEDULED: ["SAMPLE_COLLECTED", "CANCELLED"],
   SAMPLE_COLLECTED: ["PROCESSING", "RECOLLECTION_REQUIRED", "CANCELLED"],
@@ -74,6 +75,11 @@ const formatDateTimeInputValue = (value) => {
   return normalized.slice(0, 16);
 };
 
+const formatDateInputValue = (value) => {
+  if (!value) return "";
+  return String(value).replace("T", " ").slice(0, 10);
+};
+
 const isCompleteDateTimeValue = (value) =>
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(String(value || ""));
 
@@ -87,6 +93,7 @@ export default function LabRequests({
   onPageChange,
   pagination,
   actionId,
+  actionField,
   onStatusUpdate,
   onReportDateUpdate,
   onCollectionDetailsUpdate,
@@ -99,6 +106,7 @@ export default function LabRequests({
   onToggleDelayedUpload,
   technicians = [],
   onAssignTechnician,
+  onCreateRequest,
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -120,9 +128,8 @@ export default function LabRequests({
   const [collectionDialog, setCollectionDialog] = useState({
     open: false,
     request: null,
-    slot: "",
+    date: "",
     instructions: "",
-    token: "",
   });
 
   const safeRequests = Array.isArray(requests) ? requests : [];
@@ -154,6 +161,11 @@ export default function LabRequests({
 
   const isCancelled = (request) =>
     String(request?.status || "").toUpperCase() === "CANCELLED";
+
+  const canAssignTechnician = (request) => {
+    if (!request) return false;
+    return ["APPROVED", "ACCEPTED"].includes(String(request.status || "").toUpperCase()) && !isCancelled(request);
+  };
 
   const getStatusStyle = (status) => {
     switch (String(status || "").toUpperCase()) {
@@ -239,9 +251,8 @@ export default function LabRequests({
     setCollectionDialog({
       open: true,
       request,
-      slot: formatDateTimeInputValue(request?.collection_slot || request?.collectionSlot || ""),
+      date: formatDateInputValue(request?.collection_slot || request?.collectionSlot || ""),
       instructions: request?.collection_instructions || request?.collectionInstructions || "",
-      token: request?.collection_token || request?.collectionToken || "",
     });
     closeActions();
   };
@@ -359,6 +370,7 @@ export default function LabRequests({
       <SectionTitle
         title="Test Requests"
         description="Review patient test requests and update their processing status."
+        action={<LabAddTestDialog onCreateRequest={onCreateRequest} />}
       />
 
       {updateFeedback?.message ? (
@@ -411,7 +423,7 @@ export default function LabRequests({
             >
               {showDelayedOnly
                 ? `Showing ${pendingUploadCount} delayed`
-                : `Pending uploads (${pendingUploadCount})`}
+                : `Pending uploads`}
             </Button>
           }
           onReset={() => {
@@ -433,6 +445,7 @@ export default function LabRequests({
           "TECHNICIAN",
           "PATIENT",
           "DOCTOR",
+          "CREATED BY",
           "TESTS",
           "PRIORITY",
           "REPORT BY",
@@ -514,6 +527,7 @@ export default function LabRequests({
           const allowedStatuses = [status, ...(STATUS_TRANSITIONS[status] || [])];
           const priorityStyle = getPriorityStyle(priority);
           const updating = actionId === request.id;
+          const fieldUpdating = (field) => actionId === request.id && actionField === field;
           const cancelled = isCancelled(request);
 
           const reason =
@@ -570,25 +584,39 @@ export default function LabRequests({
               </TableCell>
 
               <TableCell sx={{ ...cellSx, minWidth: 190 }}>
-                <Select
-                  size="small"
-                  value={request.assigned_technician_email || ""}
-                  displayEmpty
-                  disabled={cancelled || actionId === request.id || !technicians.length}
-                  onChange={(event) => {
-                    if (event.target.value) onAssignTechnician?.(request.id, event.target.value);
-                  }}
-                  sx={{ minWidth: 175, height: 32, fontSize: "11px" }}
-                >
-                  <MenuItem value="" sx={{ fontSize: "11px" }}>
-                    {technicians.length ? "Assign technician" : "Add technician first"}
-                  </MenuItem>
-                  {technicians.map((technician) => (
-                    <MenuItem key={technician.email} value={technician.email} sx={{ fontSize: "11px" }}>
-                      {technician.full_name}
+                <Stack direction="row" alignItems="center" spacing={0.7}>
+                  <Select
+                    size="small"
+                    value={request.assigned_technician_email || ""}
+                    displayEmpty
+                    disabled={
+                      cancelled ||
+                      actionId === request.id ||
+                      !technicians.length ||
+                      !canAssignTechnician(request)
+                    }
+                    onChange={(event) => {
+                      if (event.target.value) onAssignTechnician?.(request.id, event.target.value);
+                    }}
+                    sx={{ minWidth: 175, height: 32, fontSize: "11px" }}
+                  >
+                    <MenuItem value="" sx={{ fontSize: "11px" }}>
+                      {canAssignTechnician(request)
+                        ? "Assign technician"
+                        : technicians.length
+                          ? "Approved or accepted requests only"
+                          : "Add technician first"}
                     </MenuItem>
-                  ))}
-                </Select>
+                    {technicians.map((technician) => (
+                      <MenuItem key={technician.email} value={technician.email} sx={{ fontSize: "11px" }}>
+                        {technician.full_name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {fieldUpdating("technician") && (
+                    <CircularProgress size={15} thickness={5} sx={{ color: "#0B5C8E" }} />
+                  )}
+                </Stack>
               </TableCell>
 
               <TableCell
@@ -624,8 +652,33 @@ export default function LabRequests({
                   }}
                 >
                   {request.doctor_name ||
+                    request.referring_doctor_name ||
                     request.doctor_id ||
                     "-"}
+                </Typography>
+                {request.referring_doctor_phone ? (
+                  <Typography variant="caption" display="block" color="text.secondary">
+                    {request.referring_doctor_phone}
+                  </Typography>
+                ) : null}
+              </TableCell>
+
+              <TableCell sx={{ ...cellSx, minWidth: 140 }}>
+                <Typography sx={{ fontSize: "11px", fontWeight: 700, color: "#0B5C8E" }}>
+                  {request.doctor_id || Number(request.created_by_role_id) === 2
+                    ? "Doctor"
+                    : Number(request.created_by_role_id) === 1
+                      ? "Patient"
+                      : Number(request.created_by_role_id) === 7
+                      ? "Technician"
+                      : Number(request.created_by_role_id) === 4
+                        ? "You (Lab)"
+                        : Number(request.created_by_role_id) === 5
+                          ? "Admin"
+                          : "Unknown"}
+                </Typography>
+                <Typography variant="caption" display="block" color="text.secondary">
+                  {request.created_by_name || request.doctor_name || "-"}
                 </Typography>
               </TableCell>
 
@@ -722,7 +775,7 @@ export default function LabRequests({
       }}
     />
 
-    {updating && (
+    {fieldUpdating("reportDate") && (
       <CircularProgress
         size={15}
         thickness={5}
@@ -733,32 +786,37 @@ export default function LabRequests({
 </TableCell>
 
               <TableCell sx={cellSx}>
-                <Select
-                  size="small"
-                  value={status}
-                  onChange={(event) => handleStatusChange(request, event.target.value)}
-                  disabled={updating || cancelled}
-                  sx={{
-                    minWidth: 155,
-                    height: 32,
-                    borderRadius: "6px",
-                    bgcolor: "transparent",
-                    color: statusStyle.color,
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      border: 0,
-                    },
-                    "& .MuiSvgIcon-root": { color: statusStyle.color },
-                    "& .MuiSelect-select": { py: 0.8 },
-                  }}
-                >
-                  {REQUEST_STATUSES.map((item) => (
-                    <MenuItem key={item} value={item} disabled={!allowedStatuses.includes(item)} sx={{ fontSize: "12px" }}>
-                      {item.replaceAll("_", " ")}
-                    </MenuItem>
-                  ))}
-                </Select>
+                <Stack direction="row" alignItems="center" spacing={0.7}>
+                  <Select
+                    size="small"
+                    value={status}
+                    onChange={(event) => handleStatusChange(request, event.target.value)}
+                    disabled={updating || cancelled}
+                    sx={{
+                      minWidth: 155,
+                      height: 32,
+                      borderRadius: "6px",
+                      bgcolor: "transparent",
+                      color: statusStyle.color,
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        border: 0,
+                      },
+                      "& .MuiSvgIcon-root": { color: statusStyle.color },
+                      "& .MuiSelect-select": { py: 0.8 },
+                    }}
+                  >
+                    {REQUEST_STATUSES.map((item) => (
+                      <MenuItem key={item} value={item} disabled={!allowedStatuses.includes(item)} sx={{ fontSize: "12px" }}>
+                        {item.replaceAll("_", " ")}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {fieldUpdating("status") && (
+                    <CircularProgress size={15} thickness={5} sx={{ color: "#0B5C8E" }} />
+                  )}
+                </Stack>
               </TableCell>
 
               <TableCell
@@ -907,7 +965,7 @@ export default function LabRequests({
 
       <Dialog
         open={collectionDialog.open}
-        onClose={() => actionId !== collectionDialog.request?.id && setCollectionDialog({ open: false, request: null, slot: "", instructions: "", token: "" })}
+        onClose={() => actionId !== collectionDialog.request?.id && setCollectionDialog({ open: false, request: null, date: "", instructions: "" })}
         maxWidth="sm"
         fullWidth
         PaperProps={{ sx: { borderRadius: "10px" } }}
@@ -917,27 +975,20 @@ export default function LabRequests({
         </DialogTitle>
         <DialogContent sx={{ display: "grid", gap: 1.5, pt: 1 }}>
           <Typography sx={{ fontSize: "12px", color: "#64748B" }}>
-            Set the appointment window and instructions the assigned technician should follow.
+            Select the collection date. The collection time and next token number are assigned automatically from the lab schedule.
           </Typography>
           <TextField
+            required
             size="small"
-            type="datetime-local"
-            label="Collection slot"
-            value={collectionDialog.slot}
-            onChange={(event) => setCollectionDialog((current) => ({ ...current, slot: event.target.value }))}
+            type="date"
+            label="Collection date"
+            value={collectionDialog.date}
+            onChange={(event) => setCollectionDialog((current) => ({ ...current, date: event.target.value }))}
             InputLabelProps={{ shrink: true }}
             fullWidth
           />
           <TextField
-            size="small"
-            label="Collection token"
-            placeholder="Example: 12 or A-12"
-            value={collectionDialog.token}
-            onChange={(event) => setCollectionDialog((current) => ({ ...current, token: event.target.value }))}
-            helperText="Assigned by the lab for the collection sequence."
-            fullWidth
-          />
-          <TextField
+            required
             size="small"
             multiline
             minRows={3}
@@ -949,21 +1000,20 @@ export default function LabRequests({
           />
         </DialogContent>
         <DialogActions sx={{ px: 2.5, pb: 2 }}>
-          <Button onClick={() => setCollectionDialog({ open: false, request: null, slot: "", instructions: "", token: "" })} disabled={actionId === collectionDialog.request?.id} sx={{ textTransform: "none" }}>
+          <Button onClick={() => setCollectionDialog({ open: false, request: null, date: "", instructions: "" })} disabled={actionId === collectionDialog.request?.id} sx={{ textTransform: "none" }}>
             Cancel
           </Button>
           <Button
             variant="contained"
-            disabled={!collectionDialog.request || actionId === collectionDialog.request.id}
+            disabled={!collectionDialog.request || !collectionDialog.date || !collectionDialog.instructions.trim() || actionId === collectionDialog.request.id}
             onClick={async () => {
               const saved = await onCollectionDetailsUpdate?.(
                 collectionDialog.request.id,
-                collectionDialog.slot,
+                collectionDialog.date,
                 collectionDialog.instructions,
-                collectionDialog.token,
               );
               if (saved !== false) {
-                setCollectionDialog({ open: false, request: null, slot: "", instructions: "", token: "" });
+                setCollectionDialog({ open: false, request: null, date: "", instructions: "" });
               }
             }}
             sx={{ textTransform: "none" }}

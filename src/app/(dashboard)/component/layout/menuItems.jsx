@@ -29,6 +29,11 @@ export const menuItems = {
       route: "/users/pages/doctor",
     },
     {
+      label: "Labs",
+      icon: <ScienceOutlined />,
+      route: "/users/pages/lab/search",
+    },
+    {
       label: "Document",
       icon: <DescriptionOutlined />,
       route: "/users/pages/document",

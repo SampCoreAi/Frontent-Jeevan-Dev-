@@ -167,6 +167,10 @@ export default function LoginForm({
           router.replace(
             "/medical/pages/dashboard"
           );
+        else if (role === 7)
+          router.replace(
+            "/lab/pages/technician"
+          );
         else {
           console.error(
             "Invalid role_id:",

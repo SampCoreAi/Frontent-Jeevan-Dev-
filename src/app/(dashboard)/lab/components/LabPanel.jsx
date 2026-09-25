@@ -10,6 +10,7 @@ import LabConnections from "./LabConnections";
 import LabRequests from "./LabRequests";
 import LabReports from "./LabReports";
 import LabTechnicians from "./LabTechnicians";
+import { createWalkInLabTestRequest } from "../services/labRequestApi";
 
 const getRows = (response) => response.data?.data || [];
 const getErrorMessage = (error, fallback) => error.response?.data?.message || error.message || fallback;
@@ -23,6 +24,7 @@ export default function LabPanel({ section = "dashboard" }) {
   const [technicians, setTechnicians] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
+  const [actionField, setActionField] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -90,6 +92,15 @@ export default function LabPanel({ section = "dashboard" }) {
     setTechnicians(getRows(response));
   };
 
+  const handleProfileUpdate = (updatedProfile) => {
+    setProfile((current) => ({
+      ...(current || {}),
+      ...(updatedProfile || {}),
+      weekly_hours: updatedProfile?.weekly_hours ?? updatedProfile?.weeklyHours ?? current?.weekly_hours ?? {},
+      slot_duration_minutes: updatedProfile?.slot_duration_minutes ?? updatedProfile?.slotDurationMinutes ?? current?.slot_duration_minutes ?? 30,
+    }));
+  };
+
   const loadSection = async () => {
     try {
       setLoading(true);
@@ -146,6 +157,7 @@ export default function LabPanel({ section = "dashboard" }) {
   const updateConnection = async (connectionId, status) => {
     try {
       setActionId(connectionId);
+      setActionField("status");
       await api.patch(`/api/labs/connections/${connectionId}/status`, { status });
       setConnections((items) => items.map((item) => item.connection_id === connectionId ? { ...item, status } : item));
       setNotice(`Connection ${status.toLowerCase()}.`);
@@ -153,15 +165,17 @@ export default function LabPanel({ section = "dashboard" }) {
       setError(getErrorMessage(requestError, "Unable to update connection."));
     } finally {
       setActionId(null);
+      setActionField(null);
     }
   };
 
   const updateRequest = async (requestId, status, expectedReportAt = null, note = null) => {
     try {
       setActionId(requestId);
+      setActionField("status");
       setRequestUpdateFeedback({ type: "info", message: status === "REJECTED" || status === "CANCELLED" ? "Submitting rejection reason..." : "Updating report delivery time..." });
       await api.patch(`/api/lab-requests/${requestId}/status`, { status, expectedReportAt: expectedReportAt || null, note: note || null });
-      setRequests((items) => items.map((item) => item.id === requestId ? { ...item, status, expected_report_at: expectedReportAt || item.expected_report_at } : item));
+      await loadRequests();
       setRequestUpdateFeedback({ type: "success", message: status === "REJECTED" || status === "CANCELLED" ? "Reason submitted successfully." : "Report delivery time updated successfully." });
       setNotice("Test request status updated.");
     } catch (requestError) {
@@ -170,12 +184,14 @@ export default function LabPanel({ section = "dashboard" }) {
       setError(message);
     } finally {
       setActionId(null);
+      setActionField(null);
     }
   };
 
   const updateReportDate = async (requestId, expectedReportAt) => {
     try {
       setActionId(requestId);
+      setActionField("reportDate");
       await api.patch(`/api/lab-requests/${requestId}/report-date`, { expectedReportAt });
       setRequests((items) => items.map((item) => (
         item.id === requestId ? { ...item, expected_report_at: expectedReportAt } : item
@@ -187,28 +203,30 @@ export default function LabPanel({ section = "dashboard" }) {
       setError(message);
     } finally {
       setActionId(null);
+      setActionField(null);
     }
   };
 
-  const updateCollectionDetails = async (requestId, collectionSlot, collectionInstructions, collectionToken) => {
+  const updateCollectionDetails = async (requestId, collectionDate, collectionInstructions) => {
     try {
       setActionId(requestId);
-      await api.patch(`/api/lab-requests/${requestId}/collection-details`, {
-        collectionSlot: collectionSlot || null,
+      setActionField("collection");
+      const response = await api.patch(`/api/lab-requests/${requestId}/collection-details`, {
+        collectionDate,
         collectionInstructions: collectionInstructions?.trim() || null,
-        collectionToken: collectionToken?.trim() || null,
       });
+      const saved = response.data?.data || {};
       setRequests((items) => items.map((item) => (
         item.id === requestId
           ? {
               ...item,
-              collection_slot: collectionSlot || null,
-              collection_instructions: collectionInstructions?.trim() || null,
-              collection_token: collectionToken?.trim() || null,
+              collection_slot: saved.collectionSlot || item.collection_slot,
+              collection_instructions: saved.collectionInstructions || item.collection_instructions,
+              collection_token: saved.collectionToken || item.collection_token,
             }
           : item
       )));
-      setRequestUpdateFeedback({ type: "success", message: "Collection details updated successfully." });
+      setRequestUpdateFeedback({ type: "success", message: `Collection details saved. Token ${saved.collectionToken}, time ${saved.collectionSlot}.` });
       return true;
     } catch (requestError) {
       const message = getErrorMessage(requestError, "Unable to update collection details.");
@@ -217,12 +235,14 @@ export default function LabPanel({ section = "dashboard" }) {
       return false;
     } finally {
       setActionId(null);
+      setActionField(null);
     }
   };
 
   const assignTechnician = async (requestId, technicianEmail) => {
     try {
       setActionId(requestId);
+      setActionField("technician");
       await api.patch(`/api/lab-technicians/${requestId}/assign`, { technicianEmail });
       await loadRequests();
       setNotice("Technician assigned and task email sent.");
@@ -230,6 +250,7 @@ export default function LabPanel({ section = "dashboard" }) {
       setError(getErrorMessage(requestError, "Unable to assign technician."));
     } finally {
       setActionId(null);
+      setActionField(null);
     }
   };
 
@@ -237,6 +258,36 @@ export default function LabPanel({ section = "dashboard" }) {
     await api.post("/api/lab-technicians", payload);
     await loadTechnicians();
     setNotice("Technician added and login credentials sent by email.");
+  };
+
+  const createLabRequest = async ({ fullName, email, phoneNumber, referringDoctorName, referringDoctorPhone, tests, sampleType, priority, requestType }) => {
+    try {
+      if (!profile?.id) throw new Error("Lab profile is not loaded yet.");
+      const created = await createWalkInLabTestRequest({
+        labId: Number(profile.id),
+        fullName,
+        email,
+        phoneNumber,
+        referringDoctorName,
+        referringDoctorPhone,
+        tests,
+        sampleType,
+        priority,
+        requestType,
+      });
+      await loadRequests();
+      setNotice(`${requestType === "WALK_IN" ? "Walk-in" : "Independent"} test request created. Patient ID: ${created.patientId}.`);
+      return {
+        success: true,
+        patientId: created.patientId,
+        requestId: created.requestId,
+        orderId: created.orderId,
+        request: created.request,
+      };
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Unable to create test request."));
+      return { success: false, message: getErrorMessage(requestError, "Unable to create test request.") };
+    }
   };
 
   const uploadReport = async (requestId, file) => {
@@ -297,9 +348,10 @@ export default function LabPanel({ section = "dashboard" }) {
       onPageChange={setTablePage}
       pagination={requestPagination}
       actionId={actionId}
+      actionField={actionField}
       onStatusUpdate={updateRequest}
       onReportDateUpdate={updateReportDate}
-            onCollectionDetailsUpdate={updateCollectionDetails}
+      onCollectionDetailsUpdate={updateCollectionDetails}
       uploading={uploading}
       onUploadReport={uploadReport}
       onDeleteReport={deleteReport}
@@ -307,13 +359,14 @@ export default function LabPanel({ section = "dashboard" }) {
       pendingUploadCount={delayedUploadCount}
       showDelayedOnly={showDelayedOnly}
       onToggleDelayedUpload={() => setShowDelayedOnly((value) => !value)}
-        technicians={technicians}
-        onAssignTechnician={assignTechnician}
+      technicians={technicians}
+      onAssignTechnician={assignTechnician}
+      onCreateRequest={createLabRequest}
     />
   ) : section === "reports" ? (
     <LabReports reports={reports} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} pagination={reportPagination} />
   ) : section === "profile" ? (
-    <LabProfile profile={profile} />
+    <LabProfile profile={profile} onProfileUpdate={handleProfileUpdate} />
   ) : section === "technicians" ? (
     <LabTechnicians technicians={technicians} loading={loading} onCreate={createTechnician} />
   ) : (

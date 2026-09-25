@@ -157,37 +157,9 @@ const getTheme = (mode) => {
         },
       },
 
-      // Dropdown / Menu / Modal / Drawer / Select / Autocomplete
-      // sab me scroll-lock disable, taaki body me padding-right add
-      // na ho aur page left/right shift na ho.
-      MuiPopover: {
-        defaultProps: {
-          disableScrollLock: true,
-        },
-      },
-
-      MuiPopper: {
-        defaultProps: {
-          disableScrollLock: true,
-        },
-      },
-
-      MuiModal: {
-        defaultProps: {
-          disableScrollLock: true,
-        },
-      },
-
-      MuiDrawer: {
-        defaultProps: {
-          disableScrollLock: true,
-        },
-      },
-
+      // Keep global modal behavior neutral to avoid leaking MUI modal props
+      // to the rendered DOM in React 19 / MUI 7 combinations.
       MuiDialog: {
-        defaultProps: {
-          disableScrollLock: true,
-        },
         styleOverrides: {
           paper: {
             backgroundColor: isDark ? "#171D23" : "#FFFFFF",
@@ -502,9 +474,6 @@ const getTheme = (mode) => {
       },
 
       MuiMenu: {
-        defaultProps: {
-          disableScrollLock: true,
-        },
         styleOverrides: {
           paper: {
             backgroundColor: isDark
