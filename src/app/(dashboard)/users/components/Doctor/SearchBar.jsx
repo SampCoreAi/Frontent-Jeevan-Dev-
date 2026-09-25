@@ -28,6 +28,7 @@ export default function SearchBar({
   onFilterClick,
   onNearbyClick,
   onEmergencyClick, // add this
+  isEmergencySelected,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -585,6 +586,7 @@ const placeholderTexts = [
   onFilterClick={onFilterClick}
   onNearbyClick={handleNearby}
   onEmergencyClick={onEmergencyClick}
+  isEmergencySelected={isEmergencySelected}
 />
       </Box>
     </Box>

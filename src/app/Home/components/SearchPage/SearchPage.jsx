@@ -31,7 +31,7 @@ export default function SearchPage() {
   // checking | allowed | denied | blocked
   const [locationStatus, setLocationStatus] = useState("checking");
   const [currentCity, setCurrentCity] = useState("");
-
+const [emergencyMode, setEmergencyMode] = useState(false);
   // nearby | all | search
   const [resultMode, setResultMode] = useState("nearby");
   const [searchQuery, setSearchQuery] = useState("");
@@ -54,7 +54,70 @@ export default function SearchPage() {
     feeRange: [],
     gender: [],
   });
-  const applyFilters = async (pageNo = 1) => {
+
+  const searchEmergencyDoctors = async (pageNo = 1) => {
+  try {
+    setLoading(true);
+    setError("");
+
+    setEmergencyMode(true);
+    setResultMode("emergency");
+
+    setSearchQuery("");
+
+    const limit = itemsPerPage;
+    const offset = (pageNo - 1) * itemsPerPage;
+
+    const params = {
+      search: "emergency",
+      city: currentCity || "",
+      limit,
+      offset,
+    };
+
+    Object.entries(selectedFilters).forEach(([key, values]) => {
+      if (values.length > 0) {
+        params[key] = values.join(",");
+      }
+    });
+
+    const res = await api.get(
+      "/api/doctors/doctor/search",
+      {
+        params,
+      }
+    );
+
+    setResults(
+      mapDoctors(res?.data?.data || [])
+    );
+
+    setTotalDoctors(
+      res?.data?.count || 0
+    );
+
+    setPage(pageNo);
+  } catch (err) {
+    console.error(
+      "Emergency doctors error:",
+      err?.response?.data || err
+    );
+
+    if (err?.response?.status === 404) {
+      setResults([]);
+      setTotalDoctors(0);
+      setError("");
+      return;
+    }
+
+    setError(
+      "We couldn't find emergency doctors right now. Please try again."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+const applyFilters = async (pageNo = 1, emergencyOverride = emergencyMode) => {
   try {
     setLoading(true);
     setError("");
@@ -64,7 +127,9 @@ export default function SearchPage() {
     const offset = (pageNo - 1) * itemsPerPage;
 
     const params = {
-      search: searchQuery.trim(),
+      search: emergencyOverride
+        ? "emergency"
+        : searchQuery.trim(),
       city: currentCity || "",
       limit,
       offset,
@@ -114,45 +179,78 @@ export default function SearchPage() {
       }
     );
 
-    setResults(mapDoctors(res?.data?.data || []));
-    setTotalDoctors(res?.data?.count || 0);
+    setResults(
+      mapDoctors(res?.data?.data || [])
+    );
+
+    setTotalDoctors(
+      res?.data?.count || 0
+    );
+
     setPage(pageNo);
-  }  catch (err) {
-  console.error(
-    "Filter doctors error:",
-    err?.response?.data || err
-  );
+  } catch (err) {
+    console.error(
+      "Filter doctors error:",
+      err?.response?.data || err
+    );
 
-  if (err?.response?.status === 404) {
-    setResults([]);
-    setTotalDoctors(0);
-    setError("");
-    return;
+    if (err?.response?.status === 404) {
+      setResults([]);
+      setTotalDoctors(0);
+      setError("");
+      return;
+    }
+
+    setError(
+      "We couldn't apply your filters. Please try again."
+    );
+  } finally {
+    setLoading(false);
   }
-
-  setError(
-    "We couldn't apply your filters. Please try again."
-  );
-} finally {
-  setLoading(false);
-}
 };
   const [isMobile, setIsMobile] = useState(false);
   const [isLaptopUp, setIsLaptopUp] = useState(false);
 
-  const resetFilters = () => {
-    setSelectedFilters({
-      specialization: [],
-      experience: [],
-      rating: [],
-      availability: [],
-      consultationType: [],
-      feeRange: [],
-      gender: [],
-    });
+ const resetFilters = () => {
+  setSelectedFilters({
+    specialization: [],
+    experience: [],
+    rating: [],
+    availability: [],
+    consultationType: [],
+    feeRange: [],
+    gender: [],
+  });
 
-    setSelectedDoctorId(null);
-  };
+  setSelectedDoctorId(null);
+};
+
+const handleClearFilters = async () => {
+  resetFilters();
+
+  setPage(1);
+  setError("");
+
+  if (emergencyMode) {
+    await searchEmergencyDoctors(1);
+    return;
+  }
+
+  if (searchQuery.trim()) {
+    await searchDoctors(
+      searchQuery,
+      1
+    );
+    return;
+  }
+
+  if (currentCity) {
+    await searchDoctorsByCity(1);
+    return;
+  }
+
+  await loadAllDoctors(1);
+};
 
   // -----------------------------------------
   // Nearby Doctors
@@ -160,7 +258,10 @@ export default function SearchPage() {
     try {
       setLoading(true);
       setError("");
-      setResultMode("nearby");
+
+    setEmergencyMode(false);
+    setSearchQuery("");
+    setResultMode("nearby");
 
       // 1. Browser permission status check
       const permission = await checkLocationPermission();
@@ -238,9 +339,13 @@ export default function SearchPage() {
   // -----------------------------------------
   const loadAllDoctors = async (pageNo = 1) => {
     try {
-      setLoading(true);
-      setError("");
-      setResultMode("all");
+        setLoading(true);
+    setError("");
+
+    setEmergencyMode(false);
+    setSearchQuery("");
+    setResultMode("all");
+
 
       const limit = itemsPerPage;
       const offset = (pageNo - 1) * itemsPerPage;
@@ -278,9 +383,13 @@ export default function SearchPage() {
   // -----------------------------------------
   // Search
   // -----------------------------------------
-const searchDoctors = async (query, pageNo = 1) => {
+const searchDoctors = async (
+  query,
+  pageNo = 1
+) => {
   if (!query?.trim()) {
     setSearchQuery("");
+    setEmergencyMode(false);
     loadAllDoctors(1);
     return;
   }
@@ -288,45 +397,67 @@ const searchDoctors = async (query, pageNo = 1) => {
   try {
     setLoading(true);
     setError("");
+
+    setEmergencyMode(false);
     setResultMode("search");
-    setSearchQuery(query.trim());
+
+    const cleanQuery =
+      query.trim();
+
+    setSearchQuery(cleanQuery);
 
     const limit = itemsPerPage;
-    const offset = (pageNo - 1) * itemsPerPage;
+    const offset =
+      (pageNo - 1) *
+      itemsPerPage;
 
-    const res = await api.get("/api/doctors/doctor/search", {
-      params: {
-        search: query.trim(),
-        city: currentCity || "",
-        limit,
-        offset,
-      },
-    });
+    const res = await api.get(
+      "/api/doctors/doctor/search",
+      {
+        params: {
+          search: cleanQuery,
+          city:
+            currentCity || "",
+          limit,
+          offset,
+        },
+      }
+    );
 
-    setResults(mapDoctors(res?.data?.data || []));
-    setTotalDoctors(res?.data?.count || 0);
+    setResults(
+      mapDoctors(
+        res?.data?.data || []
+      )
+    );
+
+    setTotalDoctors(
+      res?.data?.count || 0
+    );
+
     setPage(pageNo);
- } catch (err) {
-  console.error(
-    "Doctor search error:",
-    err?.response?.data || err
-  );
+  } catch (err) {
+    console.error(
+      "Doctor search error:",
+      err?.response?.data ||
+        err
+    );
 
-  if (err?.response?.status === 404) {
-    setResults([]);
-    setTotalDoctors(0);
-    setError("");
-    return;
+    if (
+      err?.response?.status ===
+      404
+    ) {
+      setResults([]);
+      setTotalDoctors(0);
+      setError("");
+      return;
+    }
+
+    setError(
+      "We couldn't complete your search. Please try again."
+    );
+  } finally {
+    setLoading(false);
   }
-
-  setError(
-    query?.toLowerCase() === "emergency"
-      ? "We couldn't find emergency doctors right now. Please try again."
-      : "We couldn't complete your search. Please try again."
-  );
-} finally {
-  setLoading(false);
-}
 };
 
   // -----------------------------------------
@@ -357,24 +488,35 @@ const searchDoctors = async (query, pageNo = 1) => {
   // -----------------------------------------
   // Pagination
   // -----------------------------------------
-  const handlePageChange = (newPage) => {
-    setPage(newPage);
+const handlePageChange = (newPage) => {
+  setPage(newPage);
 
-    if (resultMode === "nearby") {
-      searchDoctorsByCity(newPage);
-    } else if (resultMode === "all") {
-      loadAllDoctors(newPage);
-    } else if (resultMode === "search") {
-      searchDoctors(searchQuery, newPage);
-    } else if (resultMode === "filter") {
-      applyFilters(newPage);
-    }
+  if (resultMode === "nearby") {
+    searchDoctorsByCity(newPage);
+  } else if (resultMode === "all") {
+    loadAllDoctors(newPage);
+  } else if (resultMode === "search") {
+    searchDoctors(
+      searchQuery,
+      newPage
+    );
+  } else if (
+    resultMode === "emergency"
+  ) {
+    searchEmergencyDoctors(
+      newPage
+    );
+  } else if (
+    resultMode === "filter"
+  ) {
+    applyFilters(newPage);
+  }
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  };
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+};
 
   // -----------------------------------------
   // Navigation
@@ -686,7 +828,7 @@ const searchDoctors = async (query, pageNo = 1) => {
           title="No Doctors Match Your Filters"
           description="Try removing some filters to see more doctors."
           secondaryText="Clear Filters"
-          onSecondary={resetFilters}
+          onSecondary={handleClearFilters}
           styles={styles}
         />
       );
@@ -725,11 +867,24 @@ const searchDoctors = async (query, pageNo = 1) => {
         }}
       >
         <SearchBar
-          onSearch={searchDoctors}
-          onFilterClick={() => setFilterOpen(true)}
-          onNearbyClick={() => searchDoctorsByCity(1)}
-          onEmergencyClick={() => searchDoctors("emergency", 1)}
-        />
+  onSearch={searchDoctors}
+  onFilterClick={() =>
+    setFilterOpen(true)
+  }
+  onNearbyClick={() =>
+    searchDoctorsByCity(1)
+  }
+  isEmergencySelected={emergencyMode}
+  onEmergencyClick={() => {
+    if (emergencyMode) {
+      setEmergencyMode(false);
+      applyFilters(1, false);
+      return;
+    }
+
+    searchEmergencyDoctors(1);
+  }}
+/>
       </div>
 
       {renderContent()}

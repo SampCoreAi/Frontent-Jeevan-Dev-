@@ -167,9 +167,6 @@ const PatientDetailsCard = ({ patient }) => {
         minHeight: 58,
         px: 1.5,
         py: 1.1,
-        borderRadius: "8px",
-        bgcolor: theme.palette.action.hover,
-        border: `1px solid ${theme.palette.divider}`,
       }}
     >
       <Typography

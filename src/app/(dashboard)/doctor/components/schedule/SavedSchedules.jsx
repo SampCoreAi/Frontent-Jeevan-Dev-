@@ -286,30 +286,6 @@ function SavedSchedules({
                         </Typography>
                       </Stack>
 
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={0.7}
-                        mt={0.7}
-                      >
-                        <AccessTimeOutlinedIcon
-                          sx={{
-                            fontSize: 15,
-                            color: secondaryText,
-                          }}
-                        />
-
-                        <Typography
-                          sx={{
-                            fontSize: "11.5px",
-                            color: secondaryText,
-                          }}
-                        >
-                          {schedule?.startTime || "—"}
-                          {" - "}
-                          {schedule?.endTime || "—"}
-                        </Typography>
-                      </Stack>
                     </Box>
                   </Stack>
 

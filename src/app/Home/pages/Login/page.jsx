@@ -34,33 +34,38 @@ export default function LoginPage() {
       <Navbar />
       <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
         <Grid container justifyContent="center" alignItems="center">
-          <Grid
-            sx={{
-              width: "100%",
-              maxWidth: 850,
-              height: { xs: "auto", md: 550 },
-              position: "relative",
-              display: "flex",
+        <Grid
+  sx={{
+    width: "100%",
+    maxWidth: 900,
+    height: {
+      xs: "auto",
+      md: 550,
+    },
+    position: "relative",
+    display: "flex",
+    flexDirection: {
+      xs: "column",
+      md: "row",
+    },
+    borderRadius: 2,
+    overflow: "hidden",
+    boxShadow: "0 10px 35px rgba(15, 35, 30, 0.10)",
+  }}
+>
+  <AuthSidePanel isSignup={false} />
 
-              flexDirection: { xs: "column", md: "row" },
-              borderRadius: 0.5,
-              overflow: "hidden",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-            }}
-          >
-            <AuthSidePanel isSignup={false} />
-            
-            <AuthCard
-              icon="/img/icon.png"
-              title="Welcome Back!"
-              subtitle="Enter your credentials to access your account"
-            >
-              <LoginForm
-                onForgotPassword={() => setOpenForgotPassword(true)}
-                showMessage={showMessage}
-              />
-            </AuthCard>
-          </Grid>
+  <AuthCard
+    icon="/img/icon.png"
+    title="Welcome Back!"
+    subtitle="Enter your credentials to access your account"
+  >
+    <LoginForm
+      onForgotPassword={() => setOpenForgotPassword(true)}
+      showMessage={showMessage}
+    />
+  </AuthCard>
+</Grid>
         </Grid>
       </Container>
 

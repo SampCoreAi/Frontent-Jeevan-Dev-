@@ -36,18 +36,176 @@ const PatientProfileSidebar = ({
   const [uploading, setUploading] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [previewImage, setPreviewImage] = React.useState(null);
+  const [uploadError, setUploadError] = React.useState("");
+  const [errors, setErrors] = React.useState({});
 
   const open = Boolean(anchorEl);
 
-  const localUser = (() => {
+  const localUser = React.useMemo(() => {
+    if (typeof window === "undefined") return {};
+
     try {
       return JSON.parse(localStorage.getItem("user") || "{}");
     } catch {
       return {};
     }
-  })();
+  }, []);
+
+  const validateField = (field, value) => {
+    const stringValue = String(value ?? "").trim();
+
+    switch (field) {
+      case "username":
+        if (!stringValue) {
+          return "Username is required";
+        }
+
+        if (stringValue.length < 3) {
+          return "Minimum 3 characters required";
+        }
+
+        if (stringValue.length > 30) {
+          return "Maximum 30 characters allowed";
+        }
+
+        if (!/^[A-Za-z0-9_]+$/.test(stringValue)) {
+          return "Only letters, numbers and underscore allowed";
+        }
+
+        return "";
+
+      case "age":
+        if (!stringValue) {
+          return "";
+        }
+
+        if (!/^\d+$/.test(stringValue)) {
+          return "Enter a valid age";
+        }
+
+        if (
+          Number(stringValue) < 1 ||
+          Number(stringValue) > 120
+        ) {
+          return "Age must be between 1 and 120";
+        }
+
+        return "";
+
+      case "language":
+        if (!stringValue) {
+          return "";
+        }
+
+        if (stringValue.length > 100) {
+          return "Maximum 100 characters allowed";
+        }
+
+        if (!/^[A-Za-z,\s]+$/.test(stringValue)) {
+          return "Only letters, spaces and commas allowed";
+        }
+
+        return "";
+
+      case "weight":
+        if (!stringValue) {
+          return "";
+        }
+
+        if (!/^\d+(\.\d{1,2})?$/.test(stringValue)) {
+          return "Enter a valid weight";
+        }
+
+        if (
+          Number(stringValue) < 1 ||
+          Number(stringValue) > 500
+        ) {
+          return "Weight must be between 1 and 500 kg";
+        }
+
+        return "";
+
+      case "height":
+        if (!stringValue) {
+          return "";
+        }
+
+        if (!/^\d+(\.\d{1,2})?$/.test(stringValue)) {
+          return "Enter a valid height";
+        }
+
+        if (
+          Number(stringValue) < 30 ||
+          Number(stringValue) > 300
+        ) {
+          return "Height must be between 30 and 300 cm";
+        }
+
+        return "";
+
+      default:
+        return "";
+    }
+  };
+
+  const updateField = (field, value) => {
+    let nextValue = value;
+
+    if (field === "username") {
+      nextValue = value
+        .replace(/[^A-Za-z0-9_]/g, "")
+        .slice(0, 30);
+    }
+
+    if (field === "age") {
+      nextValue = value
+        .replace(/\D/g, "")
+        .slice(0, 3);
+    }
+
+    if (field === "language") {
+      nextValue = value
+        .replace(/[^A-Za-z,\s]/g, "")
+        .replace(/\s{2,}/g, " ")
+        .slice(0, 100);
+    }
+
+    if (field === "weight" || field === "height") {
+      nextValue = value
+        .replace(/[^\d.]/g, "")
+        .replace(/(\..*)\./g, "$1")
+        .slice(0, 6);
+    }
+
+    const error = validateField(field, nextValue);
+
+    setErrors((prev) => ({
+      ...prev,
+      [field]: error,
+    }));
+
+    handleChange(field, nextValue);
+  };
+
+  const handleBlur = (field) => {
+    const value = formData?.[field] ?? "";
+
+    setErrors((prev) => ({
+      ...prev,
+      [field]: validateField(field, value),
+    }));
+  };
+
+  const preventInvalidNumberKeys = (event) => {
+    if (
+      ["e", "E", "+", "-"].includes(event.key)
+    ) {
+      event.preventDefault();
+    }
+  };
 
   const handleCameraClick = (event) => {
+    setUploadError("");
     setAnchorEl(event.currentTarget);
   };
 
@@ -55,10 +213,36 @@ const PatientProfileSidebar = ({
     setAnchorEl(null);
   };
 
-  const handleUpload = async (e) => {
-    const file = e.target.files?.[0];
+  const handleUpload = async (event) => {
+    const file = event.target.files?.[0];
 
     if (!file) return;
+
+    setUploadError("");
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError(
+        "Only JPG, PNG or WEBP images are allowed."
+      );
+      event.target.value = "";
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      setUploadError(
+        "Image size cannot exceed 5 MB."
+      );
+      event.target.value = "";
+      return;
+    }
 
     const localPreview = URL.createObjectURL(file);
     setPreviewImage(localPreview);
@@ -68,10 +252,20 @@ const PatientProfileSidebar = ({
 
     const token = localStorage.getItem("token");
 
+    if (!token) {
+      URL.revokeObjectURL(localPreview);
+      setPreviewImage(null);
+      setUploadError(
+        "Authentication token not found."
+      );
+      event.target.value = "";
+      return;
+    }
+
     try {
       setUploading(true);
 
-      const res = await axios.post(
+      const response = await axios.post(
         `${API_BASE_URL}${API_ENDPOINTS.UPLOAD_IMAGE}?folder=user-profile`,
         uploadFormData,
         {
@@ -81,39 +275,70 @@ const PatientProfileSidebar = ({
         }
       );
 
-      console.log("UPLOAD RESPONSE:", res.data);
-
-      if (!res.data?.success) {
+      if (!response.data?.success) {
         throw new Error(
-          res.data?.message || "Image upload failed"
+          response.data?.message ||
+            "Image upload failed"
         );
       }
-    } catch (err) {
-      console.error(
-        "Upload Error:",
-        err.response?.data || err.message || err
-      );
+    } catch (error) {
+      URL.revokeObjectURL(localPreview);
 
       setPreviewImage(null);
+
+      setUploadError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to upload image."
+      );
+
+      console.error(
+        "Upload Error:",
+        error?.response?.data ||
+          error?.message ||
+          error
+      );
     } finally {
       setUploading(false);
-      e.target.value = "";
+      event.target.value = "";
     }
   };
 
+  React.useEffect(() => {
+    return () => {
+      if (
+        previewImage &&
+        previewImage.startsWith("blob:")
+      ) {
+        URL.revokeObjectURL(previewImage);
+      }
+    };
+  }, [previewImage]);
+
   const handleRemovePhoto = () => {
+    if (
+      previewImage &&
+      previewImage.startsWith("blob:")
+    ) {
+      URL.revokeObjectURL(previewImage);
+    }
+
     setPreviewImage(null);
-    handleChange("doctor_image", "");
+    setUploadError("");
+    handleClose();
   };
 
   const displayName =
     localUser?.name ||
     formData?.name ||
+    userProfile?.full_name ||
     "Patient";
 
   const displayUsername = formData?.username
     ? `@${formData.username}`
-    : `@${displayName.toLowerCase().replace(/\s+/g, "")}`;
+    : `@${displayName
+        .toLowerCase()
+        .replace(/\s+/g, "")}`;
 
   const displayEmail =
     formData?.email ||
@@ -135,10 +360,7 @@ const PatientProfileSidebar = ({
     (userProfile?.image?.url
       ? userProfile.image.url.startsWith("http")
         ? userProfile.image.url
-        : `${S3_URL}/${userProfile.image.url}`
-      : null) ||
-    (userProfile?.doctor_image
-      ? `${S3_URL}/${userProfile.doctor_image}`
+        : `${S3_URL}${userProfile.image.url}`
       : null);
 
   const avatarInitial = displayName
@@ -152,9 +374,73 @@ const PatientProfileSidebar = ({
     gap: 1,
     px: 1.3,
     py: 1,
+    minHeight: 40,
     borderRadius: 1.5,
-    backgroundColor: theme.palette.background.default,
+    backgroundColor:
+      theme.palette.background.default,
     border: `1px solid ${theme.palette.divider}`,
+    boxSizing: "border-box",
+  };
+
+  const editableRow = (field) => ({
+    ...infoRow,
+
+    borderColor: errors[field]
+      ? theme.palette.error.main
+      : theme.palette.divider,
+
+    "&:focus-within": {
+      borderColor: errors[field]
+        ? theme.palette.error.main
+        : editable
+          ? theme.palette.primary.main
+          : theme.palette.divider,
+
+      boxShadow:
+        editable && !errors[field]
+          ? `0 0 0 2px ${theme.palette.primary.main}12`
+          : "none",
+    },
+  });
+
+  const labelStyle = {
+    fontSize: "12px",
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+    minWidth: 70,
+    flexShrink: 0,
+  };
+
+  const inputStyle = {
+    width: "100%",
+    minWidth: 0,
+    border: "none",
+    outline: "none",
+    background: "transparent",
+    fontSize: "12px",
+    color: theme.palette.text.secondary,
+    fontFamily: "inherit",
+    boxSizing: "border-box",
+  };
+
+  const ErrorText = ({ field }) => {
+    if (!editable || !errors[field]) {
+      return null;
+    }
+
+    return (
+      <Typography
+        sx={{
+          mt: 0.4,
+          ml: 1,
+          fontSize: "10.5px",
+          color: theme.palette.error.main,
+          lineHeight: 1.3,
+        }}
+      >
+        {errors[field]}
+      </Typography>
+    );
   };
 
   return (
@@ -165,32 +451,25 @@ const PatientProfileSidebar = ({
           xs: "100%",
           md: "26%",
         },
-
         minWidth: {
           md: 230,
         },
-
         maxWidth: {
           md: 290,
         },
-
-        backgroundColor: theme.palette.background.paper,
-
+        backgroundColor:
+          theme.palette.background.paper,
         px: {
           xs: 2,
           md: 2.5,
         },
-
         py: 2.5,
-
         borderRadius: {
           xs: 0,
           md: "10px 0 0 10px",
         },
       }}
     >
-      {/* PROFILE IMAGE */}
-
       <Box
         sx={{
           position: "relative",
@@ -204,49 +483,38 @@ const PatientProfileSidebar = ({
               xs: 120,
               md: 145,
             },
-
             height: {
               xs: 120,
               md: 160,
             },
-
             borderRadius: 2.5,
-
             border: `2px solid ${theme.palette.primary.main}`,
-
             fontSize: {
               xs: "34px",
               md: "42px",
             },
-
-            backgroundColor: theme.palette.primary.main,
-
-            color: theme.palette.primary.contrastText,
-
+            backgroundColor:
+              theme.palette.primary.main,
+            color:
+              theme.palette.primary.contrastText,
             fontWeight: 700,
-
             opacity: uploading ? 0.5 : 1,
           }}
         >
           {!displayImage && avatarInitial}
         </Avatar>
 
-        {/* Upload Loader */}
-
         {uploading && (
           <Box
             sx={{
               position: "absolute",
               inset: 0,
-
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-
               borderRadius: 2.5,
-
-              backgroundColor: "rgba(255,255,255,0.4)",
-
+              backgroundColor:
+                "rgba(255,255,255,0.45)",
               zIndex: 2,
             }}
           >
@@ -264,11 +532,9 @@ const PatientProfileSidebar = ({
           type="file"
           id="upload-photo-input"
           hidden
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp"
           onChange={handleUpload}
         />
-
-        {/* CAMERA */}
 
         {editable && !uploading && (
           <IconButton
@@ -279,15 +545,11 @@ const PatientProfileSidebar = ({
               position: "absolute",
               bottom: 6,
               right: 6,
-
               width: 30,
               height: 30,
-
               backgroundColor:
                 theme.palette.background.paper,
-
               border: `1px solid ${theme.palette.divider}`,
-
               boxShadow:
                 "0 2px 8px rgba(0,0,0,0.12)",
 
@@ -306,8 +568,6 @@ const PatientProfileSidebar = ({
           </IconButton>
         )}
       </Box>
-
-      {/* PHOTO MENU */}
 
       <Menu
         anchorEl={anchorEl}
@@ -333,145 +593,144 @@ const PatientProfileSidebar = ({
             handleClose();
 
             document
-              .getElementById("upload-photo-input")
+              .getElementById(
+                "upload-photo-input"
+              )
               ?.click();
           }}
         >
           Upload New Photo
         </MenuItem>
 
-        <MenuItem
-          onClick={() => {
-            handleClose();
-            handleRemovePhoto();
-          }}
-        >
-          Remove Photo
-        </MenuItem>
+        {displayImage && (
+          <MenuItem
+            onClick={handleRemovePhoto}
+            sx={{
+              color: theme.palette.error.main,
+            }}
+          >
+            Remove Preview
+          </MenuItem>
+        )}
       </Menu>
 
-     {/* NAME + USERNAME */}
-
-<Stack
-  spacing={0.8}
-  sx={{
-    width: "100%",
-    mt: 1.5,
-  }}
->
-  {/* NAME */}
-  <Box
-    sx={{
-      ...infoRow,
-      backgroundColor: "#F8FAF9",
-    }}
-  >
-    <Typography
-      sx={{
-        fontSize: "12px",
-        fontWeight: 600,
-        color: theme.palette.text.primary,
-        minWidth: 72,
-        flexShrink: 0,
-      }}
-    >
-      Name 
-    </Typography>
-
-    <Typography
-      sx={{
-        fontSize: "12px",
-        fontWeight: 500,
-        color: theme.palette.text.secondary,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {displayName}
-    </Typography>
-  </Box>
-
-  {/* USERNAME */}
-  <Box
-    sx={{
-      ...infoRow,
-      backgroundColor: "#F8FAF9",
-
-      "&:focus-within": {
-        borderColor: editable
-          ? theme.palette.primary.main
-          : theme.palette.divider,
-      },
-    }}
-  >
-    <Typography
-      sx={{
-        fontSize: "12px",
-        fontWeight: 600,
-        color: theme.palette.text.primary,
-        minWidth: 72,
-        flexShrink: 0,
-      }}
-    >
-      Username 
-    </Typography>
-
-    {editable ? (
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          flex: 1,
-          minWidth: 0,
-        }}
-      >
+      {uploadError && (
         <Typography
           sx={{
-            fontSize: "12px",
-            color: theme.palette.text.secondary,
+            width: "100%",
+            mt: 0.8,
+            textAlign: "center",
+            fontSize: "10.5px",
+            color: theme.palette.error.main,
           }}
         >
-          @
+          {uploadError}
         </Typography>
+      )}
 
-        <input
-          type="text"
-          value={formData.username || ""}
-          onChange={(e) =>
-            handleChange("username", e.target.value)
-          }
-          placeholder="username"
-          style={{
-            width: "100%",
-            minWidth: 0,
-            border: "none",
-            outline: "none",
-            background: "transparent",
-            padding: "0 0 0 2px",
-            fontSize: "12px",
-            fontWeight: 500,
-            color: theme.palette.text.secondary,
-            fontFamily: "inherit",
-          }}
-        />
-      </Box>
-    ) : (
-      <Typography
+      <Stack
+        spacing={0.8}
         sx={{
-          fontSize: "12px",
-          fontWeight: 500,
-          color: theme.palette.text.secondary,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
+          width: "100%",
+          mt: 1.5,
         }}
       >
-        {displayUsername}
-      </Typography>
-    )}
-  </Box>
-</Stack>
+        <Box sx={infoRow}>
+          <Typography
+            sx={{
+              ...labelStyle,
+              minWidth: 72,
+            }}
+          >
+            Name
+          </Typography>
+
+          <Typography
+            title={displayName}
+            sx={{
+              fontSize: "12px",
+              fontWeight: 500,
+              color: theme.palette.text.secondary,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {displayName}
+          </Typography>
+        </Box>
+
+        <Box sx={editableRow("username")}>
+          <Typography
+            sx={{
+              ...labelStyle,
+              minWidth: 72,
+            }}
+          >
+            Username
+          </Typography>
+
+          {editable ? (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: "12px",
+                  color:
+                    theme.palette.text.secondary,
+                }}
+              >
+                @
+              </Typography>
+
+              <input
+                type="text"
+                value={formData?.username || ""}
+                maxLength={30}
+                autoComplete="username"
+                onChange={(e) =>
+                  updateField(
+                    "username",
+                    e.target.value
+                  )
+                }
+                onBlur={() =>
+                  handleBlur("username")
+                }
+                placeholder="username"
+                style={{
+                  ...inputStyle,
+                  padding: "0 0 0 2px",
+                  fontWeight: 500,
+                }}
+              />
+            </Box>
+          ) : (
+            <Typography
+              sx={{
+                fontSize: "12px",
+                fontWeight: 500,
+                color:
+                  theme.palette.text.secondary,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {displayUsername}
+            </Typography>
+          )}
+        </Box>
+
+        <ErrorText field="username" />
+      </Stack>
+
       <Divider
         sx={{
           width: "100%",
@@ -480,13 +739,7 @@ const PatientProfileSidebar = ({
         }}
       />
 
-      {/* CONTACT INFORMATION */}
-
-      <Box
-        sx={{
-          width: "100%",
-        }}
-      >
+      <Box sx={{ width: "100%" }}>
         <Typography
           sx={{
             fontSize: "11px",
@@ -501,13 +754,12 @@ const PatientProfileSidebar = ({
         </Typography>
 
         <Stack spacing={0.8}>
-          {/* EMAIL */}
-
           {displayEmail && (
             <Box sx={infoRow}>
               <EmailOutlinedIcon
                 sx={{
-                  color: theme.palette.primary.main,
+                  color:
+                    theme.palette.primary.main,
                   fontSize: 16,
                   flexShrink: 0,
                 }}
@@ -517,8 +769,8 @@ const PatientProfileSidebar = ({
                 title={displayEmail}
                 sx={{
                   fontSize: "12px",
-                  color: theme.palette.text.secondary,
-
+                  color:
+                    theme.palette.text.secondary,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -529,253 +781,276 @@ const PatientProfileSidebar = ({
             </Box>
           )}
 
-          {/* PHONE */}
-
           {displayPhone && (
             <Box sx={infoRow}>
               <PhoneOutlinedIcon
                 sx={{
-                  color: theme.palette.primary.main,
+                  color:
+                    theme.palette.primary.main,
                   fontSize: 16,
                   flexShrink: 0,
                 }}
               />
 
               <Typography
+                title={displayPhone}
                 sx={{
                   fontSize: "12px",
-                  color: theme.palette.text.secondary,
+                  color:
+                    theme.palette.text.secondary,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {displayPhone}
               </Typography>
             </Box>
           )}
-          {/* PERSONAL DETAILS */}
+        </Stack>
+      </Box>
 
-<Divider
-  sx={{
-    width: "100%",
-    my: 1.7,
-    borderColor: theme.palette.divider,
-  }}
-/>
-
-<Box sx={{ width: "100%" }}>
-  <Typography
-    sx={{
-      fontSize: "11px",
-      textTransform: "uppercase",
-      letterSpacing: "0.5px",
-      color: theme.palette.text.secondary,
-      fontWeight: 600,
-      mb: 0.8,
-    }}
-  >
-    Personal Information
-  </Typography>
-
-  <Stack spacing={0.8}>
-    {/* AGE */}
-    <Box sx={infoRow}>
-      <Typography
+      <Divider
         sx={{
-          fontSize: "12px",
-          fontWeight: 600,
-          color: theme.palette.text.primary,
-          minWidth: 70,
-        }}
-      >
-        Age
-      </Typography>
-
-      <input
-        type="number"
-        value={formData.age || ""}
-        placeholder="Age"
-        disabled={!editable}
-        onChange={(e) => handleChange("age", e.target.value)}
-        style={{
           width: "100%",
-          border: "none",
-          outline: "none",
-          background: "transparent",
-          fontSize: "12px",
-          color: theme.palette.text.secondary,
-          fontFamily: "inherit",
+          my: 1.7,
+          borderColor: theme.palette.divider,
         }}
       />
-    </Box>
 
-    {/* GENDER */}
-    <Box sx={infoRow}>
-      <Typography
-        sx={{
-          fontSize: "12px",
-          fontWeight: 600,
-          color: theme.palette.text.primary,
-          minWidth: 70,
-        }}
-      >
-        Gender
-      </Typography>
-
-      <select
-        value={formData.gender || ""}
-        disabled={!editable}
-        onChange={(e) => handleChange("gender", e.target.value)}
-        style={{
-          width: "100%",
-          border: "none",
-          outline: "none",
-          background: "transparent",
-          fontSize: "12px",
-          color: theme.palette.text.secondary,
-          fontFamily: "inherit",
-          cursor: editable ? "pointer" : "default",
-        }}
-      >
-        <option value="">Select</option>
-        <option value="MALE">Male</option>
-        <option value="FEMALE">Female</option>
-        <option value="OTHER">Other</option>
-      </select>
-    </Box>
-
-    {/* LANGUAGE */}
-    <Box sx={infoRow}>
-      <Typography
-        sx={{
-          fontSize: "12px",
-          fontWeight: 600,
-          color: theme.palette.text.primary,
-          minWidth: 70,
-        }}
-      >
-        Language
-      </Typography>
-
-      <input
-        type="text"
-        value={formData.language || ""}
-        placeholder="Language"
-        disabled={!editable}
-        onChange={(e) => handleChange("language", e.target.value)}
-        style={{
-          width: "100%",
-          border: "none",
-          outline: "none",
-          background: "transparent",
-          fontSize: "12px",
-          color: theme.palette.text.secondary,
-          fontFamily: "inherit",
-        }}
-      />
-    </Box>
-
-    {/* WEIGHT */}
-    <Box sx={infoRow}>
-      <Typography
-        sx={{
-          fontSize: "12px",
-          fontWeight: 600,
-          color: theme.palette.text.primary,
-          minWidth: 70,
-        }}
-      >
-        Weight
-      </Typography>
-
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          flex: 1,
-        }}
-      >
-        <input
-          type="number"
-          value={formData.weight || ""}
-          placeholder="Weight"
-          disabled={!editable}
-          onChange={(e) => handleChange("weight", e.target.value)}
-          style={{
-            width: "100%",
-            border: "none",
-            outline: "none",
-            background: "transparent",
-            fontSize: "12px",
+      <Box sx={{ width: "100%" }}>
+        <Typography
+          sx={{
+            fontSize: "11px",
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
             color: theme.palette.text.secondary,
-            fontFamily: "inherit",
+            fontWeight: 600,
+            mb: 0.8,
           }}
-        />
+        >
+          Personal Information
+        </Typography>
 
-        {formData.weight && (
-          <Typography
-            sx={{
-              fontSize: "11px",
-              color: theme.palette.text.secondary,
-            }}
-          >
-            kg
-          </Typography>
-        )}
-      </Box>
-    </Box>
+        <Stack spacing={0.8}>
+          <Box>
+            <Box sx={editableRow("age")}>
+              <Typography sx={labelStyle}>
+                Age
+              </Typography>
 
-    {/* HEIGHT */}
-    <Box sx={infoRow}>
-      <Typography
-        sx={{
-          fontSize: "12px",
-          fontWeight: 600,
-          color: theme.palette.text.primary,
-          minWidth: 70,
-        }}
-      >
-        Height
-      </Typography>
+              <input
+                type="number"
+                value={formData?.age ?? ""}
+                placeholder="Age"
+                disabled={!editable}
+                min={1}
+                max={120}
+                inputMode="numeric"
+                onKeyDown={
+                  preventInvalidNumberKeys
+                }
+                onChange={(e) =>
+                  updateField(
+                    "age",
+                    e.target.value
+                  )
+                }
+                onBlur={() =>
+                  handleBlur("age")
+                }
+                style={inputStyle}
+              />
+            </Box>
 
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          flex: 1,
-        }}
-      >
-        <input
-          type="number"
-          value={formData.height || ""}
-          placeholder="Height"
-          disabled={!editable}
-          onChange={(e) => handleChange("height", e.target.value)}
-          style={{
-            width: "100%",
-            border: "none",
-            outline: "none",
-            background: "transparent",
-            fontSize: "12px",
-            color: theme.palette.text.secondary,
-            fontFamily: "inherit",
-          }}
-        />
+            <ErrorText field="age" />
+          </Box>
 
-        {formData.height && (
-          <Typography
-            sx={{
-              fontSize: "11px",
-              color: theme.palette.text.secondary,
-            }}
-          >
-            cm
-          </Typography>
-        )}
-      </Box>
-    </Box>
+          <Box sx={infoRow}>
+            <Typography sx={labelStyle}>
+              Gender
+            </Typography>
 
-    
-  </Stack>
-</Box>
+            <select
+              value={formData?.gender || ""}
+              disabled={!editable}
+              onChange={(e) =>
+                handleChange(
+                  "gender",
+                  e.target.value
+                )
+              }
+              style={{
+                ...inputStyle,
+                cursor: editable
+                  ? "pointer"
+                  : "default",
+              }}
+            >
+              <option value="">
+                Select
+              </option>
+              <option value="MALE">
+                Male
+              </option>
+              <option value="FEMALE">
+                Female
+              </option>
+              <option value="OTHER">
+                Other
+              </option>
+            </select>
+          </Box>
+
+          <Box>
+            <Box sx={editableRow("language")}>
+              <Typography sx={labelStyle}>
+                Language
+              </Typography>
+
+              <input
+                type="text"
+                value={
+                  formData?.language || ""
+                }
+                placeholder="Hindi, English"
+                disabled={!editable}
+                maxLength={100}
+                onChange={(e) =>
+                  updateField(
+                    "language",
+                    e.target.value
+                  )
+                }
+                onBlur={() =>
+                  handleBlur("language")
+                }
+                style={inputStyle}
+              />
+            </Box>
+
+            <ErrorText field="language" />
+          </Box>
+
+          <Box>
+            <Box sx={editableRow("weight")}>
+              <Typography sx={labelStyle}>
+                Weight
+              </Typography>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                <input
+                  type="number"
+                  value={
+                    formData?.weight ?? ""
+                  }
+                  placeholder="Weight"
+                  disabled={!editable}
+                  min={1}
+                  max={500}
+                  step="0.1"
+                  inputMode="decimal"
+                  onKeyDown={
+                    preventInvalidNumberKeys
+                  }
+                  onChange={(e) =>
+                    updateField(
+                      "weight",
+                      e.target.value
+                    )
+                  }
+                  onBlur={() =>
+                    handleBlur("weight")
+                  }
+                  style={inputStyle}
+                />
+
+                {formData?.weight !== "" &&
+                  formData?.weight != null && (
+                    <Typography
+                      sx={{
+                        fontSize: "11px",
+                        color:
+                          theme.palette.text
+                            .secondary,
+                        flexShrink: 0,
+                      }}
+                    >
+                      kg
+                    </Typography>
+                  )}
+              </Box>
+            </Box>
+
+            <ErrorText field="weight" />
+          </Box>
+
+          <Box>
+            <Box sx={editableRow("height")}>
+              <Typography sx={labelStyle}>
+                Height
+              </Typography>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                <input
+                  type="number"
+                  value={
+                    formData?.height ?? ""
+                  }
+                  placeholder="Height"
+                  disabled={!editable}
+                  min={30}
+                  max={300}
+                  step="0.1"
+                  inputMode="decimal"
+                  onKeyDown={
+                    preventInvalidNumberKeys
+                  }
+                  onChange={(e) =>
+                    updateField(
+                      "height",
+                      e.target.value
+                    )
+                  }
+                  onBlur={() =>
+                    handleBlur("height")
+                  }
+                  style={inputStyle}
+                />
+
+                {formData?.height !== "" &&
+                  formData?.height != null && (
+                    <Typography
+                      sx={{
+                        fontSize: "11px",
+                        color:
+                          theme.palette.text
+                            .secondary,
+                        flexShrink: 0,
+                      }}
+                    >
+                      cm
+                    </Typography>
+                  )}
+              </Box>
+            </Box>
+
+            <ErrorText field="height" />
+          </Box>
         </Stack>
       </Box>
     </Stack>

@@ -9,6 +9,7 @@ import {
   TextField,
   Box,
   Divider,
+  MenuItem,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -18,41 +19,120 @@ import EmergencyOutlinedIcon from "@mui/icons-material/EmergencyOutlined";
 export default function UserAddress({
   address = {},
   emergencyContact = {},
-  editable,
+  editable = false,
   handleChange,
 }) {
   const theme = useTheme();
 
-  const addressFields = [
-    { label: "Street Name", key: "street" },
-    { label: "City / Town / Village", key: "city" },
-    { label: "State", key: "state" },
-    { label: "PIN Code", key: "pincode" },
-  ];
-
-  const emergencyFields = [
-    { label: "Full Name", key: "name" },
-    { label: "Relation", key: "relationship" },
-    { label: "Email", key: "email" },
-    { label: "Phone Number", key: "phone" },
+  const relations = [
+    "Father",
+    "Mother",
+    "Spouse",
+    "Brother",
+    "Sister",
+    "Guardian",
+    "Friend",
+    "Other",
   ];
 
   const handleAddressChange = (key, value) => {
-    handleChange("address", {
-      ...address,
-      [key]: value,
-    });
+    if (!editable) return;
+
+    let newValue = value;
+
+    if (key === "pincode") {
+      newValue = value.replace(/\D/g, "").slice(0, 6);
+    }
+
+    handleChange(`address.${key}`, newValue);
   };
 
   const handleEmergencyChange = (key, value) => {
-    handleChange(`emergencyContact.${key}`, value);
+    if (!editable) return;
+
+    let newValue = value;
+
+    if (key === "name") {
+      newValue = value
+        .replace(/[^A-Za-z\s]/g, "")
+        .replace(/\s{2,}/g, " ")
+        .slice(0, 50);
+    }
+
+    if (key === "phone") {
+      newValue = value.replace(/\D/g, "").slice(0, 10);
+    }
+
+    if (key === "email") {
+      newValue = value.replace(/\s/g, "").slice(0, 254);
+    }
+
+    handleChange(`emergencyContact.${key}`, newValue);
   };
+
+  const nameError = (() => {
+    const name = emergencyContact?.name?.trim() || "";
+
+    if (!name) return "";
+
+    if (name.length < 2) {
+      return "Name must be at least 2 characters";
+    }
+
+    if (name.length > 50) {
+      return "Name cannot exceed 50 characters";
+    }
+
+    if (!/^[A-Za-z\s]+$/.test(name)) {
+      return "Name can contain only letters and spaces";
+    }
+
+    return "";
+  })();
+
+  const emailError = (() => {
+    const email = emergencyContact?.email?.trim() || "";
+
+    if (!email) return "";
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return "Enter a valid email address";
+    }
+
+    return "";
+  })();
+
+  const phoneError = (() => {
+    const phone = emergencyContact?.phone || "";
+
+    if (!phone) return "";
+
+    if (!/^\d{10}$/.test(phone)) {
+      return "Phone number must be 10 digits";
+    }
+
+    return "";
+  })();
+
+  const pincodeError = (() => {
+    const pincode = address?.pincode || "";
+
+    if (!pincode) return "";
+
+    if (!/^\d{6}$/.test(pincode)) {
+      return "PIN code must be 6 digits";
+    }
+
+    return "";
+  })();
 
   const textFieldStyle = {
     "& .MuiOutlinedInput-root": {
       minHeight: 42,
       borderRadius: "7px",
-      backgroundColor: theme.palette.background.paper,
+      backgroundColor: editable
+        ? theme.palette.background.paper
+        : theme.palette.background.default,
       fontSize: "12.5px",
 
       "& fieldset": {
@@ -83,7 +163,14 @@ export default function UserAddress({
 
     "& .MuiOutlinedInput-input.Mui-disabled": {
       WebkitTextFillColor: theme.palette.text.primary,
-      color: theme.palette.text.primary,
+    },
+
+    "& .MuiSelect-select": {
+      fontSize: "12.5px",
+    },
+
+    "& .MuiSelect-select.Mui-disabled": {
+      WebkitTextFillColor: theme.palette.text.primary,
     },
 
     "& .MuiInputLabel-root": {
@@ -98,18 +185,20 @@ export default function UserAddress({
     "& .MuiInputLabel-root.Mui-disabled": {
       color: theme.palette.text.secondary,
     },
+
+    "& .MuiFormHelperText-root": {
+      fontSize: "11px",
+      mx: 0.5,
+      mt: 0.4,
+    },
   };
 
   return (
-    <Box
-      sx={{
-        width: "100%",
-        mt: 0,
-      }}
-    >
+    <Box sx={{ width: "100%" }}>
       <Accordion
         elevation={0}
         defaultExpanded
+        disableGutters
         sx={{
           width: "100%",
           border: `1px solid ${theme.palette.divider}`,
@@ -126,7 +215,6 @@ export default function UserAddress({
           },
         }}
       >
-        {/* HEADER */}
         <AccordionSummary
           expandIcon={
             <ExpandMoreIcon
@@ -137,13 +225,13 @@ export default function UserAddress({
             />
           }
           sx={{
-            minHeight: "44px",
+            minHeight: 44,
             px: 1.7,
             backgroundColor: theme.palette.background.default,
             borderBottom: `1px solid ${theme.palette.divider}`,
 
             "&.Mui-expanded": {
-              minHeight: "44px",
+              minHeight: 44,
             },
 
             "& .MuiAccordionSummary-content": {
@@ -175,8 +263,6 @@ export default function UserAddress({
             py: 1.7,
           }}
         >
-          {/* ================= ADDRESS ================= */}
-
           <Box
             sx={{
               display: "flex",
@@ -204,25 +290,85 @@ export default function UserAddress({
           </Box>
 
           <Grid container spacing={1.5}>
-            {addressFields.map(({ label, key }) => (
-              <Grid key={key} size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  fullWidth
-                  label={label}
-                  size="small"
-                  variant="outlined"
-                  disabled={!editable}
-                  value={address?.[key] || ""}
-                  onChange={(e) =>
-                    handleAddressChange(key, e.target.value)
-                  }
-                  sx={textFieldStyle}
-                />
-              </Grid>
-            ))}
-          </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="Street Name"
+                size="small"
+                disabled={!editable}
+                value={address?.street || ""}
+                onChange={(e) =>
+                  handleAddressChange("street", e.target.value)
+                }
+                slotProps={{
+                  htmlInput: {
+                    maxLength: 120,
+                  },
+                }}
+                sx={textFieldStyle}
+              />
+            </Grid>
 
-          {/* DIVIDER */}
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="City / Town / Village"
+                size="small"
+                disabled={!editable}
+                value={address?.city || ""}
+                onChange={(e) =>
+                  handleAddressChange("city", e.target.value)
+                }
+                slotProps={{
+                  htmlInput: {
+                    maxLength: 80,
+                  },
+                }}
+                sx={textFieldStyle}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="State"
+                size="small"
+                disabled={!editable}
+                value={address?.state || ""}
+                onChange={(e) =>
+                  handleAddressChange("state", e.target.value)
+                }
+                slotProps={{
+                  htmlInput: {
+                    maxLength: 80,
+                  },
+                }}
+                sx={textFieldStyle}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="PIN Code"
+                size="small"
+                disabled={!editable}
+                value={address?.pincode || ""}
+                onChange={(e) =>
+                  handleAddressChange("pincode", e.target.value)
+                }
+                error={Boolean(pincodeError)}
+                helperText={pincodeError}
+                slotProps={{
+                  htmlInput: {
+                    inputMode: "numeric",
+                    maxLength: 6,
+                  },
+                }}
+                sx={textFieldStyle}
+              />
+            </Grid>
+          </Grid>
 
           <Divider
             sx={{
@@ -230,8 +376,6 @@ export default function UserAddress({
               borderColor: theme.palette.divider,
             }}
           />
-
-          {/* ================= EMERGENCY ================= */}
 
           <Box
             sx={{
@@ -260,22 +404,108 @@ export default function UserAddress({
           </Box>
 
           <Grid container spacing={1.5}>
-            {emergencyFields.map(({ label, key }) => (
-              <Grid key={key} size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  fullWidth
-                  label={label}
-                  size="small"
-                  variant="outlined"
-                  disabled={!editable}
-                  value={emergencyContact?.[key] || ""}
-                  onChange={(e) =>
-                    handleEmergencyChange(key, e.target.value)
-                  }
-                  sx={textFieldStyle}
-                />
-              </Grid>
-            ))}
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="Full Name"
+                size="small"
+                disabled={!editable}
+                value={emergencyContact?.name || ""}
+                onChange={(e) =>
+                  handleEmergencyChange("name", e.target.value)
+                }
+                error={Boolean(nameError)}
+                helperText={nameError}
+                slotProps={{
+                  htmlInput: {
+                    maxLength: 50,
+                    autoComplete: "name",
+                  },
+                }}
+                sx={textFieldStyle}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                select
+                fullWidth
+                label="Relation"
+                size="small"
+                disabled={!editable}
+                value={emergencyContact?.relationship || ""}
+                onChange={(e) =>
+                  handleEmergencyChange(
+                    "relationship",
+                    e.target.value
+                  )
+                }
+                sx={textFieldStyle}
+              >
+                <MenuItem value="">
+                  Select Relation
+                </MenuItem>
+
+                {relations.map((relation) => (
+                  <MenuItem
+                    key={relation}
+                    value={relation}
+                    sx={{
+                      fontSize: "12.5px",
+                    }}
+                  >
+                    {relation}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                type="email"
+                label="Email"
+                size="small"
+                disabled={!editable}
+                value={emergencyContact?.email || ""}
+                onChange={(e) =>
+                  handleEmergencyChange("email", e.target.value)
+                }
+                error={Boolean(emailError)}
+                helperText={emailError}
+                slotProps={{
+                  htmlInput: {
+                    maxLength: 254,
+                    autoComplete: "email",
+                  },
+                }}
+                sx={textFieldStyle}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                type="tel"
+                label="Phone Number"
+                size="small"
+                disabled={!editable}
+                value={emergencyContact?.phone || ""}
+                onChange={(e) =>
+                  handleEmergencyChange("phone", e.target.value)
+                }
+                error={Boolean(phoneError)}
+                helperText={phoneError}
+                slotProps={{
+                  htmlInput: {
+                    inputMode: "numeric",
+                    maxLength: 10,
+                    autoComplete: "tel",
+                  },
+                }}
+                sx={textFieldStyle}
+              />
+            </Grid>
           </Grid>
         </AccordionDetails>
       </Accordion>

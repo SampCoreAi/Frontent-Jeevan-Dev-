@@ -15,6 +15,7 @@ export default function SearchActions({
   onFilterClick,
   onNearbyClick,
   onEmergencyClick,
+  isEmergencySelected,
 }) {
   return (
     <Box
@@ -209,6 +210,7 @@ export default function SearchActions({
         <Button
           type="button"
           onClick={onEmergencyClick}
+          aria-pressed={isEmergencySelected}
           startIcon={
             <EmergencyOutlinedIcon
               sx={{
@@ -232,11 +234,11 @@ export default function SearchActions({
               sm: 1.5,
             },
 
-            bgcolor: "#FFF5F5",
-            color: "#D32F2F",
+            bgcolor: isEmergencySelected ? "#D32F2F" : "#FFF5F5",
+            color: isEmergencySelected ? "#FFFFFF" : "#D32F2F",
 
             border: "1px solid",
-            borderColor: "#EF9A9A",
+            borderColor: isEmergencySelected ? "#D32F2F" : "#EF9A9A",
 
             borderRadius: 1,
 
@@ -248,7 +250,7 @@ export default function SearchActions({
             transition: "all 0.2s ease",
 
             "&:hover": {
-              bgcolor: "#FFEBEE",
+              bgcolor: isEmergencySelected ? "#B71C1C" : "#FFEBEE",
               borderColor: "#D32F2F",
               color: "#B71C1C",
 

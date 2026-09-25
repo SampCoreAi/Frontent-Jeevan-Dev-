@@ -19,12 +19,15 @@
   -webkit-text-stroke: 1.5px #333;
 }
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
 }
 
+body {
+  margin: 0;
+  padding: 0 !important; /* MUI ki inline padding ko override karne ke liye */
+}
 
 
 

@@ -1,66 +1,91 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+
+import React, { useEffect, useState } from "react";
 import {
-  Alert,
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControl,
-  IconButton,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
-  TextField,
-  Typography,
   useTheme,
 } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
-import WifiIcon from "@mui/icons-material/Wifi";
-import LocalHospitalOutlinedIcon from "@mui/icons-material/LocalHospitalOutlined";
-import CloseIcon from "@mui/icons-material/Close";
 import { useRouter, useSearchParams } from "next/navigation";
-import PatientDetailsCard from "./PatientDetailsCard";
-import CustomToolbar from "../../../doctorReceptionist/components/CustomToolbar";
+
 import { scheduleService } from "../../services/api";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import HistoryIcon from "@mui/icons-material/History";
-import LocalPharmacyOutlinedIcon from "@mui/icons-material/LocalPharmacyOutlined";
-import Menu from "@mui/material/Menu";
 import api from "../../../../../utils/axiosInstance";
-import MedicalInvoiceDialog from "../Medical/MedicalInvoiceDialog";
+
+import AppointmentHeader from "./AppointmentHeader";
+import AppointmentTable from "./AppointmentTable";
+import PatientDetailsDialog from "./PatientDetailsDialog";
+import MedicalDetailsDialog from "./MedicalDetailsDialog";
+import TokenVerificationDialog from "./TokenVerificationDialog";
+import PastDetailsDialog from "./PastDetailsDialog";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export default function OnOffCard({ selectedHospital, selectedMode }) {
+export default function OnOffCard({
+  selectedHospital,
+  selectedMode,
+}) {
   const theme = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const appointmentIdFromDashboard = searchParams.get("appointment_id");
-  const verifyFromDashboard = searchParams.get("verify");
-const [detailsAnchorEl, setDetailsAnchorEl] = useState(null);
-const [detailsRow, setDetailsRow] = useState(null);
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
+
+  const appointmentIdFromDashboard =
+    searchParams.get("appointment_id");
+
+  const verifyFromDashboard =
+    searchParams.get("verify");
+
+  const [selectedAppointmentId, setSelectedAppointmentId] =
+    useState(null);
+
+const [pastSelectedDate, setPastSelectedDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+
+  const [tokenOpen, setTokenOpen] = useState(false);
   const [error, setError] = useState("");
   const [patients, setPatients] = useState([]);
+
   const [date, setDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+;
+const [pastOpen, setPastOpen] = useState(false);
+const [pastLoading, setPastLoading] = useState(false);
+const [pastData, setPastData] = useState([]);
+const [pastError, setPastError] = useState("");
+const [pastPatient, setPastPatient] = useState(null);
   const [status, setStatus] = useState("pending");
   const [token, setToken] = useState("");
+
   const [viewOpen, setViewOpen] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [approvedMedicalStores, setApprovedMedicalStores] = useState([]);
-  const [medicalDetailsOpen, setMedicalDetailsOpen] = useState(false);
-  const [medicalDetailRows, setMedicalDetailRows] = useState([]);
-  const [medicalDetailsLoading, setMedicalDetailsLoading] = useState(false);
-  const [medicalDetailsPatient, setMedicalDetailsPatient] = useState(null);
+  const [selectedPatient, setSelectedPatient] =
+    useState(null);
+
+  const [
+    approvedMedicalStores,
+    setApprovedMedicalStores,
+  ] = useState([]);
+
+  const [
+    medicalDetailsOpen,
+    setMedicalDetailsOpen,
+  ] = useState(false);
+
+  const [
+    medicalDetailRows,
+    setMedicalDetailRows,
+  ] = useState([]);
+
+  const [
+    medicalDetailsLoading,
+    setMedicalDetailsLoading,
+  ] = useState(false);
+
+  const [
+    medicalDetailsPatient,
+    setMedicalDetailsPatient,
+  ] = useState(null);
+  
+
+
   const [pagination, setPagination] = useState({
     page: 0,
     pageSize: 5,
@@ -68,7 +93,9 @@ const [detailsRow, setDetailsRow] = useState(null);
 
   const user =
     typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("user") || "{}")
+      ? JSON.parse(
+          localStorage.getItem("user") || "{}"
+        )
       : {};
 
   const roleId = user?.role_id;
@@ -76,147 +103,70 @@ const [detailsRow, setDetailsRow] = useState(null);
   useEffect(() => {
     const loadApprovedMedicalStores = async () => {
       try {
-        const response = await api.get("/api/medical-stores/doctor/connections");
-        const connections = response?.data?.data || [];
-        setApprovedMedicalStores(
-          connections
-            .filter((connection) => String(connection?.status || "").toUpperCase() === "APPROVED")
-            .map((connection) => ({
-              id: connection.medical_store_id || connection.store_id || connection.id,
-              name: connection.store_name || connection.medical_store_name || "Medical Store",
-              city: connection.city || connection.address || "",
-              phone: connection.phone || connection.phone_number || "",
-            }))
-            .filter((store) => store.id)
+        const response = await api.get(
+          "/api/medical-stores/doctor/connections"
         );
+
+        const connections =
+          response?.data?.data || [];
+
+        const stores = connections
+          .filter(
+            (connection) =>
+              String(
+                connection?.status || ""
+              ).toUpperCase() === "APPROVED"
+          )
+          .map((connection) => ({
+            id:
+              connection.medical_store_id ||
+              connection.store_id ||
+              connection.id,
+
+            name:
+              connection.store_name ||
+              connection.medical_store_name ||
+              "Medical Store",
+
+            city:
+              connection.city ||
+              connection.address ||
+              "",
+
+            phone:
+              connection.phone ||
+              connection.phone_number ||
+              "",
+          }))
+          .filter((store) => store.id);
+
+        setApprovedMedicalStores(stores);
       } catch (requestError) {
-        console.error("Medical stores error:", requestError);
+        console.error(
+          "Medical stores error:",
+          requestError
+        );
       }
     };
 
     loadApprovedMedicalStores();
   }, []);
 
-const fieldStyle = {
-  "& .MuiInputLabel-root": {
-    fontSize: "13px",
-    color: theme.palette.text.secondary,
-  },
-  "& .MuiInputLabel-root.MuiInputLabel-shrink": {
-    transform: "translate(14px, -5px) scale(0.75)",
-  },
-  "& .MuiInputLabel-root.Mui-focused": {
-    color: theme.palette.primary.main,
-  },
-  "& .MuiOutlinedInput-root": {
-    height: 40,
-    fontSize: "13px",
-    bgcolor: theme.palette.background.paper,
-    "& fieldset": {
-      borderColor: "#D8DEDC",
-    },
-    "&:hover fieldset": {
-      borderColor: theme.palette.primary.main,
-    },
-    "&.Mui-focused fieldset": {
-      borderColor: theme.palette.primary.main,
-      borderWidth: "1px",
-    },
-  },
-  "& input": {
-    fontSize: "13px",
-    color: theme.palette.text.primary,
-  },
-  "& .MuiSelect-select": {
-    fontSize: "13px",
-  },
-};
-
-  const handleOpen = (patient) => {
-    const appointmentStatus = patient?.status?.toLowerCase();
-
-    if (
-      appointmentStatus === "in_progress" ||
-      appointmentStatus === "completed"
-    ) {
-      router.push(
-        `/doctor/pages/prescription?appointment_id=${patient.id}`
-      );
-      return;
-    }
-
-    if (appointmentStatus === "pending") {
-      setSelectedAppointmentId(patient.id);
-      setToken("");
-      setError("");
-      setOpen(true);
-    }
-  };
-const handleDetailsMenuOpen = (event, row) => {
-  setDetailsAnchorEl(event.currentTarget);
-  setDetailsRow(row);
-};
-
-const handleDetailsMenuClose = () => {
-  setDetailsAnchorEl(null);
-  setDetailsRow(null);
-};
-
-const handleViewDetails = () => {
-  if (!detailsRow) return;
-  const row = detailsRow;
-  handleDetailsMenuClose();
-  setMedicalDetailsPatient(row);
-  handleView(row);
-};
-
-const handleViewHistory = () => {
-  if (!detailsRow) return;
-  const patientId = detailsRow.id;
-  handleDetailsMenuClose();
-  router.push(`/doctor/pages/patient-history?appointment_id=${patientId}`);
-};
-
-const handleViewMedicalDetails = async () => {
-  if (!detailsRow?.patientId) return;
-  const row = detailsRow;
-  handleDetailsMenuClose();
-  setMedicalDetailsLoading(true);
-  try {
-    const response = await api.get("/api/medical-requests/doctor");
-    const requests = response?.data?.data || [];
-    const patientRequests = requests.filter((request) => (
-      Number(request.patient_id) === Number(row.patientId)
-      && String(request.status || "").toUpperCase() === "COMPLETED"
-    ));
-    if (!patientRequests.length) {
-      setError("Invoice tabhi available hoga jab medical store medicine deliver karega.");
-      return;
-    }
-    setMedicalDetailRows(patientRequests.map((request) => ({
-      id: request.id,
-      medicineName: request.medicine_name,
-      quantity: request.quantity || 1,
-      storeId: request.medical_store_id,
-      amount: request.total_amount || request.amount || 0,
-      status: request.status,
-    })));
-    setMedicalDetailsOpen(true);
-  } catch (requestError) {
-    setError(requestError?.response?.data?.message || "Unable to load medical details.");
-  } finally {
-    setMedicalDetailsLoading(false);
-  }
-};
   useEffect(() => {
     if (
       verifyFromDashboard === "true" &&
       appointmentIdFromDashboard
     ) {
-      setSelectedAppointmentId(appointmentIdFromDashboard);
-      setOpen(true);
+      setSelectedAppointmentId(
+        appointmentIdFromDashboard
+      );
+
+      setTokenOpen(true);
     }
-  }, [verifyFromDashboard, appointmentIdFromDashboard]);
+  }, [
+    verifyFromDashboard,
+    appointmentIdFromDashboard,
+  ]);
 
   useEffect(() => {
     if (!selectedHospital || !selectedMode) {
@@ -230,40 +180,82 @@ const handleViewMedicalDetails = async () => {
       try {
         const paginationParams = {
           limit: pagination.pageSize,
-          offset: pagination.page * pagination.pageSize,
+          offset:
+            pagination.page *
+            pagination.pageSize,
         };
 
-        const res = await scheduleService.getDoctorAppointments(
-          selectedHospital,
-          selectedMode,
-          status,
-          date,
-          paginationParams
-        );
+        const res =
+          await scheduleService.getDoctorAppointments(
+            selectedHospital,
+            selectedMode,
+            status,
+            date,
+            paginationParams
+          );
 
-        const appointments = Array.isArray(res?.appointments)
+        const appointments = Array.isArray(
+          res?.appointments
+        )
           ? res.appointments
           : [];
 
-        setPatients(
+        const formattedPatients =
           appointments.map((appointment) => ({
             id: appointment.appointment_id,
-            patientId: appointment.patient_id || appointment.patientId || appointment.user_id || appointment.userId,
-            tokenNumber: appointment.token_number,
-            name: appointment.name || "Not provided",
-            phoneNumber: appointment.phone_number || "Not provided",
-            Diagnostic: appointment.diagnostic || "Not provided",
-            date: appointment.date || "Not provided",
-            time: appointment.time || "Not provided",
-            mode: appointment.mode || "Not provided",
+
+            patientId:
+              appointment.patient_id ||
+              appointment.patientId ||
+              appointment.user_id ||
+              appointment.userId,
+
+            tokenNumber:
+              appointment.token_number,
+
+            name:
+              appointment.name ||
+              "Not provided",
+
+            phoneNumber:
+              appointment.phone_number ||
+              "Not provided",
+
+            Diagnostic:
+              appointment.diagnostic ||
+              "Not provided",
+
+            date:
+              appointment.date ||
+              "Not provided",
+
+            time:
+              appointment.time ||
+              "Not provided",
+
+            mode:
+              appointment.mode ||
+              "Not provided",
+
             hospitalName:
-              appointment.hospital_name || "Not provided",
-            status: appointment.status || "Not provided",
-            bookedAt: appointment.booked_at,
-          }))
-        );
+              appointment.hospital_name ||
+              "Not provided",
+
+            status:
+              appointment.status ||
+              "Not provided",
+
+            bookedAt:
+              appointment.booked_at,
+          }));
+
+        setPatients(formattedPatients);
       } catch (err) {
-        console.error("Appointment API Error:", err);
+        console.error(
+          "Appointment API Error:",
+          err
+        );
+
         setPatients([]);
       } finally {
         setTableLoading(false);
@@ -280,11 +272,35 @@ const handleViewMedicalDetails = async () => {
     pagination.pageSize,
   ]);
 
+  const handleOpen = (patient) => {
+    const appointmentStatus =
+      patient?.status?.toLowerCase();
+
+    if (
+      appointmentStatus === "in_progress" ||
+      appointmentStatus === "completed"
+    ) {
+      router.push(
+        `/doctor/pages/prescription?appointment_id=${patient.id}`
+      );
+
+      return;
+    }
+
+    if (appointmentStatus === "pending") {
+      setSelectedAppointmentId(patient.id);
+      setToken("");
+      setError("");
+      setTokenOpen(true);
+    }
+  };
+
   const handleView = async (patient) => {
     if (!patient?.id) return;
 
     try {
-      const authToken = localStorage.getItem("token");
+      const authToken =
+        localStorage.getItem("token");
 
       if (!authToken) return;
 
@@ -292,7 +308,8 @@ const handleViewMedicalDetails = async () => {
         `${API_URL}/api/user/getPatientDetails/${patient.id}`,
         {
           headers: {
-            Authorization: `Bearer ${authToken}`,
+            Authorization:
+              `Bearer ${authToken}`,
           },
         }
       );
@@ -304,7 +321,233 @@ const handleViewMedicalDetails = async () => {
         setViewOpen(true);
       }
     } catch (err) {
-      console.error("Patient details error:", err);
+      console.error(
+        "Patient details error:",
+        err
+      );
+    }
+  };
+
+  const handleViewDetails = (row) => {
+    setMedicalDetailsPatient(row);
+    handleView(row);
+  };
+const fetchPastPrescription = async (patientId, prescriptionDate) => {
+  if (!patientId || !prescriptionDate) return;
+
+  setPastLoading(true);
+  setPastError("");
+  setPastData([]);
+
+  try {
+    const response = await api.get(
+      "/api/appointments/getprescriptions",
+      {
+        params: {
+          user_id: patientId,
+          date: prescriptionDate,
+        },
+      }
+    );
+
+    const prescriptions = Array.isArray(response?.data?.data)
+      ? response.data.data
+      : [];
+
+    setPastData(prescriptions);
+
+    if (!prescriptions.length) {
+      setPastError("No prescription found for this date.");
+    }
+  } catch (err) {
+    console.error("Prescription API Error:", err);
+
+    setPastError(
+      err?.response?.data?.message ||
+        "Unable to load prescription."
+    );
+  } finally {
+    setPastLoading(false);
+  }
+};
+
+const normalizeApiDate = (value) => {
+  if (!value || value === "Not provided") return "";
+
+  const cleanValue = String(value).split("T")[0].trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleanValue)) {
+    return cleanValue;
+  }
+
+  if (/^\d{2}-\d{2}-\d{4}$/.test(cleanValue)) {
+    const [day, month, year] = cleanValue.split("-");
+    return `${year}-${month}-${day}`;
+  }
+
+  return "";
+};
+
+const handleViewHistory = async (row) => {
+  setPastPatient(row);
+  setPastOpen(true);
+  setPastLoading(true);
+  setPastError("");
+  setPastData([]);
+  setPastSelectedDate("");
+
+  if (!row?.patientId) {
+    setPastError("Patient ID not found.");
+    setPastLoading(false);
+    return;
+  }
+
+  try {
+    const response = await api.get(
+      "/api/appointments/getprescriptions",
+      {
+        params: {
+          user_id: row.patientId,
+        },
+      }
+    );
+
+    const prescriptions = Array.isArray(response?.data?.data)
+      ? response.data.data
+      : [];
+
+    if (!prescriptions.length) {
+      setPastData([]);
+      setPastError("No past prescriptions found.");
+      return;
+    }
+
+    const sortedPrescriptions = [...prescriptions].sort((a, b) => {
+      const dateA = a?.appointment?.date || "";
+      const dateB = b?.appointment?.date || "";
+
+      if (dateA !== dateB) {
+        return dateB.localeCompare(dateA);
+      }
+
+      const timeA = a?.appointment?.start_time || "";
+      const timeB = b?.appointment?.start_time || "";
+
+      return timeB.localeCompare(timeA);
+    });
+
+    setPastData(sortedPrescriptions);
+
+    const latestDate =
+      sortedPrescriptions[0]?.appointment?.date || "";
+
+    setPastSelectedDate(latestDate);
+  } catch (err) {
+    console.error("Past prescriptions error:", err);
+
+    setPastError(
+      err?.response?.data?.message ||
+        "Unable to load past prescriptions."
+    );
+  } finally {
+    setPastLoading(false);
+  }
+};
+
+const handlePastClose = () => {
+  setPastOpen(false);
+  setPastPatient(null);
+  setPastData([]);
+  setPastError("");
+  setPastSelectedDate("");
+  setPastLoading(false);
+};
+
+const handlePastDateChange = async (selectedDate) => {
+  if (!pastPatient?.patientId || !selectedDate) return;
+
+  setPastSelectedDate(selectedDate);
+
+  await fetchPastPrescription(
+    pastPatient.patientId,
+    selectedDate
+  );
+};
+
+
+
+
+
+  const handleViewMedicalDetails = async (
+    row
+  ) => {
+    if (!row?.patientId) {
+      setError("Patient ID not found.");
+      return;
+    }
+
+    setMedicalDetailsPatient(row);
+    setMedicalDetailsLoading(true);
+    setError("");
+
+    try {
+      const response = await api.get(
+        "/api/medical-requests/doctor"
+      );
+
+      const requests =
+        response?.data?.data || [];
+
+      const patientRequests =
+        requests.filter(
+          (request) =>
+            Number(request.patient_id) ===
+              Number(row.patientId) &&
+            String(
+              request.status || ""
+            ).toUpperCase() === "COMPLETED"
+        );
+
+      if (!patientRequests.length) {
+        setError(
+          "Invoice tabhi available hoga jab medical store medicine deliver karega."
+        );
+
+        return;
+      }
+
+      const rows = patientRequests.map(
+        (request) => ({
+          id: request.id,
+
+          medicineName:
+            request.medicine_name,
+
+          quantity:
+            request.quantity || 1,
+
+          storeId:
+            request.medical_store_id,
+
+          amount:
+            request.total_amount ||
+            request.amount ||
+            0,
+
+          status:
+            request.status,
+        })
+      );
+
+      setMedicalDetailRows(rows);
+      setMedicalDetailsOpen(true);
+    } catch (requestError) {
+      setError(
+        requestError?.response?.data?.message ||
+          "Unable to load medical details."
+      );
+    } finally {
+      setMedicalDetailsLoading(false);
     }
   };
 
@@ -313,10 +556,10 @@ const handleViewMedicalDetails = async () => {
     setSelectedPatient(null);
   };
 
-  const handleClose = () => {
+  const handleTokenClose = () => {
     if (loading) return;
 
-    setOpen(false);
+    setTokenOpen(false);
     setToken("");
     setSelectedAppointmentId(null);
     setError("");
@@ -339,10 +582,14 @@ const handleViewMedicalDetails = async () => {
     setError("");
 
     try {
-      const jwtToken = localStorage.getItem("token");
+      const jwtToken =
+        localStorage.getItem("token");
 
       if (!jwtToken) {
-        setError("Authentication token not found");
+        setError(
+          "Authentication token not found"
+        );
+
         setLoading(false);
         return;
       }
@@ -352,8 +599,11 @@ const handleViewMedicalDetails = async () => {
         {
           method: "GET",
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${jwtToken}`,
+            "Content-Type":
+              "application/json",
+
+            Authorization:
+              `Bearer ${jwtToken}`,
           },
         }
       );
@@ -364,207 +614,50 @@ const handleViewMedicalDetails = async () => {
         router.push(
           `/doctor/pages/prescription?appointment_id=${selectedAppointmentId}`
         );
+
         return;
       }
 
-      setError(res?.message || "Invalid token");
-      setLoading(false);
+      setError(
+        res?.message || "Invalid token"
+      );
     } catch (err) {
-      setError(err?.message || "Token expired or invalid");
+      setError(
+        err?.message ||
+          "Token expired or invalid"
+      );
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleClearFilters = () => {
-    setDate("");
-    setStatus("pending");
+  const handleDateChange = (value) => {
+    setDate(value);
+
     setPagination((prev) => ({
       ...prev,
       page: 0,
     }));
   };
 
-  const columns = useMemo(() => {
-    const data = [
-      {
-        field: "name",
-        headerName: "Name",
-        minWidth: 160,
-        flex: 1,
-      },
-      {
-        field: "date",
-        headerName: "Date",
-        minWidth: 130,
-        flex: 0.8,
-      },
-      {
-        field: "time",
-        headerName: "Time",
-        minWidth: 120,
-        flex: 0.7,
-      },
-      {
-  field: "mode",
-  headerName: "Mode",
-  minWidth: 110,
-  flex: 0.7,
-  renderCell: (params) => (
-    <Box
-      sx={{
-        height: "100%",
-        display: "flex",
-        alignItems: "center",
-      }}
-    >
-      <Typography
-        sx={{
-          fontSize: "13px",
-          textTransform: "capitalize",
-          color: theme.palette.text.primary,
-          lineHeight: 1.2,
-        }}
-      >
-        {params.value || "Not provided"}
-      </Typography>
-    </Box>
-  ),
-},
-      {
-        field: "status",
-        headerName: "Status",
-        minWidth: 130,
-        flex: 0.8,
-        renderCell: (params) => {
-          const value = String(params.value || "").toLowerCase();
+  const handleStatusChange = (value) => {
+    setStatus(value);
 
-          const statusStyles = {
-            pending: {
-              bgcolor: "#FFF6DD",
-              color: "#A66B00",
-            },
-            in_progress: {
-              bgcolor: "#EDF7F2",
-              color: theme.palette.primary.main,
-            },
-            completed: {
-              bgcolor: "#EDF7F2",
-              color: theme.palette.primary.main,
-            },
-            cancelled: {
-              bgcolor: "#FDECEC",
-              color: theme.palette.error.main,
-            },
-          };
+    setPagination((prev) => ({
+      ...prev,
+      page: 0,
+    }));
+  };
 
-          const currentStyle = statusStyles[value] || {
-            bgcolor: theme.palette.background.default,
-            color: theme.palette.text.secondary,
-          };
+  const handleClearFilters = () => {
+    setDate("");
+    setStatus("pending");
 
-          return (
-            <Box
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                width: "fit-content",
-                px: 1,
-                py: 0.35,
-                borderRadius: 1,
-                fontSize: "12px",
-                fontWeight: 600,
-                lineHeight: 1.3,
-                ...currentStyle,
-              }}
-            >
-              {value
-                ? value
-                    .replaceAll("_", " ")
-                    .replace(/\b\w/g, (char) => char.toUpperCase())
-                : "Not provided"}
-            </Box>
-          );
-        },
-      },
-      
-    ];
-
-    if (roleId === 2) {
-      data.push({
-        field: "action",
-        headerName: "Action",
-        minWidth: 110,
-        sortable: false,
-        filterable: false,
-        renderCell: (params) => {
-          const appointmentStatus =
-            params.row.status?.toLowerCase();
-
-          const label =
-            appointmentStatus === "in_progress"
-              ? "Continue"
-              : appointmentStatus === "completed"
-                ? "View"
-                : "Start";
-
-          return (
-            <Button
-              variant="contained"
-              size="small"
-              onClick={() => handleOpen(params.row)}
-              sx={{
-                minWidth: 70,
-                height: 30,
-                px: 1.25,
-                fontSize: "12px",
-                fontWeight: 600,
-                textTransform: "none",
-                borderRadius: 1.25,
-                boxShadow: "none",
-                bgcolor: theme.palette.primary.main,
-                "&:hover": {
-                  bgcolor: theme.palette.primary.dark,
-                  boxShadow: "none",
-                },
-              }}
-            >
-              {label}
-            </Button>
-          );
-        },
-      });
-    }
-
-data.push({
-  field: "details",
-  headerName: "Details",
-  minWidth: 80,
-  maxWidth: 80,
-  sortable: false,
-  filterable: false,
-  align: "center",
-  headerAlign: "center",
-  renderCell: (params) => (
-    <IconButton
-      size="small"
-      onClick={(event) => handleDetailsMenuOpen(event, params.row)}
-      sx={{
-        width: 30,
-        height: 30,
-        color: theme.palette.text.secondary,
-        "&:hover": {
-          bgcolor: theme.palette.background.default,
-          color: theme.palette.primary.main,
-        },
-      }}
-    >
-      <MoreVertIcon sx={{ fontSize: 19 }} />
-    </IconButton>
-  ),
-});
-
-return data;
-  }, [roleId, theme]);
+    setPagination((prev) => ({
+      ...prev,
+      page: 0,
+    }));
+  };
 
   return (
     <>
@@ -572,478 +665,80 @@ return data;
         elevation={0}
         sx={{
           width: "100%",
-          bgcolor: theme.palette.background.paper,
-          border: `1px solid ${theme.palette.divider}`,
+          bgcolor:
+            theme.palette.background.paper,
+          border:
+            `1px solid ${theme.palette.divider}`,
           borderRadius: 2,
           overflow: "hidden",
         }}
       >
-        <Box
-          sx={{
-            px: { xs: 1.5, sm: 2 },
-            py: 1.5,
-            bgcolor: theme.palette.background.default,
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            display: "flex",
-            alignItems: { xs: "stretch", md: "center" },
-            justifyContent: "space-between",
-            flexDirection: { xs: "column", md: "row" },
-            gap: 1.5,
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              minWidth: 0,
-            }}
-          >
-            <Box
-              sx={{
-                width: 38,
-                height: 38,
-                minWidth: 38,
-                borderRadius: 1.5,
-                bgcolor: "#EDF7F2",
-                color: theme.palette.primary.main,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {selectedMode === "online" ? (
-                <WifiIcon sx={{ fontSize: 20 }} />
-              ) : (
-                <LocalHospitalOutlinedIcon sx={{ fontSize: 20 }} />
-              )}
-            </Box>
+        <AppointmentHeader
+          selectedHospital={selectedHospital}
+          selectedMode={selectedMode}
+          date={date}
+          status={status}
+          onDateChange={handleDateChange}
+          onStatusChange={handleStatusChange}
+          onClear={handleClearFilters}
+        />
 
-            <Box sx={{ minWidth: 0 }}>
-              <Typography
-                sx={{
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  color: theme.palette.text.primary,
-                }}
-              >
-                {selectedMode === "online"
-                  ? "Online Appointments"
-                  : "Offline Appointments"}
-              </Typography>
-
-              <Typography
-                sx={{
-                  mt: 0.15,
-                  fontSize: "11px",
-                  color: theme.palette.text.secondary,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {selectedHospital || "No hospital selected"}
-              </Typography>
-            </Box>
-          </Box>
-
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", sm: "row" },
-              alignItems: { xs: "stretch", sm: "center" },
-              gap: 1,
-              width: { xs: "100%", md: "auto" },
-            }}
-          >
-           <TextField
-  type="date"
-  label="Date"
-  size="small"
-  value={date}
-  onChange={(e) => {
-    setDate(e.target.value);
-    setPagination((prev) => ({
-      ...prev,
-      page: 0,
-    }));
-  }}
-  InputLabelProps={{ shrink: true }}
-  sx={{
-    ...fieldStyle,
-    width: { xs: "100%", sm: 165 },
-    "& input::-webkit-calendar-picker-indicator": {
-      filter:
-        "invert(45%) sepia(60%) saturate(600%) hue-rotate(110deg) brightness(85%)",
-      cursor: "pointer",
-    },
-  }}
-/>
-            <FormControl
-              size="small"
-              sx={{
-                ...fieldStyle,
-                width: { xs: "100%", sm: 165 },
-              }}
-            >
-              <InputLabel>Status</InputLabel>
-
-              <Select
-                value={status}
-                label="Status"
-                onChange={(e) => {
-                  setStatus(e.target.value);
-                  setPagination((prev) => ({
-                    ...prev,
-                    page: 0,
-                  }));
-                }}
-                MenuProps={{
-                  PaperProps: {
-                    sx: {
-                      "& .MuiMenuItem-root": {
-                        fontSize: "13px",
-                      },
-                    },
-                  },
-                }}
-              >
-                <MenuItem value="all">All</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="in_progress">In Progress</MenuItem>
-                <MenuItem value="completed">Completed</MenuItem>
-                <MenuItem value="cancelled">Cancelled</MenuItem>
-              </Select>
-            </FormControl>
-
-            <Button
-              variant="outlined"
-              onClick={handleClearFilters}
-              sx={{
-                height: 40,
-                minWidth: 72,
-                px: 1.5,
-                fontSize: "12px",
-                fontWeight: 500,
-                textTransform: "none",
-                whiteSpace: "nowrap",
-                borderColor: "#D8DEDC",
-                color: theme.palette.text.secondary,
-                borderRadius: 1.25,
-                "&:hover": {
-                  borderColor: theme.palette.primary.main,
-                  color: theme.palette.primary.main,
-                  bgcolor: "#EDF7F2",
-                },
-              }}
-            >
-              Clear
-            </Button>
-          </Box>
-        </Box>
-
-        <Box
-          sx={{
-            width: "100%",
-            overflowX: "auto",
-          }}
-        >
-          <DataGrid
-            rows={patients}
-            columns={columns}
-            loading={tableLoading}
-            autoHeight
-            pageSizeOptions={[5, 10, 20]}
-            paginationModel={pagination}
-            onPaginationModelChange={setPagination}
-            slots={{ toolbar: CustomToolbar }}
-            disableRowSelectionOnClick
-            sx={{
-              minWidth: 760,
-              border: 0,
-              borderRadius: 0,
-              bgcolor: theme.palette.background.paper,
-              color: theme.palette.text.primary,
-              "& .MuiDataGrid-toolbarContainer": {
-                minHeight: 0,
-                p: 0,
-              },
-              "& .MuiDataGrid-columnHeaders": {
-                bgcolor: "#F8FAF9",
-                borderBottom: `1px solid ${theme.palette.divider}`,
-              },
-              "& .MuiDataGrid-columnHeader": {
-                bgcolor: "#F8FAF9",
-              },
-              "& .MuiDataGrid-columnHeaderTitle": {
-                fontSize: "13px",
-                fontWeight: 600,
-                color: theme.palette.text.primary,
-              },
-              "& .MuiDataGrid-cell": {
-                fontSize: "13px",
-                borderColor: theme.palette.divider,
-              },
-              "& .MuiDataGrid-row": {
-                bgcolor: theme.palette.background.paper,
-              },
-              "& .MuiDataGrid-row:hover": {
-                bgcolor: "#F8FAF9",
-              },
-              "& .MuiDataGrid-footerContainer": {
-                minHeight: 48,
-                borderTop: `1px solid ${theme.palette.divider}`,
-              },
-              "& .MuiTablePagination-root": {
-                fontSize: "12px",
-                color: theme.palette.text.secondary,
-              },
-              "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows":
-                {
-                  fontSize: "12px",
-                },
-              "& .MuiDataGrid-overlayWrapper": {
-                minHeight: 150,
-              },
-            }}
-          />
-          <Menu
-  anchorEl={detailsAnchorEl}
-  open={Boolean(detailsAnchorEl)}
-  onClose={handleDetailsMenuClose}
-  anchorOrigin={{
-    vertical: "bottom",
-    horizontal: "right",
-  }}
-  transformOrigin={{
-    vertical: "top",
-    horizontal: "right",
-  }}
-  PaperProps={{
-    sx: {
-      minWidth: 170,
-      mt: 0.5,
-      borderRadius: 1.5,
-      border: `1px solid ${theme.palette.divider}`,
-      boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-    },
-  }}
->
-  <MenuItem
-    onClick={handleViewDetails}
-    sx={{
-      minHeight: 36,
-      gap: 1,
-      fontSize: "12.5px",
-    }}
-  >
-    <VisibilityOutlinedIcon
-      sx={{
-        fontSize: 17,
-        color: theme.palette.primary.main,
-      }}
-    />
-    View Details
-  </MenuItem>
-
-  <MenuItem
-    onClick={handleViewMedicalDetails}
-    disabled={medicalDetailsLoading}
-    sx={{
-      minHeight: 36,
-      gap: 1,
-      fontSize: "12.5px",
-    }}
-  >
-    <LocalPharmacyOutlinedIcon sx={{ fontSize: 17, color: theme.palette.success.main }} />
-    Medical Details
-  </MenuItem>
-
-  <MenuItem
-    onClick={handleViewHistory}
-    sx={{
-      minHeight: 36,
-      gap: 1,
-      fontSize: "12.5px",
-    }}
-  >
-    <HistoryIcon
-      sx={{
-        fontSize: 17,
-        color: theme.palette.text.secondary,
-      }}
-    />
-    View Past Details
-  </MenuItem>
-</Menu>
-        </Box>
+        <AppointmentTable
+          patients={patients}
+          loading={tableLoading}
+          pagination={pagination}
+          setPagination={setPagination}
+          roleId={roleId}
+          onStart={handleOpen}
+          onViewDetails={handleViewDetails}
+          onViewMedicalDetails={
+            handleViewMedicalDetails
+          }
+          onViewHistory={handleViewHistory}
+          medicalDetailsLoading={
+            medicalDetailsLoading
+          }
+        />
       </Paper>
 
-      <MedicalInvoiceDialog
-        open={medicalDetailsOpen}
-        onClose={() => setMedicalDetailsOpen(false)}
-        selectedPatient={{ name: medicalDetailsPatient?.name || "Patient" }}
-        stores={approvedMedicalStores}
-        rows={medicalDetailRows}
-        invoiceSummary={{
-          subtotal: medicalDetailRows.reduce((total, row) => total + Number(row.amount || 0), 0),
-          discount: 0,
-          tax: 0,
-          finalTotal: medicalDetailRows.reduce((total, row) => total + Number(row.amount || 0), 0),
-        }}
+      <PatientDetailsDialog
+        open={viewOpen}
+        patient={selectedPatient}
+        onClose={handleViewClose}
       />
 
-      <Dialog
-        open={viewOpen}
-        onClose={handleViewClose}
-        fullWidth
-        maxWidth="sm"
-        PaperProps={{
-          sx: {
-            m: { xs: 1, sm: 2 },
-            maxHeight: "90vh",
-            borderRadius: 2,
-            overflow: "hidden",
-            position: "relative",
-          },
+      <MedicalDetailsDialog
+        open={medicalDetailsOpen}
+        onClose={() => {
+          setMedicalDetailsOpen(false);
+          setMedicalDetailRows([]);
+          setMedicalDetailsPatient(null);
         }}
-      >
-        <IconButton
-          onClick={handleViewClose}
-          size="small"
-          aria-label="Close"
-          sx={{
-            position: "absolute",
-            top: 8,
-            right: 8,
-            zIndex: 10,
-            bgcolor: theme.palette.background.default,
-            color: theme.palette.text.secondary,
-            "&:hover": {
-              bgcolor: "#EDF7F2",
-              color: theme.palette.primary.main,
-            },
-          }}
-        >
-          <CloseIcon sx={{ fontSize: 18 }} />
-        </IconButton>
+        patient={medicalDetailsPatient}
+        stores={approvedMedicalStores}
+        rows={medicalDetailRows}
+      />
 
-        <DialogContent sx={{ p: { xs: 1.5, sm: 2 } }}>
-          <PatientDetailsCard patient={selectedPatient} />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        fullWidth
-        maxWidth="xs"
-        PaperProps={{
-          sx: {
-            m: { xs: 1.5, sm: 2 },
-            borderRadius: 2,
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            px: 2,
-            py: 1.5,
-            fontSize: "13px",
-            fontWeight: 700,
-            color: theme.palette.text.primary,
-            borderBottom: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          Verify Appointment Token
-        </DialogTitle>
-
-        <DialogContent
-          sx={{
-            px: 2,
-            pt: "16px !important",
-            pb: 1,
-          }}
-        >
-          <Typography
-            sx={{
-              mb: 1.5,
-              fontSize: "12px",
-              color: theme.palette.text.secondary,
-            }}
-          >
-            Enter the patient token to start this appointment.
-          </Typography>
-
-          <TextField
-            label="Token"
-            fullWidth
-            size="small"
-            autoFocus
-            value={token}
-            onChange={(e) => {
-              setToken(e.target.value.replace(/\s/g, ""));
-              setError("");
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && token.trim() && !loading) {
-                handleNext();
-              }
-            }}
-            error={Boolean(error)}
-            helperText={error}
-            inputProps={{
-              maxLength: 100,
-            }}
-            sx={{
-              ...fieldStyle,
-              "& .MuiFormHelperText-root": {
-                mx: 0,
-                fontSize: "11px",
-              },
-            }}
-          />
-        </DialogContent>
-
-        <DialogActions
-          sx={{
-            px: 2,
-            py: 1.5,
-            borderTop: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <Button
-            onClick={handleClose}
-            disabled={loading}
-            sx={{
-              fontSize: "12px",
-              textTransform: "none",
-              color: theme.palette.text.secondary,
-            }}
-          >
-            Cancel
-          </Button>
-
-          <Button
-            variant="contained"
-            onClick={handleNext}
-            disabled={!token.trim() || loading}
-            sx={{
-              minWidth: 90,
-              fontSize: "12px",
-              textTransform: "none",
-              boxShadow: "none",
-              bgcolor: theme.palette.primary.main,
-              "&:hover": {
-                bgcolor: theme.palette.primary.dark,
-                boxShadow: "none",
-              },
-            }}
-          >
-            {loading ? "Verifying..." : "Verify"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+<PastDetailsDialog
+  open={pastOpen}
+  onClose={handlePastClose}
+  loading={pastLoading}
+  error={pastError}
+  data={pastData}
+  patient={pastPatient}
+  selectedDate={pastSelectedDate}
+  onDateChange={setPastSelectedDate}
+/>
+      <TokenVerificationDialog
+        open={tokenOpen}
+        token={token}
+        error={error}
+        loading={loading}
+        onTokenChange={setToken}
+        onErrorClear={() => setError("")}
+        onClose={handleTokenClose}
+        onVerify={handleNext}
+      />
     </>
   );
 }

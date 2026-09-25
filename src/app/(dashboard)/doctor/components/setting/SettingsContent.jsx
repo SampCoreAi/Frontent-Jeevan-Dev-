@@ -19,6 +19,8 @@ import {
   Typography,
 } from "@mui/material";
 import axios from "axios";
+import UserPrivacySettings from "../../../component/Setting/UserPrivacySettings";
+import UserHelpSupport from "../../../component/Setting/UserHelpSupport";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
@@ -27,7 +29,7 @@ import PaletteOutlinedIcon from "@mui/icons-material/PaletteOutlined";
 import LocalPharmacyOutlinedIcon from "@mui/icons-material/LocalPharmacyOutlined";
 import LockResetOutlinedIcon from "@mui/icons-material/LockResetOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
-
+import { useColorMode } from "../../../../styles/theme";
 const menuItems = [
   {
     key: "account",
@@ -54,11 +56,7 @@ const menuItems = [
     label: "Theme",
     icon: <PaletteOutlinedIcon />,
   },
-  {
-    key: "prescription",
-    label: "Prescription",
-    icon: <LocalPharmacyOutlinedIcon />,
-  },
+
 ];
 
 const cardSx = {
@@ -129,13 +127,15 @@ const fieldSx = {
 const SettingsContent = () => {
   const [active, setActive] = useState("account");
   const [userId, setUserId] = useState("");
-const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [openChangePassword, setOpenChangePassword] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [oldPassword, setOldPassword] = useState("");
+    const { mode, setColorMode } = useColorMode();
+
   const [passwordLoading, setPasswordLoading] = useState(false);
-const [logoutLoading, setLogoutLoading] = useState(false);
-const [loginLoading, setLoginLoading] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [openSuccessDialog, setOpenSuccessDialog] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -143,14 +143,14 @@ const [loginLoading, setLoginLoading] = useState(false);
   const [snackbarSeverity, setSnackbarSeverity] = useState("error");
   const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
 
- const handleLogoutConfirm = () => {
-  setLogoutLoading(true);
+  const handleLogoutConfirm = () => {
+    setLogoutLoading(true);
 
-  setTimeout(() => {
-    localStorage.clear();
-    window.location.href = "/Home/pages/Login";
-  }, 300);
-};
+    setTimeout(() => {
+      localStorage.clear();
+      window.location.href = "/Home/pages/Login";
+    }, 300);
+  };
 
   const showSnackbar = (message, severity = "error") => {
     setSnackbarMessage(message);
@@ -158,63 +158,63 @@ const [loginLoading, setLoginLoading] = useState(false);
     setSnackbarOpen(true);
   };
 
-useEffect(() => {
-  const userData = localStorage.getItem("user");
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
 
-  if (userData) {
-    const user = JSON.parse(userData);
+    if (userData) {
+      const user = JSON.parse(userData);
 
-    setUserId(user.id || user.userId || "");
-    setUserEmail(user.email || "");
-  }
-}, []);
+      setUserId(user.id || user.userId || "");
+      setUserEmail(user.email || "");
+    }
+  }, []);
 
-const handleClosePasswordDialog = () => {
-  setOpenChangePassword(false);
-  setOldPassword("");
-  setNewPassword("");
-  setConfirmPassword("");
-};
-const handleChangePassword = async () => {
-  if (!oldPassword || !newPassword || !confirmPassword) {
-    showSnackbar("Please fill all password fields", "error");
-    return;
-  }
+  const handleClosePasswordDialog = () => {
+    setOpenChangePassword(false);
+    setOldPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+  const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      showSnackbar("Please fill all password fields", "error");
+      return;
+    }
 
-  if (newPassword !== confirmPassword) {
-    showSnackbar("New password and confirm password do not match", "error");
-    return;
-  }
+    if (newPassword !== confirmPassword) {
+      showSnackbar("New password and confirm password do not match", "error");
+      return;
+    }
 
-  try {
-    setPasswordLoading(true);
+    try {
+      setPasswordLoading(true);
 
-    const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token");
 
-    await axios.post(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/change-password`,
-      {
-        oldPassword,
-        newPassword,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/change-password`,
+        {
+          oldPassword,
+          newPassword,
         },
-      }
-    );
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
 
-    handleClosePasswordDialog();
-    setOpenSuccessDialog(true);
-  } catch (error) {
-    showSnackbar(
-      error?.response?.data?.message || "Failed to change password",
-      "error"
-    );
-  } finally {
-    setPasswordLoading(false);
-  }
-};
+      handleClosePasswordDialog();
+      setOpenSuccessDialog(true);
+    } catch (error) {
+      showSnackbar(
+        error?.response?.data?.message || "Failed to change password",
+        "error",
+      );
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   const changePasswordDialog = (
     <Dialog
@@ -294,46 +294,41 @@ const handleChangePassword = async () => {
             gap: 1.7,
           }}
         >
-       
-<TextField
-  fullWidth
-  label="Old Password"
-  type="password"
-  value={oldPassword}
-  onChange={(e) => setOldPassword(e.target.value)}
-  size="small"
-  sx={fieldSx}
-/>
+          <TextField
+            fullWidth
+            label="Old Password"
+            type="password"
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+            size="small"
+            sx={fieldSx}
+          />
 
-<TextField
-  fullWidth
-  label="New Password"
-  type="password"
-  value={newPassword}
-  onChange={(e) => setNewPassword(e.target.value)}
-  size="small"
-  sx={fieldSx}
-/>
+          <TextField
+            fullWidth
+            label="New Password"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            size="small"
+            sx={fieldSx}
+          />
 
-<TextField
-  fullWidth
-  label="Confirm Password"
-  type="password"
-  value={confirmPassword}
-  onChange={(e) => setConfirmPassword(e.target.value)}
-  size="small"
-  error={
-    confirmPassword !== "" &&
-    newPassword !== confirmPassword
-  }
-  helperText={
-    confirmPassword !== "" &&
-    newPassword !== confirmPassword
-      ? "Passwords do not match"
-      : ""
-  }
-  sx={fieldSx}
-/>
+          <TextField
+            fullWidth
+            label="Confirm Password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            size="small"
+            error={confirmPassword !== "" && newPassword !== confirmPassword}
+            helperText={
+              confirmPassword !== "" && newPassword !== confirmPassword
+                ? "Passwords do not match"
+                : ""
+            }
+            sx={fieldSx}
+          />
         </Box>
       </DialogContent>
 
@@ -348,7 +343,7 @@ const handleChangePassword = async () => {
         <Button
           onClick={handleClosePasswordDialog}
           variant="outlined"
-            disabled={passwordLoading}
+          disabled={passwordLoading}
           sx={{
             ...actionButtonSx,
             color: "text.secondary",
@@ -361,25 +356,25 @@ const handleChangePassword = async () => {
         >
           Cancel
         </Button>
-<Button
-  variant="contained"
-  onClick={handleChangePassword}
-  disabled={passwordLoading}
-  startIcon={
-    passwordLoading ? (
-      <CircularProgress size={15} color="inherit" />
-    ) : null
-  }
-  sx={{
-    ...actionButtonSx,
-    minWidth: 125,
-    "&:hover": {
-      boxShadow: "none",
-    },
-  }}
->
-  {passwordLoading ? "Saving..." : "Save Password"}
-</Button>
+        <Button
+          variant="contained"
+          onClick={handleChangePassword}
+          disabled={passwordLoading}
+          startIcon={
+            passwordLoading ? (
+              <CircularProgress size={15} color="inherit" />
+            ) : null
+          }
+          sx={{
+            ...actionButtonSx,
+            minWidth: 125,
+            "&:hover": {
+              boxShadow: "none",
+            },
+          }}
+        >
+          {passwordLoading ? "Saving..." : "Save Password"}
+        </Button>
       </DialogActions>
     </Dialog>
   );
@@ -430,15 +425,11 @@ const handleChangePassword = async () => {
                         color: "primary.main",
                       }}
                     >
-                      <LockResetOutlinedIcon
-                        sx={{ fontSize: 20 }}
-                      />
+                      <LockResetOutlinedIcon sx={{ fontSize: 20 }} />
                     </Box>
 
                     <Box>
-                      <Typography sx={titleSx}>
-                        Change Password
-                      </Typography>
+                      <Typography sx={titleSx}>Change Password</Typography>
 
                       <Typography sx={descriptionSx}>
                         Update your account password
@@ -448,9 +439,7 @@ const handleChangePassword = async () => {
 
                   <Button
                     variant="contained"
-                    onClick={() =>
-                      setOpenChangePassword(true)
-                    }
+                    onClick={() => setOpenChangePassword(true)}
                     sx={{
                       ...actionButtonSx,
                       width: {
@@ -477,8 +466,7 @@ const handleChangePassword = async () => {
                   bgcolor: "#FFFBFB",
                   "&:hover": {
                     borderColor: "#FCA5A5",
-                    boxShadow:
-                      "0 4px 16px rgba(239,68,68,0.04)",
+                    boxShadow: "0 4px 16px rgba(239,68,68,0.04)",
                   },
                 }}
               >
@@ -521,9 +509,7 @@ const handleChangePassword = async () => {
                         color: "error.main",
                       }}
                     >
-                      <LogoutOutlinedIcon
-                        sx={{ fontSize: 20 }}
-                      />
+                      <LogoutOutlinedIcon sx={{ fontSize: 20 }} />
                     </Box>
 
                     <Box>
@@ -545,9 +531,7 @@ const handleChangePassword = async () => {
                   <Button
                     variant="outlined"
                     color="error"
-                    onClick={() =>
-                      setOpenLogoutDialog(true)
-                    }
+                    onClick={() => setOpenLogoutDialog(true)}
                     sx={{
                       ...actionButtonSx,
                       width: {
@@ -567,9 +551,7 @@ const handleChangePassword = async () => {
 
             <Dialog
               open={openSuccessDialog}
-              onClose={() =>
-                setOpenSuccessDialog(false)
-              }
+              onClose={() => setOpenSuccessDialog(false)}
               maxWidth="xs"
               fullWidth
               PaperProps={{
@@ -582,8 +564,7 @@ const handleChangePassword = async () => {
                   borderRadius: "12px",
                   border: "1px solid",
                   borderColor: "divider",
-                  boxShadow:
-                    "0 16px 40px rgba(15,23,42,0.12)",
+                  boxShadow: "0 16px 40px rgba(15,23,42,0.12)",
                 },
               }}
             >
@@ -609,9 +590,8 @@ const handleChangePassword = async () => {
                     color: "text.secondary",
                   }}
                 >
-                  Your password has been updated
-                  successfully. Please login again with
-                  your new password.
+                  Your password has been updated successfully. Please login
+                  again with your new password.
                 </DialogContentText>
               </DialogContent>
 
@@ -625,9 +605,7 @@ const handleChangePassword = async () => {
               >
                 <Button
                   variant="outlined"
-                  onClick={() =>
-                    setOpenSuccessDialog(false)
-                  }
+                  onClick={() => setOpenSuccessDialog(false)}
                   sx={{
                     ...actionButtonSx,
                     minWidth: 90,
@@ -636,202 +614,51 @@ const handleChangePassword = async () => {
                   Close
                 </Button>
 
-               <Button
-  variant="contained"
-  disabled={loginLoading}
-  onClick={() => {
-    setLoginLoading(true);
+                <Button
+                  variant="contained"
+                  disabled={loginLoading}
+                  onClick={() => {
+                    setLoginLoading(true);
 
-    setTimeout(() => {
-      localStorage.clear();
-      window.location.href = "/Home/pages/Login";
-    }, 300);
-  }}
-  startIcon={
-    loginLoading ? (
-      <CircularProgress size={15} color="inherit" />
-    ) : null
-  }
-  sx={{
-    ...actionButtonSx,
-    minWidth: 90,
-  }}
->
-  {loginLoading ? "Loading..." : "Login"}
-</Button>
+                    setTimeout(() => {
+                      localStorage.clear();
+                      window.location.href = "/Home/pages/Login";
+                    }, 300);
+                  }}
+                  startIcon={
+                    loginLoading ? (
+                      <CircularProgress size={15} color="inherit" />
+                    ) : null
+                  }
+                  sx={{
+                    ...actionButtonSx,
+                    minWidth: 90,
+                  }}
+                >
+                  {loginLoading ? "Loading..." : "Login"}
+                </Button>
               </DialogActions>
             </Dialog>
           </Grid>
         );
-
-      case "privacy":
-        return (
-          <>
-            <Card sx={cardSx}>
-              <CardContent
-                sx={{
-                  p: { xs: 2, sm: 2.2 },
-                  "&:last-child": {
-                    pb: { xs: 2, sm: 2.2 },
-                  },
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: {
-                      xs: "flex-start",
-                      sm: "center",
-                    },
-                    justifyContent: "space-between",
-                    flexDirection: {
-                      xs: "column",
-                      sm: "row",
-                    },
-                    gap: 2,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      gap: 1.5,
-                      alignItems: "center",
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        flexShrink: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        borderRadius: "9px",
-                        bgcolor: "rgba(15,116,104,0.08)",
-                        color: "primary.main",
-                      }}
-                    >
-                      <SecurityOutlinedIcon
-                        sx={{ fontSize: 20 }}
-                      />
-                    </Box>
-
-                    <Box>
-                      <Typography sx={titleSx}>
-                        Account Security
-                      </Typography>
-
-                      <Typography sx={descriptionSx}>
-                        Your password is protected by the
-                        backend authentication service.
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Button
-                    variant="contained"
-                    onClick={() =>
-                      setOpenChangePassword(true)
-                    }
-                    sx={{
-                      ...actionButtonSx,
-                      width: {
-                        xs: "100%",
-                        sm: "auto",
-                      },
-                    }}
-                  >
-                    Change Password
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-
-            {changePasswordDialog}
-          </>
-        );
-
-      case "help":
-        return (
-          <Card sx={cardSx}>
-            <CardContent
-              sx={{
-                p: { xs: 2, sm: 2.2 },
-                "&:last-child": {
-                  pb: { xs: 2, sm: 2.2 },
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: {
-                    xs: "flex-start",
-                    sm: "center",
-                  },
-                  justifyContent: "space-between",
-                  flexDirection: {
-                    xs: "column",
-                    sm: "row",
-                  },
-                  gap: 2,
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      flexShrink: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderRadius: "9px",
-                      bgcolor: "rgba(15,116,104,0.08)",
-                      color: "primary.main",
-                    }}
-                  >
-                    <HelpOutlineOutlinedIcon
-                      sx={{ fontSize: 20 }}
-                    />
-                  </Box>
-
-                  <Box>
-                    <Typography sx={titleSx}>
-                      Need Assistance?
-                    </Typography>
-
-                    <Typography sx={descriptionSx}>
-                      Contact the Jeevan support team for
-                      account, request or report issues.
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Button
-                  variant="outlined"
-                  href="mailto:support@jeevan.com"
-                  sx={{
-                    ...actionButtonSx,
-                    width: {
-                      xs: "100%",
-                      sm: "auto",
-                    },
-                  }}
-                >
-                  Email Support
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
-        );
-
+     case "privacy":
+  return (
+    <UserPrivacySettings
+      onViewPrivacyPolicy={() => {
+      }}
+    />
+  );
+    case "help":
+  return (
+    <UserHelpSupport
+      onReportIssue={() => {
+        // Report Issue page/dialog open karo
+      }}
+      onPrivacyHelp={() => {
+        // Privacy help page/dialog open karo
+      }}
+    />
+  );
       case "device":
         return (
           <Card sx={cardSx}>
@@ -863,9 +690,7 @@ const handleChangePassword = async () => {
                     color: "primary.main",
                   }}
                 >
-                  <DevicesOutlinedIcon
-                    sx={{ fontSize: 20 }}
-                  />
+                  <DevicesOutlinedIcon sx={{ fontSize: 20 }} />
                 </Box>
 
                 <Box
@@ -874,13 +699,9 @@ const handleChangePassword = async () => {
                     flex: 1,
                   }}
                 >
-                  <Typography sx={titleSx}>
-                    Current Session
-                  </Typography>
+                  <Typography sx={titleSx}>Current Session</Typography>
 
-                  <Typography sx={descriptionSx}>
-                    This device
-                  </Typography>
+                  <Typography sx={descriptionSx}>This device</Typography>
 
                   <Box
                     sx={{
@@ -909,9 +730,7 @@ const handleChangePassword = async () => {
                   <Button
                     variant="outlined"
                     color="error"
-                    onClick={() =>
-                      setOpenLogoutDialog(true)
-                    }
+                    onClick={() => setOpenLogoutDialog(true)}
                     sx={{
                       ...actionButtonSx,
                       mt: 1.5,
@@ -956,19 +775,14 @@ const handleChangePassword = async () => {
                     color: "primary.main",
                   }}
                 >
-                  <PaletteOutlinedIcon
-                    sx={{ fontSize: 20 }}
-                  />
+                  <PaletteOutlinedIcon sx={{ fontSize: 20 }} />
                 </Box>
 
                 <Box sx={{ flex: 1 }}>
-                  <Typography sx={titleSx}>
-                    Appearance
-                  </Typography>
+                  <Typography sx={titleSx}>Appearance</Typography>
 
                   <Typography sx={descriptionSx}>
-                    Choose the theme preference for this
-                    browser.
+                    Choose the theme preference for this browser.
                   </Typography>
 
                   <Box
@@ -980,34 +794,20 @@ const handleChangePassword = async () => {
                     }}
                   >
                     <Button
-                      variant="contained"
-                      onClick={() => {
-                        localStorage.setItem(
-                          "theme",
-                          "light"
-                        );
-                        document.documentElement.dataset.theme =
-                          "light";
-                      }}
-                      sx={actionButtonSx}
-                    >
-                      Light
-                    </Button>
+  variant={mode === "light" ? "contained" : "outlined"}
+  onClick={() => setColorMode("light")}
+  sx={actionButtonSx}
+>
+  Light
+</Button>
 
-                    <Button
-                      variant="outlined"
-                      onClick={() => {
-                        localStorage.setItem(
-                          "theme",
-                          "dark"
-                        );
-                        document.documentElement.dataset.theme =
-                          "dark";
-                      }}
-                      sx={actionButtonSx}
-                    >
-                      Dark
-                    </Button>
+<Button
+  variant={mode === "dark" ? "contained" : "outlined"}
+  onClick={() => setColorMode("dark")}
+  sx={actionButtonSx}
+>
+  Dark
+</Button>
                   </Box>
                 </Box>
               </Box>
@@ -1015,93 +815,7 @@ const handleChangePassword = async () => {
           </Card>
         );
 
-      case "prescription":
-        return (
-          <Card sx={cardSx}>
-            <CardContent
-              sx={{
-                p: { xs: 2, sm: 2.2 },
-                "&:last-child": {
-                  pb: { xs: 2, sm: 2.2 },
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: {
-                    xs: "flex-start",
-                    sm: "center",
-                  },
-                  justifyContent: "space-between",
-                  flexDirection: {
-                    xs: "column",
-                    sm: "row",
-                  },
-                  gap: 2,
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      flexShrink: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderRadius: "9px",
-                      bgcolor: "rgba(15,116,104,0.08)",
-                      color: "primary.main",
-                    }}
-                  >
-                    <LocalPharmacyOutlinedIcon
-                      sx={{ fontSize: 20 }}
-                    />
-                  </Box>
-
-                  <Box>
-                    <Typography sx={titleSx}>
-                      Prescription Access
-                    </Typography>
-
-                    <Typography sx={descriptionSx}>
-                      Prescription management is available
-                      for doctors and patients. Lab users
-                      can manage test requests and reports
-                      here.
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    window.location.href =
-                      "/doctor/pages/prescription";
-                  }}
-                  sx={{
-                    ...actionButtonSx,
-                    width: {
-                      xs: "100%",
-                      sm: "auto",
-                    },
-                    flexShrink: 0,
-                  }}
-                >
-                  Open Prescription
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
-        );
-
+    
       default:
         return null;
     }
@@ -1111,11 +825,9 @@ const handleChangePassword = async () => {
     <>
       <Dialog
         open={openLogoutDialog}
-        onClose={() =>
-          setOpenLogoutDialog(false)
-        }
+        onClose={() => setOpenLogoutDialog(false)}
         aria-labelledby="logout-dialog-title"
-        maxWidth="xs"
+   
         fullWidth
         PaperProps={{
           sx: {
@@ -1127,8 +839,7 @@ const handleChangePassword = async () => {
             borderRadius: "12px",
             border: "1px solid",
             borderColor: "divider",
-            boxShadow:
-              "0 16px 40px rgba(15,23,42,0.12)",
+            boxShadow: "0 16px 40px rgba(15,23,42,0.12)",
           },
         }}
       >
@@ -1169,9 +880,7 @@ const handleChangePassword = async () => {
           }}
         >
           <Button
-            onClick={() =>
-              setOpenLogoutDialog(false)
-            }
+            onClick={() => setOpenLogoutDialog(false)}
             variant="outlined"
             sx={{
               ...actionButtonSx,
@@ -1183,41 +892,41 @@ const handleChangePassword = async () => {
             Cancel
           </Button>
 
-         <Button
-  onClick={handleLogoutConfirm}
-  variant="contained"
-  color="error"
-  disabled={logoutLoading}
-  startIcon={
-    logoutLoading ? (
-      <CircularProgress size={15} color="inherit" />
-    ) : null
-  }
-  sx={{
-    ...actionButtonSx,
-    minWidth: 100,
-  }}
->
-  {logoutLoading ? "Logging out..." : "Log Out"}
-</Button>
+          <Button
+            onClick={handleLogoutConfirm}
+            variant="contained"
+            color="error"
+            disabled={logoutLoading}
+            startIcon={
+              logoutLoading ? (
+                <CircularProgress size={15} color="inherit" />
+              ) : null
+            }
+            sx={{
+              ...actionButtonSx,
+              minWidth: 100,
+            }}
+          >
+            {logoutLoading ? "Logging out..." : "Log Out"}
+          </Button>
         </DialogActions>
       </Dialog>
 
       <Box
         sx={{
           width: "100%",
-          px: { xs: 1.5, sm: 2, md: 3 },
-          pb: 3,backgroundColor:"white",
-          height:"100vh",
-          pt:"80px"
+          pb: 3,
+
+          backgroundColor: "white",
+          height: "100vh",
+          pt: "65px",
         }}
-        >
+      >
         <Box
           sx={{
             width: "100%",
             minHeight: { xs: "auto", md: 520 },
             bgcolor: "background.paper",
-            borderRadius: "12px",
             overflow: "hidden",
           }}
         >
@@ -1227,6 +936,7 @@ const handleChangePassword = async () => {
               borderBottom: "1px solid",
               borderColor: "divider",
               overflowX: "auto",
+              pt:2,
               overflowY: "hidden",
               scrollbarWidth: "none",
               "&::-webkit-scrollbar": {
@@ -1244,17 +954,12 @@ const handleChangePassword = async () => {
               {menuItems.map((button) => (
                 <Button
                   key={button.key}
-                  onClick={() =>
-                    setActive(button.key)
-                  }
-                  startIcon={React.cloneElement(
-                    button.icon,
-                    {
-                      sx: {
-                        fontSize: "18px !important",
-                      },
-                    }
-                  )}
+                  onClick={() => setActive(button.key)}
+                  startIcon={React.cloneElement(button.icon, {
+                    sx: {
+                      fontSize: "18px !important",
+                    },
+                  })}
                   sx={{
                     position: "relative",
                     minWidth: "auto",
@@ -1264,12 +969,9 @@ const handleChangePassword = async () => {
                     whiteSpace: "nowrap",
                     textTransform: "none",
                     fontSize: "12.5px",
-                    fontWeight:
-                      active === button.key ? 700 : 500,
+                    fontWeight: active === button.key ? 700 : 500,
                     color:
-                      active === button.key
-                        ? "primary.main"
-                        : "text.secondary",
+                      active === button.key ? "primary.main" : "text.secondary",
                     bgcolor: "transparent",
                     "&::after": {
                       content: '""',
@@ -1280,13 +982,10 @@ const handleChangePassword = async () => {
                       height: 2,
                       borderRadius: "4px 4px 0 0",
                       bgcolor:
-                        active === button.key
-                          ? "primary.main"
-                          : "transparent",
+                        active === button.key ? "primary.main" : "transparent",
                     },
                     "&:hover": {
-                      bgcolor:
-                        "rgba(15,116,104,0.04)",
+                      bgcolor: "rgba(15,116,104,0.04)",
                       color: "primary.main",
                     },
                   }}
@@ -1300,7 +999,7 @@ const handleChangePassword = async () => {
           <Box
             sx={{
               p: { xs: 1.5, sm: 2, md: 2.5 },
-              minHeight: 320,
+              height: 620,
               overflowY: "auto",
             }}
           >
@@ -1312,18 +1011,14 @@ const handleChangePassword = async () => {
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={4000}
-        onClose={() =>
-          setSnackbarOpen(false)
-        }
+        onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{
           vertical: "top",
           horizontal: "right",
         }}
       >
         <Alert
-          onClose={() =>
-            setSnackbarOpen(false)
-          }
+          onClose={() => setSnackbarOpen(false)}
           severity={snackbarSeverity}
           variant="filled"
           sx={{

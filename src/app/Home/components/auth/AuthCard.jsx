@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Paper, Typography, Avatar, Fade } from "@mui/material";
+import { Box, Paper, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 
 export default function AuthCard({
@@ -17,22 +17,28 @@ export default function AuthCard({
           xs: "100%",
           md: "50%",
         },
-
+        height: {
+          xs: "auto",
+          md: "100%",
+        },
         backgroundColor: "background.paper",
-
         display: "flex",
-        py: 3,
         flexDirection: "column",
         justifyContent: "center",
-
         position: "relative",
         borderRadius: 0,
         overflow: "hidden",
-
-        border: "1px solid",
-        borderColor: "divider",
-
-        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
+        border: "none",
+       
+        px: {
+          xs: 3,
+          sm: 4,
+          md: 4,
+        },
+        py: {
+          xs: 4,
+          md: 3,
+        },
 
         "&::before": {
           content: '""',
@@ -40,112 +46,52 @@ export default function AuthCard({
           top: 0,
           left: 0,
           width: "100%",
-          height: "4px",
-
+          height: "3px",
           backgroundColor: "primary.main",
-
-          zIndex: 1,
-        },
-
-        "&::after": {
-          content: '""',
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          width: "100%",
-          height: "4px",
-
-          backgroundColor: "primary.main",
-
-          zIndex: 1,
         },
       }}
     >
-      <motion.div
-        initial={{
-          opacity: 0,
-          y: 20,
-        }}
-        animate={{
-          opacity: 1,
-          y: 0,
-        }}
-        transition={{
-          duration: 0.5,
-        }}
-      >
+      
         <Box
           sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-
             width: "100%",
-            maxWidth: 400,
-
+            maxWidth: 350,
             mx: "auto",
-            px: 2,
           }}
         >
           {icon && (
-            <motion.div
-              initial={{
-                scale: 0,
-              }}
-              animate={{
-                scale: 1,
-              }}
-              transition={{
-                type: "spring",
-                stiffness: 260,
-                damping: 20,
-                delay: 0.1,
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                mb: 1.5,
               }}
             >
-              <Avatar
+              <Box
+                component="img"
                 src={icon}
+                alt="Jeevan"
                 sx={{
-                  width: 100,
-                  height: 100,
-
-                  borderRadius: 4,
-
-                  mx: "auto",
-                  mb: 2,
-
-                  border: "3px solid",
-                  borderColor: "primary.main",
-
-                  backgroundColor: "background.paper",
-
-                  boxShadow:
-                    "0 8px 32px rgba(7, 135, 106, 0.20)",
-
-                  transition: "transform 0.3s ease",
-
-                  "&:hover": {
-                    transform: "scale(1.05) rotate(-5deg)",
-                  },
+                  width: 68,
+                  height: 68,
+                  objectFit: "contain",
                 }}
               />
-            </motion.div>
+            </Box>
           )}
 
           {title && (
             <Typography
-              variant="h4"
-              fontWeight={800}
-              textAlign="center"
-              mb={1}
               sx={{
+                textAlign: "center",
                 fontSize: {
-                  xs: "1.75rem",
-                  sm: "2rem",
+                  xs: "22px",
+                  md: "24px",
                 },
-
-                letterSpacing: "-0.5px",
-
+                lineHeight: 1.25,
+                fontWeight: 700,
                 color: "primary.main",
+                letterSpacing: "-0.4px",
               }}
             >
               {title}
@@ -154,34 +100,30 @@ export default function AuthCard({
 
           {subtitle && (
             <Typography
-              variant="body1"
-              textAlign="center"
-              mb={4}
               sx={{
+                mt: 0.7,
+                mb: 3,
+                textAlign: "center",
+                fontSize: "12.5px",
+                lineHeight: 1.5,
+                fontWeight: 400,
                 color: "text.secondary",
-
-                fontSize: "0.95rem",
-
-                maxWidth: "100%",
-                mx: "auto",
               }}
             >
               {subtitle}
             </Typography>
           )}
 
-          <Fade in timeout={600}>
-            <Box
-              sx={{
-                width: "100%",
-                color: "text.primary",
-              }}
-            >
-              {children}
-            </Box>
-          </Fade>
+          <Box
+            sx={{
+              width: "100%",
+              color: "text.primary",
+            }}
+          >
+            {children}
+          </Box>
         </Box>
-      </motion.div>
+      
     </Paper>
   );
 }
