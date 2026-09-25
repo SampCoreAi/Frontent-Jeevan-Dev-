@@ -19,12 +19,15 @@ This module covers the complete lab request and report workflow across doctor, p
 - View requested lab tests
 - View assigned lab and doctor details
 - See report delivery date/time
+- See lab-assigned collection date/time and queue token
 - View uploaded report if available
+- See doctor interpretation and next steps after report review
 - See rejection/cancel reason when applicable
 
 ### Lab User
 - Receive incoming lab requests from doctors
 - Set expected report delivery date and time
+- Assign collection date/time, queue token, and collection instructions
 - Update status through the workflow
 - Reject or cancel a request with a reason
 - Upload the final PDF report
@@ -98,6 +101,9 @@ Supported status values:
 ### Set report delivery date/time
 The lab user updates expected report delivery date/time in the lab request table.
 
+### Assign collection sequence
+The lab user can assign a collection slot, queue token, and instructions. The patient and assigned technician see the same values.
+
 ### Reject or cancel request
 When the lab chooses reject or cancel, a small dialog appears that requires a reason/comment before submission.
 
@@ -125,6 +131,7 @@ Each uploaded report includes:
 - status
 - upload date
 - downloadable link
+- doctor review status and interpretation, when reviewed
 
 ### Duplicate upload handling
 If a report is already uploaded for the same request and the user uploads again, the previous report is replaced with the new one instead of creating a duplicate entry.
@@ -153,8 +160,10 @@ This ensures the user can see why a request was rejected or cancelled.
 
 ### Patient view
 - Shows request status and report date
+- Shows collection date/time and queue token
 - Shows reason when status is rejected or cancelled
 - Shows uploaded report view button if report exists
+- Shows doctor interpretation and next steps after review
 - Includes SNO row numbers in the table
 
 ### Doctor view
@@ -162,6 +171,7 @@ This ensures the user can see why a request was rejected or cancelled.
 - Shows report date and note details
 - Allows cancel request with reason
 - Shows rejection/cancel reason in the visible record
+- Shows all reports and can add a clinical interpretation/follow-up comment
 
 ### Lab view
 - Shows request list with date-time input for expected report delivery
@@ -169,6 +179,7 @@ This ensures the user can see why a request was rejected or cancelled.
 - Shows top alert messages for success and error states
 - Requires reason input for reject/cancel operations
 - Blocks updates on cancelled requests
+- Uses server pagination for requests, reports, and technician tasks
 
 ---
 
@@ -214,6 +225,9 @@ The model layer includes:
 - Added user-facing error messages at the top of the UI
 - Prevented lab updates on cancelled requests
 - Compact reason dialogs for better UX
+- Added collection slot, queue token, and technician instructions
+- Added doctor report review and patient-visible interpretation
+- Added server pagination for high-volume request/report/task APIs
 
 ---
 

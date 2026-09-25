@@ -29,6 +29,8 @@ const getRows = (response) => response?.data?.data || [];
 const getErrorMessage = (error) =>
   error?.response?.data?.message || error?.message || "Unable to send lab request.";
 
+const SAMPLE_TYPES = ["BLOOD", "URINE", "SERUM", "PLASMA", "SWAB", "STOOL", "SPUTUM", "OTHER"];
+
 const normalizeLab = (lab = {}) => ({
   id: lab.id || lab.lab_id || lab.labId,
   name: lab.lab_name || lab.name || "Unnamed lab",
@@ -43,6 +45,7 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
   const [draftAssignments, setDraftAssignments] = useState([]);
   const [sent, setSent] = useState(false);
   const [priority, setPriority] = useState("NORMAL");
+  const [sampleType, setSampleType] = useState("BLOOD");
   const [loadingLabs, setLoadingLabs] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -67,6 +70,7 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
       setAssignments(savedAssignments);
       setDraftAssignments(savedAssignments);
       setSent(Boolean(saved?.sent));
+      setSampleType(saved?.sampleType || "BLOOD");
     } catch {
       setAssignments([]);
       setDraftAssignments([]);
@@ -80,11 +84,11 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
     if (!storageReady || !storageKey || typeof window === "undefined") return;
 
     if (assignments.length) {
-      window.localStorage.setItem(storageKey, JSON.stringify({ assignments, sent }));
+      window.localStorage.setItem(storageKey, JSON.stringify({ assignments, sent, sampleType }));
     } else {
       window.localStorage.removeItem(storageKey);
     }
-  }, [assignments, sent, storageKey, storageReady]);
+  }, [assignments, sampleType, sent, storageKey, storageReady]);
 
   useEffect(() => {
     if (!resetKey) return;
@@ -92,6 +96,7 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
     setAssignments([]);
     setDraftAssignments([]);
     setSent(false);
+    setSampleType("BLOOD");
     setTestInput("");
     setOpen(false);
     if (storageKey && typeof window !== "undefined") window.localStorage.removeItem(storageKey);
@@ -203,6 +208,7 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
               tests: [assignment.test],
               doctorNote: "Lab test requested from prescription pad.",
               priority,
+              sampleType,
             });
             return { test: assignment.test, created: true };
           } catch (requestError) {
@@ -325,6 +331,21 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
                   >
                     <MenuItem value="NORMAL" sx={{ fontSize: "12px" }}>Normal</MenuItem>
                     <MenuItem value="URGENT" sx={{ fontSize: "12px" }}>Urgent</MenuItem>
+                  </Select>
+                </FormControl>
+                <FormControl size="small" sx={{ width: { xs: 110, sm: 130 }, flexShrink: 0 }}>
+                  <InputLabel sx={{ fontSize: "12px" }}>Sample</InputLabel>
+                  <Select
+                    value={sampleType}
+                    label="Sample"
+                    onChange={(event) => setSampleType(event.target.value)}
+                    sx={{ fontSize: "12px", minHeight: 38 }}
+                  >
+                    {SAMPLE_TYPES.map((type) => (
+                      <MenuItem key={type} value={type} sx={{ fontSize: "12px" }}>
+                        {type}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Box>

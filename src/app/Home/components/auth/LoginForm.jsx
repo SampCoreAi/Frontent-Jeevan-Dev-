@@ -158,6 +158,7 @@ setTimeout(() => {
   else if (role === 4) router.replace("/lab/pages/dashboard");
   else if (role === 5) router.replace("/admin/pages/dashboard");
   else if (role === 6) router.replace("/medical/pages/dashboard");
+  else if (role === 7) router.replace("/lab/pages/technician");
   else {
     console.error("Invalid role_id:", resData?.user?.role_id);
     showMessage("Invalid user role", "error");

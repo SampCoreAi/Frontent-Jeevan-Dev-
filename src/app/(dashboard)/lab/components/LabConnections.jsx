@@ -329,9 +329,9 @@ export default function LabConnections({
                   variant="outlined"
                   sx={{
                     height: 23,
-                    bgcolor: statusStyle.bgcolor,
+                    bgcolor: "transparent",
                     color: statusStyle.color,
-                    borderColor: statusStyle.borderColor,
+                    border: 0,
                     fontSize: "9.5px",
                     fontWeight: 700,
                     letterSpacing: "0.02em",

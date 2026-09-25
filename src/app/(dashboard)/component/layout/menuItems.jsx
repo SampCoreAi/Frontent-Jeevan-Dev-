@@ -175,6 +175,11 @@ export const menuItems = {
       route: "/lab/pages/requests",
     },
     {
+      label: "Technicians",
+      icon: <GroupOutlined />,
+      route: "/lab/pages/technicians",
+    },
+    {
       label: "Reports",
       icon: <DescriptionOutlined />,
       route: "/lab/pages/reports",
@@ -271,6 +276,20 @@ export const menuItems = {
       label: "Setting",
       icon: <SettingsOutlined />,
       route: "/medical/pages/setting",
+    },
+  ],
+
+  // Lab technician
+  7: [
+    {
+      label: "Technician Dashboard",
+      icon: <AssignmentOutlined />,
+      route: "/lab/pages/technician",
+    },
+    {
+      label: "Setting",
+      icon: <SettingsOutlined />,
+      route: "/lab/pages/setting",
     },
   ],
 };

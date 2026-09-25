@@ -33,14 +33,32 @@ import { DataTable, SectionTitle, TableFilters } from "./LabUi";
 
 const REQUEST_STATUSES = [
   "PENDING",
+  "REQUESTED",
   "APPROVED",
+  "ACCEPTED",
   "REJECTED",
+  "SAMPLE_SCHEDULED",
   "SAMPLE_COLLECTED",
+  "RECOLLECTION_REQUIRED",
   "PROCESSING",
+  "REPORT_READY",
   "REPORT_UPLOADED",
   "COMPLETED",
   "CANCELLED",
 ];
+
+const STATUS_TRANSITIONS = {
+  PENDING: ["APPROVED", "REJECTED", "CANCELLED"],
+  REQUESTED: ["ACCEPTED", "REJECTED", "CANCELLED"],
+  APPROVED: ["SAMPLE_COLLECTED", "REJECTED", "CANCELLED"],
+  ACCEPTED: ["SAMPLE_SCHEDULED", "SAMPLE_COLLECTED", "CANCELLED"],
+  SAMPLE_SCHEDULED: ["SAMPLE_COLLECTED", "CANCELLED"],
+  SAMPLE_COLLECTED: ["PROCESSING", "RECOLLECTION_REQUIRED", "CANCELLED"],
+  RECOLLECTION_REQUIRED: ["SAMPLE_SCHEDULED", "SAMPLE_COLLECTED", "CANCELLED"],
+  PROCESSING: ["REPORT_READY", "REPORT_UPLOADED", "CANCELLED"],
+  REPORT_READY: ["REPORT_UPLOADED", "COMPLETED"],
+  REPORT_UPLOADED: ["REPORT_READY", "PROCESSING", "COMPLETED"],
+};
 
 const MAX_PDF_SIZE = 10 * 1024 * 1024;
 
@@ -67,8 +85,11 @@ export default function LabRequests({
   page = 1,
   pageSize = 10,
   onPageChange,
+  pagination,
   actionId,
   onStatusUpdate,
+  onReportDateUpdate,
+  onCollectionDetailsUpdate,
   uploading,
   onUploadReport,
   onDeleteReport,
@@ -76,6 +97,8 @@ export default function LabRequests({
   pendingUploadCount = 0,
   showDelayedOnly = false,
   onToggleDelayedUpload,
+  technicians = [],
+  onAssignTechnician,
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -85,6 +108,8 @@ export default function LabRequests({
   const [file, setFile] = useState(null);
   const [uploadError, setUploadError] = useState("");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [reasonDialog, setReasonDialog] = useState({
     open: false,
     request: null,
@@ -92,15 +117,19 @@ export default function LabRequests({
     note: "",
   });
   const [dateDrafts, setDateDrafts] = useState({});
+  const [collectionDialog, setCollectionDialog] = useState({
+    open: false,
+    request: null,
+    slot: "",
+    instructions: "",
+    token: "",
+  });
 
   const safeRequests = Array.isArray(requests) ? requests : [];
   const safeReports = Array.isArray(reports) ? reports : [];
   const safePageSize = Number(pageSize) > 0 ? Number(pageSize) : 10;
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(safeRequests.length / safePageSize)
-  );
+  const totalPages = pagination?.totalPages || Math.max(1, Math.ceil(safeRequests.length / safePageSize));
 
   const currentPage = Math.min(
     Math.max(Number(page) || 1, 1),
@@ -113,7 +142,7 @@ export default function LabRequests({
     safeRequests.length
   );
 
-  const visible = safeRequests.slice(startIndex, endIndex);
+  const visible = pagination ? safeRequests : safeRequests.slice(startIndex, endIndex);
 
   const selectedReport = uploadRequest
     ? safeReports.find(
@@ -205,6 +234,18 @@ export default function LabRequests({
     setActionAnchor(null);
   };
 
+  const openCollectionDetails = () => {
+    const request = uploadRequest;
+    setCollectionDialog({
+      open: true,
+      request,
+      slot: formatDateTimeInputValue(request?.collection_slot || request?.collectionSlot || ""),
+      instructions: request?.collection_instructions || request?.collectionInstructions || "",
+      token: request?.collection_token || request?.collectionToken || "",
+    });
+    closeActions();
+  };
+
   const openUpload = () => {
     setUploadDialogOpen(true);
     closeActions();
@@ -217,12 +258,27 @@ export default function LabRequests({
     setUploadError("");
   };
 
+  const openDeleteConfirmation = () => {
+    if (!selectedReport || !selectedReport.canDelete) return;
+    closeActions();
+    setDeleteError("");
+    setDeleteDialogOpen(true);
+  };
+
   const deleteReport = async () => {
     if (!selectedReport || !selectedReport.canDelete) return;
-    if (!window.confirm("Delete this uploaded report?")) return;
 
-    await onDeleteReport(selectedReport.id);
-    closeActions();
+    try {
+      await onDeleteReport(selectedReport.id);
+      setDeleteDialogOpen(false);
+      setUploadRequest(null);
+    } catch (requestError) {
+      setDeleteError(
+        requestError?.response?.data?.message ||
+          requestError?.message ||
+          "Unable to delete report."
+      );
+    }
   };
 
   const submitUpload = async (event) => {
@@ -235,7 +291,11 @@ export default function LabRequests({
       return;
     }
 
-    await onUploadReport(uploadRequest.id, file);
+    const result = await onUploadReport(uploadRequest.id, file);
+    if (result?.success === false) {
+      setUploadError(result.message || "Unable to upload report.");
+      return;
+    }
 
     setFile(null);
     setUploadError("");
@@ -368,6 +428,9 @@ export default function LabRequests({
       <DataTable
         columns={[
           "SNO",
+          "ORDER ID",
+          "SAMPLE",
+          "TECHNICIAN",
           "PATIENT",
           "DOCTOR",
           "TESTS",
@@ -375,7 +438,6 @@ export default function LabRequests({
           "REPORT BY",
           "STATUS",
           "REASON",
-          "UPDATE",
           "ACTION",
         ]}
         loading={loading}
@@ -449,6 +511,7 @@ export default function LabRequests({
           ).toUpperCase();
 
           const statusStyle = getStatusStyle(status);
+          const allowedStatuses = [status, ...(STATUS_TRANSITIONS[status] || [])];
           const priorityStyle = getPriorityStyle(priority);
           const updating = actionId === request.id;
           const cancelled = isCancelled(request);
@@ -484,6 +547,48 @@ export default function LabRequests({
                 }}
               >
                 {startIndex + index + 1}
+              </TableCell>
+
+              <TableCell sx={{ ...cellSx, fontWeight: 700, color: "#0B5C8E" }}>
+                {request.order_id || request.orderId || "-"}
+              </TableCell>
+
+              <TableCell sx={{ ...cellSx, fontWeight: 600 }}>
+                <Typography sx={{ fontSize: "12.5px", fontWeight: 600 }}>
+                  {request.sample_type || request.sampleType || "-"}
+                </Typography>
+                {request.collection_slot || request.collectionSlot ? (
+                  <Typography variant="caption" display="block" color="text.secondary">
+                    Collection: {new Date(request.collection_slot || request.collectionSlot).toLocaleString()}
+                  </Typography>
+                ) : null}
+                {request.collection_token || request.collectionToken ? (
+                  <Typography variant="caption" display="block" color="text.secondary">
+                    Token: {request.collection_token || request.collectionToken}
+                  </Typography>
+                ) : null}
+              </TableCell>
+
+              <TableCell sx={{ ...cellSx, minWidth: 190 }}>
+                <Select
+                  size="small"
+                  value={request.assigned_technician_email || ""}
+                  displayEmpty
+                  disabled={cancelled || actionId === request.id || !technicians.length}
+                  onChange={(event) => {
+                    if (event.target.value) onAssignTechnician?.(request.id, event.target.value);
+                  }}
+                  sx={{ minWidth: 175, height: 32, fontSize: "11px" }}
+                >
+                  <MenuItem value="" sx={{ fontSize: "11px" }}>
+                    {technicians.length ? "Assign technician" : "Add technician first"}
+                  </MenuItem>
+                  {technicians.map((technician) => (
+                    <MenuItem key={technician.email} value={technician.email} sx={{ fontSize: "11px" }}>
+                      {technician.full_name}
+                    </MenuItem>
+                  ))}
+                </Select>
               </TableCell>
 
               <TableCell
@@ -552,9 +657,9 @@ export default function LabRequests({
                   variant="outlined"
                   sx={{
                     height: 23,
-                    bgcolor: priorityStyle.bgcolor,
+                    bgcolor: "transparent",
                     color: priorityStyle.color,
-                    borderColor: priorityStyle.borderColor,
+                    border: 0,
                     fontSize: "9.5px",
                     fontWeight: 700,
                     "& .MuiChip-label": {
@@ -592,11 +697,7 @@ export default function LabRequests({
 
         if (nextValue === currentDateTimeValue) return;
 
-        onStatusUpdate(
-          request.id,
-          request.status || "PENDING",
-          nextValue
-        );
+        onReportDateUpdate?.(request.id, nextValue);
       }}
       disabled={updating || cancelled}
       InputLabelProps={{ shrink: true }}
@@ -632,22 +733,32 @@ export default function LabRequests({
 </TableCell>
 
               <TableCell sx={cellSx}>
-                <Chip
+                <Select
                   size="small"
-                  label={status.replaceAll("_", " ")}
-                  variant="outlined"
+                  value={status}
+                  onChange={(event) => handleStatusChange(request, event.target.value)}
+                  disabled={updating || cancelled}
                   sx={{
-                    height: 23,
-                    bgcolor: statusStyle.bgcolor,
+                    minWidth: 155,
+                    height: 32,
+                    borderRadius: "6px",
+                    bgcolor: "transparent",
                     color: statusStyle.color,
-                    borderColor: statusStyle.borderColor,
-                    fontSize: "9.5px",
+                    fontSize: "11px",
                     fontWeight: 700,
-                    "& .MuiChip-label": {
-                      px: 1,
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      border: 0,
                     },
+                    "& .MuiSvgIcon-root": { color: statusStyle.color },
+                    "& .MuiSelect-select": { py: 0.8 },
                   }}
-                />
+                >
+                  {REQUEST_STATUSES.map((item) => (
+                    <MenuItem key={item} value={item} disabled={!allowedStatuses.includes(item)} sx={{ fontSize: "12px" }}>
+                      {item.replaceAll("_", " ")}
+                    </MenuItem>
+                  ))}
+                </Select>
               </TableCell>
 
               <TableCell
@@ -683,48 +794,6 @@ export default function LabRequests({
                     —
                   </Typography>
                 )}
-              </TableCell>
-
-              <TableCell
-                sx={{
-                  ...cellSx,
-                  minWidth: 175,
-                }}
-              >
-                <Select
-                  size="small"
-                  value={request.status || "PENDING"}
-                  onChange={(event) =>
-                    handleStatusChange(
-                      request,
-                      event.target.value
-                    )
-                  }
-                  disabled={updating || cancelled}
-                  sx={{
-                    width: 165,
-                    height: 34,
-                    borderRadius: "6px",
-                    bgcolor: "#FFFFFF",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    "& .MuiSelect-select": {
-                      py: 0.8,
-                    },
-                  }}
-                >
-                  {REQUEST_STATUSES.map((item) => (
-                    <MenuItem
-                      key={item}
-                      value={item}
-                      sx={{
-                        fontSize: "12px",
-                      }}
-                    >
-                      {item.replaceAll("_", " ")}
-                    </MenuItem>
-                  ))}
-                </Select>
               </TableCell>
 
               <TableCell sx={cellSx}>
@@ -789,6 +858,11 @@ export default function LabRequests({
           Upload Report
         </MenuItem>
 
+        <MenuItem onClick={openCollectionDetails} disabled={uploadRequest ? isCancelled(uploadRequest) : false}>
+          <CalendarMonthOutlinedIcon sx={{ mr: 1, fontSize: 17, color: "#0B5C8E" }} />
+          Collection slot & instructions
+        </MenuItem>
+
         {selectedReport?.downloadUrl ? (
           <MenuItem
             component="a"
@@ -810,7 +884,7 @@ export default function LabRequests({
 
         {selectedReport ? (
           <MenuItem
-            onClick={deleteReport}
+            onClick={openDeleteConfirmation}
             disabled={!selectedReport.canDelete}
             sx={{
               color: selectedReport.canDelete
@@ -830,6 +904,118 @@ export default function LabRequests({
           </MenuItem>
         ) : null}
       </Menu>
+
+      <Dialog
+        open={collectionDialog.open}
+        onClose={() => actionId !== collectionDialog.request?.id && setCollectionDialog({ open: false, request: null, slot: "", instructions: "", token: "" })}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: "10px" } }}
+      >
+        <DialogTitle sx={{ fontSize: "16px", fontWeight: 700, color: "#123F66" }}>
+          Collection details
+        </DialogTitle>
+        <DialogContent sx={{ display: "grid", gap: 1.5, pt: 1 }}>
+          <Typography sx={{ fontSize: "12px", color: "#64748B" }}>
+            Set the appointment window and instructions the assigned technician should follow.
+          </Typography>
+          <TextField
+            size="small"
+            type="datetime-local"
+            label="Collection slot"
+            value={collectionDialog.slot}
+            onChange={(event) => setCollectionDialog((current) => ({ ...current, slot: event.target.value }))}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+          />
+          <TextField
+            size="small"
+            label="Collection token"
+            placeholder="Example: 12 or A-12"
+            value={collectionDialog.token}
+            onChange={(event) => setCollectionDialog((current) => ({ ...current, token: event.target.value }))}
+            helperText="Assigned by the lab for the collection sequence."
+            fullWidth
+          />
+          <TextField
+            size="small"
+            multiline
+            minRows={3}
+            label="Collection instructions"
+            placeholder="Example: Call the patient 30 minutes before arrival. Keep the sample refrigerated."
+            value={collectionDialog.instructions}
+            onChange={(event) => setCollectionDialog((current) => ({ ...current, instructions: event.target.value }))}
+            fullWidth
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 2.5, pb: 2 }}>
+          <Button onClick={() => setCollectionDialog({ open: false, request: null, slot: "", instructions: "", token: "" })} disabled={actionId === collectionDialog.request?.id} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            disabled={!collectionDialog.request || actionId === collectionDialog.request.id}
+            onClick={async () => {
+              const saved = await onCollectionDetailsUpdate?.(
+                collectionDialog.request.id,
+                collectionDialog.slot,
+                collectionDialog.instructions,
+                collectionDialog.token,
+              );
+              if (saved !== false) {
+                setCollectionDialog({ open: false, request: null, slot: "", instructions: "", token: "" });
+              }
+            }}
+            sx={{ textTransform: "none" }}
+          >
+            {actionId === collectionDialog.request?.id ? "Saving..." : "Save details"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setDeleteError("");
+        }}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: "10px" } }}
+      >
+        <DialogTitle sx={{ fontSize: "16px", fontWeight: 700, color: "#123F66" }}>
+          Delete uploaded report?
+        </DialogTitle>
+        <DialogContent>
+          {deleteError ? (
+            <Alert severity="error" sx={{ mb: 1.5, fontSize: "12px" }}>
+              {deleteError}
+            </Alert>
+          ) : null}
+          <Typography sx={{ fontSize: "13px", color: "#52646B", lineHeight: 1.6 }}>
+            This report will be removed from the request. You can upload a corrected PDF again while the request is not completed.
+          </Typography>
+          <Typography sx={{ mt: 1, fontSize: "12px", fontWeight: 700, color: "#334155" }}>
+            {selectedReport?.originalFileName || "Uploaded report"}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2.5, pb: 2 }}>
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            sx={{ textTransform: "none", color: "#52646B" }}
+          >
+            Keep report
+          </Button>
+          <Button
+            onClick={deleteReport}
+            color="error"
+            variant="contained"
+            sx={{ textTransform: "none" }}
+          >
+            Delete report
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog
         open={uploadDialogOpen}

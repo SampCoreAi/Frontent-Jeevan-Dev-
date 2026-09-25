@@ -99,6 +99,8 @@ const normalizeReport = (report = {}) => ({
     report.uploaded_at ||
     report.createdAt ||
     report.created_at,
+  reviewStatus: report.reviewStatus || report.review_status || "AWAITING_REVIEW",
+  doctorComment: report.doctorComment || report.doctor_comment || "",
 });
 
 export default function PatientLabPanel() {
@@ -281,10 +283,15 @@ gap: { xs: 2, md: 3 },
         {...filterProps}
         statusOptions={[
           "PENDING",
+          "REQUESTED",
           "APPROVED",
+          "ACCEPTED",
           "REJECTED",
+          "SAMPLE_SCHEDULED",
           "SAMPLE_COLLECTED",
+          "RECOLLECTION_REQUIRED",
           "PROCESSING",
+          "REPORT_READY",
           "REPORT_UPLOADED",
           "COMPLETED",
           "CANCELLED",
@@ -315,12 +322,18 @@ gap: { xs: 2, md: 3 },
         <DataTable
           columns={[
             "SNO",
+            "ORDER ID",
+            "SAMPLE",
             "LAB",
             "ADDRESS",
             "DOCTOR",
             "TESTS",
             "PRIORITY",
+            "REPORT REVIEW",
+            "DOCTOR INTERPRETATION / NEXT STEPS",
             "REPORT BY",
+            "COLLECTION DATE & TIME",
+            "TOKEN",
             "STATUS",
             "REASON",
             "REPORT",
@@ -350,6 +363,14 @@ gap: { xs: 2, md: 3 },
               <TableRow key={request.id || `${request.labName}-${index}`} hover>
                 <TableCell sx={{ ...cellSx, fontWeight: 600 }}>
                   {(tablePage - 1) * pageSize + index + 1}
+                </TableCell>
+
+                <TableCell sx={{ ...cellSx, fontWeight: 700, color: "#0B5C8E" }}>
+                  {request.order_id || request.orderId || "-"}
+                </TableCell>
+
+                <TableCell sx={{ ...cellSx, fontWeight: 600 }}>
+                  {request.sample_type || request.sampleType || "-"}
                 </TableCell>
 
                 <TableCell
@@ -399,12 +420,39 @@ gap: { xs: 2, md: 3 },
                   <Chip
                     size="small"
                     label={request.priority || "NORMAL"}
-                    color={request.priority === "URGENT" ? "error" : "default"}
                     sx={{
                       height: 24,
                       fontSize: "12.5px",
+                      bgcolor: "transparent",
+                      border: 0,
+                      color: request.priority === "URGENT" ? "#DC2626" : "#64748B",
                     }}
                   />
+                </TableCell>
+
+                <TableCell sx={cellSx}>
+                  {request.report ? (
+                    <Chip
+                      size="small"
+                      label={String(request.report.reviewStatus || "AWAITING_REVIEW").replaceAll("_", " ")}
+                      color={request.report.reviewStatus === "REVIEWED" ? "success" : "warning"}
+                      sx={{ height: 24, fontSize: "12px", fontWeight: 700, bgcolor: "transparent", border: 0, color: request.report.reviewStatus === "REVIEWED" ? "#15803D" : "#B45309" }}
+                    />
+                  ) : (
+                    "-"
+                  )}
+                </TableCell>
+
+                <TableCell
+                  sx={{
+                    ...secondaryCellSx,
+                    minWidth: 190,
+                    maxWidth: 280,
+                    whiteSpace: "normal",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {request.report?.doctorComment || "Doctor interpretation is not available yet."}
                 </TableCell>
 
                 <TableCell
@@ -419,14 +467,36 @@ gap: { xs: 2, md: 3 },
                   )}
                 </TableCell>
 
+                <TableCell
+                  sx={{
+                    ...secondaryCellSx,
+                    minWidth: 160,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {formatDateTime(
+                    request.collection_slot || request.collectionSlot,
+                  )}
+                </TableCell>
+
+                <TableCell sx={{ ...cellSx, minWidth: 80 }}>
+                  <Chip
+                    size="small"
+                    label={request.collection_token || request.collectionToken || "Not assigned"}
+                    sx={{ height: 24, fontSize: "12.5px", fontWeight: 700, bgcolor: "transparent", border: 0, color: request.collection_token || request.collectionToken ? "#0B5C8E" : "#64748B" }}
+                  />
+                </TableCell>
+
                 <TableCell sx={cellSx}>
                   <Chip
                     size="small"
                     label={status}
-                    color={getStatusColor(status)}
                     sx={{
                       height: 24,
                       fontSize: "12.5px",
+                      bgcolor: "transparent",
+                      border: 0,
+                      color: status === "COMPLETED" ? "#15803D" : status === "REJECTED" || status === "CANCELLED" ? "#DC2626" : status === "PENDING" ? "#B45309" : "#0B5C8E",
                     }}
                   />
                 </TableCell>

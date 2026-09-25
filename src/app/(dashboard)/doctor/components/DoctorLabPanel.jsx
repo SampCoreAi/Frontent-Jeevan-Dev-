@@ -107,7 +107,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
     date: "",
   });
   const [tablePage, setTablePage] = useState(1);
-  const [showPreviousReports, setShowPreviousReports] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -246,6 +245,23 @@ export default function DoctorLabPanel({ section = "connections" }) {
       setError(
         getErrorMessage(requestError, "Unable to load lab reports.")
       );
+    }
+  };
+
+  const reviewReport = async (reportId, comment) => {
+    try {
+      const numericReportId = Number(reportId);
+      if (!Number.isInteger(numericReportId) || numericReportId < 1) {
+        setError("This report does not have a valid report ID yet.");
+        return false;
+      }
+      await api.patch(`/api/lab-reports/${numericReportId}/review`, { comment });
+      await loadReports();
+      setNotice("Lab report marked as reviewed.");
+      return true;
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Unable to review lab report."));
+      return false;
     }
   };
 
@@ -557,40 +573,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
       }),
     [reportRows]
   );
-
-  const latestReportRows = useMemo(() => {
-    const latestByGroup = new Map();
-
-    sortedReportRows.forEach((row) => {
-      const key = getReportGroupKey(row);
-      const previous = latestByGroup.get(key);
-
-      if (!previous || getReportDateTimestamp(row) > getReportDateTimestamp(previous)) {
-        latestByGroup.set(key, row);
-      }
-    });
-
-    return [...latestByGroup.values()];
-  }, [sortedReportRows]);
-
-  const previousReportRows = useMemo(() => {
-    const latestByGroup = new Map();
-
-    sortedReportRows.forEach((row) => {
-      const key = getReportGroupKey(row);
-      const previous = latestByGroup.get(key);
-
-      if (!previous || getReportDateTimestamp(row) > getReportDateTimestamp(previous)) {
-        latestByGroup.set(key, row);
-      }
-    });
-
-    return sortedReportRows.filter((row) => {
-      const key = getReportGroupKey(row);
-      const latestRow = latestByGroup.get(key);
-      return latestRow && latestRow.id !== row.id;
-    });
-  }, [sortedReportRows]);
 
   if (section === "connections") {
     const connectionCardSx = {
@@ -961,10 +943,15 @@ export default function DoctorLabPanel({ section = "connections" }) {
           {...filterProps}
           statusOptions={[
             "PENDING",
+            "REQUESTED",
             "APPROVED",
+            "ACCEPTED",
             "REJECTED",
+            "SAMPLE_SCHEDULED",
             "SAMPLE_COLLECTED",
+            "RECOLLECTION_REQUIRED",
             "PROCESSING",
+            "REPORT_READY",
             "REPORT_UPLOADED",
             "COMPLETED",
             "CANCELLED",
@@ -973,6 +960,8 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
         <DataTable
           columns={[
+            "ORDER ID",
+            "SAMPLE",
             "PATIENT",
             "LAB",
             "TESTS",
@@ -1001,6 +990,14 @@ export default function DoctorLabPanel({ section = "connections" }) {
           {visibleRequests.length
             ? visibleRequests.map((request) => (
                 <TableRow key={request.id} hover>
+                  <TableCell sx={{ color: "#0B5C8E", fontWeight: 700 }}>
+                    {request.order_id || request.orderId || "-"}
+                  </TableCell>
+
+                  <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>
+                    {request.sample_type || request.sampleType || "-"}
+                  </TableCell>
+
                   <TableCell
                     sx={{
                       color: "text.primary",
@@ -1111,16 +1108,13 @@ export default function DoctorLabPanel({ section = "connections" }) {
     return (
       <Box sx={{ mt: { xs: 7, md: 8 },px:4,py:2 , backgroundColor:"white" }}>
         <LabReports
-          reports={showPreviousReports ? previousReportRows : latestReportRows}
-          previousReportsCount={previousReportRows.length}
-          showPrevious={showPreviousReports}
-          onShowCurrent={() => setShowPreviousReports(false)}
-          onShowPrevious={() => setShowPreviousReports(true)}
+          reports={reportRows}
           loading={loading}
           filters={filterProps}
           page={tablePage}
           pageSize={pageSize}
           onPageChange={setTablePage}
+          onReview={reviewReport}
         />
 
         <Snackbar
