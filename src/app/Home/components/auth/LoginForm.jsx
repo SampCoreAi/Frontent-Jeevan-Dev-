@@ -41,10 +41,6 @@ export default function LoginForm({
     return;
   }
 
-  // =========================
-  // VALIDATION
-  // =========================
-
   const validateForm = () => {
     if (!email.trim() || !password.trim()) {
       return "All fields are required";
@@ -56,10 +52,6 @@ export default function LoginForm({
 
     return null;
   };
-
-  // =========================
-  // ERROR MESSAGE
-  // =========================
 
   const getErrorMessage = (error) => {
     if (!error.response) {
@@ -88,10 +80,6 @@ export default function LoginForm({
       "Something went wrong. Please try again."
     );
   };
-
-  // =========================
-  // LOGIN
-  // =========================
 
   const handleLogin = async () => {
     if (loading) return;
@@ -149,20 +137,48 @@ export default function LoginForm({
         "Login successful!",
         "success"
       );
-setTimeout(() => {
-  const role = Number(resData?.user?.role_id);
 
-  if (role === 1) router.replace("/users/pages/doctor");
-  else if (role === 2) router.replace("/doctor/pages/dashboard");
-  else if (role === 3) router.replace("/doctor/pages/dashboard");
-  else if (role === 4) router.replace("/lab/pages/dashboard");
-  else if (role === 5) router.replace("/admin/pages/dashboard");
-  else if (role === 6) router.replace("/medical/pages/dashboard");
-  else {
-    console.error("Invalid role_id:", resData?.user?.role_id);
-    showMessage("Invalid user role", "error");
-  }
-}, 1500);
+      setTimeout(() => {
+        const role = Number(
+          resData?.user?.role_id
+        );
+
+        if (role === 1)
+          router.replace(
+            "/users/pages/doctor"
+          );
+        else if (role === 2)
+          router.replace(
+            "/doctor/pages/dashboard"
+          );
+        else if (role === 3)
+          router.replace(
+            "/doctor/pages/dashboard"
+          );
+        else if (role === 4)
+          router.replace(
+            "/lab/pages/dashboard"
+          );
+        else if (role === 5)
+          router.replace(
+            "/admin/pages/dashboard"
+          );
+        else if (role === 6)
+          router.replace(
+            "/medical/pages/dashboard"
+          );
+        else {
+          console.error(
+            "Invalid role_id:",
+            resData?.user?.role_id
+          );
+
+          showMessage(
+            "Invalid user role",
+            "error"
+          );
+        }
+      }, 1500);
     } catch (error) {
       if (
         error.name === "AbortError" ||
@@ -184,12 +200,49 @@ setTimeout(() => {
     }
   };
 
+  const inputStyle = {
+    borderRadius: 1.5,
+    backgroundColor: "background.default",
+    transition: "all 0.2s ease",
+
+    "&:hover": {
+      backgroundColor: "background.default",
+    },
+
+    "&.Mui-focused": {
+      backgroundColor: "background.paper",
+    },
+
+    "& .MuiOutlinedInput-notchedOutline": {
+      borderColor: "divider",
+      borderWidth: "1px",
+    },
+
+    "&:hover .MuiOutlinedInput-notchedOutline":
+      {
+        borderColor: "primary.main",
+      },
+
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline":
+      {
+        borderColor: "primary.main",
+        borderWidth: "1.5px",
+      },
+
+    "& .MuiInputBase-input": {
+      py: 1.35,
+      fontSize: "13px",
+      color: "text.primary",
+
+      "&::placeholder": {
+        color: "text.secondary",
+        opacity: 1,
+      },
+    },
+  };
+
   return (
     <>
-      {/* =========================
-          EMAIL
-      ========================= */}
-
       <TextField
         fullWidth
         placeholder="Email Address"
@@ -209,78 +262,25 @@ setTimeout(() => {
               <EmailIcon
                 sx={{
                   color: "primary.main",
-                  fontSize: 20,
+                  fontSize: 18,
                 }}
               />
             </InputAdornment>
           ),
         }}
         sx={{
-          mb: 2.5,
+          mb: 1.8,
 
-          "& .MuiOutlinedInput-root": {
-            borderRadius: 2,
-
-            backgroundColor:
-              "background.default",
-
-            transition: "all 0.2s ease",
-
-            "&:hover": {
-              backgroundColor:
-                "secondary.light",
-            },
-
-            "&.Mui-focused": {
-              backgroundColor:
-                "background.paper",
-            },
-
-            "& .MuiOutlinedInput-notchedOutline":
-              {
-                borderColor: "divider",
-                borderWidth: "1.5px",
-              },
-
-            "&:hover .MuiOutlinedInput-notchedOutline":
-              {
-                borderColor:
-                  "primary.main",
-              },
-
-            "&.Mui-focused .MuiOutlinedInput-notchedOutline":
-              {
-                borderColor:
-                  "primary.main",
-
-                borderWidth: "2px",
-              },
-          },
-
-          "& .MuiInputBase-input": {
-            py: 1.8,
-
-            fontSize: "0.95rem",
-
-            color: "text.primary",
-
-            "&::placeholder": {
-              color: "text.secondary",
-              opacity: 1,
-            },
-          },
+          "& .MuiOutlinedInput-root":
+            inputStyle,
         }}
       />
-
-      {/* =========================
-          PASSWORD
-      ========================= */}
 
       <FormControl
         fullWidth
         variant="outlined"
         sx={{
-          mb: 1,
+          mb: 0.8,
         }}
       >
         <OutlinedInput
@@ -304,7 +304,7 @@ setTimeout(() => {
               <LockIcon
                 sx={{
                   color: "primary.main",
-                  fontSize: 20,
+                  fontSize: 18,
                 }}
               />
             </InputAdornment>
@@ -318,115 +318,60 @@ setTimeout(() => {
                   )
                 }
                 edge="end"
+                size="small"
                 sx={{
                   color: "text.secondary",
 
                   "&:hover": {
                     color: "primary.main",
-
                     backgroundColor:
                       "secondary.light",
                   },
                 }}
               >
                 {showPassword ? (
-                  <VisibilityOff />
+                  <VisibilityOff
+                    sx={{
+                      fontSize: 19,
+                    }}
+                  />
                 ) : (
-                  <Visibility />
+                  <Visibility
+                    sx={{
+                      fontSize: 19,
+                    }}
+                  />
                 )}
               </IconButton>
             </InputAdornment>
           }
-          sx={{
-            borderRadius: 2,
-
-            backgroundColor:
-              "background.default",
-
-            transition: "all 0.2s ease",
-
-            "&:hover": {
-              backgroundColor:
-                "secondary.light",
-            },
-
-            "&.Mui-focused": {
-              backgroundColor:
-                "background.paper",
-            },
-
-            "& .MuiOutlinedInput-notchedOutline":
-              {
-                borderColor: "divider",
-                borderWidth: "1.5px",
-              },
-
-            "&:hover .MuiOutlinedInput-notchedOutline":
-              {
-                borderColor:
-                  "primary.main",
-              },
-
-            "&.Mui-focused .MuiOutlinedInput-notchedOutline":
-              {
-                borderColor:
-                  "primary.main",
-
-                borderWidth: "2px",
-              },
-
-            "& .MuiInputBase-input": {
-              py: 1.8,
-
-              fontSize: "0.95rem",
-
-              color: "text.primary",
-
-              "&::placeholder": {
-                color: "text.secondary",
-                opacity: 1,
-              },
-            },
-          }}
+          sx={inputStyle}
         />
       </FormControl>
-
-      {/* =========================
-          FORGOT PASSWORD
-      ========================= */}
 
       <Box
         sx={{
           display: "flex",
-
           justifyContent: "flex-end",
-
           alignItems: "center",
-
           width: "100%",
-
-          mb: 3,
-          mt: 0.5,
+          mb: 2.3,
+          mt: 0.3,
         }}
       >
         <Typography
           onClick={onForgotPassword}
           sx={{
             color: "primary.main",
-
             cursor: "pointer",
-
             fontWeight: 600,
-
-            fontSize: "0.9rem",
-
+            fontSize: "12.5px",
             transition:
               "all 0.2s ease",
 
             "&:hover": {
               textDecoration:
                 "underline",
-
               color: "primary.dark",
             },
           }}
@@ -435,48 +380,36 @@ setTimeout(() => {
         </Typography>
       </Box>
 
-      {/* =========================
-          LOGIN BUTTON
-      ========================= */}
-
       <Button
         fullWidth
         variant="contained"
         color="primary"
-        size="large"
         onClick={handleLogin}
         disabled={loading}
         sx={{
-          borderRadius: 2,
-
-          py: 1.8,
-
-          fontSize: "1rem",
-
+          borderRadius: 1.5,
+          py: 1.25,
+          minHeight: 42,
+          fontSize: "13px",
           fontWeight: 600,
-
-          minHeight: 52,
-
+          textTransform: "none",
+          boxShadow: "none",
           transition:
-            "all 0.3s ease",
+            "all 0.2s ease",
 
           "&:hover": {
-            transform:
-              "translateY(-2px)",
-
             boxShadow:
-              "0 6px 20px rgba(7, 135, 106, 0.25)",
+              "0 5px 15px rgba(7,135,106,0.18)",
           },
 
           "&:active": {
-            transform:
-              "translateY(0)",
+            transform: "scale(0.99)",
           },
         }}
       >
         {loading ? (
           <CircularProgress
-            size={26}
+            size={20}
             sx={{
               color:
                 "primary.contrastText",
@@ -486,6 +419,53 @@ setTimeout(() => {
           "Log In"
         )}
       </Button>
+
+      <Box
+        sx={{
+          mt: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 0.5,
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: "12.5px",
+            color: "text.secondary",
+          }}
+        >
+          Don&apos;t have an account?
+        </Typography>
+
+        <Button
+          type="button"
+          variant="text"
+          onClick={() =>
+            router.push(
+              "/Home/pages/Register"
+            )
+          }
+          sx={{
+            minWidth: "auto",
+            p: 0,
+            fontSize: "12.5px",
+            fontWeight: 700,
+            color: "primary.main",
+            textTransform: "none",
+
+            "&:hover": {
+              backgroundColor:
+                "transparent",
+              color: "primary.dark",
+              textDecoration:
+                "underline",
+            },
+          }}
+        >
+          Register
+        </Button>
+      </Box>
     </>
   );
 }
