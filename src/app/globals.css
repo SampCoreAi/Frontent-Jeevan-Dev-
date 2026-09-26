@@ -1,22 +1,7 @@
-/* :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-} */
-
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;300&display=swap');
-
 @import "tailwindcss";
-.base {
-  color: transparent;
-  -webkit-text-stroke: 1.5px #333;
+
+* {
+  box-sizing: border-box;
 }
 
 html {
@@ -24,53 +9,70 @@ html {
   scrollbar-gutter: stable;
 }
 
+html,
 body {
   margin: 0;
-  padding: 0 !important; /* MUI ki inline padding ko override karne ke liye */
+  padding: 0;
 }
 
-
-
-.highlight {
-  color: #1e6658;
-  mask-image: radial-gradient(
-    circle at var(--x, -999px) var(--y, -999px),
-    #000 0px,
-    #000 60px,
-    rgba(0,0,0,0.55) 100px,
-    rgba(0,0,0,0.18) 150px,
-    transparent 190px
-  );
-  -webkit-mask-image: radial-gradient(
-    circle at var(--x, -999px) var(--y, -999px),
-    #000 0px,
-    #000 60px,
-    rgba(0,0,0,0.55) 100px,
-    rgba(0,0,0,0.18) 150px,
-    transparent 190px
-  );
+body {
+  padding: 0 !important;
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
 }
 
-
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
 
 a {
   color: inherit;
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+.base {
+  color: transparent;
+  -webkit-text-stroke: 1.5px #333;
 }
 
+.highlight {
+  color: #1e6658;
+
+  mask-image: radial-gradient(
+    circle at var(--x, -999px) var(--y, -999px),
+    #000 0px,
+    #000 60px,
+    rgba(0, 0, 0, 0.55) 100px,
+    rgba(0, 0, 0, 0.18) 150px,
+    transparent 190px
+  );
+
+  -webkit-mask-image: radial-gradient(
+    circle at var(--x, -999px) var(--y, -999px),
+    #000 0px,
+    #000 60px,
+    rgba(0, 0, 0, 0.55) 100px,
+    rgba(0, 0, 0, 0.18) 150px,
+    transparent 190px
+  );
+}
 
 .blink-emergency {
   animation: blink 1s infinite;
 }
 
 @keyframes blink {
-  0% { background-color: #ca0d23; }
-  50% { background-color: #ff3b3b; }
-  100% { background-color: #ca0d23; }
+  0% {
+    background-color: #ca0d23;
+  }
+
+  50% {
+    background-color: #ff3b3b;
+  }
+
+  100% {
+    background-color: #ca0d23;
+  }
 }

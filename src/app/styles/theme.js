@@ -92,9 +92,12 @@ const getTheme = (mode) => {
       borderRadius: 8,
     },
 
-    typography: {
-      fontFamily:
-        'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
+typography: {
+  fontFamily: "var(--font-inter), Arial, Helvetica, sans-serif",
+  button: {
+    textTransform: "none",
+    fontFamily: "var(--font-inter), Arial, Helvetica, sans-serif",
+  },
 
       h1: {
         fontWeight: 700,
@@ -128,10 +131,6 @@ const getTheme = (mode) => {
         color: isDark ? "#A7B0BA" : "#596575",
       },
 
-      button: {
-        textTransform: "none",
-        fontWeight: 600,
-      },
     },
 
     components: {

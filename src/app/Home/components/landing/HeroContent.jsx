@@ -1,173 +1,344 @@
 "use client";
-import React, { useEffect, useState } from "react";
+
+import React from "react";
 import { Box, Typography } from "@mui/material";
-import { styled, keyframes } from "@mui/material";
-const words = [
-  "Doctors",
-  "Specialists",
-  "Hospitals",
-  "Healthcare",
-];
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { keyframes } from "@mui/system";
+
+const fadeUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
 
 const pulse = keyframes`
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(18, 184, 145, 0.28);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(18, 184, 145, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(18, 184, 145, 0);
+  }
 `;
-
-const slideUpFade = keyframes`
-  0% { opacity: 0; transform: translateY(40px); }
-  100% { opacity: 1; transform: translateY(0); }
-`;
-
-const shimmer = keyframes`
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
-`;
-
-const heartbeat = keyframes`
-  0%, 100% { transform: scale(1); }
-  10% { transform: scale(1.1); }
-  20% { transform: scale(1); }
-  30% { transform: scale(1.1); }
-  40% { transform: scale(1); }
-`;
-
-const GradientText = styled("span")({
-  background: "linear-gradient(135deg, #1e6658 0%, #2dd4a0 50%, #1e6658 100%)",
-  backgroundSize: "200% auto",
-  WebkitBackgroundClip: "text",
-  WebkitTextFillColor: "transparent",
-
-  display: "inline-block",
-  fontWeight: 800,
-  minWidth: "240px",
-  textAlign: "center",
-
-  border: "2px solid #1e6658",
-  borderRadius: "12px",
-  padding: "8px 20px", // px:3 py:1 ki jagah
-
-  transition: "all 0.5s ease",
-  animation: `${shimmer} 3s linear infinite`,
-});
 
 export default function HeroContent() {
-  const [currentWord, setCurrentWord] = useState(0);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentWord((prev) => (prev + 1) % words.length);
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
   return (
-    <Box sx={{ maxWidth: 1000, mx: "auto", px: { xs: 2, sm: 0 } }}>
-      {/* Badge */}
+    <Box
+      sx={{
+        width: "100%",
+        mx: "auto",
+        textAlign: "center",
+        fontFamily: "var(--font-inter), Arial, sans-serif",
+        px: {
+          xs: 2,
+          sm: 3,
+          md: 4,
+        },
+        pt: {
+          xs: 2,
+          sm: 2.5,
+          md: 2,
+        },
+      }}
+    >
       <Box
         sx={{
           display: "inline-flex",
           alignItems: "center",
-          gap: 1,
-          
-          bgcolor: "rgba(30, 102, 88, 0.1)",
-          color: "#1e6658",
-          px: { xs: 1.5, sm: 2 },
-          py: { xs: 0.5, sm: 0.75 },
-          borderRadius: "50px",
-          mb: 3,
-          fontSize: { xs: "0.75rem", sm: "0.875rem" },
-          fontWeight: 600,
-          flexWrap: "wrap",
           justifyContent: "center",
-          textAlign: "center",
-          maxWidth: { xs: "100%", sm: "fit-content" },
-          animation: `${pulse} 2s infinite`,
-          cursor: "default",
-          "&:hover": {
-            animation: `${heartbeat} 1s ease-in-out`,
+          gap: "8px",
+
+          height: {
+            xs: "38px",
+            md: "40px",
           },
+
+          px: "13px",
+
+          mb: {
+            xs: "28px",
+            sm: "30px",
+            md: "20px",
+          },
+
+          bgcolor: "white",
+          border: "1px solid #BCE8DE",
+          borderRadius: "999px",
+
+          boxShadow: "0 8px 24px rgba(7, 135, 106, 0.04)",
+
+          animation: `${fadeUp} 0.45s ease-out`,
         }}
       >
         <Box
           sx={{
-            width: { xs: 6, sm: 8 },
-            height: { xs: 6, sm: 8 },
-            bgcolor: "#22c55e",
+            width: "8px",
+            height: "8px",
+            flexShrink: 0,
             borderRadius: "50%",
+            bgcolor: "#2DBF98",
             animation: `${pulse} 2s infinite`,
           }}
         />
-        Available Now - 500+ Doctors Online
+
+        <Typography
+          component="span"
+          sx={{
+            fontFamily: "inherit",
+            fontSize: {
+              xs: "11.5px",
+              sm: "12px",
+              md: "12.5px",
+            },
+            lineHeight: 1,
+            fontWeight: 700,
+            color: "#007D68",
+            letterSpacing: "-0.01em",
+            whiteSpace: "nowrap",
+          }}
+        >
+          500+ doctors available now
+        </Typography>
+
+        <Box
+          sx={{
+          
+            ml: "2px",
+
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+
+            flexShrink: 0,
+
+         
+            color: "#078F73",
+
+          }}
+        >
+          <ArrowForwardIcon
+            sx={{
+              fontSize: "15px",
+            }}
+          />
+        </Box>
+      </Box>
+      <Typography
+        component="h1"
+        sx={{
+          maxWidth: "900px",
+          margin: "5px auto 0",
+          color: "#172033",
+   userSelect: "none",
+      WebkitUserSelect: "none",
+          fontFamily: "Inter, Arial, sans-serif",
+          fontSize: "clamp(46px, 5vw, 78px)",
+          fontWeight: 500,
+          lineHeight: 1.03,
+          letterSpacing: "-3.3px",
+
+          "@media (max-width: 900px)": {
+            fontSize: "47px",
+          },
+
+          "@media (max-width: 650px)": {
+            fontSize: "38px",
+            letterSpacing: "-2px",
+          },
+        }}
+      >
+        Better care starts with the
+       <Box
+  component="span"
+  sx={{
+    display: "block",
+    mt: "5px",
+    fontFamily: "inherit",
+    fontSize: "inherit",
+    fontWeight: "inherit",
+    lineHeight: "inherit",
+    letterSpacing: "inherit",
+  }}
+>
+  <Box
+    component="span"
+    sx={{
+      position: "relative",
+      display: "inline-block",
+      color: "#07876A",
+      px: "12px",
+      py: "1px",
+      zIndex: 1,
+
+      userSelect: "none",
+      WebkitUserSelect: "none",
+
+      "&::before": {
+        content: '""',
+        position: "absolute",
+
+        left: "2px",
+        right: "2px",
+        top: "12%",
+        bottom: "5%",
+
+        background:
+          "linear-gradient(100deg, #DDF8B7 0%, #CFF5A3 50%, #D9F8AE 100%)",
+
+        borderRadius: "3px 1px 3px 2px",
+
+        transform: "rotate(-0.5deg)",
+        zIndex: -1,
+
+        boxShadow:
+          "0 3px 12px rgba(7,135,106,0.05)",
+      },
+    }}
+  >
+    right doctor.
+  </Box>
+</Box>
+      </Typography>
+
+      <Typography
+        component="p"
+        sx={{
+          m: 0,
+
+          mt: {
+            xs: "24px",
+            sm: "27px",
+            md: "28px",
+          },
+
+          mx: "auto",
+   userSelect: "none",
+      WebkitUserSelect: "none",
+          maxWidth: {
+            xs: "500px",
+            sm: "650px",
+            md: "720px",
+          },
+
+          px: {
+            xs: 1,
+            sm: 0,
+          },
+
+          fontFamily: "inherit",
+
+          fontSize: {
+            xs: "13px",
+            sm: "14px",
+            md: "15px",
+          },
+
+          lineHeight: {
+            xs: 1.6,
+            md: 1.65,
+          },
+
+          fontWeight: 400,
+
+          letterSpacing: "-0.01em",
+
+          color: "#66748A",
+
+          animation: `${fadeUp} 0.65s ease-out 0.05s both`,
+        }}
+      >
+        Discover verified doctors and specialists near you. Search, compare and
+        book the right care in
+        <Box
+          component="span"
+          sx={{
+            display: {
+              xs: "inline",
+              md: "block",
+            },
+          }}
+        >
+          just a few clicks.
+        </Box>
+      </Typography>
+    </Box>
+  );
+}
+
+function Feature({ text }) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: "7px",
+      }}
+    >
+      <Box
+        sx={{
+          width: "18px",
+          height: "18px",
+
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+
+          flexShrink: 0,
+
+          borderRadius: "50%",
+
+          bgcolor: "#E8F8F4",
+
+          color: "#079276",
+
+          fontSize: "11px",
+          fontWeight: 800,
+        }}
+      >
+        ✓
       </Box>
 
-      {/* Heading - Improved Responsive */}
       <Typography
-        variant="h1"
+        component="span"
         sx={{
-           whiteSpace: {
-      xs: "normal",
-      lg: "nowrap",
-    },
-          color: "#0f172a",
-          fontWeight: 800,
+          fontFamily: "inherit",
           fontSize: {
-            xs: "2.25rem",    // Mobile: slightly reduced
-            sm: "2.75rem",    // Small tablet
-            md: "3.5rem",     // Tablet
-            lg: "4rem",       // Desktop
-            xl: "4.5rem",     // Large screens
+            xs: "11px",
+            sm: "11.5px",
           },
-          lineHeight: {
-            xs: 1.25,         // Mobile: better spacing
-            sm: 1.2,
-            md: 1.15,
-            lg: 1.1,
-          },
-          letterSpacing: {
-            xs: "-0.01em",    // Mobile: less tight
-            sm: "-0.02em",
-          },
-          textAlign: "center",
-          px: { xs: 1, sm: 0 },  // Mobile: slightly less padding
-          animation: `${slideUpFade} 0.8s ease-out`,
+          fontWeight: 600,
+          lineHeight: 1,
+          color: "#6A7789",
+          whiteSpace: "nowrap",
         }}
       >
-        Find Your Right{" "}
-        <GradientText>
-          {words[currentWord]}
-        </GradientText>{" "}
-        For You
+        {text}
       </Typography>
-
-      {/* Sub heading - Improved */}
-      <Typography
-        // Semantic HTML
-        sx={{
-          color: "#475569",
-          mt: { xs: 2, sm: 2 },     // Added top margin
-          mb: { xs: 4, sm: 3 },
-          fontSize: {
-            xs: "1rem",       // Mobile: 1.1 se 1rem (balanced)
-            sm: "1.15rem",
-            md: "1.35rem",
-            lg: "1.2rem",
-          },
-          fontWeight: 400,
-          maxWidth: 700,
-          mx: "auto",
-          lineHeight: {
-            xs: 1.6,          // Mobile: slightly tighter
-            sm: 1.7,
-          },
-
-          textAlign: "center",
-          animation: `${slideUpFade} 0.8s ease-out 0.2s both`,
-        }}
-      >
-        Connect with top-rated specialists, book appointments instantly.
-      </Typography>
-
     </Box>
+  );
+}
 
+function Dot() {
+  return (
+    <Box
+      sx={{
+        width: "3px",
+        height: "3px",
+        borderRadius: "50%",
+        bgcolor: "#D2D9DF",
+
+        display: {
+          xs: "none",
+          sm: "block",
+        },
+      }}
+    />
   );
 }

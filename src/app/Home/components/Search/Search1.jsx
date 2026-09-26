@@ -250,7 +250,7 @@ useEffect(() => {
       <Navbar />
 
 
-      <Container maxWidth={false} sx={{ width: "99%", px: { xs: 2, md: 3 }, py: 4, boxShadow: "0 4px 30px #0f7468", m: 1, }}>
+      <Container maxWidth={false} sx={{ width: "99%", px: { xs: 2, md: 3 }, py: 4,  }}>
         <Grid container spacing={3}>
           {/* Sidebar */}
           {!isTablet && (

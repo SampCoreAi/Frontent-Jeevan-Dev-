@@ -162,80 +162,71 @@ export default function Landing() {
     <Box sx={{ bgcolor: "#f8fafc", overflow: "hidden" }}>
       <Navbar />
 
-      <Box
-        sx={{
-          background:
-            "linear-gradient(135deg, #f0fdf4 0%, #f0f0f0 50%, #f8fafc 100%)",
-          pt: { xs: 12, md: 6 },
-          pb: { xs: 8, md: 12 },
-          textAlign: "center",
-          position: "relative",
-          overflow: "hidden",
-          minHeight: { xs: "auto", md: "90vh" },
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
+     <Box
+  sx={{
+    backgroundColor: "#F8FFFB",
 
-        }}
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 0,
-            overflow: "hidden",
-          }}
-        >
-          {/* Gradient */}
-          <Box
-            sx={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "linear-gradient(135deg, #dcfce7 0%, #ecfdf5 45%, #ffffff 100%)",
-            }}
-          />
+    backgroundImage: `
+      linear-gradient(
+        rgba(7, 135, 106, 0.10) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        rgba(7, 135, 106, 0.10) 1px,
+        transparent 1px
+      ),
+      radial-gradient(
+        circle at 8% 25%,
+        rgba(7, 135, 106, 0.07) 0%,
+        transparent 30%
+      ),
+      radial-gradient(
+        circle at 92% 70%,
+        rgba(7, 135, 106, 0.05) 0%,
+        transparent 30%
+      ),
+      linear-gradient(
+        180deg,
+        #F7FFFB 0%,
+        #FBFEFC 55%,
+        #F5FBF8 100%
+      )
+    `,
 
-          {/* Large Grid */}
-          <Box
-            sx={{
-              position: "absolute",
-              inset: 0,
-              opacity: 0.18,
-              backgroundImage: `
-        linear-gradient(to right,#16a34a 1px,transparent 1px),
-        linear-gradient(to bottom,#16a34a 1px,transparent 1px)
-      `,
-              backgroundSize: "60px 60px",
-            }}
-          />
+    backgroundSize: `
+      40px 40px,
+      40px 40px,
+      100% 100%,
+      100% 100%,
+      100% 100%
+    `,
 
-          {/* Small Grid */}
-          <Box
-            sx={{
-              position: "absolute",
-              inset: 0,
-              opacity: 0.08,
-              backgroundImage: `
-        linear-gradient(to right,#15803d 1px,transparent 1px),
-        linear-gradient(to bottom,#15803d 1px,transparent 1px)
-      `,
-              backgroundSize: "20px 20px",
-            }}
-          />
+    backgroundPosition: `
+      0 0,
+      0 0,
+      center,
+      center,
+      center
+    `,
 
-          {/* White Radial */}
-          <Box
-            sx={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "radial-gradient(circle at center,transparent 0%,rgba(255,255,255,.3) 50%,rgba(255,255,255,.9) 100%)",
-            }}
-          />
-        </Box>
+    pt: { xs: 6, md: 2 },
+    pb: { xs: 8, md: 12 },
 
+    textAlign: "center",
+    position: "relative",
+    overflow: "hidden",
 
+    minHeight: {
+      xs: "auto",
+      md: "90vh",
+    },
+
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+  }}
+>
         {/* Quick Access Menu - Desktop */}
         {!isMobile && (
           <Zoom

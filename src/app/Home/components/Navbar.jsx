@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -12,145 +13,104 @@ import {
   ListItemButton,
   ListItemText,
   Avatar,
-  Slide,
-  Fade,
-  Grow,
+  Divider,
   useMediaQuery,
 } from "@mui/material";
 
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
-import MenuIcon from "@mui/icons-material/Menu";
+import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import LocalPhoneOutlinedIcon from "@mui/icons-material/LocalPhoneOutlined";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "@mui/material/styles";
 import { keyframes } from "@mui/system";
 
 export default function Navbar() {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const [open, setOpen] = useState(false);
-  const [loaded] = useState(true);
   const [isMainFixed, setIsMainFixed] = useState(false);
 
-  const router = useRouter();
-  const buttonRef = useRef(null);
-  const mainRef = useRef(null);
-
-  // =========================
-  // ANIMATIONS
-  // =========================
-
-  const slideDown = keyframes`
-    from {
-      opacity: 0;
-      transform: translateY(-20px);
+  const marquee = keyframes`
+    0% {
+      transform: translateX(0);
     }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
+    100% {
+      transform: translateX(-50%);
     }
   `;
 
-  const pulse = keyframes`
-    0%, 100% {
-      transform: scale(1);
-    }
+  const navLinks = [
+    {
+      label: "Home",
+      path: "/Home/landingPage",
+    },
+    
+    {
+      label: "About",
+      path: "/Home/pages/About",
+    },
+    {
+      label: "FAQ",
+      path: "/Home/pages/FAQ",
+    },
+    {
+      label: "Contact",
+      path: "/Home/pages/Contact",
+    },
+  ];
 
-    50% {
-      transform: scale(1.05);
-    }
-  `;
+  const contactItems = [
+    {
+      icon: AccessTimeRoundedIcon,
+      text: "24×7 Support",
+    },
+    {
+      icon: LocalPhoneOutlinedIcon,
+      text: "+91 8770753546",
+    },
+    {
+      icon: EmailOutlinedIcon,
+      text: "support@mail.com",
+    },
+    {
+      icon: LocationOnOutlinedIcon,
+      text: "Bhopal, Madhya Pradesh",
+    },
+  ];
 
-  // =========================
-  // NAVIGATION
-  // =========================
-
-  const navigateTo = (path) => {
+  const handleNavigation = (path) => {
+    setOpen(false);
     router.push(path);
   };
 
-  const handleNavigation = (page) => {
-    switch (page) {
-      case "Home":
-        navigateTo("/Home/landingPage");
-        break;
-
-      case "Doctors":
-        navigateTo("/Home/pages/AllDoctors");
-        break;
-
-      case "About":
-        navigateTo("/Home/pages/About");
-        break;
-
-      case "FAQ":
-        navigateTo("/Home/pages/FAQ");
-        break;
-
-      case "Contact":
-        navigateTo("/Home/pages/Contact");
-        break;
-
-      case "Login":
-        navigateTo("/Home/pages/Login");
-        break;
-
-      default:
-        navigateTo("/");
+  const isActive = (path) => {
+    if (path === "/Home/landingPage") {
+      return pathname === path;
     }
+
+    return pathname?.startsWith(path);
   };
-
-  const navLinks = [
-    "Home",
-    "Doctors",
-    "About",
-    "FAQ",
-    "Contact",
-    "Login",
-  ];
-
-  // =========================
-  // DRAWER
-  // =========================
-
-  const toggleDrawer = (event, reason) => {
-    if (
-      reason === "backdropClick" ||
-      reason === "escapeKeyDown"
-    ) {
-      if (document.activeElement) {
-        document.activeElement.blur();
-      }
-    }
-
-    setOpen((prev) => !prev);
-  };
-
-  useEffect(() => {
-    const drawer = document.querySelector(".MuiDrawer-root");
-
-    if (drawer && !open) {
-      drawer.setAttribute("inert", "true");
-    } else if (drawer) {
-      drawer.removeAttribute("inert");
-    }
-  }, [open]);
-
-  // =========================
-  // STICKY NAVBAR
-  // =========================
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsMainFixed(window.scrollY > 100);
+      setIsMainFixed(window.scrollY > 90);
     };
 
-    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+
+    window.addEventListener("scroll", handleScroll, {
+      passive: true,
+    });
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
@@ -159,841 +119,753 @@ export default function Navbar() {
 
   return (
     <>
-      {/* =========================================
-          TOP ANNOUNCEMENT BAR
-      ========================================= */}
-
-      <Slide direction="down" in={loaded} timeout={600}>
-        <Box
-          sx={{
-            backgroundColor: "secondary.light",
-            color: "text.primary",
-
-            overflow: "hidden",
-
-            px: {
-              xs: 1,
-              sm: 4,
-            },
-
-            py: {
-              xs: 0.4,
-              sm: 0.5,
-            },
-
-            borderBottom: "1px solid",
-            borderColor: "divider",
-
-            display: "flex",
-            alignItems: "center",
-
-            position: "relative",
-
-            fontWeight: 500,
-
-            fontSize: {
-              xs: "0.75rem",
-              sm: "0.9rem",
-            },
-
-            letterSpacing: "0.3px",
-
-            animation: `${slideDown} 0.6s ease-out`,
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              minWidth: "100%",
-
-              animation: "scroll 15s linear infinite",
-
-              "&:hover": {
-                animationPlayState: "paused",
-              },
-            }}
-          >
-            {/* FIRST TEXT */}
-
-            <Box
-              component="span"
-              sx={{
-                flexShrink: 0,
-
-                display: "inline-block",
-
-                pr: {
-                  xs: 4,
-                  sm: 10,
-                },
-
-                wordSpacing: "10px",
-              }}
-            >
-              Free surgery facility available under Ayushman Bharat
-              Scheme and Pandit Deendayal Upadhyay Scheme.
-
-              <span
-                style={{
-                  margin: "0 40px",
-                  color: theme.palette.primary.main,
-                }}
-              >
-                •
-              </span>
-
-              All TPA cards accepted.
-
-              <span
-                style={{
-                  margin: "0 40px",
-                  color: theme.palette.primary.main,
-                }}
-              >
-                •
-              </span>
-
-              📞 7571905633
-            </Box>
-
-            {/* DUPLICATE FOR INFINITE SCROLL */}
-
-            <Box
-              component="span"
-              sx={{
-                flexShrink: 0,
-
-                display: "inline-block",
-
-                pr: {
-                  xs: 4,
-                  sm: 10,
-                },
-
-                wordSpacing: "10px",
-              }}
-            >
-              Free surgery facility available under Ayushman Bharat
-              Scheme and Pandit Deendayal Upadhyay Scheme.
-
-              <span
-                style={{
-                  margin: "0 40px",
-                  color: theme.palette.primary.main,
-                }}
-              >
-                •
-              </span>
-
-              All TPA cards accepted.
-
-              <span
-                style={{
-                  margin: "0 40px",
-                  color: theme.palette.primary.main,
-                }}
-              >
-                •
-              </span>
-
-              📞 7571905633
-            </Box>
-          </Box>
-
-          <style>
-            {`
-              @keyframes scroll {
-                0% {
-                  transform: translateX(0);
-                }
-
-                100% {
-                  transform: translateX(-50%);
-                }
-              }
-            `}
-          </style>
-        </Box>
-      </Slide>
-
-      {/* =========================================
-          CONTACT INFORMATION BAR
-      ========================================= */}
-
-      <Fade
-        in={loaded}
-        timeout={800}
-        style={{
-          transitionDelay: "200ms",
+     
+      <Box
+        sx={{
+          bgcolor: "#07876a",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          px: {
+            xs: 1.5,
+            sm: 3,
+            md: 5,
+            lg: 7,
+          },
+          py: {
+            xs: 0.7,
+            sm: 0.9,
+          },
+          display: {
+            xs: "none",
+            sm: "flex",
+          },
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 2,
         }}
       >
         <Box
           sx={{
-            backgroundColor: "background.paper",
-
-            px: {
-              xs: 1,
-              sm: 4,
-              md: 10,
-              lg: 5,
-            },
-
-            py: {
-              xs: 0.8,
-              sm: 1.5,
-            },
-
             display: "flex",
-
-            flexDirection: "row",
-
             alignItems: "center",
-
-            justifyContent: {
-              xs: "flex-start",
-              sm: "space-between",
-            },
-
             gap: {
-              xs: 2,
-              sm: 1.5,
+              sm: 2,
+              md: 3,
             },
-
-            overflowX: "auto",
-
-            flexWrap: {
-              xs: "nowrap",
-              sm: "wrap",
-            },
-
-            scrollbarWidth: "none",
-
-            "&::-webkit-scrollbar": {
-              display: "none",
-            },
-
-            borderBottom: "1px solid",
-            borderColor: "divider",
-
-            animation: `${slideDown} 0.8s ease-out 0.2s both`,
           }}
         >
-          {[
-            {
-              icon: LocalPhoneOutlinedIcon,
-              text: "24x7 Support",
-            },
+          {contactItems.slice(0, 2).map((item) => {
+            const Icon = item.icon;
 
-            {
-              icon: LocalPhoneOutlinedIcon,
-              text: "+91 8770753546",
-            },
-
-            {
-              icon: EmailOutlinedIcon,
-              text: "support@mail.com",
-            },
-
-            {
-              icon: LocationOnOutlinedIcon,
-              text: "123, Your Street",
-            },
-          ].map((item, index) => (
-            <Grow
-              key={index}
-              in={loaded}
-              timeout={500}
-              style={{
-                transitionDelay: `${300 + index * 100}ms`,
-              }}
-            >
+            return (
               <Box
+                key={item.text}
                 sx={{
                   display: "flex",
                   alignItems: "center",
-
                   gap: 0.7,
-
-                  flexShrink: 0,
-
-                  transition: "all 0.3s ease",
-
-                  "&:hover": {
-                    transform: "translateY(-2px)",
-                  },
-
-                  "&:hover .contact-icon": {
-                    color: "primary.dark",
-                    transform: "scale(1.1)",
-                  },
-
-                  "&:hover .contact-text": {
-                    color: "primary.main",
-                  },
                 }}
               >
-                <item.icon
-                  className="contact-icon"
+                <Icon
                   sx={{
-                    color: "primary.main",
-
-                    fontSize: {
-                      xs: 16,
-                      sm: 20,
-                    },
-
-                    transition: "all 0.3s ease",
+                    fontSize: 16,
+                    color: "white",
                   }}
                 />
 
                 <Typography
-                  className="contact-text"
                   sx={{
-                    color: "text.secondary",
-
-                    fontSize: {
-                      xs: "0.75rem",
-                      sm: "0.9rem",
-                      md: "1rem",
-                    },
-
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    color: "white",
                     whiteSpace: "nowrap",
-
-                    transition: "color 0.3s ease",
                   }}
                 >
                   {item.text}
                 </Typography>
               </Box>
-            </Grow>
-          ))}
+            );
+          })}
         </Box>
-      </Fade>
 
-      {/* =========================================
-          MAIN NAVBAR
-      ========================================= */}
-
-      <Slide
-        direction="down"
-        in={loaded}
-        timeout={600}
-        style={{
-          transitionDelay: "400ms",
-        }}
-      >
-        <AppBar
-          ref={mainRef}
+        <Box
           sx={{
-            position: isMainFixed ? "fixed" : "static",
-
-            top: 0,
-
-            backgroundColor: "primary.main",
-
-            color: "primary.contrastText",
-
-            zIndex: 1300,
-
-            px: {
-              xs: 1,
-              sm: 4,
-              md: 10,
-              lg: 1,
+            display: "flex",
+            alignItems: "center",
+            gap: {
+              sm: 2,
+              md: 3,
             },
-
-            transition:
-              "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-
-            boxShadow: isMainFixed
-              ? "0 4px 20px rgba(7, 135, 106, 0.20)"
-              : "none",
-
-            animation: isMainFixed
-              ? `${slideDown} 0.4s ease-out`
-              : "none",
           }}
         >
-          <Toolbar
+          {contactItems.slice(2).map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <Box
+                key={item.text}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.7,
+                }}
+              >
+                <Icon
+                  sx={{
+                    fontSize: 16, color: "white",
+                  }}
+                />
+
+                <Typography
+                  sx={{
+                    fontSize: "12px",
+                    fontWeight: 500, color: "white",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {item.text}
+                </Typography>
+              </Box>
+            );
+          })}
+        </Box>
+      </Box>
+
+      {isMainFixed && (
+        <Box
+          sx={{
+            height: {
+              xs: 60,
+              sm: 64,
+            },
+          }}
+        />
+      )}
+
+      <AppBar
+        position={isMainFixed ? "fixed" : "static"}
+        elevation={0}
+        sx={{
+          top: 0,
+          zIndex: theme.zIndex.appBar,
+          bgcolor: "background.paper", color: "white",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          boxShadow: isMainFixed
+            ? "0 6px 24px rgba(15, 23, 42, 0.08)"
+            : "none",
+          transition: "box-shadow 0.25s ease",
+        }}
+      >
+        <Toolbar
+          disableGutters
+          sx={{
+            minHeight: {
+              xs: "60px !important",
+              sm: "64px !important",
+            },
+            px: {
+              xs: 1.5,
+              sm: 3,
+              md: 5,
+              lg: 7,
+            },
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+          }}
+        >
+          <Box
+            onClick={() =>
+              handleNavigation("/Home/landingPage")
+            }
             sx={{
               display: "flex",
+              alignItems: "center",
+              gap: 1,
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            <Avatar
+              src="/img/icon.png"
+              alt="Jeevan Dev"
+              variant="rounded"
+              sx={{
+                width: {
+                  xs: 34,
+                  sm: 38,
+                },
+                height: {
+                  xs: 34,
+                  sm: 38,
+                },
+                bgcolor: "transparent",
+                borderRadius: 1.5,
+              }}
+            />
 
-              justifyContent: "space-between",
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: {
+                    xs: "16px",
+                    sm: "18px",
+                  },
+                  lineHeight: 1.1,
+                  fontWeight: 800,
+                  color: "primary.main",
+                  letterSpacing: "-0.3px",
+                }}
+              >
+                Jeevan Dev
+              </Typography>
 
-              flexWrap: "wrap",
+              <Typography
+                sx={{
+                  display: {
+                    xs: "none",
+                    sm: "block",
+                  },
+                  mt: 0.2,
+                  fontSize: "9.5px",
+                  lineHeight: 1,
+                  fontWeight: 500,
+                  color: "text.secondary",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                HEALTHCARE PLATFORM
+              </Typography>
+            </Box>
+          </Box>
 
-              minHeight: {
-                xs: "56px",
-                sm: "64px",
+          <Box
+            sx={{
+              display: {
+                xs: "none",
+                md: "flex",
               },
+              alignItems: "center",
+              gap: 0.4,
+              ml: "auto",
+            }}
+          >
+            {navLinks.map((item) => {
+              const active = isActive(item.path);
 
-              px: {
-                xs: 0,
-                sm: 2,
+              return (
+                <Button
+                  key={item.label}
+                  disableRipple
+                  onClick={() =>
+                    handleNavigation(item.path)
+                  }
+                  sx={{
+                    minWidth: "auto",
+                    position: "relative",
+                    px: 1.5,
+                    py: 1,
+                    borderRadius: 1.5,
+                    color: active
+                      ? "primary.main"
+                      : "text.secondary",
+                    fontSize: "12.5px",
+                    fontWeight: active ? 700 : 600,
+                    textTransform: "none",
+                    transition: "all 0.2s ease",
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      left: "50%",
+                      bottom: 4,
+                      transform: "translateX(-50%)",
+                      width: active ? "18px" : 0,
+                      height: "2px",
+                      borderRadius: "10px",
+                      bgcolor: "primary.main",
+                      transition: "width 0.2s ease",
+                    },
+                    "&:hover": {
+                      bgcolor: "transparent",
+                      color: "primary.main",
+                      "&::after": {
+                        width: "18px",
+                      },
+                    },
+                  }}
+                >
+                  {item.label}
+                </Button>
+              );
+            })}
+          </Box>
+
+          <Box
+            sx={{
+              display: {
+                xs: "none",
+                md: "flex",
+              },
+              alignItems: "center",
+              gap: 1,
+              ml: 1.5,
+            }}
+          >
+            <Button
+              variant="outlined"
+              onClick={() =>
+                handleNavigation("/Home/pages/Login")
+              }
+              sx={{
+                height: 36,
+                px: 2,
+                borderRadius: 2,
+                borderColor: "primary.main",
+                color: "primary.main",
+                fontSize: "12.5px",
+                fontWeight: 700,
+                textTransform: "none",
+                boxShadow: "none",
+                "&:hover": {
+                  borderColor: "primary.dark",
+                  bgcolor: "secondary.light",
+                  boxShadow: "none",
+                },
+              }}
+            >
+              Login
+            </Button>
+
+            <Button
+              variant="contained"
+              endIcon={
+                <ArrowForwardRoundedIcon
+                  sx={{
+                    fontSize: "16px !important",
+                  }}
+                />
+              }
+              onClick={() =>
+                handleNavigation(
+                  "/Home/pages/AllDoctors"
+                )
+              }
+              sx={{
+                height: 36,
+                px: 2,
+                borderRadius: 2,
+                bgcolor: "primary.main",
+                color: "primary.contrastText",
+                fontSize: "12.5px",
+                fontWeight: 700,
+                textTransform: "none",
+                boxShadow:
+                  "0 4px 12px rgba(7, 135, 106, 0.18)",
+                "&:hover": {
+                  bgcolor: "primary.dark",
+                  boxShadow:
+                    "0 6px 16px rgba(7, 135, 106, 0.24)",
+                },
+              }}
+            >
+              Find Doctor
+            </Button>
+          </Box>
+
+          <IconButton
+            onClick={() => setOpen(true)}
+            aria-label="Open menu"
+            sx={{
+              display: {
+                xs: "flex",
+                md: "none",
+              },
+              width: 38,
+              height: 38,
+              borderRadius: 2,
+              bgcolor: "secondary.light",
+              color: "primary.main",
+              border: "1px solid",
+              borderColor: "divider",
+              "&:hover": {
+                bgcolor: "secondary.light",
               },
             }}
           >
-            {/* =========================
-                LOGO
-            ========================= */}
-
-            <Box
-              sx={{
-                display: "flex",
-
-                alignItems: "center",
-
-                gap: 1,
-
-                transition: "transform 0.3s ease",
-
-                cursor: "pointer",
-
-                "&:hover": {
-                  transform: "scale(1.02)",
-                },
-              }}
-              onClick={() =>
-                handleNavigation("Home")
-              }
-            >
-              <Avatar
-                src="/img/icon.png"
-                alt="Logo"
-                sx={{
-                  width: {
-                    xs: 32,
-                    sm: 40,
-                  },
-
-                  height: {
-                    xs: 32,
-                    sm: 40,
-                  },
-
-                  backgroundColor: "background.paper",
-
-                  transition: "all 0.3s ease",
-
-                  animation: `${pulse} 2s ease-in-out infinite`,
-
-                  "&:hover": {
-                    transform:
-                      "rotate(5deg) scale(1.1)",
-
-                    boxShadow:
-                      "0 4px 12px rgba(0,0,0,0.15)",
-                  },
-                }}
-              />
-
-              <Typography
-                variant="h6"
-                fontWeight="bold"
-                sx={{
-                  fontSize: {
-                    xs: "0.9rem",
-                    sm: "1.25rem",
-                  },
-
-                  color: "primary.contrastText",
-
-                  transition: "all 0.3s ease",
-
-                  "&:hover": {
-                    opacity: 0.9,
-                  },
-                }}
-              >
-                Jeenvan Dev
-              </Typography>
-            </Box>
-
-            {/* =========================
-                DESKTOP MENU
-            ========================= */}
-
-            <Box
-              sx={{
-                display: {
-                  xs: "none",
-                  md: "flex",
-                },
-
-                gap: 1,
-
-                alignItems: "center",
-
-                flexWrap: "wrap",
-              }}
-            >
-              {navLinks.map((link, index) => (
-                <Grow
-                  key={link}
-                  in={loaded}
-                  timeout={400}
-                  style={{
-                    transitionDelay: `${
-                      500 + index * 100
-                    }ms`,
-                  }}
-                >
-                  <Button
-                    color="inherit"
-                    sx={{
-                      fontSize: {
-                        xs: "0.75rem",
-                        sm: "0.875rem",
-                      },
-
-                      color:
-                        "primary.contrastText",
-
-                      position: "relative",
-
-                      overflow: "hidden",
-
-                      px: 1.5,
-
-                      transition: "all 0.3s ease",
-
-                      "&::after": {
-                        content: '""',
-
-                        position: "absolute",
-
-                        bottom: 3,
-
-                        left: "50%",
-
-                        width: 0,
-
-                        height: "2px",
-
-                        borderRadius: "10px",
-
-                        backgroundColor:
-                          "primary.contrastText",
-
-                        transition:
-                          "all 0.3s ease",
-
-                        transform:
-                          "translateX(-50%)",
-                      },
-
-                      "&:hover": {
-                        transform:
-                          "translateY(-2px)",
-
-                        backgroundColor:
-                          "rgba(255,255,255,0.08)",
-
-                        "&::after": {
-                          width: "70%",
-                        },
-                      },
-                    }}
-                    onClick={() =>
-                      handleNavigation(link)
-                    }
-                  >
-                    {link}
-                  </Button>
-                </Grow>
-              ))}
-            </Box>
-
-            {/* =========================
-                MOBILE MENU ICON
-            ========================= */}
-
-            <IconButton
-              ref={buttonRef}
-              edge="end"
-              onClick={toggleDrawer}
-              sx={{
-                display: {
-                  xs: "flex",
-                  md: "none",
-                },
-
-                color: "primary.contrastText",
-
-                transition: "all 0.3s ease",
-
-                transform: open
-                  ? "rotate(90deg)"
-                  : "rotate(0deg)",
-
-                "&:hover": {
-                  backgroundColor:
-                    "rgba(255,255,255,0.10)",
-
-                  transform: open
-                    ? "rotate(90deg) scale(1.1)"
-                    : "scale(1.1)",
-                },
-              }}
-            >
-              <MenuIcon />
-            </IconButton>
-          </Toolbar>
-        </AppBar>
-      </Slide>
-
-      {/* =========================================
-          MOBILE DRAWER
-      ========================================= */}
+            <MenuRoundedIcon />
+          </IconButton>
+        </Toolbar>
+      </AppBar>
 
       <Drawer
-        anchor="left"
+        anchor="right"
         open={open}
-        onClose={toggleDrawer}
+        onClose={() => setOpen(false)}
         ModalProps={{
           keepMounted: true,
-          disableRestoreFocus: true,
-          disableAutoFocus: true,
         }}
         PaperProps={{
           sx: {
-            top: 0,
-
-            height: "100%",
-
-            width: isMobile
-              ? "80%"
-              : 300,
-
-            maxWidth: 300,
-
-            backgroundColor:
-              "background.paper",
-
-            transition:
-              "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          },
-        }}
-        SlideProps={{
-          timeout: 400,
-
-          easing: {
-            enter:
-              "cubic-bezier(0.4, 0, 0.2, 1)",
-
-            exit:
-              "cubic-bezier(0.4, 0, 0.2, 1)",
+            width: {
+              xs: "88%",
+              sm: 340,
+            },
+            maxWidth: 360,
+            bgcolor: "background.paper",
+            backgroundImage: "none",
           },
         }}
       >
         <Box
           sx={{
-            p: 0,
-
             height: "100%",
-
             display: "flex",
-
             flexDirection: "column",
           }}
         >
-          {/* =========================
-              DRAWER HEADER
-          ========================= */}
-
           <Box
             sx={{
+              minHeight: 64,
+              px: 2,
               display: "flex",
-
               alignItems: "center",
-
-              justifyContent:
-                "space-between",
-
-              p: 2,
-
+              justifyContent: "space-between",
               borderBottom: "1px solid",
-
               borderColor: "divider",
-
-              backgroundColor:
-                "secondary.light",
             }}
           >
             <Box
+              onClick={() =>
+                handleNavigation("/Home/landingPage")
+              }
               sx={{
                 display: "flex",
-
                 alignItems: "center",
-
-                gap: 1.5,
+                gap: 1,
+                cursor: "pointer",
               }}
             >
               <Avatar
                 src="/img/icon.png"
+                alt="Jeevan Dev"
+                variant="rounded"
                 sx={{
                   width: 36,
                   height: 36,
+                  borderRadius: 1.5,
                 }}
               />
 
-              <Typography
-                fontWeight="bold"
-                color="text.primary"
-                fontSize="1rem"
-              >
-                Jeenvan Dev
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* =========================
-              DRAWER NAVIGATION
-          ========================= */}
-
-          <List
-            sx={{
-              p: 2,
-              flex: 1,
-            }}
-          >
-            {navLinks.map(
-              (text, index) => (
-                <Slide
-                  key={text}
-                  direction="right"
-                  in={open}
-                  timeout={400}
-                  style={{
-                    transitionDelay: `${
-                      index * 75
-                    }ms`,
+              <Box>
+                <Typography
+                  sx={{
+                    fontSize: "16px",
+                    fontWeight: 800,
+                    color: "primary.main",
+                    lineHeight: 1.1,
                   }}
                 >
+                  Jeevan Dev
+                </Typography>
+
+                <Typography
+                  sx={{
+                    mt: 0.3,
+                    fontSize: "9px",
+                    color: "text.secondary",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  HEALTHCARE PLATFORM
+                </Typography>
+              </Box>
+            </Box>
+
+            <IconButton
+              onClick={() => setOpen(false)}
+              aria-label="Close menu"
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: 2,
+                color: "text.secondary",
+                bgcolor: "background.default",
+                border: "1px solid",
+                borderColor: "divider",
+              }}
+            >
+              <CloseRoundedIcon
+                sx={{
+                  fontSize: 20,
+                }}
+              />
+            </IconButton>
+          </Box>
+
+          <Box
+            sx={{
+              flex: 1,
+              overflowY: "auto",
+              p: 2,
+            }}
+          >
+            <Typography
+              sx={{
+                px: 1,
+                mb: 1,
+                fontSize: "10px",
+                fontWeight: 700,
+                color: "text.secondary",
+                textTransform: "uppercase",
+                letterSpacing: "0.8px",
+              }}
+            >
+              Navigation
+            </Typography>
+
+            <List
+              disablePadding
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 0.5,
+              }}
+            >
+              {navLinks.map((item) => {
+                const active = isActive(item.path);
+
+                return (
                   <ListItemButton
+                    key={item.label}
+                    onClick={() =>
+                      handleNavigation(item.path)
+                    }
                     sx={{
+                      minHeight: 44,
+                      px: 1.5,
+                      py: 0.8,
                       borderRadius: 2,
-
-                      mb: 1,
-
-                      py: 1.5,
-
-                      backgroundColor:
-                        "background.default",
-
-                      border:
-                        "1px solid transparent",
-
-                      transition:
-                        "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-
+                      border: "1px solid",
+                      borderColor: active
+                        ? "primary.light"
+                        : "transparent",
+                      bgcolor: active
+                        ? "secondary.light"
+                        : "transparent",
+                      transition: "all 0.2s ease",
                       "&:hover": {
-                        transform:
-                          "translateX(6px)",
-
-                        backgroundColor:
-                          "secondary.light",
-
-                        borderColor:
-                          "primary.light",
-
-                        "& .MuiListItemText-primary":
-                          {
-                            color:
-                              "primary.main",
-                          },
+                        bgcolor: "background.default",
+                        borderColor: "divider",
+                        transform: "translateX(3px)",
                       },
                     }}
-                    onClick={() => {
-                      toggleDrawer();
-
-                      handleNavigation(text);
-                    }}
                   >
+                    <Box
+                      sx={{
+                        width: 5,
+                        height: 5,
+                        mr: 1.5,
+                        borderRadius: "50%",
+                        bgcolor: active
+                          ? "primary.main"
+                          : "divider",
+                      }}
+                    />
+
                     <ListItemText
-                      primary={text}
+                      primary={item.label}
                       primaryTypographyProps={{
-                        fontSize: "1rem",
-
-                        fontWeight: 500,
-
-                        color:
-                          "text.primary",
-
-                        transition:
-                          "color 0.2s ease",
+                        fontSize: "13px",
+                        fontWeight: active ? 700 : 600,
+                        color: active
+                          ? "primary.main"
+                          : "text.primary",
                       }}
                     />
                   </ListItemButton>
-                </Slide>
-              )
-            )}
-          </List>
+                );
+              })}
+            </List>
 
-          {/* =========================
-              DRAWER CONTACT FOOTER
-          ========================= */}
+            <Divider
+              sx={{
+                my: 2,
+              }}
+            />
+
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 1,
+              }}
+            >
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={() =>
+                  handleNavigation("/Home/pages/Login")
+                }
+                sx={{
+                  height: 42,
+                  borderRadius: 2,
+                  borderColor: "primary.main",
+                  color: "primary.main",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  textTransform: "none",
+                }}
+              >
+                Login
+              </Button>
+
+              <Button
+                fullWidth
+                variant="contained"
+                endIcon={<ArrowForwardRoundedIcon />}
+                onClick={() =>
+                  handleNavigation(
+                    "/Home/pages/AllDoctors"
+                  )
+                }
+                sx={{
+                  height: 42,
+                  borderRadius: 2,
+                  bgcolor: "primary.main",
+                  color: "primary.contrastText",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  textTransform: "none",
+                  boxShadow: "none",
+                  "&:hover": {
+                    bgcolor: "primary.dark",
+                    boxShadow: "none",
+                  },
+                }}
+              >
+                Find Doctor
+              </Button>
+            </Box>
+          </Box>
 
           <Box
             sx={{
               p: 2,
-
+              bgcolor: "background.default",
               borderTop: "1px solid",
-
               borderColor: "divider",
-
-              backgroundColor:
-                "background.default",
             }}
           >
+            <Typography
+              sx={{
+                mb: 1.3,
+                fontSize: "10px",
+                fontWeight: 700,
+                color: "text.secondary",
+                textTransform: "uppercase",
+                letterSpacing: "0.8px",
+              }}
+            >
+              Need Help?
+            </Typography>
+
             <Box
               sx={{
                 display: "flex",
-
                 alignItems: "center",
-
                 gap: 1,
-
-                mb: 1.5,
+                mb: 1,
               }}
             >
-              <LocalPhoneOutlinedIcon
+              <Box
                 sx={{
-                  fontSize: 18,
-                  color: "primary.main",
+                  width: 30,
+                  height: 30,
+                  borderRadius: 1.5,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bgcolor: "secondary.light",
                 }}
-              />
-
-              <Typography
-                variant="body2"
-                color="text.secondary"
               >
-                7571905633
-              </Typography>
+                <LocalPhoneOutlinedIcon
+                  sx={{
+                    fontSize: 16,
+                    color: "primary.main",
+                  }}
+                />
+              </Box>
+
+              <Box>
+                <Typography
+                  sx={{
+                    fontSize: "10px",
+                    color: "text.secondary",
+                  }}
+                >
+                  24×7 Support
+                </Typography>
+
+                <Typography
+                  sx={{
+                    fontSize: "12.5px",
+                    fontWeight: 600,
+                    color: "text.primary",
+                  }}
+                >
+                  +91 8770753546
+                </Typography>
+              </Box>
             </Box>
 
             <Box
               sx={{
                 display: "flex",
-
                 alignItems: "center",
-
                 gap: 1,
               }}
             >
-              <EmailOutlinedIcon
+              <Box
                 sx={{
-                  fontSize: 18,
-                  color: "primary.main",
+                  width: 30,
+                  height: 30,
+                  borderRadius: 1.5,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bgcolor: "secondary.light",
                 }}
-              />
-
-              <Typography
-                variant="body2"
-                color="text.secondary"
               >
-                contact@sampcoreai.com
-              </Typography>
+                <EmailOutlinedIcon
+                  sx={{
+                    fontSize: 16,
+                    color: "primary.main",
+                  }}
+                />
+              </Box>
+
+              <Box>
+                <Typography
+                  sx={{
+                    fontSize: "10px",
+                    color: "text.secondary",
+                  }}
+                >
+                  Email
+                </Typography>
+
+                <Typography
+                  sx={{
+                    fontSize: "12.5px",
+                    fontWeight: 600,
+                    color: "text.primary",
+                  }}
+                >
+                  contact@sampcoreai.com
+                </Typography>
+              </Box>
             </Box>
           </Box>
         </Box>
