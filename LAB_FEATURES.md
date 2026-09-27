@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-This module covers lab connections, doctor-created test requests, lab processing, technician collection tasks, report upload and review, patient visibility, and request history.
+This module covers lab connections, doctor-created and lab-created test requests, lab processing, technician collection tasks, per-lab report templates, A4 report generation, QR verification, report upload/review, patient visibility, and request history.
 
 ---
 
@@ -32,6 +32,9 @@ This module covers lab connections, doctor-created test requests, lab processing
 
 ### Lab User
 - Receive incoming lab requests from doctors
+- Create walk-in or independent requests with patient demographics stored on the request, without creating a patient login account
+- Edit the selected report layout for a request: rows, columns, tables, text areas, and pages
+- Manage lab-owned report templates independently from templates shared by other labs
 - Set expected report delivery date and time
 - Assign collection date/time, queue token, and collection instructions
 - Update status through the workflow
@@ -71,6 +74,13 @@ When a doctor creates a lab test request, the request includes:
 
 ### Important rule
 The request creation flow does not capture a doctor-side report date/time. The report delivery date/time is owned by the lab, not by the doctor.
+
+### Lab-created walk-in / independent request
+- Lab Add Test collects patient name, contact information, required age and sex, optional address, tests, sample type, and priority.
+- This flow stores demographics directly on the lab test request; it does not create a row in `users` or a patient account.
+- The request has no linked `patient_id`; its patient details are returned from request-owned fields.
+- Doctor-created requests continue using their existing patient/user relationship and request API.
+- Technician-created requests retain the existing account-linked flow.
 
 ### Duplicate protection
 - If the same test is already active for the same patient and lab, it is skipped instead of creating a duplicate request
@@ -128,6 +138,16 @@ If a request is cancelled, the lab cannot modify it further.
 - System stores the uploaded report with request association
 - User can open or download the report
 - Report can be deleted within the defined limit window
+- Create Report renders the selected template and captures one A4 PDF page per rendered report page.
+- The PDF is uploaded to S3; QR finalization replaces the same S3 object so the verification code is included in the stored PDF.
+- A compact signed QR route redirects scans to a fresh S3 download URL.
+
+### Lab report templates
+- Default templates are seeded per owning lab; a public template from another lab does not replace that lab's own default.
+- Template detail, update, and delete use the globally unique template row ID; the template key remains scoped to its lab.
+- Templates support multiple A4 pages, shared header/footer, editable result columns/rows, custom tables, and text areas.
+- Create Report uses the selected template's layout; request-specific layout edits are local to the report draft.
+- The lab identity/footer is read-only in Create Report, and the active lab logo is used when the profile provides one.
 
 ### Doctor report review
 - Uploaded reports default to `AWAITING_REVIEW`
@@ -251,6 +271,10 @@ The model layer includes:
 - Added server pagination for high-volume request/report/task APIs
 - Added a technician dashboard with task filters and server pagination
 - Removed old/current report toggles from the doctor reports tab; all report rows are shown there
+- Added request-only lab walk-in patient demographics without inserting patient accounts into `users`
+- Added a unique-ID template API path and lab-scoped default seeding to prevent templates from different labs colliding
+- Added shared template editing/rendering for Create Report, including custom tables and notes
+- Added A4 per-sheet PDF capture, QR image readiness checks, compact signed QR redirects, and same-S3-key QR finalization
 
 ---
 

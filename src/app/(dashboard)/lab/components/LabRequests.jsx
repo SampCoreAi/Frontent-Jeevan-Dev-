@@ -108,6 +108,7 @@ export default function LabRequests({
   technicians = [],
   onAssignTechnician,
   onCreateRequest,
+  requestOnlyPatient = false,
   onCreateReport,
 }) {
   const theme = useTheme();
@@ -372,7 +373,7 @@ export default function LabRequests({
       <SectionTitle
         title="Test Requests"
         description="Review patient test requests and update their processing status."
-        action={<LabAddTestDialog onCreateRequest={onCreateRequest} />}
+        action={<LabAddTestDialog onCreateRequest={onCreateRequest} requestOnlyPatient={requestOnlyPatient} />}
       />
 
       {updateFeedback?.message ? (

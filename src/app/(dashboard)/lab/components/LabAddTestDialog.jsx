@@ -22,7 +22,7 @@ import CloseIcon from "@mui/icons-material/Close";
 
 const SAMPLE_TYPES = ["BLOOD", "URINE", "SERUM", "PLASMA", "SWAB", "STOOL", "SPUTUM", "OTHER"];
 
-export default function LabAddTestDialog({ onCreateRequest, successMessage }) {
+export default function LabAddTestDialog({ onCreateRequest, successMessage, requestOnlyPatient = false }) {
   const [open, setOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [successDetails, setSuccessDetails] = useState(null);
@@ -30,6 +30,9 @@ export default function LabAddTestDialog({ onCreateRequest, successMessage }) {
   const [patientName, setPatientName] = useState("");
   const [patientEmail, setPatientEmail] = useState("");
   const [patientPhone, setPatientPhone] = useState("");
+  const [patientAge, setPatientAge] = useState("");
+  const [patientGender, setPatientGender] = useState("UNSPECIFIED");
+  const [patientAddress, setPatientAddress] = useState("");
   const [doctorName, setDoctorName] = useState("");
   const [doctorPhone, setDoctorPhone] = useState("");
   const [testsInput, setTestsInput] = useState("");
@@ -42,6 +45,9 @@ export default function LabAddTestDialog({ onCreateRequest, successMessage }) {
     setPatientName("");
     setPatientEmail("");
     setPatientPhone("");
+    setPatientAge("");
+    setPatientGender("UNSPECIFIED");
+    setPatientAddress("");
     setDoctorName("");
     setDoctorPhone("");
     setTestsInput("");
@@ -67,6 +73,10 @@ export default function LabAddTestDialog({ onCreateRequest, successMessage }) {
       setError("Enter a valid 10-digit mobile number.");
       return;
     }
+    if (requestOnlyPatient && (!/^\d{1,3}$/.test(patientAge) || Number(patientAge) > 130)) {
+      setError("Enter the patient's age between 0 and 130 years.");
+      return;
+    }
     if (doctorPhone.trim() && !/^[6-9]\d{9}$/.test(doctorPhone.trim())) {
       setError("Enter a valid 10-digit referring doctor mobile number.");
       return;
@@ -83,6 +93,12 @@ export default function LabAddTestDialog({ onCreateRequest, successMessage }) {
         fullName: patientName.trim(),
         email: patientEmail.trim().toLowerCase(),
         phoneNumber: patientPhone.trim(),
+        ...(requestOnlyPatient ? {
+          age: Number(patientAge),
+          gender: patientGender,
+          address: patientAddress.trim(),
+        } : {}),
+        requestType: createMode,
         referringDoctorName: doctorName.trim(),
         referringDoctorPhone: doctorPhone.trim(),
         tests,
@@ -96,7 +112,8 @@ export default function LabAddTestDialog({ onCreateRequest, successMessage }) {
       }
       setOpen(false);
       setSuccessDetails({
-        patientId: result.patientId || result.request?.patient_id || "-",
+        patientId: result.patientId || result.request?.patient_id || (result.requestOnlyPatient ? "Stored with request" : "-"),
+        requestOnlyPatient: Boolean(result.requestOnlyPatient),
         requestId: result.orderId || result.request?.order_id || result.requestId || result.request?.id || "-",
       });
       setSuccessOpen(true);
@@ -172,9 +189,16 @@ export default function LabAddTestDialog({ onCreateRequest, successMessage }) {
               <TextField fullWidth size="small" type="email" label="Patient email (optional)" value={patientEmail} onChange={(event) => setPatientEmail(event.target.value)} />
               <TextField required fullWidth size="small" label="Mobile number" value={patientPhone} onChange={(event) => setPatientPhone(event.target.value.replace(/\D/g, "").slice(0, 10))} inputProps={{ inputMode: "numeric", maxLength: 10 }} />
             </Stack>
-            <Typography sx={{ mt: -1.25, fontSize: "11px", color: "#64748B" }}>
-              A unique patient ID will be generated automatically when saved.
-            </Typography>
+            {requestOnlyPatient ? <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+              <TextField required fullWidth size="small" type="number" label="Age (years)" value={patientAge} onChange={(event) => setPatientAge(event.target.value)} inputProps={{ min: 0, max: 130 }} />
+              <TextField select required fullWidth size="small" label="Sex" value={patientGender} onChange={(event) => setPatientGender(event.target.value)}>
+                <MenuItem value="UNSPECIFIED">Unspecified</MenuItem>
+                <MenuItem value="FEMALE">Female</MenuItem>
+                <MenuItem value="MALE">Male</MenuItem>
+                <MenuItem value="OTHER">Other</MenuItem>
+              </TextField>
+            </Stack> : null}
+            {requestOnlyPatient ? <TextField fullWidth size="small" label="Address (optional)" value={patientAddress} onChange={(event) => setPatientAddress(event.target.value)} /> : null}
 
             <Typography sx={{ fontSize: "12px", fontWeight: 700, color: "#334155" }}>Referring doctor (optional)</Typography>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
@@ -221,7 +245,7 @@ export default function LabAddTestDialog({ onCreateRequest, successMessage }) {
             {successMessage || "The patient test request was created successfully."}
           </Alert>
           <Typography sx={{ fontSize: "13px", color: "#334155" }}>
-            Patient ID: <Box component="strong">{successDetails?.patientId || "-"}</Box>
+            {successDetails?.requestOnlyPatient ? "Patient data" : "Patient ID"}: <Box component="strong">{successDetails?.patientId || "-"}</Box>
           </Typography>
           <Typography sx={{ fontSize: "13px", color: "#334155" }}>
             Request ID: <Box component="strong">{successDetails?.requestId || "-"}</Box>

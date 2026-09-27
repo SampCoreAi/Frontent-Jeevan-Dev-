@@ -2,10 +2,40 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { flushSync } from "react-dom";
+import { AddOutlined, CloseOutlined, DeleteOutline, EditOutlined, SaveOutlined } from "@mui/icons-material";
 import ArrowBackOutlined from "@mui/icons-material/ArrowBackOutlined";
 import PictureAsPdfOutlined from "@mui/icons-material/PictureAsPdfOutlined";
-import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, Stack, Typography } from "@mui/material";
 import api from "../../../../utils/axiosInstance";
+import LabReportPage, {
+  CreateTableDialog,
+  LabReportEditActions,
+  createReportColumn as newColumn,
+  createReportField as newField,
+  createReportPage,
+  createReportTable as newTableBlock,
+  createReportTextBlock as newTextBlock,
+  paginateReportPage,
+} from "./LabReportPage";
+
+const ACTIVE_TEMPLATE_PREFIX = "lab-active-report-template-v1";
+
+const normalizeTemplateDetail = (detail, labProfile) => {
+  const layout = detail?.layout || {};
+  const commonLayout = detail?.commonLayout || layout.commonLayout || {};
+  return {
+    ...detail,
+    ...layout,
+    commonLayout: {
+      ...commonLayout,
+      labName: labProfile?.lab_name || commonLayout.labName,
+      registrationNumber: labProfile?.registration_number || commonLayout.registrationNumber,
+      phoneNumber: labProfile?.phone_number || commonLayout.phoneNumber,
+      address: labProfile?.address || commonLayout.address,
+    },
+  };
+};
 
 const getTests = (value) => {
   if (Array.isArray(value)) return value;
@@ -15,27 +45,50 @@ const getTests = (value) => {
   return [];
 };
 
+const getPatientAgeAndSex = (request) => {
+  const combined = request?.patient_age_sex || request?.patientAgeSex;
+  if (combined) return combined;
+
+  const age = request?.patient_age ?? request?.patientAge ?? request?.age;
+  const sex = request?.patient_gender ?? request?.patientGender ?? request?.gender ?? request?.sex;
+  return [age, sex].filter((value) => value !== null && value !== undefined && value !== "").join(" / ") || "-";
+};
+
 const templateMatches = (template, testName) => {
   const name = String(template.name || "").toLowerCase();
   const test = String(testName || "").toLowerCase();
   return Boolean(test && (name.includes(test) || test.includes(name)));
 };
 
+const clonePages = (pages) => structuredClone(pages || []);
+const resolveLogoUrl = (logo) => {
+  if (typeof logo !== "string" || !logo.trim()) return "";
+  try { return new URL(logo, api.defaults.baseURL).toString(); } catch { return logo; }
+};
+
 export default function LabReportComposer({ requestId }) {
   const router = useRouter();
   const reportRef = useRef(null);
+  const qrImageRef = useRef(null);
   const [request, setRequest] = useState(null);
   const [labProfile, setLabProfile] = useState(null);
   const [templates, setTemplates] = useState([]);
   const [template, setTemplate] = useState(null);
+  const [draftPages, setDraftPages] = useState([]);
+  const [draftOutOfRangeColor, setDraftOutOfRangeColor] = useState("#c62828");
+  const [approvedOn, setApprovedOn] = useState("");
   const [values, setValues] = useState({});
   const [qrDataUrl, setQrDataUrl] = useState("");
+  const [pdfMode, setPdfMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
-  const [selectedTemplateKey, setSelectedTemplateKey] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [layoutEditing, setLayoutEditing] = useState(false);
+  const [tableDialogOpen, setTableDialogOpen] = useState(false);
+  const [tablePageIndex, setTablePageIndex] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -50,26 +103,34 @@ export default function LabReportComposer({ requestId }) {
         const labProfile = profileResponse.data?.data || {};
         const summaries = templatesResponse.data?.data || [];
         const testName = getTests(requestData.requested_tests || requestData.requestedTests)[0] || "";
-        const matching = summaries.find((item) => templateMatches(item, testName)) || summaries[0];
-        const detailResponse = matching ? await api.get(`/api/labs/templates/${encodeURIComponent(matching.templateKey || matching.id)}`) : null;
+        const activeTemplateKey = localStorage.getItem(`${ACTIVE_TEMPLATE_PREFIX}:${labProfile.id}`);
+        const activeTemplate = activeTemplateKey
+          ? summaries.find((item) => String(item.id) === activeTemplateKey)
+            || summaries.find((item) => item.isOwner && item.templateKey === activeTemplateKey)
+            || summaries.find((item) => item.templateKey === activeTemplateKey)
+          : null;
+        const matchingTest = summaries.find((item) => item.isOwner && templateMatches(item, testName))
+          || summaries.find((item) => templateMatches(item, testName));
+        const matching = activeTemplate && templateMatches(activeTemplate, testName)
+          ? activeTemplate
+          : matchingTest || activeTemplate || summaries[0];
+        const detailResponse = matching
+          ? await api.get(`/api/labs/templates/by-id/${encodeURIComponent(matching.id)}`)
+          : null;
         const detail = detailResponse?.data?.data || null;
+        const selectedDetail = detail ? normalizeTemplateDetail(detail, labProfile) : null;
         if (!mounted) return;
         setRequest(requestData);
         setLabProfile(labProfile);
         setTemplates(summaries);
-        setTemplate(detail ? {
-          ...detail,
-          commonLayout: {
-            ...(detail.commonLayout || {}),
-            labName: labProfile.lab_name || detail.commonLayout?.labName,
-            registrationNumber: labProfile.registration_number || detail.commonLayout?.registrationNumber,
-            phoneNumber: labProfile.phone_number || detail.commonLayout?.phoneNumber,
-            address: labProfile.address || detail.commonLayout?.address,
-          },
-        } : detail);
-        setSelectedTemplateKey(matching?.templateKey || matching?.id || "");
+        setTemplate(selectedDetail);
+        setDraftPages(clonePages(selectedDetail?.pages));
+        setDraftOutOfRangeColor(selectedDetail?.outOfRangeColor || "#c62828");
+        setApprovedOn(new Date().toISOString());
+        setLayoutEditing(Boolean(selectedDetail));
+        setSelectedTemplateId(matching?.id == null ? "" : String(matching.id));
         setTemplateDialogOpen(true);
-        setValues(Object.fromEntries((detail?.pages || []).flatMap((page) => (page.fields || []).map((field) => [field.id, field.result || ""]))));
+        setValues(Object.fromEntries((selectedDetail?.pages || []).flatMap((page) => (page.fields || []).map((field) => [field.id, field.result || ""]))));
       } catch (requestError) {
         if (mounted) setError(requestError.response?.data?.message || "Unable to load report details.");
       } finally {
@@ -80,24 +141,20 @@ export default function LabReportComposer({ requestId }) {
     return () => { mounted = false; };
   }, [requestId]);
 
-  const selectTemplate = async (templateKey) => {
+  const selectTemplate = async (templateId) => {
     try {
       setLoading(true);
-      const response = await api.get(`/api/labs/templates/${encodeURIComponent(templateKey)}`);
+      const response = await api.get(`/api/labs/templates/by-id/${encodeURIComponent(templateId)}`);
       const detail = response.data?.data;
-      setTemplate({
-        ...detail,
-        commonLayout: {
-          ...(detail.commonLayout || {}),
-          labName: labProfile?.lab_name || detail.commonLayout?.labName,
-          registrationNumber: labProfile?.registration_number || detail.commonLayout?.registrationNumber,
-          phoneNumber: labProfile?.phone_number || detail.commonLayout?.phoneNumber,
-          address: labProfile?.address || detail.commonLayout?.address,
-        },
-      });
-      setSelectedTemplateKey(templateKey);
+      const selectedDetail = normalizeTemplateDetail(detail, labProfile);
+      setTemplate(selectedDetail);
+      setDraftPages(clonePages(selectedDetail?.pages));
+      setDraftOutOfRangeColor(selectedDetail?.outOfRangeColor || "#c62828");
+      setApprovedOn(new Date().toISOString());
+      setLayoutEditing(true);
+      setSelectedTemplateId(String(templateId));
       setTemplateDialogOpen(false);
-      setValues(Object.fromEntries((detail?.pages || []).flatMap((page) => (page.fields || []).map((field) => [field.id, field.result || ""]))));
+      setValues(Object.fromEntries((selectedDetail?.pages || []).flatMap((page) => (page.fields || []).map((field) => [field.id, field.result || ""]))));
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to load selected template.");
     } finally {
@@ -105,24 +162,185 @@ export default function LabReportComposer({ requestId }) {
     }
   };
 
-  const createPdfBlob = async () => {
-    const html2pdf = (await import("html2pdf.js")).default;
-    return html2pdf().from(reportRef.current).set({
-      margin: 0,
-      filename: `${request.order_id || request.orderId || requestId}-report.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    }).outputPdf("blob");
+  const updateDraftPage = (pageIndex, key, value) => setDraftPages((current) => current.map((page, index) => (
+    index === pageIndex ? { ...page, [key]: value } : page
+  )));
+
+  const updateDraftField = (pageIndex, fieldId, key, value) => setDraftPages((current) => current.map((page, index) => {
+    if (index !== pageIndex) return page;
+    return {
+      ...page,
+      fields: page.fields.map((field) => {
+        if (field.id !== fieldId) return field;
+        if (key.startsWith("column:")) {
+          const columnId = key.slice("column:".length);
+          return { ...field, cells: { ...(field.cells || {}), [columnId]: value } };
+        }
+        if (key === "referenceInterval") {
+          const resultWasReference = !field.result || field.result === field.referenceInterval;
+          return { ...field, referenceInterval: value, result: resultWasReference ? value : field.result };
+        }
+        return { ...field, [key]: value };
+      }),
+    };
+  }));
+
+  const updateDraftColumnLabel = (pageIndex, columnId, label) => setDraftPages((current) => current.map((page, index) => (
+    index === pageIndex
+      ? { ...page, columns: page.columns.map((column) => column.id === columnId ? { ...column, label } : column) }
+      : page
+  )));
+
+  const updateDraftTextBlock = (pageIndex, blockId, key, value, chunkIndex = null) => setDraftPages((current) => current.map((page, index) => {
+    if (index !== pageIndex) return page;
+    return {
+      ...page,
+      textBlocks: page.textBlocks.map((block) => {
+        if (block.id !== blockId) return block;
+        if (key !== "content" || chunkIndex === null) return { ...block, [key]: value };
+        const chunks = [];
+        for (let offset = 0; offset < block.content.length; offset += 700) chunks.push(block.content.slice(offset, offset + 700));
+        if (!chunks.length) chunks.push("");
+        chunks[chunkIndex] = value;
+        return { ...block, content: chunks.join("") };
+      }),
+    };
+  }));
+
+  const updateDraftTable = (pageIndex, tableId, updateTable) => setDraftPages((current) => current.map((page, index) => (
+    index === pageIndex
+      ? { ...page, tableBlocks: page.tableBlocks.map((table) => table.id === tableId ? updateTable(table) : table) }
+      : page
+  )));
+
+  const updateDraftTableCell = (pageIndex, tableId, rowIndex, columnIndex, value) => updateDraftTable(pageIndex, tableId, (table) => {
+    const rows = table.rows.map((row) => [...row]);
+    rows[rowIndex][columnIndex] = value;
+    return { ...table, rows };
+  });
+  const updateDraftTableTitle = (pageIndex, tableId, title) => updateDraftTable(pageIndex, tableId, (table) => ({ ...table, title }));
+  const addDraftTableRow = (pageIndex, tableId) => updateDraftTable(pageIndex, tableId, (table) => ({
+    ...table,
+    rows: [...table.rows, Array.from({ length: table.rows[0]?.length || 1 }, () => "")],
+  }));
+  const removeDraftTableRow = (pageIndex, tableId) => updateDraftTable(pageIndex, tableId, (table) => ({
+    ...table,
+    rows: table.rows.length > 1 ? table.rows.slice(0, -1) : table.rows,
+  }));
+  const addDraftTableColumn = (pageIndex, tableId) => updateDraftTable(pageIndex, tableId, (table) => ({
+    ...table,
+    rows: table.rows.map((row) => [...row, ""]),
+  }));
+  const removeDraftTableColumn = (pageIndex, tableId) => updateDraftTable(pageIndex, tableId, (table) => ({
+    ...table,
+    rows: table.rows[0]?.length > 1 ? table.rows.map((row) => row.slice(0, -1)) : table.rows,
+  }));
+  const removeDraftTable = (pageIndex, tableId) => setDraftPages((current) => current.map((page, index) => (
+    index === pageIndex ? { ...page, tableBlocks: page.tableBlocks.filter((table) => table.id !== tableId) } : page
+  )));
+
+  const addTableBlock = (rows, columns) => {
+    setDraftPages((current) => current.map((page, index) => index === tablePageIndex
+      ? { ...page, tableBlocks: [...page.tableBlocks, newTableBlock(rows, columns)] }
+      : page));
+    setTableDialogOpen(false);
+  };
+  const openTableDialog = (pageIndex) => {
+    setTablePageIndex(pageIndex);
+    setTableDialogOpen(true);
   };
 
-  const uploadPdf = async (pdfBlob, preservePrevious = false) => {
+  const addDraftColumn = (pageIndex) => setDraftPages((current) => current.map((page, index) => (
+    index === pageIndex ? { ...page, columns: [...page.columns, newColumn()] } : page
+  )));
+  const removeLastDraftColumn = (pageIndex) => setDraftPages((current) => current.map((page, index) => (
+    index === pageIndex && page.columns.length > 1 ? { ...page, columns: page.columns.slice(0, -1) } : page
+  )));
+  const addDraftField = (pageIndex) => setDraftPages((current) => current.map((page, index) => (
+    index === pageIndex ? { ...page, fields: [...page.fields, newField()] } : page
+  )));
+  const removeLastDraftField = (pageIndex) => setDraftPages((current) => current.map((page, index) => (
+    index === pageIndex && page.fields.length > 1 ? { ...page, fields: page.fields.slice(0, -1) } : page
+  )));
+  const removeDraftTextBlock = (pageIndex, blockId) => setDraftPages((current) => current.map((page, index) => (
+    index === pageIndex ? { ...page, textBlocks: page.textBlocks.filter((block) => block.id !== blockId) } : page
+  )));
+
+  const startLayoutEditing = () => {
+    setDraftPages(clonePages(template?.pages));
+    setDraftOutOfRangeColor(template?.outOfRangeColor || "#c62828");
+    setLayoutEditing(true);
+  };
+  const cancelLayoutEditing = () => {
+    setDraftPages(clonePages(template?.pages));
+    setDraftOutOfRangeColor(template?.outOfRangeColor || "#c62828");
+    setLayoutEditing(false);
+  };
+
+  const addReportPage = () => setDraftPages((current) => [...current, createReportPage(current.length + 1)]);
+  const removeReportPage = (pageIndex) => setDraftPages((current) => (
+    current.length > 1 ? current.filter((_, index) => index !== pageIndex) : current
+  ));
+
+  const createPdfBlob = async () => {
+    flushSync(() => setPdfMode(true));
+    try {
+      await document.fonts?.ready;
+      await Promise.all(Array.from(reportRef.current.querySelectorAll("img"), async (image) => {
+        if (!image.complete) {
+          await new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = reject;
+          });
+        }
+        if (image.naturalWidth && typeof image.decode === "function") await image.decode();
+      }));
+      const html2canvas = (await import("html2canvas")).default;
+      const { PDFDocument } = await import("pdf-lib");
+      const pageElements = Array.from(reportRef.current.querySelectorAll(".lab-template-page"));
+      if (!pageElements.length) throw new Error("No report pages are available to export.");
+
+      const pdf = await PDFDocument.create();
+      const pageWidth = 595.28;
+      const pageHeight = 841.89;
+      for (const pageElement of pageElements) {
+        const canvas = await html2canvas(pageElement, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#FFFFFF",
+          ignoreElements: (element) => element.hasAttribute("data-html2canvas-ignore"),
+        });
+        const image = await pdf.embedPng(canvas.toDataURL("image/png"));
+        const pdfPage = pdf.addPage([pageWidth, pageHeight]);
+        pdfPage.drawImage(image, { x: 0, y: 0, width: pageWidth, height: pageHeight });
+      }
+
+      return new Blob([await pdf.save()], { type: "application/pdf" });
+    } finally {
+      flushSync(() => setPdfMode(false));
+    }
+  };
+
+  const uploadPdf = async (pdfBlob, reportId = null) => {
     const fileName = `${request.order_id || request.orderId || requestId}-report.pdf`;
     const formData = new FormData();
     formData.append("file", new File([pdfBlob], fileName, { type: "application/pdf" }));
     formData.append("testRequestId", request.id || requestId);
-    if (preservePrevious) formData.append("preservePrevious", "true");
+    if (reportId) formData.append("reportId", String(reportId));
     return api.post("/api/lab-reports/upload", formData, { headers: { "Content-Type": "multipart/form-data" } });
+  };
+
+  const waitForQrImage = async () => {
+    const image = qrImageRef.current;
+    if (!image) throw new Error("Verification QR could not be rendered in the report.");
+    if (typeof image.decode === "function") await image.decode();
+    else if (!image.complete) {
+      await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = reject;
+      });
+    }
+    if (!image.naturalWidth) throw new Error("Verification QR image failed to load.");
   };
 
   const submitReport = async () => {
@@ -134,11 +352,24 @@ export default function LabReportComposer({ requestId }) {
       if (reportId) {
         const reportResponse = await api.get(`/api/lab-reports/${reportId}`);
         const downloadUrl = reportResponse.data?.data?.downloadUrl;
-        if (downloadUrl) {
+        const qrPath = firstUpload.data?.data?.qrPath;
+        const apiUrl = new URL(api.defaults.baseURL || window.location.origin, window.location.origin);
+        const isLocalApi = ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(apiUrl.hostname);
+        const qrValue = qrPath && !isLocalApi
+          ? new URL(qrPath, apiUrl).toString()
+          : downloadUrl;
+        if (qrValue) {
           const QRious = (await import("qrious")).default;
-          setQrDataUrl(new QRious({ value: downloadUrl, size: 120, level: "H" }).toDataURL());
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          await uploadPdf(await createPdfBlob(), true);
+          const qrDataUrl = new QRious({
+            value: qrValue,
+            size: 320,
+            level: "L",
+            foreground: "#000000",
+            background: "#FFFFFF",
+          }).toDataURL();
+          flushSync(() => setQrDataUrl(qrDataUrl));
+          await waitForQrImage();
+          await uploadPdf(await createPdfBlob(), reportId);
         }
       }
       setNotice("Report submitted. Patient and doctor will be notified.");
@@ -154,44 +385,132 @@ export default function LabReportComposer({ requestId }) {
   if (error && !template) return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>;
 
   const common = template?.commonLayout || {};
+  const labLogoPath = labProfile?.lab_logo_url
+    || labProfile?.lab_logo
+    || labProfile?.lab_logo_path
+    || labProfile?.logo_url
+    || labProfile?.logo
+    || labProfile?.profile_image
+    || labProfile?.image_url
+    || common.labLogo
+    || common.brandLogo
+    || common.logo
+    || "";
+  const labLogo = resolveLogoUrl(labLogoPath);
   const tests = getTests(request?.requested_tests || request?.requestedTests);
+  const reportPages = draftPages.length ? draftPages : template?.pages || [];
+  const renderablePages = reportPages.flatMap((page, sourcePageIndex) => (
+    paginateReportPage(page, layoutEditing ? 10 : 14).map((contentPage, continuationIndex) => ({ page: contentPage, sourcePageIndex, continuationIndex }))
+  ));
 
   return (
     <Box className="lab-composer-shell">
       <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" gap={1.5} sx={{ mb: 2 }}>
         <Button startIcon={<ArrowBackOutlined />} onClick={() => router.back()} sx={{ alignSelf: "flex-start", textTransform: "none" }}>Back to test requests</Button>
-        <Button startIcon={<PictureAsPdfOutlined />} onClick={submitReport} disabled={submitting || !template} variant="contained" sx={{ textTransform: "none", bgcolor: "#07876A" }}>{submitting ? "Submitting..." : "Submit report"}</Button>
+        <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
+          {layoutEditing ? (
+            <>
+              <Button startIcon={<AddOutlined />} onClick={addReportPage} variant="outlined" sx={{ textTransform: "none" }}>Add page</Button>
+              <Button startIcon={<CloseOutlined />} onClick={cancelLayoutEditing} variant="outlined" sx={{ textTransform: "none" }}>Cancel layout</Button>
+              <Button startIcon={<SaveOutlined />} onClick={() => setLayoutEditing(false)} variant="contained" sx={{ textTransform: "none", bgcolor: "#07876A" }}>Done editing</Button>
+            </>
+          ) : (
+            <Button startIcon={<EditOutlined />} onClick={startLayoutEditing} disabled={!template || submitting} variant="outlined" sx={{ textTransform: "none" }}>Edit report layout</Button>
+          )}
+          <Button startIcon={<PictureAsPdfOutlined />} onClick={submitReport} disabled={submitting || !template} variant="contained" sx={{ textTransform: "none", bgcolor: "#07876A" }}>{submitting ? "Submitting..." : "Submit report"}</Button>
+        </Stack>
       </Stack>
+      {layoutEditing ? (
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5, px: 1, py: 0.5, border: "1px solid #E2E8F0", borderRadius: 1, width: "fit-content" }}>
+          <Typography sx={{ fontSize: 11.5, color: "#475467", whiteSpace: "nowrap" }}>Out-of-range color</Typography>
+          <input aria-label="Report out-of-range color" type="color" value={draftOutOfRangeColor} onChange={(event) => setDraftOutOfRangeColor(event.target.value)} style={{ width: 34, height: 28, border: 0, padding: 0, background: "transparent", cursor: "pointer" }} />
+        </Stack>
+      ) : null}
       {error ? <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>{error}</Alert> : null}
       {notice ? <Alert severity="success" sx={{ mb: 2 }}>{notice}</Alert> : null}
       <Dialog open={templateDialogOpen} onClose={() => router.back()} maxWidth="sm" fullWidth>
         <DialogTitle>Select report template</DialogTitle>
         <DialogContent sx={{ display: "grid", gap: 1.5, pt: 1 }}>
           <Typography sx={{ fontSize: 13, color: "#475467" }}>Test: {tests.join(", ") || request?.test_name || "Requested test"}</Typography>
-          <Select size="small" value={selectedTemplateKey} onChange={(event) => setSelectedTemplateKey(event.target.value)}>
-            {templates.map((item) => <MenuItem key={item.templateKey || item.id} value={item.templateKey || item.id}>{item.name}</MenuItem>)}
+          <Select size="small" value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)}>
+            {templates.map((item) => <MenuItem key={item.id} value={String(item.id)}>{item.name}</MenuItem>)}
           </Select>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => router.back()} sx={{ textTransform: "none" }}>Cancel</Button>
-          <Button onClick={() => selectTemplate(selectedTemplateKey)} disabled={!selectedTemplateKey || loading} variant="contained" sx={{ textTransform: "none", bgcolor: "#07876A" }}>Open template</Button>
+          <Button onClick={() => selectTemplate(selectedTemplateId)} disabled={!selectedTemplateId || loading} variant="contained" sx={{ textTransform: "none", bgcolor: "#07876A" }}>Open template</Button>
         </DialogActions>
       </Dialog>
-      <Paper ref={reportRef} className="lab-template-page lab-composer-page" elevation={2}>
-        <Box className="lab-template-top-rule" />
-        <Box className="lab-template-brand"><Box className="lab-template-mark">{common.brandMark || "LAB"}</Box><Box><Typography className="lab-template-brand-name">{common.labName || "YOUR LAB NAME"}</Typography><Typography className="lab-template-brand-caption">{common.tagline || "ACCURATE & AFFORDABLE ALWAYS"}</Typography></Box></Box>
-        {(common.registrationNumber || common.phoneNumber || common.address) ? <Box className="lab-template-contact"><span>{common.registrationNumber ? `Reg. No.: ${common.registrationNumber}` : ""}</span><span>{common.phoneNumber ? `Phone: ${common.phoneNumber}` : ""}</span><span>{common.address || ""}</span></Box> : null}
-        <Box className="lab-template-title">{common.reportTitle || "TEST REPORT"}</Box>
-        <Box className="lab-template-patient-grid"><PatientLine label="Name" value={request?.patient_name || request?.patientName || request?.patient_id || "-"} /><PatientLine label="Reg. No." value={request?.order_id || request?.orderId || "-"} /><PatientLine label="Age & Sex" value={request?.patient_age_sex || request?.patientAgeSex || "-"} /><PatientLine label="Reg. Date" value={request?.created_at || request?.createdAt || "-"} /><PatientLine label="Referred By" value={request?.doctor_name || request?.doctorName || request?.doctor_id || "-"} /><PatientLine label="Sample" value={request?.sample_type || request?.sampleType || "-"} /><PatientLine label="Tests" value={tests.join(", ") || "-"} /></Box>
-        {(template.pages || []).map((page) => <Box key={page.id} className="lab-composer-section"><Box className="lab-template-panel-title">{page.panelTitle}</Box>{page.sampleType ? <Typography className="lab-template-sample-type"><b>Sample Type:</b> {page.sampleType}</Typography> : null}{page.instructions ? <Typography className="lab-template-method-note">{page.instructions}</Typography> : null}<Box className="lab-template-columns lab-composer-columns"><Box>Parameter</Box><Box>Result</Box><Box>Bio. Ref. Interval</Box><Box>Units</Box><Box>Method</Box></Box>{(page.fields || []).map((field) => <Box key={field.id} className="lab-template-result-row lab-composer-row"><span>{field.parameter}</span><TextField size="small" variant="standard" value={values[field.id] || ""} onChange={(event) => setValues((current) => ({ ...current, [field.id]: event.target.value }))} placeholder="Result" /><span>{field.referenceInterval}</span><span>{field.unit}</span><span>{field.method}</span></Box>)}{(page.tableBlocks || []).map((table) => <Box key={table.id} className="lab-template-custom-table-wrap"><Typography className="lab-template-custom-table-title">{table.title}</Typography><Box className="lab-template-custom-table">{(table.rows || []).map((row, rowIndex) => <Box key={`${table.id}-${rowIndex}`} className={`lab-template-custom-table-row${rowIndex === 0 ? " lab-template-custom-table-header" : ""}`} sx={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>{row.map((cell, cellIndex) => <Box key={`${table.id}-${rowIndex}-${cellIndex}`} className="lab-template-custom-table-cell">{cell}</Box>)}</Box>)}</Box></Box>)}</Box>)}
-        <Box className="lab-template-footer"><Box className="lab-template-authenticated"><Typography className="lab-template-auth-note">{common.authenticationText || "This is an electronically authenticated report."}</Typography>{qrDataUrl ? <img src={qrDataUrl} alt="Report verification QR code" width="72" height="72" /> : null}</Box><Box className="lab-template-approval"><Typography><b>Approved By:</b> {common.approvedBy || "Lab Pathologist"}</Typography><Typography>{common.qualification || "Qualification / Registration No."}</Typography></Box><Typography className="lab-template-page-number">Authorized report</Typography></Box>
-      </Paper>
+      <Box ref={reportRef} className="lab-composer-document" sx={{ width: "100%", maxWidth: 900, mx: "auto" }}>
+        {renderablePages.map(({ page, sourcePageIndex, continuationIndex }, renderIndex) => {
+          return (
+            <Box key={`${page.id}-continuation-${continuationIndex}`} className="lab-report-page-wrap">
+              {layoutEditing && continuationIndex === 0 && draftPages.length > 1 ? (
+                <Button data-html2canvas-ignore="true" color="error" size="small" startIcon={<DeleteOutline />} onClick={() => removeReportPage(sourcePageIndex)} sx={{ mb: 0.75, textTransform: "none" }}>
+                  Remove manual page {sourcePageIndex + 1}
+                </Button>
+              ) : null}
+              <LabReportPage
+                page={page}
+                commonLayout={common}
+                brandLogo={labLogo}
+                showLabLogo
+                patientFields={[
+                  { label: "Name", value: request?.patient_name || request?.patientName || request?.patient_id || "-" },
+                  { label: "Reg. No.", value: request?.order_id || request?.orderId || "-" },
+                  { label: "Age & Sex", value: getPatientAgeAndSex(request) },
+                  { label: "Reg. Date", value: request?.created_at || request?.createdAt || "-" },
+                  { label: "Referred By", value: request?.doctor_name || request?.doctorName || request?.doctor_id || "-" },
+                  { label: "Sample", value: request?.sample_type || request?.sampleType || "-" },
+                  { label: "Tests", value: tests.join(", ") || "-" },
+                ]}
+                pageNumber={renderIndex + 1}
+                pageCount={renderablePages.length}
+                continuationIndex={continuationIndex}
+                lastPage={renderIndex === renderablePages.length - 1}
+                approvedOn={approvedOn}
+                templateEditing={layoutEditing}
+                pdfMode={pdfMode}
+                editPageDetails={layoutEditing && continuationIndex === 0}
+                entryMode
+                resultValues={values}
+                onResultChange={(fieldId, value) => setValues((current) => ({ ...current, [fieldId]: value }))}
+                outOfRangeColor={layoutEditing ? draftOutOfRangeColor : template.outOfRangeColor || "#c62828"}
+                qrDataUrl={qrDataUrl}
+                qrImageRef={renderIndex === 0 ? qrImageRef : undefined}
+                onPageChange={(key, value) => updateDraftPage(sourcePageIndex, key, value)}
+                onFieldChange={(fieldId, key, value) => updateDraftField(sourcePageIndex, fieldId, key, value)}
+                onColumnLabelChange={(columnId, label) => updateDraftColumnLabel(sourcePageIndex, columnId, label)}
+                onTableTitleChange={(tableId, title) => updateDraftTableTitle(sourcePageIndex, tableId, title)}
+                onTableCellChange={(tableId, rowIndex, columnIndex, value) => updateDraftTableCell(sourcePageIndex, tableId, rowIndex, columnIndex, value)}
+                onAddTableRow={(tableId) => addDraftTableRow(sourcePageIndex, tableId)}
+                onRemoveTableRow={(tableId) => removeDraftTableRow(sourcePageIndex, tableId)}
+                onAddTableColumn={(tableId) => addDraftTableColumn(sourcePageIndex, tableId)}
+                onRemoveTableColumn={(tableId) => removeDraftTableColumn(sourcePageIndex, tableId)}
+                onRemoveTable={(tableId) => removeDraftTable(sourcePageIndex, tableId)}
+                onTextBlockChange={(blockId, key, value, chunkIndex) => updateDraftTextBlock(sourcePageIndex, blockId, key, value, chunkIndex)}
+                onRemoveTextBlock={(blockId) => removeDraftTextBlock(sourcePageIndex, blockId)}
+                actions={layoutEditing && renderIndex === renderablePages.length - 1 ? (
+                  <LabReportEditActions
+                    onAddRow={() => addDraftField(sourcePageIndex)}
+                    onRemoveRow={() => removeLastDraftField(sourcePageIndex)}
+                    canRemoveRow={draftPages[sourcePageIndex].fields.length > 1}
+                    onAddColumn={() => addDraftColumn(sourcePageIndex)}
+                    onRemoveColumn={() => removeLastDraftColumn(sourcePageIndex)}
+                    canRemoveColumn={draftPages[sourcePageIndex].columns.length > 1}
+                    onCreateTable={() => openTableDialog(sourcePageIndex)}
+                    onAddTextArea={() => updateDraftPage(sourcePageIndex, "textBlocks", [...draftPages[sourcePageIndex].textBlocks, newTextBlock()])}
+                  />
+                ) : null}
+              />
+            </Box>
+          );
+        })}
+      </Box>
+      <CreateTableDialog open={tableDialogOpen} onClose={() => setTableDialogOpen(false)} onInsert={addTableBlock} />
       <Button startIcon={<PictureAsPdfOutlined />} onClick={submitReport} disabled={submitting || !template} variant="contained" sx={{ display: "flex", ml: "auto", mr: 0, mt: 2, textTransform: "none", bgcolor: "#07876A" }}>{submitting ? "Submitting..." : "Submit report"}</Button>
-      <style jsx global>{`.lab-composer-shell{min-height:100vh;padding:24px;background:#F8FAFC}.lab-composer-page{min-width:680px;max-width:900px;margin:0 auto;padding:20px 42px 74px;overflow:visible;color:#171717;background:#fff;font-family:Georgia,'Times New Roman',serif;box-sizing:border-box}.lab-template-top-rule{height:7px;margin:-20px -42px 20px;background:linear-gradient(90deg,#087c70 0 18%,#20a898 18% 100%)}.lab-template-brand{display:flex;justify-content:flex-end;align-items:center;gap:10px;min-height:74px;color:#12658a}.lab-template-mark{display:grid;place-items:center;width:44px;height:44px;border:2px solid #12658a;border-radius:50%;font:800 14px Arial}.lab-template-brand-name{color:#12658a;font:700 23px/1 Arial,sans-serif;white-space:nowrap}.lab-template-brand-caption{margin-top:4px;color:#264958;font:700 9px/1.2 Arial,sans-serif;text-align:right;letter-spacing:.6px}.lab-template-contact{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:4px 14px;color:#264958;font:10px/1.35 Arial;text-align:right}.lab-template-title{margin-top:20px;padding:8px 0;border-top:2px solid #303030;border-bottom:2px solid #303030;text-align:center;font-size:20px;font-weight:700}.lab-template-patient-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:9px 30px;padding:16px 0 22px}.lab-template-patient-line{display:grid;grid-template-columns:105px 12px minmax(0,1fr);gap:5px;font:14px/1.35 Georgia}.lab-template-patient-line:before{content:':' ;grid-column:2}.lab-template-patient-line span{grid-column:1}.lab-template-patient-line b{grid-column:3;font-weight:600}.lab-template-panel-title{display:grid;place-items:center;min-height:35px;margin:0 -10px 7px;border-radius:20px;background:#c7c7c7;color:#111;font-size:15px;font-weight:700;text-align:center}.lab-template-sample-type{margin:0 0 9px;font-size:13px}.lab-template-method-note{margin:0 0 18px;font:700 13px/1.55 Georgia}.lab-template-columns,.lab-template-result-row{display:grid;grid-template-columns:minmax(0,2.3fr) minmax(132px,1.2fr) minmax(100px,1.25fr) minmax(58px,.8fr) minmax(90px,1fr);column-gap:12px;align-items:center}.lab-template-columns{margin-bottom:5px}.lab-template-columns>*{min-height:29px;padding:4px 9px;border-radius:18px;background:#c7c7c7;font-size:11px;font-weight:700;white-space:nowrap}.lab-template-result-row{min-height:27px;padding:0 9px;font-size:12.7px;line-height:1.25}.lab-template-result-row>*{min-width:0;overflow-wrap:anywhere}.lab-composer-row .MuiInputBase-root{font:inherit}.lab-template-custom-table-wrap{margin:16px 9px}.lab-template-custom-table{display:grid}.lab-template-custom-table-row{display:grid;column-gap:12px;align-items:center;min-height:27px;padding:0 9px}.lab-template-custom-table-header{margin-bottom:5px}.lab-template-custom-table-header .lab-template-custom-table-cell{min-height:29px;padding:4px 9px;border-radius:18px;background:#c7c7c7;font-weight:700}.lab-template-custom-table-cell{min-width:0;overflow-wrap:anywhere}.lab-template-footer{display:grid;grid-template-columns:1fr 1.25fr;gap:8px 18px;align-items:end;margin-top:36px;padding-top:9px;border-top:2px solid #303030}.lab-template-auth-note{font-size:10px;text-align:center}.lab-template-approval{display:grid;gap:5px;font-size:10px}.lab-template-page-number{grid-column:2;margin-top:15px;font-size:10px;text-align:right}@media(max-width:700px){.lab-composer-shell{padding:10px}.lab-composer-page{padding-right:24px;padding-left:24px}.lab-template-top-rule{margin-right:-24px;margin-left:-24px}}@media print{.lab-composer-shell{padding:0}.lab-composer-page{width:210mm;min-width:0;max-width:none;min-height:297mm;overflow:hidden;box-shadow:none;break-after:page}}`}</style>
+      <style jsx global>{`.lab-composer-shell{min-height:100vh;padding:24px;background:#F8FAFC}@media(max-width:700px){.lab-composer-shell{padding:10px}}@media print{.lab-composer-shell{padding:0}}`}</style>
     </Box>
   );
 }
 
-function PatientLine({ label, value }) {
-  return <Typography className="lab-template-patient-line"><span>{label}</span><b>{value}</b></Typography>;
-}

@@ -10,7 +10,7 @@ import LabConnections from "./LabConnections";
 import LabRequests from "./LabRequests";
 import LabReports from "./LabReports";
 import LabTechnicians from "./LabTechnicians";
-import { createWalkInLabTestRequest } from "../services/labRequestApi";
+import { createLabWalkInTestRequest } from "../services/labRequestApi";
 
 const getRows = (response) => response.data?.data || [];
 const getErrorMessage = (error, fallback) => error.response?.data?.message || error.message || fallback;
@@ -260,28 +260,18 @@ export default function LabPanel({ section = "dashboard" }) {
     setNotice("Technician added and login credentials sent by email.");
   };
 
-  const createLabRequest = async ({ fullName, email, phoneNumber, referringDoctorName, referringDoctorPhone, tests, sampleType, priority, requestType }) => {
+  const createLabRequest = async (requestDetails) => {
     try {
       if (!profile?.id) throw new Error("Lab profile is not loaded yet.");
-      const created = await createWalkInLabTestRequest({
-        labId: Number(profile.id),
-        fullName,
-        email,
-        phoneNumber,
-        referringDoctorName,
-        referringDoctorPhone,
-        tests,
-        sampleType,
-        priority,
-        requestType,
-      });
+      const created = await createLabWalkInTestRequest({ ...requestDetails, labId: Number(profile.id) });
       await loadRequests();
-      setNotice(`${requestType === "WALK_IN" ? "Walk-in" : "Independent"} test request created. Patient ID: ${created.patientId}.`);
+      setNotice(`${requestDetails.requestType === "INDEPENDENT" ? "Independent" : "Walk-in"} test request created. Request ID: ${created.orderId || created.order_id || created.requestId}.`);
       return {
         success: true,
         patientId: created.patientId,
         requestId: created.requestId,
         orderId: created.orderId,
+        requestOnlyPatient: created.requestOnlyPatient,
         request: created.request,
       };
     } catch (requestError) {
@@ -362,6 +352,7 @@ export default function LabPanel({ section = "dashboard" }) {
       technicians={technicians}
       onAssignTechnician={assignTechnician}
       onCreateRequest={createLabRequest}
+      requestOnlyPatient
       onCreateReport={(request) => router.push(`/lab/pages/requests/${request.id}/report`)}
     />
   ) : section === "reports" ? (

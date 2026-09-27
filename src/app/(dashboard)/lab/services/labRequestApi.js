@@ -1,5 +1,10 @@
 import api from "../../../../utils/axiosInstance";
 
+export const createLabWalkInTestRequest = async (requestDetails) => {
+  const response = await api.post("/api/lab-requests/walk-in-request", requestDetails);
+  return response.data?.data || {};
+};
+
 export const createWalkInLabTestRequest = async ({
   labId,
   fullName,
