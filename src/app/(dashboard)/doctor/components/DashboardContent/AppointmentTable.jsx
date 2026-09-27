@@ -9,12 +9,15 @@ import {
   Box,
   CircularProgress,
 } from "@mui/material";
+import { useRouter } from "next/navigation";
 
 const AppointmentTable = ({
   appointments = [],
   loading,
   onSelectAppointment,
 }) => {
+  const router = useRouter();
+
   const safeAppointments = Array.isArray(appointments) ? appointments : [];
 
   const displayValue = (value) => {
@@ -53,13 +56,16 @@ const AppointmentTable = ({
     };
   };
 
+  const handleMoreClick = () => {
+    router.push("/doctor/pages/patient");
+  };
+
   return (
     <Paper
       elevation={0}
       sx={{
         p: { xs: 1.5, sm: 2 },
         width: "100%",
-        // height: "100%",
         border: "1px solid #b1b1b1",
         borderRadius: 1.5,
         bgcolor: "#fff",
@@ -74,7 +80,9 @@ const AppointmentTable = ({
       >
         Today Appointments
       </Typography>
+
       <Divider sx={{ my: 1.5 }} />
+
       {loading ? (
         <Box
           sx={{
@@ -160,6 +168,7 @@ const AppointmentTable = ({
                         ?.charAt(0)
                         ?.toUpperCase() || "?"}
                     </Avatar>
+
                     <Box sx={{ minWidth: 0 }}>
                       <Typography
                         sx={{
@@ -172,6 +181,7 @@ const AppointmentTable = ({
                       >
                         Token {displayValue(appointment?.token_number)}
                       </Typography>
+
                       <Typography
                         sx={{
                           fontSize: "12.5px",
@@ -184,6 +194,7 @@ const AppointmentTable = ({
                       >
                         {displayValue(appointment?.patient_name)}
                       </Typography>
+
                       <Typography
                         sx={{
                           mt: 0.2,
@@ -198,6 +209,7 @@ const AppointmentTable = ({
                       </Typography>
                     </Box>
                   </Box>
+
                   <Box
                     sx={{
                       display: { xs: "none", sm: "flex" },
@@ -214,6 +226,7 @@ const AppointmentTable = ({
                     >
                       Token
                     </Typography>
+
                     <Typography
                       sx={{
                         mt: 0.15,
@@ -225,6 +238,7 @@ const AppointmentTable = ({
                       {displayValue(appointment?.token_number)}
                     </Typography>
                   </Box>
+
                   <Box
                     sx={{
                       flexShrink: 0,
@@ -242,6 +256,7 @@ const AppointmentTable = ({
                     >
                       {displayValue(appointment?.start_time)}
                     </Typography>
+
                     <Box
                       sx={{
                         display: "inline-flex",
@@ -261,26 +276,44 @@ const AppointmentTable = ({
                     </Box>
                   </Box>
                 </Box>
+
                 {index !== Math.min(safeAppointments.length, 5) - 1 && (
                   <Divider sx={{ borderColor: "#eeeeee" }} />
                 )}
               </Box>
             );
           })}
+
           {safeAppointments.length > 5 && (
             <>
               <Divider sx={{ mt: 1 }} />
-              <Typography
+
+              <Box
+                onClick={handleMoreClick}
                 sx={{
-                  pt: 1.3,
-                  textAlign: "center",
-                  fontSize: "12.5px",
-                  fontWeight: 600,
-                  color: "#07876a",
+                  mt: 0.5,
+                  py: 0.9,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  borderRadius: 1,
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    bgcolor: "#f1f8f6",
+                  },
                 }}
               >
-                +{safeAppointments.length - 5} More
-              </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "12.5px",
+                    fontWeight: 600,
+                    color: "#07876a",
+                  }}
+                >
+                  +{safeAppointments.length - 5} More
+                </Typography>
+              </Box>
             </>
           )}
         </Box>
