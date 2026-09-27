@@ -158,6 +158,7 @@ export default function PrescriptionUI(props) {
     setSnackbar,
 
     handleSavePrescription,
+    isSavingPrescription,
     downloadPdf,
     pdfRef,
 
@@ -772,13 +773,21 @@ export default function PrescriptionUI(props) {
               variant="contained"
               disableElevation
               onClick={handleSavePrescription}
+              disabled={isSavingPrescription}
+              startIcon={
+                isSavingPrescription ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : null
+              }
               sx={actionButtonSx(110)}
             >
               <Box
                 component="span"
                 sx={{ display: { xs: "none", sm: "inline" } }}
               >
-                {apiData?.prescription
+                {isSavingPrescription
+                  ? "Saving..."
+                  : apiData?.prescription
                   ? "Update Prescription"
                   : "Save Prescription"}
               </Box>
@@ -787,7 +796,11 @@ export default function PrescriptionUI(props) {
                 component="span"
                 sx={{ display: { xs: "inline", sm: "none" } }}
               >
-                {apiData?.prescription ? "Update" : "Save"}
+                {isSavingPrescription
+                  ? "Saving"
+                  : apiData?.prescription
+                    ? "Update"
+                    : "Save"}
               </Box>
             </Button>
           )}

@@ -1,5 +1,4 @@
 "use client";
-import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -14,7 +13,8 @@ import {
   ErrorOutline as ErrorOutlineIcon,
   InfoOutlined as InfoIcon,
 } from "@mui/icons-material";
-
+import React, { useEffect, useState } from "react";
+import { socket } from "../../../../../socket/socket";
 const NotificationPopover = ({ sidebar = false }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [notifications, setNotifications] = useState([]);
@@ -69,6 +69,93 @@ const NotificationPopover = ({ sidebar = false }) => {
     }
   };
 
+  useEffect(() => {
+  const handleNewNotification = (notification) => {
+    console.log("🔔 New notification:", notification);
+
+    setNotifications((prev) => {
+      const exists = prev.some(
+        (item) => Number(item.id) === Number(notification.id)
+      );
+
+      if (exists) {
+        return prev;
+      }
+
+      return [notification, ...prev];
+    });
+  };
+
+  const handleNotificationRead = (notification) => {
+    setNotifications((prev) =>
+      prev.map((item) =>
+        Number(item.id) === Number(notification.id)
+          ? notification
+          : item
+      )
+    );
+  };
+
+  const handleReadAll = () => {
+    setNotifications((prev) =>
+      prev.map((item) => ({
+        ...item,
+        is_read: 1,
+      }))
+    );
+  };
+
+  const handleDeleted = ({ notificationId }) => {
+    setNotifications((prev) =>
+      prev.filter(
+        (item) =>
+          Number(item.id) !== Number(notificationId)
+      )
+    );
+  };
+
+  socket.on(
+    "notification:new",
+    handleNewNotification
+  );
+
+  socket.on(
+    "notification:read",
+    handleNotificationRead
+  );
+
+  socket.on(
+    "notification:read-all",
+    handleReadAll
+  );
+
+  socket.on(
+    "notification:deleted",
+    handleDeleted
+  );
+
+  return () => {
+    socket.off(
+      "notification:new",
+      handleNewNotification
+    );
+
+    socket.off(
+      "notification:read",
+      handleNotificationRead
+    );
+
+    socket.off(
+      "notification:read-all",
+      handleReadAll
+    );
+
+    socket.off(
+      "notification:deleted",
+      handleDeleted
+    );
+  };
+}, []);
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
     fetchNotifications();

@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Grid, Stack, Typography } from "@mui/material";
+
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import PersonSearchRoundedIcon from "@mui/icons-material/PersonSearchRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
@@ -30,21 +31,29 @@ export default function AuthSidePanel() {
     <Grid
       sx={{
         position: "relative",
+
         width: {
           xs: "100%",
           md: "50%",
         },
+
         height: {
-          xs: 520,
+          xs: "500px",
           md: "100%",
         },
+
+        boxSizing: "border-box",
+
         overflow: "hidden",
+
         background:
           "linear-gradient(145deg, #F7FFFC 0%, #EEFAF6 55%, #E4F6F0 100%)",
+
         px: {
           xs: 3,
           md: 3.5,
         },
+
         py: {
           xs: 3,
           md: 3,
@@ -54,11 +63,17 @@ export default function AuthSidePanel() {
       <Box
         sx={{
           position: "absolute",
+
           width: 330,
           height: 330,
+
           borderRadius: "50%",
-          backgroundColor: "rgba(7,135,106,0.035)",
-          border: "1px solid rgba(7,135,106,0.08)",
+
+          bgcolor: "rgba(7,135,106,0.035)",
+
+          border:
+            "1px solid rgba(7,135,106,0.08)",
+
           right: -150,
           top: 145,
         }}
@@ -67,10 +82,15 @@ export default function AuthSidePanel() {
       <Box
         sx={{
           position: "absolute",
+
           width: 240,
           height: 240,
+
           borderRadius: "50%",
-          border: "1px solid rgba(7,135,106,0.07)",
+
+          border:
+            "1px solid rgba(7,135,106,0.07)",
+
           right: -95,
           top: 190,
         }}
@@ -79,10 +99,14 @@ export default function AuthSidePanel() {
       <Box
         sx={{
           position: "absolute",
+
           width: 200,
           height: 200,
+
           borderRadius: "50%",
-          backgroundColor: "rgba(7,135,106,0.035)",
+
+          bgcolor: "rgba(7,135,106,0.035)",
+
           left: -100,
           bottom: -100,
         }}
@@ -92,53 +116,7 @@ export default function AuthSidePanel() {
         sx={{
           position: "relative",
           zIndex: 5,
-          display: "flex",
-          alignItems: "center",
-          gap: 1.2,
-        }}
-      >
-        <Box
-          component="img"
-          src="/img/icon.png"
-          alt="Jeevan"
-          sx={{
-            width: 46,
-            height: 46,
-            objectFit: "contain",
-          }}
-        />
 
-        <Box>
-          <Typography
-            sx={{
-              fontSize: "23px",
-              fontWeight: 800,
-              lineHeight: 1,
-              color: "#102331",
-              letterSpacing: "-0.4px",
-            }}
-          >
-            Jeevan
-          </Typography>
-
-          <Typography
-            sx={{
-              mt: 0.4,
-              fontSize: "11.5px",
-              fontWeight: 500,
-              color: "#687887",
-            }}
-          >
-            Your Health Partner
-          </Typography>
-        </Box>
-      </Box>
-
-      <Box
-        sx={{
-          position: "relative",
-          zIndex: 5,
-          mt: 4,
           maxWidth: 320,
         }}
       >
@@ -148,9 +126,13 @@ export default function AuthSidePanel() {
               xs: "29px",
               md: "31px",
             },
-            lineHeight: 1.12,
+
+            lineHeight: 1.08,
+
             fontWeight: 800,
+
             letterSpacing: "-0.8px",
+
             color: "#102331",
           }}
         >
@@ -160,13 +142,18 @@ export default function AuthSidePanel() {
         <Typography
           sx={{
             mt: 0.2,
+
             fontSize: {
               xs: "29px",
               md: "31px",
             },
-            lineHeight: 1.12,
+
+            lineHeight: 1.08,
+
             fontWeight: 800,
+
             letterSpacing: "-0.8px",
+
             color: "primary.main",
           }}
         >
@@ -177,11 +164,16 @@ export default function AuthSidePanel() {
 
         <Typography
           sx={{
-            mt: 1.7,
+            mt: 1.5,
+
             maxWidth: 295,
+
             fontSize: "12.5px",
-            lineHeight: 1.6,
+
+            lineHeight: 1.55,
+
             fontWeight: 400,
+
             color: "#647585",
           }}
         >
@@ -191,11 +183,12 @@ export default function AuthSidePanel() {
       </Box>
 
       <Stack
-        spacing={1.15}
+        spacing={1}
         sx={{
           position: "relative",
           zIndex: 6,
-          mt: 2.5,
+
+          mt: 2,
         }}
       >
         {features.map((item) => (
@@ -204,7 +197,9 @@ export default function AuthSidePanel() {
             sx={{
               display: "flex",
               alignItems: "center",
+
               gap: 1.1,
+
               width: "fit-content",
             }}
           >
@@ -212,13 +207,19 @@ export default function AuthSidePanel() {
               sx={{
                 width: 31,
                 height: 31,
+
                 flexShrink: 0,
+
                 borderRadius: "50%",
-                backgroundColor: "#FFFFFF",
+
+                bgcolor: "#FFFFFF",
+
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 4px 12px rgba(7,135,106,0.09)",
+
+                boxShadow:
+                  "0 4px 12px rgba(7,135,106,0.09)",
 
                 "& svg": {
                   fontSize: "16px",
@@ -232,8 +233,11 @@ export default function AuthSidePanel() {
             <Typography
               sx={{
                 fontSize: "11.5px",
+
                 fontWeight: 500,
+
                 color: "#596B79",
+
                 whiteSpace: "nowrap",
               }}
             >
@@ -249,17 +253,22 @@ export default function AuthSidePanel() {
         alt="Doctor"
         sx={{
           position: "absolute",
+
           zIndex: 4,
+
           right: {
             md: -18,
             lg: -8,
           },
+
           bottom: 0,
-          
-          width: 300,
-          height: 400,
+
+          width: 280,
+          height: 330,
+
           objectFit: "contain",
           objectPosition: "bottom right",
+
           display: {
             xs: "none",
             md: "block",

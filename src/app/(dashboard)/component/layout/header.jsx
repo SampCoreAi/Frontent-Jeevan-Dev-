@@ -48,19 +48,41 @@ const Navbar = ({
   });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+  if (typeof window === "undefined") return;
 
-    const userData = localStorage.getItem("user");
+  const userData = localStorage.getItem("user");
 
-    if (userData) {
-      try {
-        setStoredUser(JSON.parse(userData));
-      } catch {
-        setStoredUser(null);
-      }
-    }
-  }, []);
+  if (!userData) return;
 
+  let user;
+
+  try {
+    user = JSON.parse(userData);
+  } catch {
+    return;
+  }
+
+  const registerSocketUser = () => {
+    socket.emit("register_user", user.id);
+    socket.emit("join_user_room", user.id);
+
+    console.log("Socket user registered:", user.id);
+  };
+
+  if (!socket.connected) {
+    socket.connect();
+  }
+
+  if (socket.connected) {
+    registerSocketUser();
+  }
+
+  socket.on("connect", registerSocketUser);
+
+  return () => {
+    socket.off("connect", registerSocketUser);
+  };
+}, []);
   useEffect(() => {
     const unlockAudio = () => {
       if (alertAudioRef.current) {
