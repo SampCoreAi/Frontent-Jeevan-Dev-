@@ -362,6 +362,7 @@ export default function LabPanel({ section = "dashboard" }) {
       technicians={technicians}
       onAssignTechnician={assignTechnician}
       onCreateRequest={createLabRequest}
+      onCreateReport={(request) => router.push(`/lab/pages/requests/${request.id}/report`)}
     />
   ) : section === "reports" ? (
     <LabReports reports={reports} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} pagination={reportPagination} />

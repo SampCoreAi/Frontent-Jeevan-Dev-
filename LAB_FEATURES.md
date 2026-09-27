@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-This module covers the complete lab request and report workflow across doctor, patient, and lab user roles. It includes lab connection management, request creation, status updates, report upload, duplicate prevention, and historical reasoning for rejected or cancelled requests.
+This module covers lab connections, doctor-created test requests, lab processing, technician collection tasks, report upload and review, patient visibility, and request history.
 
 ---
 
@@ -14,6 +14,7 @@ This module covers the complete lab request and report workflow across doctor, p
 - View patient lab requests and report status
 - Cancel a pending lab request with a reason
 - See lab rejection/cancel notes
+- Review uploaded reports and write a clinical interpretation with next steps
 
 ### Patient
 - View requested lab tests
@@ -23,6 +24,11 @@ This module covers the complete lab request and report workflow across doctor, p
 - View uploaded report if available
 - See doctor interpretation and next steps after report review
 - See rejection/cancel reason when applicable
+
+### Technician
+- View assigned collection tasks with patient and lab contact details
+- See collection slot, queue token, sample type, and collection instructions
+- Update an eligible scheduled task to `SAMPLE_COLLECTED`
 
 ### Lab User
 - Receive incoming lab requests from doctors
@@ -38,7 +44,7 @@ This module covers the complete lab request and report workflow across doctor, p
 ## 3. Lab connection flow
 
 ### Doctor to lab connection
-- Doctor searches lab by name, code, city, or address
+- Doctor searches active labs by name or lab code
 - Sends a connection request
 - Lab approves or rejects the connection
 - Status values include:
@@ -76,10 +82,15 @@ The request creation flow does not capture a doctor-side report date/time. The r
 
 Supported status values:
 - PENDING
+- REQUESTED
 - APPROVED
+- ACCEPTED
 - REJECTED
+- SAMPLE_SCHEDULED
 - SAMPLE_COLLECTED
+- RECOLLECTION_REQUIRED
 - PROCESSING
+- REPORT_READY
 - REPORT_UPLOADED
 - COMPLETED
 - CANCELLED
@@ -93,6 +104,8 @@ Supported status values:
 - REPORT_UPLOADED: lab uploaded PDF
 - COMPLETED: workflow finished
 - CANCELLED: request was cancelled by doctor or lab action
+
+The request currently uses one status field for request, sample, and report lifecycle. Separate status tracks are not implemented yet.
 
 ---
 
@@ -115,6 +128,11 @@ If a request is cancelled, the lab cannot modify it further.
 - System stores the uploaded report with request association
 - User can open or download the report
 - Report can be deleted within the defined limit window
+
+### Doctor report review
+- Uploaded reports default to `AWAITING_REVIEW`
+- The doctor can mark a report `REVIEWED` and save a clinical interpretation / follow-up comment
+- The patient can see the review state and doctor comment
 
 ---
 
@@ -161,6 +179,7 @@ This ensures the user can see why a request was rejected or cancelled.
 ### Patient view
 - Shows request status and report date
 - Shows collection date/time and queue token
+- Shows test request status separately from report review status
 - Shows reason when status is rejected or cancelled
 - Shows uploaded report view button if report exists
 - Shows doctor interpretation and next steps after review
@@ -180,6 +199,7 @@ This ensures the user can see why a request was rejected or cancelled.
 - Requires reason input for reject/cancel operations
 - Blocks updates on cancelled requests
 - Uses server pagination for requests, reports, and technician tasks
+- Lab connections and technician roster are currently loaded as bounded/small lists rather than server-paginated lists
 
 ---
 
@@ -210,6 +230,7 @@ The model layer includes:
 - last status note lookup
 - insertion into status history
 - duplicate detection logic
+- paginated request, report, and technician-task list queries with page metadata
 
 ---
 
@@ -228,12 +249,14 @@ The model layer includes:
 - Added collection slot, queue token, and technician instructions
 - Added doctor report review and patient-visible interpretation
 - Added server pagination for high-volume request/report/task APIs
+- Added a technician dashboard with task filters and server pagination
+- Removed old/current report toggles from the doctor reports tab; all report rows are shown there
 
 ---
 
 ## 12. Final note
 
-The lab feature is now aligned across all three major user roles: doctor, patient, and lab. The flow is consistent, the status lifecycle is preserved, and the rejection/cancel reason is clearly visible rather than remaining hidden in backend history only.
+The core workflow is available across doctor, patient, lab user, and technician roles. Partial per-test results, separate lifecycle statuses, full slot booking/conflict checks, report version history, and critical-result alerts are not implemented yet.
 
 ---
 

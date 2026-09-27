@@ -190,6 +190,11 @@ export const menuItems = {
       route: "/lab/pages/reports",
     },
     {
+      label: "Report Templates",
+      icon: <ScienceOutlined />,
+      route: "/lab/pages/templates",
+    },
+    {
       label: "Profile",
       icon: <PersonOutlined />,
       route: "/lab/pages/profile",
