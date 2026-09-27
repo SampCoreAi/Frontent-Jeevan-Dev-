@@ -215,7 +215,7 @@ export default function SearchBar() {
       <Box
         sx={{
           width: "100%",
-          maxWidth: "1000px",
+          maxWidth: "950px",
           mx: "auto",
           mt: {
             xs: 2.5,

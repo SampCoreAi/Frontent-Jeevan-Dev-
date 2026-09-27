@@ -212,11 +212,22 @@ const downloadRows = rows.filter(
   // ============================================================
 
   const handleAddMedicine = () => {
+    const newMedicineRow = {
+      name: "",
+      dose: "",
+      unit: "",
+      freq: "",
+      instr: "",
+      duration: "",
+    };
+
     if (!currentRow) {
-      if (typeof addRow === "function") {
-        addRow();
+      if (typeof setRows !== "function") {
+        return;
       }
 
+      setDraftRowIndex(rows.length);
+      setRows((previousRows) => [...previousRows, newMedicineRow]);
       return;
     }
 
@@ -232,9 +243,12 @@ const downloadRows = rows.filter(
     setMedicineSearchOpen(false);
     setActiveSuggestion(-1);
 
-    if (typeof addRow === "function") {
-      addRow();
+    if (typeof setRows !== "function") {
+      return;
     }
+
+    setDraftRowIndex(rows.length);
+    setRows((previousRows) => [...previousRows, newMedicineRow]);
   };
 
   // ============================================================

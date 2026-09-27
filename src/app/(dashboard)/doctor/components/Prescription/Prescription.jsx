@@ -36,6 +36,7 @@ export default function Prescription({
   const [remark, setRemark] = useState("");
   const [apiData, setApiData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isSavingPrescription, setIsSavingPrescription] = useState(false);
   const pdfRef = useRef(null);
   const pdfDownloadRef = useRef(null);
   const [canEdit, setCanEdit] = useState(false);
@@ -187,6 +188,8 @@ const qrImage = doctor?.qr_url || null;
       return;
     }
 
+    setIsSavingPrescription(true);
+
     try {
       const payload = {
         appointmentId: appointmentId,
@@ -252,6 +255,8 @@ const qrImage = doctor?.qr_url || null;
         severity: "error",
         message,
       });
+    } finally {
+      setIsSavingPrescription(false);
     }
   };
 
@@ -623,6 +628,7 @@ return (
         apiData={apiData}
         setSnackbar={setSnackbar}
         handleSavePrescription={handleSavePrescription}
+        isSavingPrescription={isSavingPrescription}
         handleClick={handleClick}
         downloadPdf={downloadPdf}
         pdfRef={pdfRef}

@@ -138,6 +138,7 @@ const formatCurrency = (value) =>
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
 
+
 export default function DoctorMedicalPanel() {
   const [invoiceRows, setInvoiceRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -243,9 +244,7 @@ export default function DoctorMedicalPanel() {
       [field]: nextValue,
     }));
 
-    if (field !== "search") {
-      setTablePage(1);
-    }
+    setTablePage(1);
   };
 
   const resetFilters = () => {
@@ -262,12 +261,15 @@ export default function DoctorMedicalPanel() {
   return (
     <Box
       sx={{
-        mt: { xs: 7, md: 8 },
-        pt:3,
-        backgroundColor:"white",
-        px:4,
-        height:"100vh",
-        gap: 3,
+        mt: { xs: 7, sm: 7, md: 8 },
+        pt: { xs: 2, sm: 3 },
+        pb: 3,
+        px: { xs: 1.5, sm: 2, md: 3, lg: 4 },
+        backgroundColor: "#fff",
+        minHeight: "100vh",
+        width: "100%",
+        boxSizing: "border-box",
+        overflowX: "hidden",
       }}
     >
       <SectionTitle
@@ -275,911 +277,365 @@ export default function DoctorMedicalPanel() {
         description="Track your patient medical requests, preferred store, and invoice details in one place."
       />
 
-     <Box
-  sx={{
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 2,
-    p: 1.5,
-    mb: 3,
-    border: "1px solid #b1b1b1",
-    borderRadius: 2,
-    backgroundColor: "#fff",
-    boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-
-    "@media (max-width: 1100px)": {
-      alignItems: "flex-start",
-      flexDirection: "column",
-    },
-  }}
->
-  {/* FILTERS */}
-  <Typography
-    sx={{
-      color: "#123f66",
-      fontWeight: 800,
-      fontSize: "0.72rem",
-      letterSpacing: "0.06em",
-      whiteSpace: "nowrap",
-      lineHeight: 1,
-      flexShrink: 0,
-    }}
-  >
-    FILTERS
-  </Typography>
-
-  {/* RIGHT SIDE FILTERS */}
-  <Box
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "flex-end",
-      gap: 1.25,
-      flex: 1,
-      width: "100%",
-
-      "@media (max-width: 1100px)": {
-        justifyContent: "flex-start",
-        flexWrap: "wrap",
-      },
-
-      "@media (max-width: 700px)": {
-        flexDirection: "column",
-        alignItems: "stretch",
-        width: "100%",
-      },
-    }}
-  >
-    {/* SEARCH */}
-    <TextField
-      size="small"
-      label="Search records"
-      value={tableFilters.search}
-      onChange={(event) =>
-        handleFilter("search")(event.target.value)
-      }
-      sx={{
-        width: { xs: "100%", sm: 240, md: 250 },
-
-        "& .MuiOutlinedInput-root": {
-          height: 40,
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", lg: "row" },
+          alignItems: { xs: "stretch", lg: "center" },
+          justifyContent: "space-between",
+          gap: { xs: 1.5, lg: 2 },
+          p: { xs: 1.5, sm: 2 },
+          mb: 3,
+          border: "1px solid #b1b1b1",
+          borderRadius: 2,
           backgroundColor: "#fff",
-          borderRadius: 1.5,
-        },
-
-        "& .MuiInputLabel-root": {
-          fontSize: "0.85rem",
-        },
-
-        "& .MuiOutlinedInput-notchedOutline": {
-          borderColor: "#e1e1e1",
-        },
-
-        "&:hover .MuiOutlinedInput-notchedOutline": {
-          borderColor: "#b1b1b1",
-        },
-      }}
-      InputProps={{
-        startAdornment: (
-          <InputAdornment position="start">
-            <SearchIcon
-              sx={{
-                color: "#789096",
-                fontSize: 19,
-              }}
-            />
-          </InputAdornment>
-        ),
-      }}
-    />
-
-    {/* MEDICAL STORE */}
-    <TextField
-      select
-      size="small"
-      label="Medical Store"
-      value={tableFilters.medicalStore}
-      onChange={(event) =>
-        handleFilter("medicalStore")(event.target.value)
-      }
-      sx={{
-        width: { xs: "100%", sm: 190, md: 250 },
-
-        "& .MuiOutlinedInput-root": {
-          height: 40,
-          backgroundColor: "#fff",
-          borderRadius: 1.5,
-        },
-
-        "& .MuiInputLabel-root": {
-          fontSize: "0.85rem",
-        },
-
-        "& .MuiOutlinedInput-notchedOutline": {
-          borderColor: "#e1e1e1",
-        },
-
-        "&:hover .MuiOutlinedInput-notchedOutline": {
-          borderColor: "#b1b1b1",
-        },
-      }}
-    >
-      <MenuItem value="">
-        All medical stores
-      </MenuItem>
-
-      {medicalStoreOptions.map((option) => (
-        <MenuItem key={option} value={option}>
-          {option}
-        </MenuItem>
-      ))}
-    </TextField>
-
-    {/* STATUS */}
-    <TextField
-      select
-      size="small"
-      label="Status"
-      value={tableFilters.status}
-      onChange={(event) =>
-        handleFilter("status")(event.target.value)
-      }
-      sx={{
-        width: { xs: "100%", sm: 170, md: 225 },
-
-        "& .MuiOutlinedInput-root": {
-          height: 40,
-          backgroundColor: "#fff",
-          borderRadius: 1.5,
-        },
-
-        "& .MuiInputLabel-root": {
-          fontSize: "0.85rem",
-        },
-
-        "& .MuiOutlinedInput-notchedOutline": {
-          borderColor: "#e1e1e1",
-        },
-
-        "&:hover .MuiOutlinedInput-notchedOutline": {
-          borderColor: "#b1b1b1",
-        },
-      }}
-    >
-      <MenuItem value="">
-        All statuses
-      </MenuItem>
-
-      <MenuItem value="PENDING">PENDING</MenuItem>
-      <MenuItem value="APPROVED">APPROVED</MenuItem>
-      <MenuItem value="PROCESSING">PROCESSING</MenuItem>
-      <MenuItem value="READY_FOR_PICKUP">
-        READY FOR PICKUP
-      </MenuItem>
-      <MenuItem value="IN_PROGRESS">
-        IN PROGRESS
-      </MenuItem>
-      <MenuItem value="COMPLETED">COMPLETED</MenuItem>
-      <MenuItem value="REJECTED">REJECTED</MenuItem>
-      <MenuItem value="CANCELLED">CANCELLED</MenuItem>
-    </TextField>
-
-    {/* DATE */}
-    <TextField
-      size="small"
-      type="date"
-      label="Date"
-      value={tableFilters.date}
-      onChange={(event) =>
-        handleFilter("date")(event.target.value)
-      }
-      InputLabelProps={{
-        shrink: true,
-      }}
-      sx={{
-        width: { xs: "100%", sm: 160, md: 205 },
-
-        "& .MuiOutlinedInput-root": {
-          height: 40,
-          backgroundColor: "#fff",
-          borderRadius: 1.5,
-        },
-
-        "& .MuiInputLabel-root": {
-          fontSize: "0.85rem",
-        },
-
-        "& .MuiOutlinedInput-notchedOutline": {
-          borderColor: "#e1e1e1",
-        },
-
-        "&:hover .MuiOutlinedInput-notchedOutline": {
-          borderColor: "#b1b1b1",
-        },
-      }}
-    />
-
-    {/* RESET */}
-    <Button
-      variant="outlined"
-      onClick={resetFilters}
-      sx={{
-        height: 40,
-        minWidth: 90,
-        px: 1.75,
-        borderRadius: 1.5,
-        textTransform: "none",
-        fontWeight: 700,
-        fontSize: "0.82rem",
-        color: "#0b5c8e",
-        borderColor: "#b1b1b1",
-        backgroundColor: "#fff",
-        flexShrink: 0,
-
-        "&:hover": {
-          borderColor: "#0b5c8e",
-          backgroundColor: "#f8fafc",
-        },
-
-        "@media (max-width: 700px)": {
+          boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
           width: "100%",
-        },
-      }}
-    >
-      Reset
-    </Button>
-  </Box>
-</Box>
-
-      <DataTable
-        columns={[
-          "SNO",
-          "PATIENT",
-          "MEDICINE",
-          "STORE",
-          "AMOUNT",
-          "STATUS",
-          "ACTION",
-        ]}
-        loading={loading}
-        emptyMessage="No medical requests found."
-        footer={
-          <Pagination
-            count={Math.max(
-              1,
-              Math.ceil(filteredRows.length / pageSize)
-            )}
-            page={tablePage - 1}
-            onChange={(_, value) =>
-              setTablePage(value + 1)
-            }
-            size="small"
-            color="primary"
-          />
-        }
+          boxSizing: "border-box",
+        }}
       >
-        {visibleRows.length
-          ? visibleRows.map((row, index) => (
-              <TableRow
-                key={row.id}
-                hover
-              >
-                <TableCell
-                  sx={{
-                    color: "#1f2937 !important",
-                    fontWeight: 600,
-                  }}
-                >
-                  {(tablePage - 1) * pageSize +
-                    index +
-                    1}
-                </TableCell>
+        
 
-                <TableCell
-                  sx={{
-                    color: "#1f2937 !important",
-                    maxWidth: 180,
-                    whiteSpace: "normal",
-                  }}
-                >
-                  <Box
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, minmax(0, 1fr))",
+              md: "repeat(2, minmax(0, 1fr))",
+              lg: "1.4fr 1.2fr 1fr 0.9fr auto",
+            },
+            gap: 1.25,
+            width: "100%",
+            minWidth: 0,
+            alignItems: "center",
+          }}
+        >
+          <TextField
+            fullWidth
+            size="small"
+            label="Search records"
+            value={tableFilters.search}
+            onChange={(event) =>
+              handleFilter("search")(event.target.value)
+            }
+            sx={{
+              minWidth: 0,
+              "& .MuiOutlinedInput-root": {
+                height: 40,
+                backgroundColor: "#fff",
+                borderRadius: 1.5,
+              },
+              "& .MuiInputLabel-root": {
+                fontSize: "0.85rem",
+              },
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#e1e1e1",
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#b1b1b1",
+              },
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon
                     sx={{
-                      display: "grid",
+                      color: "#789096",
+                      fontSize: 19,
                     }}
-                  >
-                    <Typography
-                      sx={{
-                        fontWeight: 700,
-                      }}
-                    >
-                      {row.patientName}
-                    </Typography>
-
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: "#64748b",
-                      }}
-                    >
-                      {row.age} yrs • {row.gender}
-                    </Typography>
-                  </Box>
-                </TableCell>
-
-                <TableCell
-                  sx={{
-                    color: "#1f2937 !important",
-                    maxWidth: 210,
-                    whiteSpace: "normal",
-                  }}
-                >
-                  {row.medicineName}
-                </TableCell>
-
-                <TableCell
-                  sx={{
-                    color: "#475569 !important",
-                  }}
-                >
-                  {row.medicalStore}
-                </TableCell>
-
-                <TableCell
-                  sx={{
-                    color: "#0f172a !important",
-                    fontWeight: 600,
-                  }}
-                >
-                  {formatCurrency(row.amount)}
-                </TableCell>
-
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={row.status.replace("_", " ")}
-                    color={statusColor(row.status)}
                   />
-                </TableCell>
+                </InputAdornment>
+              ),
+            }}
+          />
 
-                <TableCell>
-                  {row.status === "COMPLETED" ? (
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() =>
-                        setSelectedInvoice(row)
-                      }
-                      aria-label={`View invoice for ${row.patientName}`}
-                    >
-                      <VisibilityOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  ) : null}
-                </TableCell>
-              </TableRow>
-            ))
-          : null}
-      </DataTable>
+          <TextField
+            fullWidth
+            select
+            size="small"
+            label="Medical Store"
+            value={tableFilters.medicalStore}
+            onChange={(event) =>
+              handleFilter("medicalStore")(event.target.value)
+            }
+            sx={{
+              minWidth: 0,
+              "& .MuiOutlinedInput-root": {
+                height: 40,
+                backgroundColor: "#fff",
+                borderRadius: 1.5,
+              },
+              "& .MuiInputLabel-root": {
+                fontSize: "0.85rem",
+              },
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#e1e1e1",
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#b1b1b1",
+              },
+            }}
+          >
+            <MenuItem value="">All medical stores</MenuItem>
 
-      <Dialog
-        open={false}
-        onClose={() => setSelectedInvoice(null)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            overflow: "hidden",
-            background: "#fff",
-            boxShadow:
-              "0 8px 28px rgba(15, 23, 42, 0.12)",
-            maxHeight: "82vh",
-            margin: 1,
+            {medicalStoreOptions.map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
+            fullWidth
+            select
+            size="small"
+            label="Status"
+            value={tableFilters.status}
+            onChange={(event) =>
+              handleFilter("status")(event.target.value)
+            }
+            sx={{
+              minWidth: 0,
+              "& .MuiOutlinedInput-root": {
+                height: 40,
+                backgroundColor: "#fff",
+                borderRadius: 1.5,
+              },
+              "& .MuiInputLabel-root": {
+                fontSize: "0.85rem",
+              },
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#e1e1e1",
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#b1b1b1",
+              },
+            }}
+          >
+            <MenuItem value="">All statuses</MenuItem>
+            <MenuItem value="PENDING">PENDING</MenuItem>
+            <MenuItem value="APPROVED">APPROVED</MenuItem>
+            <MenuItem value="PROCESSING">PROCESSING</MenuItem>
+            <MenuItem value="READY_FOR_PICKUP">
+              READY FOR PICKUP
+            </MenuItem>
+            <MenuItem value="IN_PROGRESS">IN PROGRESS</MenuItem>
+            <MenuItem value="COMPLETED">COMPLETED</MenuItem>
+            <MenuItem value="REJECTED">REJECTED</MenuItem>
+            <MenuItem value="CANCELLED">CANCELLED</MenuItem>
+          </TextField>
+
+          <TextField
+            fullWidth
+            size="small"
+            type="date"
+            label="Date"
+            value={tableFilters.date}
+            onChange={(event) =>
+              handleFilter("date")(event.target.value)
+            }
+            InputLabelProps={{
+              shrink: true,
+            }}
+            sx={{
+              minWidth: 0,
+              "& .MuiOutlinedInput-root": {
+                height: 40,
+                backgroundColor: "#fff",
+                borderRadius: 1.5,
+              },
+              "& .MuiInputLabel-root": {
+                fontSize: "0.85rem",
+              },
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#e1e1e1",
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#b1b1b1",
+              },
+            }}
+          />
+
+          <Button
+            fullWidth
+            variant="outlined"
+            onClick={resetFilters}
+            sx={{
+              height: 40,
+              minWidth: 90,
+              px: 1.75,
+              borderRadius: 1.5,
+              textTransform: "none",
+              fontWeight: 700,
+              fontSize: "0.82rem",
+              color: "#0b5c8e",
+              borderColor: "#b1b1b1",
+              backgroundColor: "#fff",
+              whiteSpace: "nowrap",
+              "&:hover": {
+                borderColor: "#0b5c8e",
+                backgroundColor: "#f8fafc",
+              },
+            }}
+          >
+            Reset
+          </Button>
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          width: "100%",
+          overflowX: "auto",
+          borderRadius: 2,
+          "& table": {
+            minWidth: 850,
           },
         }}
       >
-        {selectedInvoice ? (
-          <Box
-            sx={{
-              p: 1.75,
-              background: "#f8fafc",
-              maxHeight: "82vh",
-              overflowY: "auto",
-            }}
-          >
-            <Typography
+        <DataTable
+          columns={[
+            "SNO",
+            "PATIENT",
+            "MEDICINE",
+            "STORE",
+            "AMOUNT",
+            "STATUS",
+            "ACTION",
+          ]}
+          loading={loading}
+          emptyMessage="No medical requests found."
+          footer={
+            <Pagination
+              count={Math.max(
+                1,
+                Math.ceil(filteredRows.length / pageSize)
+              )}
+              page={tablePage - 1}
+              onChange={(_, value) => setTablePage(value + 1)}
+              size="small"
+              color="primary"
               sx={{
-                color: "#123f66",
-                fontWeight: 800,
-                fontSize: "1.1rem",
-                lineHeight: 1.2,
-                mb: 1.5,
-              }}
-            >
-              Medical Invoice
-            </Typography>
-
-            <Box
-              sx={{
-                border: "1px solid #e2e8f0",
-                borderRadius: 2,
-                background: "#fff",
-                p: 1.5,
-                mb: 1.5,
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: 1.5,
+                "& .MuiPagination-ul": {
                   flexWrap: "wrap",
-                }}
-              >
-                <Box>
-                  <Typography
-                    sx={{
-                      color: "#64748b",
-                      fontSize: "0.78rem",
-                      mt: 0.5,
-                    }}
-                  >
-                    Created:{" "}
-                    {new Date(
-                      selectedInvoice.invoiceDate
-                    ).toLocaleDateString("en-GB")}
-                  </Typography>
-
-                  <Typography
-                    sx={{
-                      color: "#64748b",
-                      fontSize: "0.78rem",
-                      mt: 0.15,
-                    }}
-                  >
-                    Status:{" "}
-                    {selectedInvoice.status.replace(
-                      "_",
-                      " "
-                    )}
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: {
-                    xs: "1fr",
-                    sm: "1fr 1fr",
-                  },
-                  gap: 1.5,
-                  mt: 1.5,
-                }}
-              >
-                <Box>
-                  <Typography
-                    sx={{
-                      color: "#123f66",
-                      fontWeight: 800,
-                      fontSize: "0.68rem",
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Patient
-                  </Typography>
-
-                  <Typography
-                    sx={{
-                      fontWeight: 700,
-                      color: "#0f172a",
-                      fontSize: "0.9rem",
-                      mt: 0.35,
-                    }}
-                  >
-                    {selectedInvoice.patientName}
-                  </Typography>
-
-                  <Typography
-                    sx={{
-                      color: "#475569",
-                      fontSize: "0.78rem",
-                      mt: 0.15,
-                    }}
-                  >
-                    {selectedInvoice.age} yrs •{" "}
-                    {selectedInvoice.gender}
-                  </Typography>
-
-                  <Typography
-                    sx={{
-                      color: "#475569",
-                      fontSize: "0.78rem",
-                      mt: 0.15,
-                    }}
-                  >
-                    {selectedInvoice.medicalStore}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography
-                    sx={{
-                      color: "#123f66",
-                      fontWeight: 800,
-                      fontSize: "0.68rem",
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Physician
-                  </Typography>
-
-                  <Typography
-                    sx={{
-                      fontWeight: 700,
-                      color: "#0f172a",
-                      fontSize: "0.9rem",
-                      mt: 0.35,
-                    }}
-                  >
-                    {selectedInvoice.doctorName}
-                  </Typography>
-
-                  <Typography
-                    sx={{
-                      color: "#475569",
-                      fontSize: "0.78rem",
-                      mt: 0.15,
-                    }}
-                  >
-                    Invoice no:{" "}
-                    {selectedInvoice.invoiceNumber}
-                  </Typography>
-
-                  <Typography
-                    sx={{
-                      color: "#475569",
-                      fontSize: "0.78rem",
-                      mt: 0.15,
-                    }}
-                  >
-                    Payment:{" "}
-                    {selectedInvoice.paymentMode}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-
-            <Box
-              sx={{
-                border: "1px solid #e2e8f0",
-                borderRadius: 2,
-                background: "#fff",
-                overflow: "hidden",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns:
-                    "1.3fr 2fr 0.95fr 0.9fr",
-                  background: "#f8fafc",
-                  borderBottom:
-                    "1px solid #e2e8f0",
-                }}
-              >
-                <Typography
-                  sx={{
-                    p: 0.85,
-                    color: "#123f66",
-                    fontWeight: 800,
-                    fontSize: "0.7rem",
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    borderRight:
-                      "1px solid #e2e8f0",
-                  }}
-                >
-                  Item
-                </Typography>
-
-                <Typography
-                  sx={{
-                    p: 0.85,
-                    color: "#123f66",
-                    fontWeight: 800,
-                    fontSize: "0.7rem",
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    borderRight:
-                      "1px solid #e2e8f0",
-                  }}
-                >
-                  Description
-                </Typography>
-
-                <Typography
-                  sx={{
-                    p: 0.85,
-                    color: "#123f66",
-                    fontWeight: 800,
-                    fontSize: "0.7rem",
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    borderRight:
-                      "1px solid #e2e8f0",
-                  }}
-                >
-                  Qty
-                </Typography>
-
-                <Typography
-                  sx={{
-                    p: 0.85,
-                    color: "#123f66",
-                    fontWeight: 800,
-                    fontSize: "0.7rem",
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Price
-                </Typography>
-              </Box>
-
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns:
-                    "1.3fr 2fr 0.95fr 0.9fr",
-                  borderBottom:
-                    "1px solid #e2e8f0",
-                }}
-              >
-                <Typography
-                  sx={{
-                    p: 0.85,
-                    color: "#0f172a",
-                    fontSize: "0.8rem",
-                    borderRight:
-                      "1px solid #e2e8f0",
-                  }}
-                >
-                  {selectedInvoice.medicineName}
-                </Typography>
-
-                <Typography
-                  sx={{
-                    p: 0.85,
-                    color: "#475569",
-                    fontSize: "0.78rem",
-                    borderRight:
-                      "1px solid #e2e8f0",
-                  }}
-                >
-                  Prescribed by{" "}
-                  {selectedInvoice.doctorName}
-                </Typography>
-
-                <Typography
-                  sx={{
-                    p: 0.85,
-                    color: "#0f172a",
-                    fontSize: "0.8rem",
-                    borderRight:
-                      "1px solid #e2e8f0",
-                  }}
-                >
-                  {selectedInvoice.quantity}
-                </Typography>
-
-                <Typography
-                  sx={{
-                    p: 0.85,
-                    color: "#0f172a",
-                    fontWeight: 700,
-                    fontSize: "0.8rem",
-                  }}
-                >
-                  {formatCurrency(
-                    selectedInvoice.amount
-                  )}
-                </Typography>
-              </Box>
-            </Box>
-
-            <Box
-              sx={{
-                mt: 1.5,
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "1fr 0.8fr",
+                  justifyContent: "center",
                 },
-                gap: 1.5,
               }}
-            >
-              <Box
-                sx={{
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 2,
-                  background: "#fff",
-                  p: 1.25,
-                }}
-              >
-                <Typography
-                  sx={{
-                    color: "#123f66",
-                    fontWeight: 800,
-                    fontSize: "0.68rem",
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    mb: 0.65,
-                  }}
+            />
+          }
+        >
+          {visibleRows.length
+            ? visibleRows.map((row, index) => (
+                <TableRow
+                  key={row.id}
+                  hover
                 >
-                  Notes
-                </Typography>
-
-                <Typography
-                  sx={{
-                    color: "#475569",
-                    fontSize: "0.78rem",
-                  }}
-                >
-                  Medical prescription delivered
-                  through{" "}
-                  {selectedInvoice.medicalStore}.
-                  Please retain this invoice for
-                  payment and record tracking.
-                </Typography>
-              </Box>
-
-              <Box
-                sx={{
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 2,
-                  background: "#fff",
-                  p: 1.25,
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent:
-                      "space-between",
-                    mb: 0.6,
-                  }}
-                >
-                  <Typography
+                  <TableCell
                     sx={{
-                      color: "#475569",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
+                      color: "#1f2937 !important",
+                      fontWeight: 600,
                     }}
                   >
-                    Subtotal
-                  </Typography>
+                    {(tablePage - 1) * pageSize + index + 1}
+                  </TableCell>
 
-                  <Typography
+                  <TableCell
                     sx={{
-                      color: "#0f172a",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
+                      color: "#1f2937 !important",
+                      maxWidth: 180,
+                      whiteSpace: "normal",
                     }}
                   >
-                    {formatCurrency(
-                      selectedInvoice.amount
-                    )}
-                  </Typography>
-                </Box>
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gap: 0.25,
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontWeight: 700,
+                          fontSize: { xs: "0.78rem", sm: "0.85rem" },
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {row.patientName}
+                      </Typography>
 
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent:
-                      "space-between",
-                    mb: 0.6,
-                  }}
-                >
-                  <Typography
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "#64748b",
+                          fontSize: "0.72rem",
+                        }}
+                      >
+                        {row.age} yrs • {row.gender}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+
+                  <TableCell
                     sx={{
-                      color: "#475569",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
+                      color: "#1f2937 !important",
+                      maxWidth: 210,
+                      whiteSpace: "normal",
+                      wordBreak: "break-word",
                     }}
                   >
-                    Discount
-                  </Typography>
+                    {row.medicineName}
+                  </TableCell>
 
-                  <Typography
+                  <TableCell
                     sx={{
-                      color: "#0f172a",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
+                      color: "#475569 !important",
+                      whiteSpace: "normal",
+                      wordBreak: "break-word",
                     }}
                   >
-                    {formatCurrency(
-                      selectedInvoice.amount * 0.09
-                    )}
-                  </Typography>
-                </Box>
+                    {row.medicalStore}
+                  </TableCell>
 
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent:
-                      "space-between",
-                    mb: 0.6,
-                  }}
-                >
-                  <Typography
+                  <TableCell
                     sx={{
-                      color: "#475569",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
+                      color: "#0f172a !important",
+                      fontWeight: 600,
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    Tax
-                  </Typography>
+                    {formatCurrency(row.amount)}
+                  </TableCell>
 
-                  <Typography
-                    sx={{
-                      color: "#0f172a",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                    }}
-                  >
-                    {formatCurrency(
-                      selectedInvoice.amount * 0.18
-                    )}
-                  </Typography>
-                </Box>
+                  <TableCell>
+                    <Chip
+                      size="small"
+                      label={row.status.replaceAll("_", " ")}
+                      color={statusColor(row.status)}
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: "0.7rem",
+                        maxWidth: 150,
+                      }}
+                    />
+                  </TableCell>
 
-                <Box
-                  sx={{
-                    borderTop:
-                      "1px solid #e2e8f0",
-                    pt: 0.75,
-                    mt: 0.75,
-                    display: "flex",
-                    justifyContent:
-                      "space-between",
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      color: "#ef4444",
-                      fontWeight: 900,
-                      fontSize: "0.95rem",
-                    }}
-                  >
-                    Total
-                  </Typography>
-
-                  <Typography
-                    sx={{
-                      color: "#ef4444",
-                      fontWeight: 900,
-                      fontSize: "0.95rem",
-                    }}
-                  >
-                    {formatCurrency(
-                      selectedInvoice.amount -
-                        selectedInvoice.amount *
-                          0.09 +
-                        selectedInvoice.amount *
-                          0.18
-                    )}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </Box>
-        ) : null}
-      </Dialog>
+                  <TableCell>
+                    {row.status === "COMPLETED" ? (
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => setSelectedInvoice(row)}
+                        aria-label={`View invoice for ${row.patientName}`}
+                      >
+                        <VisibilityOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    ) : null}
+                  </TableCell>
+                </TableRow>
+              ))
+            : null}
+        </DataTable>
+      </Box>
 
       <MedicalRequestInvoiceDialog
         open={Boolean(selectedInvoice)}

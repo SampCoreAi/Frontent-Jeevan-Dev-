@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Badge,
   Box,
@@ -20,6 +20,19 @@ import SidebarMenuItem from "../layout/Sidebar/SidebarMenuItem";
 import SidebarProfile from "../layout/Sidebar/SidebarProfile";
 import NotificationPopover from "../../users/components/Header/NotificationPopover";
 import Calender from "../../doctor/components/Header/Calender";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
 
 const Sidebar = ({
   isOpen,
@@ -29,6 +42,7 @@ const Sidebar = ({
   setActiveButton,
   drawerWidth,
 }) => {
+  const suppressClickRef = useRef(false);
   const [roleId, setRoleId] = useState(0);
   const [profileImage, setProfileImage] = useState("");
   const [userName, setUserName] = useState("Dr. User");
@@ -36,12 +50,19 @@ const Sidebar = ({
   const [specialization, setSpecialization] = useState("");
   const [storedUser, setStoredUser] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [orderedMenuItems, setOrderedMenuItems] = useState([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  );
 
   const theme = useTheme();
   const pathname = usePathname();
-  const isMobile = useMediaQuery(
-    theme.breakpoints.down("md")
-  );
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -63,26 +84,12 @@ const Sidebar = ({
 
       setStoredUser(user);
       setRoleId(Number(user?.role_id) || 0);
-      setUserName(
-        user?.full_name ||
-          user?.name ||
-          "Not Provided"
-      );
-      setQualification(
-        user?.qualification ||
-          "Not Provided"
-      );
+      setUserName(user?.full_name || user?.name || "Not Provided");
+      setQualification(user?.qualification || "Not Provided");
       setSpecialization(user?.specialization || "");
-      setProfileImage(
-        user?.image ||
-          user?.profileImage ||
-          ""
-      );
+      setProfileImage(user?.image || user?.profileImage || "");
     } catch (error) {
-      console.error(
-        "Sidebar user parse error:",
-        error
-      );
+      console.error("Sidebar user parse error:", error);
 
       setRoleId(0);
       setStoredUser(null);
@@ -93,8 +100,7 @@ const Sidebar = ({
     }
   }, []);
 
-  const S3_BUCKET_URL =
-    process.env.NEXT_PUBLIC_S3_BUCKET_URL || "";
+  const S3_BUCKET_URL = process.env.NEXT_PUBLIC_S3_BUCKET_URL || "";
 
   const getAvatarUrl = () => {
     if (!profileImage) {
@@ -121,56 +127,123 @@ const Sidebar = ({
   };
 
   const avatarSrc = getAvatarUrl();
-  const currentMenuItems =
-    menuItems?.[roleId] || [];
-  const roleNavbar =
-    navbarItems?.[storedUser?.role_id] || [];
+  const currentMenuItems = menuItems?.[roleId] || [];
+
+  useEffect(() => {
+    if (!roleId || currentMenuItems.length === 0) {
+      setOrderedMenuItems([]);
+      return;
+    }
+
+    try {
+      const savedOrder = localStorage.getItem(`sidebar-order-${roleId}`);
+
+      if (!savedOrder) {
+        setOrderedMenuItems(currentMenuItems);
+        return;
+      }
+
+      const order = JSON.parse(savedOrder);
+
+      const sortedItems = [...currentMenuItems].sort((a, b) => {
+        const aId = a.route || a.label;
+        const bId = b.route || b.label;
+
+        const aIndex = order.indexOf(aId);
+        const bIndex = order.indexOf(bId);
+
+        if (aIndex === -1 && bIndex === -1) return 0;
+        if (aIndex === -1) return 1;
+        if (bIndex === -1) return -1;
+
+        return aIndex - bIndex;
+      });
+
+      setOrderedMenuItems(sortedItems);
+    } catch (error) {
+      console.error("Sidebar order error:", error);
+      setOrderedMenuItems(currentMenuItems);
+    }
+  }, [roleId]);
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    // Reset the suppress flag AFTER the click event has had a chance
+    // to fire and be swallowed. Double rAF guarantees this runs after
+    // the browser's click dispatch + a paint cycle, regardless of
+    // drag direction or which sibling visually ends up under the cursor.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        suppressClickRef.current = false;
+      });
+    });
+
+    if (!over || active.id === over.id) return;
+
+    setOrderedMenuItems((items) => {
+      const oldIndex = items.findIndex(
+        (item) => (item.route || item.label) === active.id
+      );
+      const newIndex = items.findIndex(
+        (item) => (item.route || item.label) === over.id
+      );
+
+      if (oldIndex === -1 || newIndex === -1) {
+        return items;
+      }
+
+      const newItems = arrayMove(items, oldIndex, newIndex);
+
+      localStorage.setItem(
+        `sidebar-order-${roleId}`,
+        JSON.stringify(newItems.map((item) => item.route || item.label))
+      );
+
+      return newItems;
+    });
+  };
+
+  const handleDragCancel = () => {
+    // Drag cancelled (Escape key, lost pointer capture, etc.) —
+    // onDragEnd won't fire in this case, so reset here too.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        suppressClickRef.current = false;
+      });
+    });
+  };
+
+  const roleNavbar = navbarItems?.[storedUser?.role_id] || [];
 
   useEffect(() => {
     if (!pathname) return;
 
     if (
-      pathname.includes(
-        "/doctor/pages/prescription"
-      ) ||
-      pathname.includes(
-        "/doctor/pages/reportPatient"
-      )
+      pathname.includes("/doctor/pages/prescription") ||
+      pathname.includes("/doctor/pages/reportPatient")
     ) {
       setActiveButton?.("Patient");
       return;
     }
 
-    if (
-      pathname.startsWith(
-        "/users/pages/Appointment"
-      )
-    ) {
+    if (pathname.startsWith("/users/pages/Appointment")) {
       setActiveButton?.("Doctor");
       return;
     }
 
-    const currentItem = currentMenuItems.find(
-      (item) => {
-        if (!item?.route) return false;
+    const currentItem = currentMenuItems.find((item) => {
+      if (!item?.route) return false;
 
-        return (
-          pathname === item.route ||
-          pathname.startsWith(
-            `${item.route}/`
-          )
-        );
-      }
-    );
+      return (
+        pathname === item.route || pathname.startsWith(`${item.route}/`)
+      );
+    });
 
     if (currentItem) {
       setActiveButton?.(currentItem.label);
     }
-  }, [
-    pathname,
-    currentMenuItems,
-    setActiveButton,
-  ]);
+  }, [pathname, currentMenuItems, setActiveButton]);
 
   const handleNavigation = (item) => {
     setActiveButton?.(item.label);
@@ -192,12 +265,8 @@ const Sidebar = ({
   const handleEmergencyClick = () => {
     let user = storedUser;
 
-    if (
-      !user &&
-      typeof window !== "undefined"
-    ) {
-      const userData =
-        localStorage.getItem("user");
+    if (!user && typeof window !== "undefined") {
+      const userData = localStorage.getItem("user");
 
       if (userData) {
         try {
@@ -240,7 +309,8 @@ const Sidebar = ({
         py: {
           xs: "14px",
           sm: "14px",
-        },mt: { xs: 8, md: 0 },
+        },
+        mt: { xs: 8, md: 0 },
         overflow: "hidden",
         boxSizing: "border-box",
       }}
@@ -273,6 +343,17 @@ const Sidebar = ({
       )}
 
       <Box
+        onClickCapture={(e) => {
+          // Capture-phase guard: if a drag just happened, swallow the
+          // click no matter which child element it technically lands
+          // on (dnd-kit's transform can put a different sibling's
+          // Link under the cursor at drop time, especially when
+          // dragging upward).
+          if (suppressClickRef.current) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
         sx={{
           display: "flex",
           flexDirection: "column",
@@ -287,22 +368,32 @@ const Sidebar = ({
           },
         }}
       >
-        {currentMenuItems.map(
-          (item, index) => (
-            <SidebarMenuItem
-              key={
-                item?.route ||
-                `${item?.label}-${index}`
-              }
-              item={item}
-              isActive={
-                activeButton === item.label
-              }
-              showLabel={showContent}
-              onNavigate={handleNavigation}
-            />
-          )
-        )}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={() => {
+            suppressClickRef.current = true;
+          }}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <SortableContext
+            items={orderedMenuItems.map((item) => item.route || item.label)}
+            strategy={verticalListSortingStrategy}
+          >
+            {orderedMenuItems.map((item, index) => (
+              <SidebarMenuItem
+                key={item?.route || `${item?.label}-${index}`}
+                item={item}
+                isActive={activeButton === item.label}
+                showLabel={showContent}
+                onNavigate={handleNavigation}
+                dragEnabled={!isMobile && isOpen}
+                suppressClickRef={suppressClickRef}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
 
         {isMobile && (
           <>
@@ -330,120 +421,27 @@ const Sidebar = ({
             >
               <NotificationPopover sidebar />
 
-              {roleNavbar.map(
-                (item, index) => (
-                  <Button
-                    key={
-                      item?.label || index
-                    }
-                    disableRipple
-                    onClick={(event) =>
-                      handleMobileAction(
-                        event,
-                        item
-                      )
-                    }
-                    sx={{
-                      width: "100%",
-                      minWidth: 0,
-                      minHeight: "42px",
-                      px: "11px",
-                      display: "flex",
-                      justifyContent:
-                        "flex-start",
-                      alignItems: "center",
-                      gap: "10px",
-                      borderRadius: "8px",
-                      color:
-                        "text.secondary",
-                      textTransform: "none",
-                      transition:
-                        "all 0.2s ease",
-                      "&:hover": {
-                        bgcolor:
-                          "secondary.light",
-                        color:
-                          "primary.main",
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: "23px",
-                        minWidth: "23px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent:
-                          "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Badge
-                        badgeContent={
-                          item.badge
-                        }
-                        color="error"
-                        max={99}
-                        invisible={
-                          !item.badge
-                        }
-                      >
-                        <item.icon
-                          sx={{
-                            fontSize:
-                              "19px",
-                          }}
-                        />
-                      </Badge>
-                    </Box>
-
-                    <Typography
-                      component="span"
-                      sx={{
-                        flex: 1,
-                        minWidth: 0,
-                        fontSize:
-                          "12.5px",
-                        fontWeight: 600,
-                        color: "inherit",
-                        textAlign: "left",
-                        whiteSpace:
-                          "nowrap",
-                        overflow: "hidden",
-                        textOverflow:
-                          "ellipsis",
-                      }}
-                    >
-                      {item.label}
-                    </Typography>
-                  </Button>
-                )
-              )}
-
-          {[2, 3].includes(Number(roleId)) && (
+              {roleNavbar.map((item, index) => (
                 <Button
+                  key={item?.label || index}
                   disableRipple
-                  onClick={
-                    handleEmergencyClick
-                  }
+                  onClick={(event) => handleMobileAction(event, item)}
                   sx={{
                     width: "100%",
                     minWidth: 0,
                     minHeight: "42px",
                     px: "11px",
                     display: "flex",
-                    justifyContent:
-                      "flex-start",
+                    justifyContent: "flex-start",
                     alignItems: "center",
                     gap: "10px",
                     borderRadius: "8px",
-                    color: "error.main",
+                    color: "text.secondary",
                     textTransform: "none",
-                    transition:
-                      "all 0.2s ease",
+                    transition: "all 0.2s ease",
                     "&:hover": {
-                      bgcolor:
-                        "rgba(211, 47, 47, 0.06)",
+                      bgcolor: "secondary.light",
+                      color: "primary.main",
                     },
                   }}
                 >
@@ -453,8 +451,72 @@ const Sidebar = ({
                       minWidth: "23px",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent:
-                        "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Badge
+                      badgeContent={item.badge}
+                      color="error"
+                      max={99}
+                      invisible={!item.badge}
+                    >
+                      <item.icon
+                        sx={{
+                          fontSize: "19px",
+                        }}
+                      />
+                    </Badge>
+                  </Box>
+
+                  <Typography
+                    component="span"
+                    sx={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: "12.5px",
+                      fontWeight: 600,
+                      color: "inherit",
+                      textAlign: "left",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {item.label}
+                  </Typography>
+                </Button>
+              ))}
+
+              {[2, 3].includes(Number(roleId)) && (
+                <Button
+                  disableRipple
+                  onClick={handleEmergencyClick}
+                  sx={{
+                    width: "100%",
+                    minWidth: 0,
+                    minHeight: "42px",
+                    px: "11px",
+                    display: "flex",
+                    justifyContent: "flex-start",
+                    alignItems: "center",
+                    gap: "10px",
+                    borderRadius: "8px",
+                    color: "error.main",
+                    textTransform: "none",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      bgcolor: "rgba(211, 47, 47, 0.06)",
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: "23px",
+                      minWidth: "23px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       flexShrink: 0,
                     }}
                   >
@@ -536,8 +598,7 @@ const Sidebar = ({
             "& .MuiDrawer-paper": {
               boxSizing: "border-box",
               width: drawerWidth,
-              bgcolor:
-                "background.paper",
+              bgcolor: "background.paper",
               border: "none",
               overflowX: "hidden",
             },
@@ -549,9 +610,7 @@ const Sidebar = ({
         <Popover
           open={Boolean(anchorEl)}
           anchorEl={anchorEl}
-          onClose={() =>
-            setAnchorEl(null)
-          }
+          onClose={() => setAnchorEl(null)}
           anchorOrigin={{
             vertical: "bottom",
             horizontal: "left",

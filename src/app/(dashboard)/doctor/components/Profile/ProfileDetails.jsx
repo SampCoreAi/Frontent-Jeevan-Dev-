@@ -34,35 +34,41 @@ import WorkingHoursModal from "./WorkingHoursModal";
 
 const rowSx = {
   minHeight: "46px",
-
   display: "flex",
-  alignItems: "center",
-
-  gap: "10px",
-
-  px: "12px",
+  alignItems: {
+    xs: "flex-start",
+    sm: "center",
+  },
+  flexDirection: {
+    xs: "column",
+    sm: "row",
+  },
+  gap: {
+    xs: "6px",
+    sm: "10px",
+  },
+  px: {
+    xs: "9px",
+    sm: "12px",
+  },
   py: "7px",
-
   border: "1px solid",
   borderColor: "divider",
-
   borderRadius: "8px",
-
   bgcolor: "#f7f9f9",
+  width: "100%",
+  boxSizing: "border-box",
 };
 
 const iconSx = {
   width: "28px",
   height: "28px",
-
+  minWidth: "28px",
   flexShrink: 0,
-
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-
   borderRadius: "7px",
-
   bgcolor: "secondary.light",
   color: "primary.main",
 
@@ -72,39 +78,55 @@ const iconSx = {
 };
 
 const labelSx = {
-  width: "150px",
-  minWidth: "150px",
-
-  fontSize: "12.5px",
+  width: {
+    xs: "100%",
+    sm: "150px",
+  },
+  minWidth: {
+    xs: 0,
+    sm: "150px",
+  },
+  fontSize: {
+    xs: "12px",
+    sm: "12.5px",
+  },
+  lineHeight: 1.4,
   fontWeight: 650,
-
   color: "text.primary",
+  flexShrink: 0,
 };
 
 const valueSx = {
   flex: 1,
   minWidth: 0,
-
-  fontSize: "12.5px",
+  width: {
+    xs: "100%",
+    sm: "auto",
+  },
+  fontSize: {
+    xs: "12px",
+    sm: "12.5px",
+  },
   lineHeight: 1.4,
-
   fontWeight: 500,
-
   color: "text.secondary",
-
   wordBreak: "break-word",
+  overflowWrap: "anywhere",
 };
 
 const inputSx = {
   flex: 1,
+  width: {
+    xs: "100%",
+    sm: "auto",
+  },
+  minWidth: 0,
 
   "& .MuiInputBase-root": {
     minHeight: "34px",
-
+    width: "100%",
     fontSize: "12.5px",
-
     borderRadius: "7px",
-
     bgcolor: "background.paper",
   },
 
@@ -116,16 +138,14 @@ const inputSx = {
     borderColor: "divider",
   },
 
-  "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline":
-    {
-      borderColor: "primary.light",
-    },
+  "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+    borderColor: "primary.light",
+  },
 
-  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-    {
-      borderColor: "primary.main",
-      borderWidth: "1px",
-    },
+  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+    borderColor: "primary.main",
+    borderWidth: "1px",
+  },
 };
 
 // ============================================================
@@ -144,13 +164,22 @@ const DetailRow = ({
 }) => {
   return (
     <Box sx={rowSx}>
-      <Box sx={iconSx}>
-        {icon}
-      </Box>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          width: {
+            xs: "100%",
+            sm: "auto",
+          },
+          minWidth: 0,
+        }}
+      >
+        <Box sx={iconSx}>{icon}</Box>
 
-      <Typography sx={labelSx}>
-        {label}
-      </Typography>
+        <Typography sx={labelSx}>{label}</Typography>
+      </Box>
 
       {isEditing && editable ? (
         <TextField
@@ -195,36 +224,27 @@ const ProfileDetails = ({
     setWorkingHoursModalOpen,
   ] = useState(false);
 
-  const languageValue =
-    Array.isArray(
-      profileData?.language
-    )
-      ? profileData.language.join(
-          ", "
-        )
-      : profileData?.language || "";
+  const languageValue = Array.isArray(profileData?.language)
+    ? profileData.language.join(", ")
+    : profileData?.language || "";
 
   // ============================================================
   // TIME
   // ============================================================
 
-  const formatDisplayTime = (
-    time
-  ) => {
+  const formatDisplayTime = (time) => {
     if (!time) return "";
 
-    const [hour, minute] =
-      time.split(":").map(Number);
+    const [hour, minute] = time.split(":").map(Number);
 
-    const ampm =
-      hour >= 12 ? "PM" : "AM";
+    const ampm = hour >= 12 ? "PM" : "AM";
 
-    const displayHour =
-      hour % 12 || 12;
+    const displayHour = hour % 12 || 12;
 
-    return `${displayHour}:${String(
-      minute
-    ).padStart(2, "0")} ${ampm}`;
+    return `${displayHour}:${String(minute).padStart(
+      2,
+      "0"
+    )} ${ampm}`;
   };
 
   const days = [
@@ -243,57 +263,51 @@ const ProfileDetails = ({
 
   const documents = [
     {
-      name:
-        "Medical Registration Certificate",
-
-      path:
-        profileData?.medical_registration_certificate,
+      name: "Medical Registration Certificate",
+      path: profileData?.medical_registration_certificate,
     },
-
     {
-      name:
-        "Medical Degree Certificate",
-
-      path:
-        profileData?.medical_degree_certificate,
+      name: "Medical Degree Certificate",
+      path: profileData?.medical_degree_certificate,
     },
-
     {
-      name:
-        "Government ID Proof",
-
-      path:
-        profileData?.government_id_proof,
+      name: "Government ID Proof",
+      path: profileData?.government_id_proof,
     },
-
     {
       name: "Selfie",
-
       path: profileData?.selfie,
     },
   ];
 
-  const availableDocuments =
-    documents.filter(
-      (document) =>
-        document.path
-    );
+  const availableDocuments = documents.filter(
+    (document) => document.path
+  );
 
   return (
     <>
+      {/* ======================================================
+          MAIN RESPONSIVE GRID
+      ====================================================== */}
+
       <Box
         sx={{
           display: "grid",
 
           gridTemplateColumns: {
             xs: "1fr",
-
-            lg: "minmax(0, 1.08fr) minmax(330px, .92fr)",
+            md: "1fr",
+            lg: "minmax(0, 1.08fr) minmax(300px, .92fr)",
           },
 
-          gap: "12px",
+          gap: {
+            xs: "10px",
+            sm: "12px",
+          },
 
           mt: "10px",
+
+          width: "100%",
         }}
       >
         {/* ====================================================
@@ -302,24 +316,30 @@ const ProfileDetails = ({
 
         <Box
           sx={{
-            p: "12px",
+            p: {
+              xs: "10px",
+              sm: "12px",
+            },
 
             border: "1px solid",
             borderColor: "divider",
 
             borderRadius: "10px",
 
-            bgcolor:
-              "background.paper",
+            bgcolor: "background.paper",
+
+            width: "100%",
+            boxSizing: "border-box",
+            minWidth: 0,
           }}
         >
+          {/* HEADER */}
+
           <Box
             sx={{
               display: "flex",
               alignItems: "center",
-
               gap: "8px",
-
               mb: "10px",
             }}
           >
@@ -329,100 +349,97 @@ const ProfileDetails = ({
 
             <Typography
               sx={{
-                fontSize: "15px",
+                fontSize: {
+                  xs: "14px",
+                  sm: "15px",
+                },
                 fontWeight: 700,
-
-                color:
-                  "text.primary",
+                color: "text.primary",
               }}
             >
               Basic Information
             </Typography>
           </Box>
 
+          {/* ROWS */}
+
           <Box
             sx={{
               display: "flex",
               flexDirection: "column",
-
               gap: "6px",
+              width: "100%",
             }}
           >
             {/* LANGUAGE */}
 
             <Box sx={rowSx}>
-              <Box sx={iconSx}>
-                <LanguageOutlinedIcon />
-              </Box>
-
-              <Typography
-                sx={labelSx}
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  width: {
+                    xs: "100%",
+                    sm: "auto",
+                  },
+                }}
               >
-                Language
-              </Typography>
+                <Box sx={iconSx}>
+                  <LanguageOutlinedIcon />
+                </Box>
+
+                <Typography sx={labelSx}>
+                  Language
+                </Typography>
+              </Box>
 
               {isEditing ? (
                 <TextField
                   fullWidth
                   size="small"
-                  value={
-                    languageValue
-                  }
+                  value={languageValue}
                   placeholder="Hindi, English"
-                  onChange={(
-                    event
-                  ) =>
+                  onChange={(event) =>
                     onFieldChange?.(
                       "language",
-
                       event.target.value
                         .split(",")
-                        .map((item) =>
-                          item.trim()
-                        )
+                        .map((item) => item.trim())
                         .filter(Boolean)
                     )
                   }
                   sx={inputSx}
                 />
               ) : (
-                <Typography
-                  sx={valueSx}
-                >
-                  {languageValue ||
-                    "Not provided"}
+                <Typography sx={valueSx}>
+                  {languageValue || "Not provided"}
                 </Typography>
               )}
             </Box>
 
+            {/* EMAIL */}
+
             <DetailRow
-              icon={
-                <EmailOutlinedIcon />
-              }
+              icon={<EmailOutlinedIcon />}
               label="Email"
-              value={
-                profileData?.email
-              }
+              value={profileData?.email}
             />
 
+            {/* PHONE */}
+
             <DetailRow
-              icon={
-                <PhoneOutlinedIcon />
-              }
+              icon={<PhoneOutlinedIcon />}
               label="Phone Number"
-              value={
-                profileData?.mobile
-              }
+              value={profileData?.mobile}
             />
 
+            {/* EXPERIENCE */}
+
             <DetailRow
-              icon={
-                <WorkHistoryOutlinedIcon />
-              }
+              icon={<WorkHistoryOutlinedIcon />}
               label="Experience"
-              value={
-                profileData?.experience
-              }
+              value={profileData?.experience}
               isEditing={isEditing}
               editable
               type="number"
@@ -435,14 +452,12 @@ const ProfileDetails = ({
               }
             />
 
+            {/* CONSULTATION FEE */}
+
             <DetailRow
-              icon={
-                <PaymentsOutlinedIcon />
-              }
+              icon={<PaymentsOutlinedIcon />}
               label="Consultation Fee"
-              value={
-                profileData?.consultation_fee
-              }
+              value={profileData?.consultation_fee}
               isEditing={isEditing}
               editable
               type="number"
@@ -455,10 +470,10 @@ const ProfileDetails = ({
               }
             />
 
+            {/* MEDICAL LICENSE */}
+
             <DetailRow
-              icon={
-                <BadgeOutlinedIcon />
-              }
+              icon={<BadgeOutlinedIcon />}
               label="Medical License / Reg. No."
               value={
                 profileData?.medical_registration_number
@@ -474,10 +489,10 @@ const ProfileDetails = ({
               }
             />
 
+            {/* REGISTRATION NUMBER */}
+
             <DetailRow
-              icon={
-                <ConfirmationNumberOutlinedIcon />
-              }
+              icon={<ConfirmationNumberOutlinedIcon />}
               label="Registration Number"
               value={
                 profileData?.registration_number
@@ -503,32 +518,42 @@ const ProfileDetails = ({
           sx={{
             display: "flex",
             flexDirection: "column",
-
             gap: "10px",
+            width: "100%",
+            minWidth: 0,
           }}
         >
-          {/* WORKING HOURS */}
+          {/* ==================================================
+              WORKING HOURS
+          ================================================== */}
 
           <Box
             sx={{
-              p: "12px",
+              p: {
+                xs: "10px",
+                sm: "12px",
+              },
 
               border: "1px solid",
               borderColor: "divider",
 
               borderRadius: "10px",
 
-              bgcolor:
-                "background.paper",
+              bgcolor: "background.paper",
+
+              width: "100%",
+              boxSizing: "border-box",
+              minWidth: 0,
             }}
           >
+            {/* HEADER */}
+
             <Box
               sx={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent:
-                  "space-between",
-
+                justifyContent: "space-between",
+                gap: "8px",
                 mb: "10px",
               }}
             >
@@ -536,8 +561,8 @@ const ProfileDetails = ({
                 sx={{
                   display: "flex",
                   alignItems: "center",
-
                   gap: "8px",
+                  minWidth: 0,
                 }}
               >
                 <Box sx={iconSx}>
@@ -546,45 +571,33 @@ const ProfileDetails = ({
 
                 <Typography
                   sx={{
-                    fontSize:
-                      "15px",
-
-                    fontWeight:
-                      700,
-
-                    color:
-                      "text.primary",
+                    fontSize: {
+                      xs: "14px",
+                      sm: "15px",
+                    },
+                    fontWeight: 700,
+                    color: "text.primary",
                   }}
                 >
                   Working Hours
                 </Typography>
               </Box>
 
-              {/* Edit Hours sirf edit mode me */}
-
               {isEditing && (
                 <Typography
                   component="button"
                   onClick={() =>
-                    setWorkingHoursModalOpen(
-                      true
-                    )
+                    setWorkingHoursModalOpen(true)
                   }
                   sx={{
                     border: 0,
                     background: "none",
-
-                    cursor:
-                      "pointer",
-
-                    fontSize:
-                      "12.5px",
-
-                    fontWeight:
-                      600,
-
-                    color:
-                      "primary.main",
+                    cursor: "pointer",
+                    fontSize: "12.5px",
+                    fontWeight: 600,
+                    color: "primary.main",
+                    flexShrink: 0,
+                    p: 0,
                   }}
                 >
                   Change
@@ -592,141 +605,142 @@ const ProfileDetails = ({
               )}
             </Box>
 
+            {/* DAYS */}
+
             <Box
               sx={{
                 display: "grid",
 
                 gridTemplateColumns: {
                   xs: "1fr",
-                  sm: "repeat(2, minmax(0,1fr))",
+                  sm: "repeat(2, minmax(0, 1fr))",
                 },
 
                 gap: "6px",
+                width: "100%",
               }}
             >
-              {days.map(
-                ([key, label]) => {
-                  const day =
-                    profileData
-                      ?.workingHours?.[
-                      key
-                    ] || {};
+              {days.map(([key, label]) => {
+                const day =
+                  profileData?.workingHours?.[key] || {};
 
-                  const closed =
-                    !day.start ||
-                    !day.end;
+                const closed = !day.start || !day.end;
 
-                  return (
-                    <Box
-                      key={key}
+                return (
+                  <Box
+                    key={key}
+                    sx={{
+                      minHeight: "42px",
+
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+
+                      gap: "8px",
+
+                      px: {
+                        xs: "8px",
+                        sm: "10px",
+                      },
+
+                      py: "6px",
+
+                      border: "1px solid",
+                      borderColor: "divider",
+
+                      borderRadius: "7px",
+
+                      bgcolor: "background.default",
+
+                      minWidth: 0,
+                    }}
+                  >
+                    <Typography
                       sx={{
-                        minHeight:
-                          "42px",
+                        fontSize: {
+                          xs: "12px",
+                          sm: "12.5px",
+                        },
 
-                        display:
-                          "flex",
+                        fontWeight: 650,
 
-                        alignItems:
-                          "center",
+                        color: "text.primary",
 
-                        justifyContent:
-                          "space-between",
-
-                        gap: "8px",
-
-                        px: "10px",
-
-                        border:
-                          "1px solid",
-
-                        borderColor:
-                          "divider",
-
-                        borderRadius:
-                          "7px",
-
-                        bgcolor:
-                          "background.default",
+                        flexShrink: 0,
                       }}
                     >
-                      <Typography
-                        sx={{
-                          fontSize:
-                            "12.5px",
+                      {label}
+                    </Typography>
 
-                          fontWeight:
-                            650,
+                    <Typography
+                      sx={{
+                        fontSize: {
+                          xs: "11.5px",
+                          sm: "12.5px",
+                        },
 
-                          color:
-                            "text.primary",
-                        }}
-                      >
-                        {label}
-                      </Typography>
+                        color: closed
+                          ? "text.disabled"
+                          : "text.secondary",
 
-                      <Typography
-                        sx={{
-                          fontSize:
-                            "12.5px",
+                        textAlign: "right",
 
-                          color:
-                            closed
-                              ? "text.disabled"
-                              : "text.secondary",
-
-                          textAlign:
-                            "right",
-                        }}
-                      >
-                        {closed
-                          ? "Closed"
-                          : `${formatDisplayTime(
-                              day.start
-                            )} - ${formatDisplayTime(
-                              day.end
-                            )}`}
-                      </Typography>
-                    </Box>
-                  );
-                }
-              )}
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {closed
+                        ? "Closed"
+                        : `${formatDisplayTime(
+                            day.start
+                          )} - ${formatDisplayTime(
+                            day.end
+                          )}`}
+                    </Typography>
+                  </Box>
+                );
+              })}
             </Box>
           </Box>
 
-          {/* DOCUMENT */}
+          {/* ==================================================
+              DOCUMENTS
+          ================================================== */}
 
           <Box
             onClick={() =>
-              setDocumentsModalOpen(
-                true
-              )
+              setDocumentsModalOpen(true)
             }
             sx={{
-              p: "12px",
+              p: {
+                xs: "10px",
+                sm: "12px",
+              },
 
               border: "1px solid",
               borderColor: "divider",
 
               borderRadius: "10px",
 
-              bgcolor:
-                "background.paper",
+              bgcolor: "background.paper",
 
               cursor: "pointer",
 
+              width: "100%",
+              boxSizing: "border-box",
+              minWidth: 0,
+
               "&:hover": {
-                borderColor:
-                  "primary.light",
+                borderColor: "primary.light",
               },
             }}
           >
+            {/* HEADER */}
+
             <Box
               sx={{
                 display: "flex",
                 alignItems: "center",
-
                 gap: "8px",
-
                 mb: "10px",
               }}
             >
@@ -736,17 +750,19 @@ const ProfileDetails = ({
 
               <Typography
                 sx={{
-                  fontSize: "15px",
-
+                  fontSize: {
+                    xs: "14px",
+                    sm: "15px",
+                  },
                   fontWeight: 700,
-
-                  color:
-                    "text.primary",
+                  color: "text.primary",
                 }}
               >
                 Documents
               </Typography>
             </Box>
+
+            {/* DOCUMENT COUNT */}
 
             <Box
               sx={{
@@ -757,37 +773,50 @@ const ProfileDetails = ({
 
                 gap: "9px",
 
-                px: "10px",
+                px: {
+                  xs: "8px",
+                  sm: "10px",
+                },
 
-                bgcolor:
-                  "background.default",
+                py: "7px",
+
+                bgcolor: "background.default",
 
                 border: "1px solid",
                 borderColor: "divider",
 
                 borderRadius: "8px",
+
+                width: "100%",
+                boxSizing: "border-box",
+                minWidth: 0,
               }}
             >
               <Box sx={iconSx}>
                 <DescriptionOutlinedIcon />
               </Box>
 
-              <Box sx={{ flex: 1 }}>
+              <Box
+                sx={{
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
                 <Typography
                   sx={{
-                    fontSize:
-                      "12.5px",
+                    fontSize: {
+                      xs: "12px",
+                      sm: "12.5px",
+                    },
 
-                    fontWeight:
-                      600,
+                    fontWeight: 600,
 
-                    color:
-                      "text.primary",
+                    color: "text.primary",
+
+                    wordBreak: "break-word",
                   }}
                 >
-                  {
-                    availableDocuments.length
-                  }{" "}
+                  {availableDocuments.length}{" "}
                   documents available
                 </Typography>
               </Box>
@@ -795,9 +824,8 @@ const ProfileDetails = ({
               <ArrowForwardIosIcon
                 sx={{
                   fontSize: "13px",
-
-                  color:
-                    "text.secondary",
+                  color: "text.secondary",
+                  flexShrink: 0,
                 }}
               />
             </Box>
@@ -805,57 +833,85 @@ const ProfileDetails = ({
         </Box>
       </Box>
 
-      {/* WORKING HOURS */}
+      {/* ======================================================
+          WORKING HOURS MODAL
+      ====================================================== */}
 
       <WorkingHoursModal
-        open={
-          workingHoursModalOpen
-        }
+        open={workingHoursModalOpen}
         onClose={() =>
-          setWorkingHoursModalOpen(
-            false
-          )
+          setWorkingHoursModalOpen(false)
         }
-        workingHours={
-          profileData?.workingHours
-        }
+        workingHours={profileData?.workingHours}
         onWorkingHoursChange={
           onWorkingHoursChange
         }
       />
 
-      {/* DOCUMENT DIALOG */}
+      {/* ======================================================
+          DOCUMENT DIALOG
+      ====================================================== */}
 
       <Dialog
         open={documentsModalOpen}
         onClose={() =>
-          setDocumentsModalOpen(
-            false
-          )
+          setDocumentsModalOpen(false)
         }
         fullWidth
         maxWidth="sm"
         PaperProps={{
           sx: {
-            borderRadius: "10px",
+            borderRadius: {
+              xs: "8px",
+              sm: "10px",
+            },
+
+            width: {
+              xs: "calc(100% - 20px)",
+              sm: "100%",
+            },
+
+            m: {
+              xs: "10px",
+              sm: "32px",
+            },
+
+            maxHeight: {
+              xs: "calc(100vh - 20px)",
+              sm: "calc(100vh - 64px)",
+            },
           },
         }}
       >
+        {/* DIALOG TITLE */}
+
         <DialogTitle
           sx={{
             display: "flex",
             alignItems: "center",
-            justifyContent:
-              "space-between",
+            justifyContent: "space-between",
 
-            fontSize: "15px",
+            gap: "10px",
+
+            fontSize: {
+              xs: "14px",
+              sm: "15px",
+            },
+
             fontWeight: 700,
 
-            borderBottom:
-              "1px solid",
+            borderBottom: "1px solid",
+            borderColor: "divider",
 
-            borderColor:
-              "divider",
+            px: {
+              xs: "12px",
+              sm: "16px",
+            },
+
+            py: {
+              xs: "10px",
+              sm: "12px",
+            },
           }}
         >
           Documents
@@ -863,9 +919,7 @@ const ProfileDetails = ({
           <IconButton
             size="small"
             onClick={() =>
-              setDocumentsModalOpen(
-                false
-              )
+              setDocumentsModalOpen(false)
             }
           >
             <CloseIcon
@@ -876,130 +930,138 @@ const ProfileDetails = ({
           </IconButton>
         </DialogTitle>
 
+        {/* DIALOG CONTENT */}
+
         <DialogContent
           sx={{
-            p: "14px !important",
+            p: {
+              xs: "10px !important",
+              sm: "14px !important",
+            },
+
+            overflowX: "hidden",
           }}
         >
           <Box
             sx={{
               display: "flex",
               flexDirection: "column",
-
               gap: "7px",
+              width: "100%",
             }}
           >
             {availableDocuments.length ? (
-              availableDocuments.map(
-                (document) => (
-                  <Box
-                    key={
-                      document.name
-                    }
+              availableDocuments.map((document) => (
+                <Box
+                  key={document.name}
+                  sx={{
+                    minHeight: "46px",
+
+                    display: "flex",
+                    alignItems: {
+                      xs: "flex-start",
+                      sm: "center",
+                    },
+
+                    justifyContent:
+                      "space-between",
+
+                    flexDirection: {
+                      xs: "column",
+                      sm: "row",
+                    },
+
+                    gap: "8px",
+
+                    px: "10px",
+                    py: "8px",
+
+                    border: "1px solid",
+                    borderColor: "divider",
+
+                    borderRadius: "7px",
+
+                    bgcolor: "background.default",
+
+                    width: "100%",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <Typography
                     sx={{
-                      minHeight:
-                        "46px",
+                      fontSize: {
+                        xs: "12px",
+                        sm: "12.5px",
+                      },
 
-                      display:
-                        "flex",
+                      fontWeight: 600,
 
-                      alignItems:
-                        "center",
+                      color: "text.primary",
 
-                      justifyContent:
-                        "space-between",
+                      wordBreak: "break-word",
 
-                      gap: "10px",
+                      width: {
+                        xs: "100%",
+                        sm: "auto",
+                      },
 
-                      px: "10px",
-
-                      border:
-                        "1px solid",
-
-                      borderColor:
-                        "divider",
-
-                      borderRadius:
-                        "7px",
-
-                      bgcolor:
-                        "background.default",
+                      flex: 1,
                     }}
                   >
-                    <Typography
-                      sx={{
-                        fontSize:
-                          "12.5px",
+                    {document.name}
+                  </Typography>
 
-                        fontWeight:
-                          600,
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                      const base =
+                        process.env
+                          .NEXT_PUBLIC_S3_BUCKET_URL ||
+                        "";
 
-                        color:
-                          "text.primary",
-                      }}
-                    >
-                      {
-                        document.name
-                      }
-                    </Typography>
+                      const url =
+                        document.path.startsWith(
+                          "http"
+                        )
+                          ? document.path
+                          : `${base.replace(
+                              /\/$/,
+                              ""
+                            )}/${document.path.replace(
+                              /^\//,
+                              ""
+                            )}`;
 
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => {
-                        const base =
-                          process.env
-                            .NEXT_PUBLIC_S3_BUCKET_URL ||
-                          "";
-
-                        const url =
-                          document.path.startsWith(
-                            "http"
-                          )
-                            ? document.path
-                            : `${base.replace(
-                                /\/$/,
-                                ""
-                              )}/${document.path.replace(
-                                /^\//,
-                                ""
-                              )}`;
-
-                        window.open(
-                          url,
-                          "_blank"
-                        );
-                      }}
-                      sx={{
-                        fontSize:
-                          "12.5px",
-
-                        textTransform:
-                          "none",
-                      }}
-                    >
-                      View
-                    </Button>
-                  </Box>
-                )
-              )
+                      window.open(
+                        url,
+                        "_blank"
+                      );
+                    }}
+                    sx={{
+                      fontSize: "12.5px",
+                      textTransform: "none",
+                      minWidth: {
+                        xs: "100%",
+                        sm: "64px",
+                      },
+                      flexShrink: 0,
+                    }}
+                  >
+                    View
+                  </Button>
+                </Box>
+              ))
             ) : (
               <Typography
                 sx={{
-                  textAlign:
-                    "center",
-
+                  textAlign: "center",
                   py: "20px",
-
-                  fontSize:
-                    "12.5px",
-
-                  color:
-                    "text.secondary",
+                  fontSize: "12.5px",
+                  color: "text.secondary",
                 }}
               >
-                No documents
-                available
+                No documents available
               </Typography>
             )}
           </Box>

@@ -1,7 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Container, Grid, Snackbar, Alert } from "@mui/material";
+import {
+  Box,
+  Container,
+  Grid,
+  Snackbar,
+  Alert,
+  Typography,
+  IconButton,
+} from "@mui/material";
+
+import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
+import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
+import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import AuthCard from "../../components/auth/AuthCard";
@@ -9,10 +24,9 @@ import AuthSidePanel from "../../components/auth/AuthSidePanel";
 import LoginForm from "../../components/auth/LoginForm";
 import ForgotPasswordDialog from "../../components/auth/ForgotPasswordDialog";
 
-import { useRouter } from "next/navigation";
 export default function LoginPage() {
   const [openForgotPassword, setOpenForgotPassword] = useState(false);
-  const router = useRouter();
+
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -20,35 +34,103 @@ export default function LoginPage() {
   });
 
   const showMessage = (message, severity = "success") => {
-    setSnackbar({ open: true, message, severity });
+    setSnackbar({
+      open: true,
+      message,
+      severity,
+    });
   };
 
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === "clickaway") return;
+
+    setSnackbar((prev) => ({
+      ...prev,
+      open: false,
+    }));
   };
+
+  const notificationConfig = {
+    success: {
+      icon: CheckCircleOutlineRoundedIcon,
+      color: "#07876A",
+      background: "#F0FDF9",
+      border: "#CDEFE5",
+    },
+
+    error: {
+      icon: ErrorOutlineRoundedIcon,
+      color: "#D92D20",
+      background: "#FFF6F5",
+      border: "#F8D7D4",
+    },
+
+    warning: {
+      icon: WarningAmberRoundedIcon,
+      color: "#DC7A00",
+      background: "#FFFAEB",
+      border: "#FBE6B1",
+    },
+
+    info: {
+      icon: InfoOutlinedIcon,
+      color: "#2563EB",
+      background: "#F5F8FF",
+      border: "#D9E4FF",
+    },
+  };
+
+  const currentNotification =
+    notificationConfig[snackbar.severity] ||
+    notificationConfig.info;
+
+  const NotificationIcon = currentNotification.icon;
 
   return (
-   <Grid sx={{ backgroundColor: "#FFFFFF" }}>
+    <Grid
+      sx={{
+        backgroundColor: "#FFFFFF",
+      }}
+    >
       <Navbar />
-      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-        <Grid container justifyContent="center" alignItems="center">
+
+      <Container
+        maxWidth="md"
+        sx={{
+          mt: 4,
+          mb: 4,
+        }}
+      >
+        <Grid
+          container
+          justifyContent="center"
+          alignItems="center"
+        >
           <Grid
             sx={{
               width: "100%",
               maxWidth: 900,
+
               height: {
                 xs: "auto",
-                md: 550,
+                md: 500,
               },
+
               position: "relative",
+
               display: "flex",
+
               flexDirection: {
                 xs: "column",
                 md: "row",
               },
+
               borderRadius: 2,
+
               overflow: "hidden",
-              boxShadow: "0 10px 35px rgba(15, 35, 30, 0.10)",
+
+              boxShadow:
+                "0 10px 35px rgba(15, 35, 30, 0.10)",
             }}
           >
             <AuthSidePanel isSignup={false} />
@@ -59,7 +141,9 @@ export default function LoginPage() {
               subtitle="Enter your credentials to access your account"
             >
               <LoginForm
-                onForgotPassword={() => setOpenForgotPassword(true)}
+                onForgotPassword={() =>
+                  setOpenForgotPassword(true)
+                }
                 showMessage={showMessage}
               />
             </AuthCard>
@@ -71,22 +155,158 @@ export default function LoginPage() {
 
       <ForgotPasswordDialog
         open={openForgotPassword}
-        onClose={() => setOpenForgotPassword(false)}
+        onClose={() =>
+          setOpenForgotPassword(false)
+        }
         showMessage={showMessage}
       />
 
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={6000}
+        autoHideDuration={3500}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+        sx={{
+          mt: {
+            xs: 1,
+            md: 1.5,
+          },
+        }}
       >
         <Alert
-          onClose={handleCloseSnackbar}
           severity={snackbar.severity}
-          sx={{ width: "100%" }}
+          icon={false}
+          onClose={handleCloseSnackbar}
+          sx={{
+            p: 0,
+
+            minWidth: {
+              xs: "calc(100vw - 32px)",
+              sm: "340px",
+            },
+
+            maxWidth: {
+              xs: "calc(100vw - 32px)",
+              sm: "460px",
+            },
+
+            backgroundColor:
+              currentNotification.background,
+
+            color: "#172033",
+
+            border: `1px solid ${currentNotification.border}`,
+
+            borderRadius: "12px",
+
+            boxShadow:
+              "0 10px 35px rgba(15, 23, 42, 0.12)",
+
+            overflow: "hidden",
+
+            "& .MuiAlert-message": {
+              width: "100%",
+              padding: 0,
+            },
+
+            "& .MuiAlert-action": {
+              display: "none",
+            },
+          }}
         >
-          {snackbar.message}
+          <Box
+            sx={{
+              minHeight: "58px",
+
+              px: 1.8,
+
+              display: "flex",
+              alignItems: "center",
+
+              gap: 1.3,
+            }}
+          >
+            <Box
+              sx={{
+                width: "34px",
+                height: "34px",
+
+                flexShrink: 0,
+
+                borderRadius: "9px",
+
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+
+                backgroundColor: "#FFFFFF",
+
+                border: `1px solid ${currentNotification.border}`,
+              }}
+            >
+              <NotificationIcon
+                sx={{
+                  fontSize: "20px",
+                  color: currentNotification.color,
+                }}
+              />
+            </Box>
+
+            <Typography
+              sx={{
+                flex: 1,
+
+                fontSize: "13px",
+
+                fontWeight: 500,
+
+                lineHeight: 1.4,
+
+                color: "#344054",
+              }}
+            >
+              {snackbar.message}
+            </Typography>
+
+            <IconButton
+              size="small"
+              onClick={handleCloseSnackbar}
+              sx={{
+                width: "30px",
+                height: "30px",
+
+                flexShrink: 0,
+
+                color: "#667085",
+
+                "&:hover": {
+                  backgroundColor:
+                    "rgba(15, 23, 42, 0.05)",
+
+                  color: "#172033",
+                },
+              }}
+            >
+              <CloseRoundedIcon
+                sx={{
+                  fontSize: "18px",
+                }}
+              />
+            </IconButton>
+          </Box>
+
+          <Box
+            sx={{
+              height: "2px",
+              width: "100%",
+              backgroundColor:
+                currentNotification.color,
+              opacity: 0.75,
+            }}
+          />
         </Alert>
       </Snackbar>
     </Grid>

@@ -586,16 +586,28 @@ const WorkingHoursModal = ({
         fullWidth
         maxWidth="lg"
         PaperProps={{
-  sx: {
-    width: "min(700px, calc(80vw - 132px))",
-    maxHeight: "calc(100vh - 24px)",
-    borderRadius: "12px",
-    border: "1px solid",
-    borderColor: "divider",
-    boxShadow: "0 20px 60px rgba(15, 23, 42, 0.14)",
-    overflow: "hidden",
-  },
-}}
+          sx: {
+            width: {
+              xs: "calc(100vw - 20px)",
+              sm: "calc(100vw - 40px)",
+              md: "min(700px, calc(100vw - 80px))",
+            },
+            maxWidth: "700px",
+            maxHeight: {
+              xs: "calc(100vh - 20px)",
+              sm: "calc(100vh - 40px)",
+            },
+            m: {
+              xs: "10px",
+              sm: "20px",
+            },
+            borderRadius: "12px",
+            border: "1px solid",
+            borderColor: "divider",
+            boxShadow: "0 20px 60px rgba(15, 23, 42, 0.14)",
+            overflow: "hidden",
+          },
+        }}
       >
         <DialogTitle
           sx={{
@@ -685,12 +697,13 @@ const WorkingHoursModal = ({
 
         <DialogContent
           sx={{
-            p: "12px 16px !important",
-
-            overflow: {
-              xs: "auto",
-              md: "hidden",
+            p: {
+              xs: "10px !important",
+              sm: "12px 16px !important",
             },
+            overflowY: "auto",
+            overflowX: "hidden",
+            minWidth: 0,
           }}
         >
           {error && (
@@ -1202,8 +1215,15 @@ gridTemplateColumns: "1fr",
                           minHeight:
                             "46px",
 
-                          display:
-                            "flex",
+                          display: {
+                            xs: "grid",
+                            sm: "flex",
+                          },
+
+                          gridTemplateColumns: {
+                            xs: "minmax(0, 1fr) auto",
+                            sm: "none",
+                          },
 
                           alignItems:
                             "center",
@@ -1240,8 +1260,14 @@ gridTemplateColumns: "1fr",
 
                         <Box
                           sx={{
-                            minWidth:
-                              "75px",
+                            minWidth: {
+                              xs: 0,
+                              sm: "75px",
+                            },
+                            gridColumn: {
+                              xs: "1 / -1",
+                              sm: "auto",
+                            },
                           }}
                         >
                           <Typography
@@ -1297,6 +1323,11 @@ gridTemplateColumns: "1fr",
 
                             minWidth:
                               0,
+
+                            width: {
+                              xs: "100%",
+                              sm: "auto",
+                            },
 
                             display:
                               "flex",
@@ -1423,9 +1454,15 @@ gridTemplateColumns: "1fr",
                             )
                           }
                           sx={{
-                            ml: "2px",
+                            ml: {
+                              xs: 0,
+                              sm: "2px",
+                            },
 
-                            mr: "-6px",
+                            mr: {
+                              xs: "-6px",
+                              sm: "-6px",
+                            },
 
                             flexShrink:
                               0,
@@ -1577,8 +1614,12 @@ gridTemplateColumns: "1fr",
         maxWidth="xs"
         PaperProps={{
           sx: {
-            width:
-              "min(380px, calc(100vw - 32px))",
+            width: {
+              xs: "calc(100vw - 24px)",
+              sm: "min(380px, calc(100vw - 32px))",
+            },
+
+            maxHeight: "calc(100vh - 24px)",
 
             borderRadius:
               "10px",
@@ -1690,8 +1731,10 @@ gridTemplateColumns: "1fr",
                 display:
                   "grid",
 
-                gridTemplateColumns:
-                  "1fr auto 1fr",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "1fr auto 1fr",
+                },
 
                 alignItems:
                   "center",
@@ -1762,6 +1805,11 @@ gridTemplateColumns: "1fr",
 
                   color:
                     "text.secondary",
+
+                  display: {
+                    xs: "none",
+                    sm: "block",
+                  },
                 }}
               >
                 to

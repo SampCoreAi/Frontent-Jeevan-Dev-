@@ -109,7 +109,6 @@ export default function HeroContent() {
 
         <Box
           sx={{
-          
             ml: "2px",
 
             display: "flex",
@@ -118,9 +117,7 @@ export default function HeroContent() {
 
             flexShrink: 0,
 
-         
             color: "#078F73",
-
           }}
         >
           <ArrowForwardIcon
@@ -136,11 +133,11 @@ export default function HeroContent() {
           maxWidth: "900px",
           margin: "5px auto 0",
           color: "#172033",
-   userSelect: "none",
-      WebkitUserSelect: "none",
+          userSelect: "none",
+          WebkitUserSelect: "none",
           fontFamily: "Inter, Arial, sans-serif",
           fontSize: "clamp(46px, 5vw, 78px)",
-          fontWeight: 500,
+          fontWeight: 400,
           lineHeight: 1.03,
           letterSpacing: "-3.3px",
 
@@ -154,57 +151,60 @@ export default function HeroContent() {
           },
         }}
       >
-        Better care starts with the
-       <Box
-  component="span"
-  sx={{
-    display: "block",
-    mt: "5px",
-    fontFamily: "inherit",
-    fontSize: "inherit",
-    fontWeight: "inherit",
-    lineHeight: "inherit",
-    letterSpacing: "inherit",
-  }}
->
-  <Box
-    component="span"
-    sx={{
-      position: "relative",
-      display: "inline-block",
-      color: "#07876A",
-      px: "12px",
-      py: "1px",
-      zIndex: 1,
+        <Box
+          component="span"
+          sx={{
+            display: "block",
+            fontWeight: 700,
+            letterSpacing: "-2.8px",
+          }}
+        >
+          Better care starts with the
+        </Box>
 
-      userSelect: "none",
-      WebkitUserSelect: "none",
+        <Box
+          component="span"
+          sx={{
+            display: "block",
+            mt: "5px",
+            fontFamily: "inherit",
+            fontSize: "inherit",
+            fontWeight: "inherit",
+            lineHeight: "inherit",
+            letterSpacing: "inherit",
+          }}
+        >
+          <Box
+            component="span"
+            sx={{
+              position: "relative",
+              display: "inline-block",
+              color: "#07876A",
+              px: "12px",
+              py: "1px",
+              zIndex: 1,
+              userSelect: "none",
+              WebkitUserSelect: "none",
 
-      "&::before": {
-        content: '""',
-        position: "absolute",
-
-        left: "2px",
-        right: "2px",
-        top: "12%",
-        bottom: "5%",
-
-        background:
-          "linear-gradient(100deg, #DDF8B7 0%, #CFF5A3 50%, #D9F8AE 100%)",
-
-        borderRadius: "3px 1px 3px 2px",
-
-        transform: "rotate(-0.5deg)",
-        zIndex: -1,
-
-        boxShadow:
-          "0 3px 12px rgba(7,135,106,0.05)",
-      },
-    }}
-  >
-    right doctor.
-  </Box>
-</Box>
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                left: "2px",
+                right: "2px",
+                top: "12%",
+                bottom: "5%",
+                background:
+                  "linear-gradient(100deg, #DDF8B7 0%, #CFF5A3 50%, #D9F8AE 100%)",
+                borderRadius: "3px 1px 3px 2px",
+                transform: "rotate(-0.5deg)",
+                zIndex: -1,
+                boxShadow: "0 3px 12px rgba(7,135,106,0.05)",
+              },
+            }}
+          >
+            right doctor.
+          </Box>
+        </Box>
       </Typography>
 
       <Typography
@@ -219,8 +219,8 @@ export default function HeroContent() {
           },
 
           mx: "auto",
-   userSelect: "none",
-      WebkitUserSelect: "none",
+          userSelect: "none",
+          WebkitUserSelect: "none",
           maxWidth: {
             xs: "500px",
             sm: "650px",
