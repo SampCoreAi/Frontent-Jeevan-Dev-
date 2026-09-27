@@ -29,6 +29,7 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import LabAddTestDialog from "./LabAddTestDialog";
 import { DataTable, SectionTitle, TableFilters } from "./LabUi";
 
@@ -107,6 +108,7 @@ export default function LabRequests({
   technicians = [],
   onAssignTechnician,
   onCreateRequest,
+  onCreateReport,
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -900,6 +902,17 @@ export default function LabRequests({
           },
         }}
       >
+        <MenuItem
+          onClick={() => {
+            closeActions();
+            onCreateReport?.(uploadRequest);
+          }}
+          disabled={!uploadRequest || isCancelled(uploadRequest)}
+        >
+          <DescriptionOutlinedIcon sx={{ mr: 1, fontSize: 17, color: "#0B5C8E" }} />
+          Create report
+        </MenuItem>
+
         <MenuItem
           onClick={openUpload}
           disabled={

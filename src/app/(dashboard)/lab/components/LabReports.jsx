@@ -159,7 +159,6 @@ export default function LabReports({
             "SNO",
             "REPORT ID",
             "PATIENT",
-            "LAB",
             "TEST",
             "STATUS",
             "REVIEW",
@@ -290,13 +289,6 @@ export default function LabReports({
                 </TableCell>
 
                 <TableCell sx={cellSx}>
-                  {report.labName ||
-                    report.lab_name ||
-                    report.labId ||
-                    "-"}
-                </TableCell>
-
-                <TableCell sx={cellSx}>
                   {Array.isArray(
                     report.requestedTests ||
                       report.requested_tests
@@ -331,7 +323,7 @@ export default function LabReports({
                   />
                 </TableCell>
 
-                <TableCell sx={{ ...cellSx, minWidth: 170 }}>
+                <TableCell sx={{ ...cellSx, minWidth: 140 }}>
                   <Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap">
                     <Chip
                       size="small"
