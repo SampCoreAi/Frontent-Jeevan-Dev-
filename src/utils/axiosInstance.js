@@ -76,7 +76,7 @@ api.interceptors.response.use(
         if (!refreshToken) {
           console.warn("⚠️ No refresh token found");
           localStorage.clear();
-          window.location.href = "/login";
+          window.location.href = "/Home/pages/Login";
           return Promise.reject(error);
         }
 
@@ -121,7 +121,7 @@ api.interceptors.response.use(
         processQueue(err, null);
         
         localStorage.clear();
-        window.location.href = "/login";
+        window.location.href = "/Home/pages/Login";
         
         return Promise.reject(err);
       }

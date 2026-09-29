@@ -10,6 +10,7 @@ import {
 } from "@mui/icons-material";
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Dialog,
@@ -478,142 +479,1283 @@ export default function LabReportTemplateEditor() {
     setNotice(`${activeTemplate.name} selected for use on a test request.`);
   };
 
-  return (
-    <Box sx={{ display: "grid", gap: 2, width: "100%" }}>
-      <Box sx={{ display: "flex", alignItems: { xs: "stretch", sm: "center" }, justifyContent: "space-between", flexDirection: { xs: "column", sm: "row" }, gap: 1.5 }}>
-        <Box>
-          <Typography sx={{ fontSize: 17, fontWeight: 700, color: "#172033" }}>Lab Report Templates</Typography>
-          <Typography sx={{ mt: 0.4, fontSize: 12.5, color: "#64748B" }}>Each test template can have multiple pages. Shared header and footer repeat on every page.</Typography>
-        </Box>
-        <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
-          {editing ? (
-            <>
-              <Button startIcon={<AddOutlined />} onClick={addReportPage} variant="outlined" sx={{ textTransform: "none" }}>Add page</Button>
-              <Button startIcon={<CloseOutlined />} onClick={cancelEditing} variant="outlined" sx={{ textTransform: "none" }}>Cancel</Button>
-              <Button startIcon={<SaveOutlined />} onClick={saveTemplate} variant="contained" sx={{ textTransform: "none", bgcolor: "#07876A" }}>Save template</Button>
-            </>
-          ) : (
-            <>
-              <Button startIcon={<AddOutlined />} onClick={createTemplate} disabled={loading || Boolean(error)} variant="outlined" sx={{ textTransform: "none" }}>New template</Button>
-              <Button startIcon={<EditOutlined />} onClick={startEditing} disabled={!activeTemplate || activeTemplate.isOwner === false || loading || Boolean(error)} variant="outlined" sx={{ textTransform: "none" }}>Edit on page</Button>
-              <Button color="error" startIcon={<DeleteOutline />} onClick={() => setRemoveTemplateDialogOpen(true)} disabled={!activeTemplate || activeTemplate.isOwner === false || loading || Boolean(error)} variant="outlined" sx={{ textTransform: "none" }}>Remove template</Button>
-              <Button startIcon={<SaveOutlined />} onClick={useTemplate} disabled={!activeTemplate || loading || Boolean(error)} variant="contained" sx={{ textTransform: "none", bgcolor: "#07876A" }}>Use template</Button>
-            </>
-          )}
-        </Stack>
-      </Box>
+return (
+  <Box
+    sx={{
+      display: "grid",
+      gap: 1.5,
+      width: "100%",
+    }}
+  >
+    {/* =========================
+        PAGE HEADER
+    ========================== */}
+  
 
-      {error ? <Alert severity="error">{error}</Alert> : null}
-      {notice ? <Alert severity="success" onClose={() => setNotice("")}>{notice}</Alert> : null}
-      {loading ? <Typography color="text.secondary">Loading lab profile…</Typography> : null}
+    {/* =========================
+        ALERTS
+    ========================== */}
 
-      {!loading && !error && activeTemplate ? (
-        <>
-          <Stack direction="row" spacing={1} sx={{ overflowX: "auto", pb: 0.5 }}>
-            {templates.map((template) => (
-              <Button key={template.id} size="small" variant={activeId === template.id ? "contained" : "outlined"} onClick={() => selectTemplate(template.id)} disabled={editing || Boolean(selectingTemplateId)} sx={{ minWidth: "max-content", textTransform: "none" }}>
-                {template.name}
-              </Button>
-            ))}
-          </Stack>
+    {error ? (
+      <Alert
+        severity="error"
+        sx={{
+          py: 0.3,
+          borderRadius: "8px",
+          fontSize: "11px",
 
-          {editing ? (
-            <Stack direction={{ xs: "column", sm: "row" }} alignItems={{ sm: "center" }} spacing={1.5}>
-              <Box sx={{ maxWidth: 420, flex: 1 }}><InlineInput ariaLabel="Template name" value={draft.name} onChange={(value) => updateDraft("name", value)} /></Box>
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1, py: 0.5, border: "1px solid #E2E8F0", borderRadius: 1 }}>
-                <Typography sx={{ fontSize: 11.5, color: "#475467", whiteSpace: "nowrap" }}>Out-of-range color</Typography>
-                <input aria-label="Template out-of-range color" type="color" value={draft.outOfRangeColor || "#c62828"} onChange={(event) => updateDraft("outOfRangeColor", event.target.value)} style={{ width: 34, height: 28, border: 0, padding: 0, background: "transparent", cursor: "pointer" }} />
-              </Stack>
-            </Stack>
+          "& .MuiAlert-icon": {
+            fontSize: 18,
+          },
+        }}
+      >
+        {error}
+      </Alert>
+    ) : null}
+
+    {notice ? (
+      <Alert
+        severity="success"
+        onClose={() => setNotice("")}
+        sx={{
+          py: 0.3,
+          borderRadius: "8px",
+          fontSize: "11px",
+
+          "& .MuiAlert-icon": {
+            fontSize: 18,
+          },
+        }}
+      >
+        {notice}
+      </Alert>
+    ) : null}
+
+    {loading ? (
+      <Typography
+        sx={{
+          fontSize: "11.5px",
+          color: "#64748B",
+        }}
+      >
+        Loading lab profile…
+      </Typography>
+    ) : null}
+
+    {!loading && !error && activeTemplate ? (
+      <>
+        {/* =========================
+            TEMPLATE TOOLBAR
+        ========================== */}
+
+    <Box
+  sx={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: { xs: "wrap", md: "nowrap" },
+    gap: 1.2,
+
+    width: "100%",
+    p: 1.1,
+
+    bgcolor: "#F7FAF9",
+    border: "1px solid #E3EBE7",
+    borderRadius: "9px",
+  }}
+>
+  {/* =====================================
+      LEFT - SEARCHABLE TEMPLATE
+  ====================================== */}
+ <Box
+  sx={{
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+    flexShrink: 0,
+    width: { xs: "100%", sm: "auto" },
+  }}
+>
+  <Typography
+    sx={{
+      fontSize: "11px",
+      fontWeight: 700,
+      color: "#475569",
+      whiteSpace: "nowrap",
+    }}
+  >
+    Template
+  </Typography>
+
+  <Autocomplete
+    size="small"
+    disableClearable
+    disabled={editing || Boolean(selectingTemplateId)}
+    options={templates}
+    value={
+      templates.find(
+        (template) => template.id === activeId
+      ) || null
+    }
+    getOptionLabel={(option) => option?.name || ""}
+    isOptionEqualToValue={(option, value) =>
+      option.id === value.id
+    }
+    onChange={(_, template) => {
+      if (template) {
+        selectTemplate(template.id);
+      }
+    }}
+    noOptionsText="No template found"
+    sx={{
+      width: {
+        xs: "100%",
+        sm: 280,
+        md: 300,
+      },
+
+      flexShrink: 0,
+
+      "& .MuiOutlinedInput-root": {
+        height: 38,
+        py: "0 !important",
+        pl: "6px !important",
+        pr: "34px !important",
+
+        bgcolor: "#FFFFFF",
+        borderRadius: "7px",
+
+        "& fieldset": {
+          borderColor: "#CFDDD7",
+        },
+
+        "&:hover fieldset": {
+          borderColor: "#AFC7BE",
+        },
+
+        "&.Mui-focused fieldset": {
+          borderColor: "#07876A",
+          borderWidth: "1px",
+        },
+      },
+
+      "& .MuiAutocomplete-input": {
+        fontSize: "11.5px",
+        fontWeight: 650,
+        color: "#172033",
+      },
+
+      "& .MuiAutocomplete-popupIndicator": {
+        color: "#07876A",
+      },
+
+      "& .MuiAutocomplete-endAdornment": {
+        right: "5px !important",
+      },
+    }}
+    slotProps={{
+      paper: {
+        sx: {
+          mt: 0.5,
+          border: "1px solid #E1E9E5",
+          borderRadius: "8px",
+          boxShadow:
+            "0 10px 28px rgba(15, 23, 42, 0.10)",
+          overflow: "hidden",
+
+          "& .MuiAutocomplete-listbox": {
+            p: 0.6,
+            maxHeight: 260,
+
+            "& .MuiAutocomplete-option": {
+              minHeight: 35,
+              px: 1.1,
+              py: 0.6,
+              borderRadius: "6px",
+
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "#475569",
+
+              "&[aria-selected='true']": {
+                bgcolor: "#EDF7F2",
+                color: "#07876A",
+                fontWeight: 700,
+              },
+
+              "&.Mui-focused": {
+                bgcolor: "#F4F8F6",
+              },
+
+              "&.Mui-focused[aria-selected='true']": {
+                bgcolor: "#E7F4EE",
+              },
+            },
+          },
+        },
+      },
+    }}
+    renderOption={(props, option) => {
+      const selected = option.id === activeId;
+
+      return (
+        <Box
+          component="li"
+          {...props}
+          key={option.id}
+          sx={{
+            display: "flex !important",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 1,
+          }}
+        >
+          <Typography
+            sx={{
+              minWidth: 0,
+              fontSize: "11px",
+              fontWeight: selected ? 700 : 600,
+              color: selected ? "#07876A" : "#475569",
+
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {option.name}
+          </Typography>
+
+          {selected ? (
+            <Box
+              sx={{
+                px: 0.7,
+                py: 0.2,
+                flexShrink: 0,
+
+                bgcolor: "#DDF2E9",
+                borderRadius: "4px",
+
+                color: "#07876A",
+                fontSize: "8px",
+                fontWeight: 750,
+                textTransform: "uppercase",
+              }}
+            >
+              Selected
+            </Box>
           ) : null}
-          <Box sx={{ width: "100%", overflowX: "auto", pb: 2 }}>
-            {renderablePages.map(({ page, sourcePageIndex, continuationIndex }, renderIndex) => {
-              const sourceTemplatePage = (editing ? draft.pages : activeTemplate.pages)[sourcePageIndex];
-              const canEditCommon = editing && renderIndex === 0;
+        </Box>
+      );
+    }}
+    renderInput={(params) => (
+      <TextField
+        {...params}
+        placeholder="Search templates..."
+        inputProps={{
+          ...params.inputProps,
+          autoComplete: "off",
+        }}
+      />
+    )}
+  />
+</Box>
+
+  {/* =====================================
+      RIGHT - ALL ACTION BUTTONS
+  ====================================== */}
+  <Stack
+    direction="row"
+    spacing={0.8}
+    useFlexGap
+    flexWrap="wrap"
+    sx={{
+      ml: { xs: 0, md: "auto" },
+      width: { xs: "100%", md: "auto" },
+      justifyContent: {
+        xs: "flex-start",
+        md: "flex-end",
+      },
+      alignItems: "center",
+    }}
+  >
+    {editing ? (
+      <>
+        {/* ADD PAGE */}
+        <Button
+          startIcon={
+            <AddOutlined
+              sx={{
+                fontSize: "15px !important",
+              }}
+            />
+          }
+          onClick={addReportPage}
+          variant="outlined"
+          size="small"
+          sx={{
+            height: 38,
+            px: 1.4,
+
+            borderRadius: "7px",
+            borderColor: "#D4DFDA",
+
+            bgcolor: "#FFFFFF",
+            color: "#475569",
+
+            fontSize: "10.5px",
+            fontWeight: 650,
+            textTransform: "none",
+
+            boxShadow: "none",
+
+            "&:hover": {
+              bgcolor: "#FFFFFF",
+              borderColor: "#B8C8C1",
+              boxShadow: "none",
+            },
+          }}
+        >
+          Add page
+        </Button>
+
+        {/* CANCEL */}
+        <Button
+          startIcon={
+            <CloseOutlined
+              sx={{
+                fontSize: "15px !important",
+              }}
+            />
+          }
+          onClick={cancelEditing}
+          variant="outlined"
+          size="small"
+          sx={{
+            height: 38,
+            px: 1.4,
+
+            borderRadius: "7px",
+            borderColor: "#D4DFDA",
+
+            bgcolor: "#FFFFFF",
+            color: "#64748B",
+
+            fontSize: "10.5px",
+            fontWeight: 650,
+            textTransform: "none",
+
+            "&:hover": {
+              bgcolor: "#FFFFFF",
+              borderColor: "#B8C8C1",
+            },
+          }}
+        >
+          Cancel
+        </Button>
+
+        {/* SAVE TEMPLATE */}
+        <Button
+          startIcon={
+            <SaveOutlined
+              sx={{
+                fontSize: "15px !important",
+              }}
+            />
+          }
+          onClick={saveTemplate}
+          variant="contained"
+          size="small"
+          sx={{
+            height: 38,
+            px: 1.5,
+
+            borderRadius: "7px",
+
+            bgcolor: "#07876A",
+            color: "#FFFFFF",
+
+            fontSize: "10.5px",
+            fontWeight: 700,
+            textTransform: "none",
+
+            boxShadow: "none",
+
+            "&:hover": {
+              bgcolor: "#07876A",
+              boxShadow: "none",
+            },
+          }}
+        >
+          Save template
+        </Button>
+      </>
+    ) : (
+      <>
+        {/* NEW TEMPLATE */}
+        <Button
+          startIcon={
+            <AddOutlined
+              sx={{
+                fontSize: "15px !important",
+              }}
+            />
+          }
+          onClick={createTemplate}
+          disabled={loading || Boolean(error)}
+          variant="outlined"
+          size="small"
+          sx={{
+            height: 38,
+            px: 1.4,
+
+            borderRadius: "7px",
+            borderColor: "#D4DFDA",
+
+            bgcolor: "#FFFFFF",
+            color: "#334155",
+
+            fontSize: "10.5px",
+            fontWeight: 650,
+            textTransform: "none",
+
+            "&:hover": {
+              bgcolor: "#FFFFFF",
+              borderColor: "#B8C8C1",
+            },
+          }}
+        >
+          New template
+        </Button>
+
+        {/* EDIT TEMPLATE */}
+        <Button
+          startIcon={
+            <EditOutlined
+              sx={{
+                fontSize: "14px !important",
+              }}
+            />
+          }
+          onClick={startEditing}
+          disabled={
+            !activeTemplate ||
+            activeTemplate.isOwner === false ||
+            loading ||
+            Boolean(error)
+          }
+          variant="outlined"
+          size="small"
+          sx={{
+            height: 38,
+            px: 1.4,
+
+            borderRadius: "7px",
+            borderColor: "#B9D9D0",
+
+            bgcolor: "#F6FBF9",
+            color: "#07876A",
+
+            fontSize: "10.5px",
+            fontWeight: 650,
+            textTransform: "none",
+
+            "&:hover": {
+              bgcolor: "#F6FBF9",
+              borderColor: "#07876A",
+            },
+          }}
+        >
+          Edit template
+        </Button>
+
+        {/* REMOVE TEMPLATE */}
+        <Button
+          startIcon={
+            <DeleteOutline
+              sx={{
+                fontSize: "14px !important",
+              }}
+            />
+          }
+          onClick={() =>
+            setRemoveTemplateDialogOpen(true)
+          }
+          disabled={
+            !activeTemplate ||
+            activeTemplate.isOwner === false ||
+            loading ||
+            Boolean(error)
+          }
+          variant="outlined"
+          size="small"
+          sx={{
+            height: 38,
+            px: 1.4,
+
+            borderRadius: "7px",
+            borderColor: "#F0CECB",
+
+            bgcolor: "#FFFDFC",
+            color: "#B42318",
+
+            fontSize: "10.5px",
+            fontWeight: 650,
+            textTransform: "none",
+
+            "&:hover": {
+              bgcolor: "#FFFDFC",
+              borderColor: "#E8B8B4",
+            },
+          }}
+        >
+          Remove
+        </Button>
+
+        {/* USE TEMPLATE */}
+        <Button
+          startIcon={
+            <SaveOutlined
+              sx={{
+                fontSize: "14px !important",
+              }}
+            />
+          }
+          onClick={useTemplate}
+          disabled={
+            !activeTemplate ||
+            loading ||
+            Boolean(error)
+          }
+          variant="contained"
+          size="small"
+          sx={{
+            height: 38,
+            px: 1.6,
+
+            borderRadius: "7px",
+
+            bgcolor: "#07876A",
+            color: "#FFFFFF",
+
+            fontSize: "10.5px",
+            fontWeight: 700,
+            textTransform: "none",
+
+            boxShadow: "none",
+
+            "&:hover": {
+              bgcolor: "#07876A",
+              boxShadow: "none",
+            },
+          }}
+        >
+          Use template
+        </Button>
+      </>
+    )}
+  </Stack>
+</Box>
+
+        {/* =========================
+            EDIT SETTINGS
+        ========================== */}
+
+        {editing ? (
+          <Box
+            sx={{
+              display: "grid",
+
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "minmax(260px, 420px) auto",
+              },
+
+              alignItems: "center",
+
+              justifyContent: "start",
+
+              gap: 1.2,
+
+              p: 1.2,
+
+              bgcolor: "#FFFFFF",
+
+              border: "1px solid #E4EAEF",
+
+              borderRadius: "8px",
+            }}
+          >
+            <Box>
+              <Typography
+                sx={{
+                  mb: 0.5,
+
+                  fontSize: "9.5px",
+
+                  fontWeight: 700,
+
+                  color: "#64748B",
+
+                  textTransform: "uppercase",
+
+                  letterSpacing: "0.05em",
+                }}
+              >
+                Template name
+              </Typography>
+
+              <InlineInput
+                ariaLabel="Template name"
+                value={draft.name}
+                onChange={(value) =>
+                  updateDraft("name", value)
+                }
+              />
+            </Box>
+
+            <Box>
+              <Typography
+                sx={{
+                  mb: 0.5,
+
+                  fontSize: "9.5px",
+
+                  fontWeight: 700,
+
+                  color: "#64748B",
+
+                  textTransform: "uppercase",
+
+                  letterSpacing: "0.05em",
+                }}
+              >
+                Out-of-range color
+              </Typography>
+
+              <Box
+                sx={{
+                  height: 35,
+
+                  display: "flex",
+
+                  alignItems: "center",
+
+                  gap: 0.8,
+
+                  px: 1,
+
+                  bgcolor: "#FAFBFB",
+
+                  border:
+                    "1px solid #E2E8F0",
+
+                  borderRadius: "7px",
+                }}
+              >
+                <input
+                  aria-label="Template out-of-range color"
+                  type="color"
+                  value={
+                    draft.outOfRangeColor ||
+                    "#c62828"
+                  }
+                  onChange={(event) =>
+                    updateDraft(
+                      "outOfRangeColor",
+                      event.target.value
+                    )
+                  }
+                  style={{
+                    width: 25,
+
+                    height: 25,
+
+                    border: 0,
+
+                    padding: 0,
+
+                    background:
+                      "transparent",
+
+                    cursor: "pointer",
+                  }}
+                />
+
+                <Typography
+                  sx={{
+                    fontSize: "10.5px",
+
+                    fontWeight: 600,
+
+                    color: "#475569",
+
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {draft.outOfRangeColor ||
+                    "#c62828"}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        ) : null}
+
+        {/* =========================
+            REPORT PREVIEW AREA
+        ========================== */}
+
+        <Box
+          sx={{
+            width: "100%",
+
+            mt: 0.3,
+
+            p: {
+              xs: 1,
+              sm: 1.5,
+              md: 2,
+            },
+
+            bgcolor: "#F4F7F6",
+
+            border: "1px solid #E5EBE8",
+
+            borderRadius: "10px",
+
+            overflowX: "auto",
+          }}
+        >
+          {renderablePages.map(
+            (
+              {
+                page,
+                sourcePageIndex,
+                continuationIndex,
+              },
+              renderIndex
+            ) => {
+              const sourceTemplatePage = (
+                editing
+                  ? draft.pages
+                  : activeTemplate.pages
+              )[sourcePageIndex];
+
+              const canEditCommon =
+                editing && renderIndex === 0;
+
               return (
-                <Box key={`${sourceTemplatePage.id}-continuation-${continuationIndex}`} className="lab-report-page-wrap">
-                  {editing && continuationIndex === 0 && draft.pages.length > 1 ? (
-                    <Button color="error" size="small" startIcon={<DeleteOutline />} onClick={() => removeReportPage(sourcePageIndex)} sx={{ mb: 0.75, textTransform: "none" }}>
-                      Remove manual page {sourcePageIndex + 1}
+                <Box
+                  key={`${sourceTemplatePage.id}-continuation-${continuationIndex}`}
+                  className="lab-report-page-wrap"
+                  sx={{
+                    mb:
+                      renderIndex ===
+                      renderablePages.length -
+                        1
+                        ? 0
+                        : 2,
+                  }}
+                >
+                  {editing &&
+                  continuationIndex === 0 &&
+                  draft.pages.length > 1 ? (
+                    <Button
+                      color="error"
+                      size="small"
+                      startIcon={
+                        <DeleteOutline
+                          sx={{
+                            fontSize:
+                              "15px !important",
+                          }}
+                        />
+                      }
+                      onClick={() =>
+                        removeReportPage(
+                          sourcePageIndex
+                        )
+                      }
+                      sx={{
+                        mb: 0.8,
+
+                        height: 31,
+
+                        px: 1.2,
+
+                        borderRadius: "6px",
+
+                        bgcolor: "#FFFFFF",
+
+                        border:
+                          "1px solid #F0D0CD",
+
+                        color: "#B42318",
+
+                        fontSize: "10px",
+
+                        fontWeight: 650,
+
+                        textTransform: "none",
+
+                        "&:hover": {
+                          bgcolor: "#FFFFFF",
+                        },
+                      }}
+                    >
+                      Remove page{" "}
+                      {sourcePageIndex + 1}
                     </Button>
                   ) : null}
+
                   <LabReportPage
                     page={page}
-                    commonLayout={editing ? draftCommon : commonLayout}
+                    commonLayout={
+                      editing
+                        ? draftCommon
+                        : commonLayout
+                    }
                     patientFields={[
-                      { label: "Name", value: "Patient Name" },
-                      { label: "Reg. No.", value: "LAB-ORDER-ID" },
-                      { label: "Age & Sex", value: "Age / Gender" },
-                      { label: "Reg. Date", value: "DD/MM/YYYY  HH:MM AM" },
-                      { label: "Referred By", value: "Doctor / Self" },
-                      { label: "Collected On", value: "DD/MM/YYYY  HH:MM AM" },
-                      { label: "Client", value: "Client / Walk-in" },
+                      {
+                        label: "Name",
+                        value: "Patient Name",
+                      },
+                      {
+                        label: "Reg. No.",
+                        value: "LAB-ORDER-ID",
+                      },
+                      {
+                        label: "Age & Sex",
+                        value: "Age / Gender",
+                      },
+                      {
+                        label: "Reg. Date",
+                        value:
+                          "DD/MM/YYYY  HH:MM AM",
+                      },
+                      {
+                        label: "Referred By",
+                        value:
+                          "Doctor / Self",
+                      },
+                      {
+                        label: "Collected On",
+                        value:
+                          "DD/MM/YYYY  HH:MM AM",
+                      },
+                      {
+                        label: "Client",
+                        value:
+                          "Client / Walk-in",
+                      },
                     ]}
-                    pageNumber={renderIndex + 1}
-                    pageCount={renderablePages.length}
-                    continuationIndex={continuationIndex}
-                    lastPage={renderIndex === renderablePages.length - 1}
+                    pageNumber={
+                      renderIndex + 1
+                    }
+                    pageCount={
+                      renderablePages.length
+                    }
+                    continuationIndex={
+                      continuationIndex
+                    }
+                    lastPage={
+                      renderIndex ===
+                      renderablePages.length -
+                        1
+                    }
                     templateEditing={editing}
                     editCommon={canEditCommon}
-                    editPageDetails={editing && continuationIndex === 0}
-                    outOfRangeColor={editing ? draft.outOfRangeColor : activeTemplate.outOfRangeColor}
-                    onCommonChange={updateDraftCommon}
-                    onPageChange={(key, value) => updateDraftPage(sourcePageIndex, key, value)}
-                    onFieldChange={(fieldId, key, value) => updateDraftField(sourcePageIndex, fieldId, key, value)}
-                    onColumnLabelChange={(columnId, label) => updateDraftColumnLabel(sourcePageIndex, columnId, label)}
-                    onTableTitleChange={(tableId, title) => updateDraftTableTitle(sourcePageIndex, tableId, title)}
-                    onTableCellChange={(tableId, rowIndex, columnIndex, value) => updateDraftTableCell(sourcePageIndex, tableId, rowIndex, columnIndex, value)}
-                    onAddTableRow={(tableId) => addDraftTableRow(sourcePageIndex, tableId)}
-                    onRemoveTableRow={(tableId) => removeDraftTableRow(sourcePageIndex, tableId)}
-                    onAddTableColumn={(tableId) => addDraftTableColumn(sourcePageIndex, tableId)}
-                    onRemoveTableColumn={(tableId) => removeDraftTableColumn(sourcePageIndex, tableId)}
-                    onRemoveTable={(tableId) => removeDraftTable(sourcePageIndex, tableId)}
-                    onTextBlockChange={(blockId, key, value, chunkIndex) => updateDraftTextBlock(sourcePageIndex, blockId, key, value, chunkIndex)}
-                    onRemoveTextBlock={(blockId) => removeDraftTextBlock(sourcePageIndex, blockId)}
-                    actions={editing && renderIndex === renderablePages.length - 1 ? (
-                      <LabReportEditActions
-                        onAddRow={() => updateDraftPage(sourcePageIndex, "fields", [...draft.pages[sourcePageIndex].fields, newField()])}
-                        onRemoveRow={() => removeLastDraftField(sourcePageIndex)}
-                        canRemoveRow={draft.pages[sourcePageIndex].fields.length > 1}
-                        onAddColumn={() => addDraftColumn(sourcePageIndex)}
-                        onRemoveColumn={() => removeLastDraftColumn(sourcePageIndex)}
-                        canRemoveColumn={draft.pages[sourcePageIndex].columns.length > 1}
-                        onCreateTable={() => openTableDialog(sourcePageIndex)}
-                        onAddTextArea={() => updateDraftPage(sourcePageIndex, "textBlocks", [...draft.pages[sourcePageIndex].textBlocks, newTextBlock()])}
-                      />
-                    ) : null}
+                    editPageDetails={
+                      editing &&
+                      continuationIndex === 0
+                    }
+                    outOfRangeColor={
+                      editing
+                        ? draft.outOfRangeColor
+                        : activeTemplate.outOfRangeColor
+                    }
+                    onCommonChange={
+                      updateDraftCommon
+                    }
+                    onPageChange={(
+                      key,
+                      value
+                    ) =>
+                      updateDraftPage(
+                        sourcePageIndex,
+                        key,
+                        value
+                      )
+                    }
+                    onFieldChange={(
+                      fieldId,
+                      key,
+                      value
+                    ) =>
+                      updateDraftField(
+                        sourcePageIndex,
+                        fieldId,
+                        key,
+                        value
+                      )
+                    }
+                    onColumnLabelChange={(
+                      columnId,
+                      label
+                    ) =>
+                      updateDraftColumnLabel(
+                        sourcePageIndex,
+                        columnId,
+                        label
+                      )
+                    }
+                    onTableTitleChange={(
+                      tableId,
+                      title
+                    ) =>
+                      updateDraftTableTitle(
+                        sourcePageIndex,
+                        tableId,
+                        title
+                      )
+                    }
+                    onTableCellChange={(
+                      tableId,
+                      rowIndex,
+                      columnIndex,
+                      value
+                    ) =>
+                      updateDraftTableCell(
+                        sourcePageIndex,
+                        tableId,
+                        rowIndex,
+                        columnIndex,
+                        value
+                      )
+                    }
+                    onAddTableRow={(tableId) =>
+                      addDraftTableRow(
+                        sourcePageIndex,
+                        tableId
+                      )
+                    }
+                    onRemoveTableRow={(
+                      tableId
+                    ) =>
+                      removeDraftTableRow(
+                        sourcePageIndex,
+                        tableId
+                      )
+                    }
+                    onAddTableColumn={(
+                      tableId
+                    ) =>
+                      addDraftTableColumn(
+                        sourcePageIndex,
+                        tableId
+                      )
+                    }
+                    onRemoveTableColumn={(
+                      tableId
+                    ) =>
+                      removeDraftTableColumn(
+                        sourcePageIndex,
+                        tableId
+                      )
+                    }
+                    onRemoveTable={(tableId) =>
+                      removeDraftTable(
+                        sourcePageIndex,
+                        tableId
+                      )
+                    }
+                    onTextBlockChange={(
+                      blockId,
+                      key,
+                      value,
+                      chunkIndex
+                    ) =>
+                      updateDraftTextBlock(
+                        sourcePageIndex,
+                        blockId,
+                        key,
+                        value,
+                        chunkIndex
+                      )
+                    }
+                    onRemoveTextBlock={(
+                      blockId
+                    ) =>
+                      removeDraftTextBlock(
+                        sourcePageIndex,
+                        blockId
+                      )
+                    }
+                    actions={
+                      editing &&
+                      renderIndex ===
+                        renderablePages.length -
+                          1 ? (
+                        <LabReportEditActions
+                          onAddRow={() =>
+                            updateDraftPage(
+                              sourcePageIndex,
+                              "fields",
+                              [
+                                ...draft.pages[
+                                  sourcePageIndex
+                                ].fields,
+                                newField(),
+                              ]
+                            )
+                          }
+                          onRemoveRow={() =>
+                            removeLastDraftField(
+                              sourcePageIndex
+                            )
+                          }
+                          canRemoveRow={
+                            draft.pages[
+                              sourcePageIndex
+                            ].fields.length > 1
+                          }
+                          onAddColumn={() =>
+                            addDraftColumn(
+                              sourcePageIndex
+                            )
+                          }
+                          onRemoveColumn={() =>
+                            removeLastDraftColumn(
+                              sourcePageIndex
+                            )
+                          }
+                          canRemoveColumn={
+                            draft.pages[
+                              sourcePageIndex
+                            ].columns.length >
+                            1
+                          }
+                          onCreateTable={() =>
+                            openTableDialog(
+                              sourcePageIndex
+                            )
+                          }
+                          onAddTextArea={() =>
+                            updateDraftPage(
+                              sourcePageIndex,
+                              "textBlocks",
+                              [
+                                ...draft.pages[
+                                  sourcePageIndex
+                                ].textBlocks,
+                                newTextBlock(),
+                              ]
+                            )
+                          }
+                        />
+                      ) : null
+                    }
                   />
                 </Box>
               );
-            })}
-          </Box>
-        </>
-      ) : null}
+            }
+          )}
+        </Box>
+      </>
+    ) : null}
 
-      {!loading && !error && !renderablePages.length ? <Alert severity="warning">No report layout is available for this template yet.</Alert> : null}
+    {/* =========================
+        NO REPORT LAYOUT
+    ========================== */}
 
-      {saveError ? <Alert severity="error" onClose={() => setSaveError("")}>{saveError}</Alert> : null}
+    {!loading &&
+    !error &&
+    !renderablePages.length ? (
+      <Alert
+        severity="warning"
+        sx={{
+          borderRadius: "8px",
+          fontSize: "11px",
+        }}
+      >
+        No report layout is available for this
+        template yet.
+      </Alert>
+    ) : null}
 
-      <CreateTableDialog open={tableDialogOpen} onClose={() => setTableDialogOpen(false)} onInsert={addTableBlock} />
+    {/* =========================
+        SAVE ERROR
+    ========================== */}
 
-      <Dialog open={removeTemplateDialogOpen} onClose={() => setRemoveTemplateDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <DeleteOutline sx={{ color: "#B42318" }} />
-          Remove template?
-        </DialogTitle>
-        <DialogContent>
-          <Typography sx={{ color: "#475467" }}>
-            Are you sure you want to remove <b>{activeTemplate?.name}</b> template? This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRemoveTemplateDialogOpen(false)} sx={{ textTransform: "none" }}>Cancel</Button>
-          <Button onClick={confirmRemoveTemplate} color="error" variant="contained" startIcon={<DeleteOutline />} sx={{ textTransform: "none" }}>Remove template</Button>
-        </DialogActions>
-      </Dialog>
+    {saveError ? (
+      <Alert
+        severity="error"
+        onClose={() => setSaveError("")}
+        sx={{
+          borderRadius: "8px",
+          fontSize: "11px",
+        }}
+      >
+        {saveError}
+      </Alert>
+    ) : null}
 
-      <Snackbar open={Boolean(notice)} autoHideDuration={3000} onClose={() => setNotice("")}><Alert severity="success" onClose={() => setNotice("")}>{notice}</Alert></Snackbar>
+    {/* =========================
+        CREATE TABLE DIALOG
+    ========================== */}
 
-    </Box>
-  );
+    <CreateTableDialog
+      open={tableDialogOpen}
+      onClose={() =>
+        setTableDialogOpen(false)
+      }
+      onInsert={addTableBlock}
+    />
+
+    {/* =========================
+        REMOVE TEMPLATE DIALOG
+    ========================== */}
+
+    <Dialog
+      open={removeTemplateDialogOpen}
+      onClose={() =>
+        setRemoveTemplateDialogOpen(false)
+      }
+      maxWidth="xs"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: "12px",
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          display: "flex",
+
+          alignItems: "center",
+
+          gap: 1,
+
+          fontSize: "15px",
+
+          fontWeight: 700,
+
+          color: "#172033",
+        }}
+      >
+        <DeleteOutline
+          sx={{
+            color: "#B42318",
+            fontSize: 20,
+          }}
+        />
+
+        Remove template?
+      </DialogTitle>
+
+      <DialogContent>
+        <Typography
+          sx={{
+            fontSize: "12px",
+
+            lineHeight: 1.6,
+
+            color: "#64748B",
+          }}
+        >
+          Are you sure you want to remove{" "}
+          <Box
+            component="strong"
+            sx={{
+              color: "#172033",
+            }}
+          >
+            {activeTemplate?.name}
+          </Box>{" "}
+          template? This action cannot be undone.
+        </Typography>
+      </DialogContent>
+
+      <DialogActions
+        sx={{
+          px: 3,
+          pb: 2,
+        }}
+      >
+        <Button
+          onClick={() =>
+            setRemoveTemplateDialogOpen(false)
+          }
+          sx={{
+            height: 34,
+
+            px: 1.6,
+
+            borderRadius: "7px",
+
+            color: "#64748B",
+
+            fontSize: "11px",
+
+            textTransform: "none",
+          }}
+        >
+          Cancel
+        </Button>
+
+        <Button
+          onClick={confirmRemoveTemplate}
+          color="error"
+          variant="contained"
+          startIcon={
+            <DeleteOutline
+              sx={{
+                fontSize:
+                  "15px !important",
+              }}
+            />
+          }
+          sx={{
+            height: 34,
+
+            px: 1.6,
+
+            borderRadius: "7px",
+
+            fontSize: "11px",
+
+            fontWeight: 700,
+
+            textTransform: "none",
+
+            boxShadow: "none",
+          }}
+        >
+          Remove template
+        </Button>
+      </DialogActions>
+    </Dialog>
+
+    {/* =========================
+        SUCCESS SNACKBAR
+    ========================== */}
+
+    <Snackbar
+      open={Boolean(notice)}
+      autoHideDuration={3000}
+      onClose={() => setNotice("")}
+    >
+      <Alert
+        severity="success"
+        onClose={() => setNotice("")}
+        sx={{
+          fontSize: "11px",
+          borderRadius: "8px",
+        }}
+      >
+        {notice}
+      </Alert>
+    </Snackbar>
+  </Box>
+);
 }

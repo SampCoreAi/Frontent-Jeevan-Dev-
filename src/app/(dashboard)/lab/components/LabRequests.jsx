@@ -134,31 +134,36 @@ export default function LabRequests({
     date: "",
     instructions: "",
   });
+const HIDDEN_STATUSES = ["COMPLETED", "CANCELLED", "REJECTED"];
 
-  const safeRequests = Array.isArray(requests) ? requests : [];
+const safeRequests = Array.isArray(requests)
+  ? requests.filter(
+      (request) =>
+        !HIDDEN_STATUSES.includes(
+          String(request?.status || "").toUpperCase()
+        )
+    )
+  : [];
   const safeReports = Array.isArray(reports) ? reports : [];
   const safePageSize = Number(pageSize) > 0 ? Number(pageSize) : 10;
 
-  const totalPages = pagination?.totalPages || Math.max(1, Math.ceil(safeRequests.length / safePageSize));
+  const totalPages =
+    pagination?.totalPages ||
+    Math.max(1, Math.ceil(safeRequests.length / safePageSize));
 
-  const currentPage = Math.min(
-    Math.max(Number(page) || 1, 1),
-    totalPages
-  );
+  const currentPage = Math.min(Math.max(Number(page) || 1, 1), totalPages);
 
   const startIndex = (currentPage - 1) * safePageSize;
-  const endIndex = Math.min(
-    startIndex + safePageSize,
-    safeRequests.length
-  );
+  const endIndex = Math.min(startIndex + safePageSize, safeRequests.length);
 
-  const visible = pagination ? safeRequests : safeRequests.slice(startIndex, endIndex);
+  const visible = pagination
+    ? safeRequests
+    : safeRequests.slice(startIndex, endIndex);
 
   const selectedReport = uploadRequest
     ? safeReports.find(
         (report) =>
-          Number(getReportRequestId(report)) ===
-          Number(uploadRequest.id)
+          Number(getReportRequestId(report)) === Number(uploadRequest.id),
       )
     : null;
 
@@ -167,7 +172,11 @@ export default function LabRequests({
 
   const canAssignTechnician = (request) => {
     if (!request) return false;
-    return ["APPROVED", "ACCEPTED"].includes(String(request.status || "").toUpperCase()) && !isCancelled(request);
+    return (
+      ["APPROVED", "ACCEPTED"].includes(
+        String(request.status || "").toUpperCase(),
+      ) && !isCancelled(request)
+    );
   };
 
   const getStatusStyle = (status) => {
@@ -254,8 +263,13 @@ export default function LabRequests({
     setCollectionDialog({
       open: true,
       request,
-      date: formatDateInputValue(request?.collection_slot || request?.collectionSlot || ""),
-      instructions: request?.collection_instructions || request?.collectionInstructions || "",
+      date: formatDateInputValue(
+        request?.collection_slot || request?.collectionSlot || "",
+      ),
+      instructions:
+        request?.collection_instructions ||
+        request?.collectionInstructions ||
+        "",
     });
     closeActions();
   };
@@ -290,7 +304,7 @@ export default function LabRequests({
       setDeleteError(
         requestError?.response?.data?.message ||
           requestError?.message ||
-          "Unable to delete report."
+          "Unable to delete report.",
       );
     }
   };
@@ -331,10 +345,8 @@ export default function LabRequests({
     onStatusUpdate(
       request.id,
       nextStatus,
-      request.expected_report_at ||
-        request.expectedReportAt ||
-        null,
-      null
+      request.expected_report_at || request.expectedReportAt || null,
+      null,
     );
   };
 
@@ -349,7 +361,7 @@ export default function LabRequests({
       reasonDialog.request.expected_report_at ||
         reasonDialog.request.expectedReportAt ||
         null,
-      note || null
+      note || null,
     );
 
     setReasonDialog({
@@ -359,75 +371,127 @@ export default function LabRequests({
       note: "",
     });
   };
+  const formatPrettyDate = (value) => {
+    if (!value) return "-";
 
-  const cellSx = {
-    fontSize: "12.5px",
-    color: "#334155",
-    py: 1.25,
-    borderColor: "#EDF1F3",
-    whiteSpace: "nowrap",
+    const date = new Date(String(value).replace(" ", "T"));
+
+    if (Number.isNaN(date.getTime())) return "-";
+
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
 
+  const shortCode = (value, max = 28) => {
+    if (!value) return null;
+
+    const text = String(value);
+
+    if (text.length <= max) return text;
+
+    return `${text.slice(0, max - 3)}...`;
+  };
+
+  const getPatientAgeGender = (request) => {
+    const values = [];
+
+    if (request.patient_age) {
+      values.push(`${request.patient_age} yrs`);
+    }
+
+    if (request.patient_gender) {
+      values.push(request.patient_gender);
+    }
+
+    return values.length ? values.join(" • ") : "Patient";
+  };
+
+  const getCreatorRole = (request) => {
+    const roleId = Number(request.created_by_role_id);
+
+    if (roleId === 2) return "Doctor";
+    if (roleId === 1) return "Patient";
+    if (roleId === 7) return "Technician";
+    if (roleId === 4) return "Lab";
+    if (roleId === 5) return "Admin";
+
+    return request.created_by_name || "Unknown";
+  };
+const cellSx = {
+  fontSize: "11px",
+  color: "#334155",
+  py: 1.25,
+  px: 1,
+  borderColor: "#EDF2F4",
+  verticalAlign: "middle",
+};
   return (
     <Box sx={{ width: "100%" }}>
       <SectionTitle
         title="Test Requests"
         description="Review patient test requests and update their processing status."
-        action={<LabAddTestDialog onCreateRequest={onCreateRequest} requestOnlyPatient={requestOnlyPatient} />}
+        action={
+          <LabAddTestDialog
+            onCreateRequest={onCreateRequest}
+            requestOnlyPatient={requestOnlyPatient}
+          />
+        }
       />
 
-      {updateFeedback?.message ? (
-        <Alert
-          severity={updateFeedback.type || "info"}
-          sx={{
-            mt: 1.5,
-            mb: 1.5,
-            borderRadius: "7px",
-            fontSize: "12px",
-            fontWeight: 600,
-            alignItems: "center",
-          }}
-        >
-          {updateFeedback.message}
-        </Alert>
-      ) : null}
-
-      <Box sx={{ mt: 1.5, mb: 1.5, width: "100%" }}>
+    
+     <Box sx={{ mb: 1.5, width: "100%" }}>
         <TableFilters
           {...filters}
           statusOptions={REQUEST_STATUSES}
           leftAction={
             <Button
-              variant={showDelayedOnly ? "contained" : "outlined"}
-              size="small"
-              disabled={pendingUploadCount === 0}
-              onClick={onToggleDelayedUpload}
-              sx={{
-                height: 40,
-                minWidth: { xs: "100%", md: 190 },
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontWeight: 700,
-                textTransform: "none",
-                bgcolor: showDelayedOnly ? "#0B5C8E" : "#FFFFFF",
-                color: showDelayedOnly ? "#FFFFFF" : "#0B5C8E",
-                borderColor: "#B8D1E2",
-                boxShadow: "none",
-                "&:hover": {
-                  bgcolor: showDelayedOnly ? "#094F79" : "#F4F9FC",
-                  boxShadow: "none",
-                },
-                "&.Mui-disabled": {
-                  bgcolor: "#F8FAFC",
-                  color: "#A7B4C4",
-                  borderColor: "#E2E8F0",
-                },
-              }}
-            >
-              {showDelayedOnly
-                ? `Showing ${pendingUploadCount} delayed`
-                : `Pending uploads`}
-            </Button>
+  variant="outlined"
+  size="small"
+  disabled={pendingUploadCount === 0}
+  onClick={onToggleDelayedUpload}
+  sx={{
+    height: 40,
+    minWidth: { xs: "100%", md: 190 },
+    px: 2,
+    borderRadius: "8px",
+
+    fontSize: "12px",
+    fontWeight: 700,
+    textTransform: "none",
+
+    bgcolor: showDelayedOnly ? "#07876A" : "#EDF7F2",
+    color: showDelayedOnly ? "#FFFFFF" : "#07876A",
+
+    border: showDelayedOnly
+      ? "1px solid #07876A"
+      : "1px dashed #07876A",
+
+    boxShadow: "none",
+
+    // No hover effect
+    "&:hover": {
+      bgcolor: showDelayedOnly ? "#07876A" : "#EDF7F2",
+      color: showDelayedOnly ? "#FFFFFF" : "#07876A",
+      border: showDelayedOnly
+        ? "1px solid #07876A"
+        : "1px dashed #07876A",
+      boxShadow: "none",
+    },
+
+    "&.Mui-disabled": {
+      bgcolor: "#F8FAFC",
+      color: "#A7B4C4",
+      border: "1px dashed #CBD5E1",
+    },
+  }}
+>
+  {showDelayedOnly
+    ? `Showing ${pendingUploadCount} Delayed`
+    : `Delayed Reports (${pendingUploadCount})`}
+</Button>
           }
           onReset={() => {
             filters?.onSearch?.("");
@@ -440,450 +504,773 @@ export default function LabRequests({
         />
       </Box>
 
-      <DataTable
-        columns={[
-          "SNO",
-          "ORDER ID",
-          "SAMPLE",
-          "TECHNICIAN",
-          "PATIENT",
-          "DOCTOR",
-          "CREATED BY",
-          "TESTS",
-          "PRIORITY",
-          "REPORT BY",
-          "STATUS",
-          "REASON",
-          "ACTION",
-        ]}
-        loading={loading}
-        emptyMessage="No test requests found."
-        footer={
-          safeRequests.length > 0 ? (
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              justifyContent="space-between"
-              alignItems="center"
-              gap={1.5}
+     <DataTable
+  columns={[
+    "ORDER / REPORT",
+    "PATIENT",
+    "TEST & SAMPLE",
+    "REQUESTED BY",
+    "TECHNICIAN / REPORT DATE",
+    "PRIORITY / STATUS",
+    "ACTIONS",
+  ]}
+  loading={loading}
+  emptyMessage="No test requests found."
+  footer={
+    safeRequests.length > 0 ? (
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        alignItems="center"
+        gap={1}
+        sx={{
+          width: "100%",
+          px: 0.5,
+          py: 0.25,
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: "11px",
+            color: "#718087",
+          }}
+        >
+          Showing{" "}
+          <Box
+            component="span"
+            sx={{
+              fontWeight: 700,
+              color: "#334155",
+            }}
+          >
+            {startIndex + 1}-{endIndex}
+          </Box>{" "}
+          of{" "}
+          <Box
+            component="span"
+            sx={{
+              fontWeight: 700,
+              color: "#334155",
+            }}
+          >
+            {pagination?.total || safeRequests.length}
+          </Box>
+        </Typography>
+
+        <Pagination
+          count={totalPages}
+          page={currentPage}
+          onChange={(_, value) => onPageChange?.(value)}
+          size="small"
+          siblingCount={isMobile ? 0 : 1}
+          boundaryCount={1}
+          sx={{
+            "& .MuiPaginationItem-root": {
+              minWidth: 28,
+              height: 28,
+              borderRadius: "7px",
+              fontSize: "11px",
+              color: "#64748B",
+            },
+
+            "& .Mui-selected": {
+              fontWeight: 700,
+              bgcolor: "#E7F6F1 !important",
+              color: "#07876A",
+            },
+          }}
+        />
+      </Stack>
+    ) : null
+  }
+>
+  {visible.map((request) => {
+    const status = String(
+      request?.status || "PENDING"
+    ).toUpperCase();
+
+    const priority = String(
+      request?.priority || "NORMAL"
+    ).toUpperCase();
+
+    const statusStyle = getStatusStyle(status);
+
+    const allowedStatuses = [
+      status,
+      ...(STATUS_TRANSITIONS[status] || []),
+    ];
+
+    const updating = actionId === request.id;
+
+    const fieldUpdating = (field) =>
+      actionId === request.id && actionField === field;
+
+    const cancelled = isCancelled(request);
+
+    // =========================
+    // REPORT MATCH
+    // =========================
+
+    const requestReport = safeReports.find(
+      (report) =>
+        Number(getReportRequestId(report)) ===
+        Number(request.id)
+    );
+
+    // =========================
+    // DATA
+    // =========================
+
+    const tests = Array.isArray(request.requested_tests)
+      ? request.requested_tests.join(", ")
+      : request.requested_tests || "-";
+
+    const reportDate =
+      request.expected_report_at ||
+      request.expectedReportAt;
+
+    const technicianName =
+      request.assigned_technician_name ||
+      request.assignedTechnicianName;
+
+    const technicianEmail =
+      request.assigned_technician_email ||
+      request.assignedTechnicianEmail ||
+      "";
+
+    const patientName =
+      request.patient_name ||
+      request.walk_in_patient_name ||
+      request.patient_id ||
+      "-";
+
+    const requestedBy =
+      request.created_by_name || "-";
+
+    return (
+      <TableRow
+        key={request.id}
+        sx={{
+          transition: "background-color 0.18s ease",
+
+          "&:hover": {
+            bgcolor: "#F8FCFB",
+          },
+
+          "&:last-child td": {
+            borderBottom: 0,
+          },
+        }}
+      >
+        {/* =====================================
+            ORDER / REPORT
+        ====================================== */}
+
+        <TableCell
+          sx={{
+            ...cellSx,
+            width: "15%",
+            maxWidth: 165,
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              title={
+                request.order_id ||
+                request.orderId ||
+                `#${request.id}`
+              }
               sx={{
-                width: "100%",
-                px: { xs: 0.5, sm: 1 },
-                py: 0.5,
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#172033",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
+              {request.order_id ||
+                request.orderId ||
+                `#${request.id}`}
+            </Typography>
+
+            <Typography
+              title={
+                requestReport?.reportCode ||
+                "Report not uploaded"
+              }
+              sx={{
+                mt: 0.3,
+                fontSize: "10px",
+                color: requestReport?.reportCode
+                  ? "#82909D"
+                  : "#A3AFB8",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {requestReport?.reportCode
+                ? requestReport.reportCode
+                : "Report pending"}
+            </Typography>
+          </Box>
+        </TableCell>
+
+        {/* =====================================
+            PATIENT
+        ====================================== */}
+
+        <TableCell
+          sx={{
+            ...cellSx,
+            width: "13%",
+            maxWidth: 145,
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              title={String(patientName)}
+              sx={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#172033",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                
+                cursor: "default",
+              }}
+            >
+              {patientName}
+            </Typography>
+
+            <Typography
+              sx={{
+                mt: 0.25,
+                fontSize: "10px",
+                color: "#84919B",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {getPatientAgeGender(request)}
+            </Typography>
+          </Box>
+        </TableCell>
+
+        {/* =====================================
+            TEST & SAMPLE
+        ====================================== */}
+
+        <TableCell
+          sx={{
+            ...cellSx,
+            width: "13%",
+            maxWidth: 145,
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              title={String(tests)}
+              sx={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#172033",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                cursor: "default",
+              }}
+            >
+              {tests}
+            </Typography>
+
+            <Typography
+              title={
+                request.sample_type ||
+                request.sampleType ||
+                "No sample"
+              }
+              sx={{
+                mt: 0.25,
+                fontSize: "9.5px",
+                fontWeight: 600,
+                color: "#84919B",
+                textTransform: "uppercase",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {request.sample_type ||
+                request.sampleType ||
+                "No sample"}
+            </Typography>
+
+            {request.collection_token ||
+            request.collectionToken ? (
               <Typography
+                title={`Token: ${
+                  request.collection_token ||
+                  request.collectionToken
+                }`}
                 sx={{
-                  fontSize: "11.5px",
-                  color: "#718087",
+                  mt: 0.2,
+                  fontSize: "9px",
+                  color: "#07876A",
+                  fontWeight: 600,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
               >
-                Showing{" "}
-                <Box
-                  component="span"
-                  sx={{ fontWeight: 700, color: "#334155" }}
-                >
-                  {startIndex + 1}-{endIndex}
-                </Box>{" "}
-                of{" "}
-                <Box
-                  component="span"
-                  sx={{ fontWeight: 700, color: "#334155" }}
-                >
-                  {safeRequests.length}
-                </Box>
+                Token:{" "}
+                {request.collection_token ||
+                  request.collectionToken}
               </Typography>
+            ) : null}
+          </Box>
+        </TableCell>
 
-              <Pagination
-                count={totalPages}
-                page={Math.min(currentPage, totalPages) - 1}
-                onChange={(_, value) => onPageChange?.(value + 1)}
-                size="small"
-                color="primary"
-                siblingCount={isMobile ? 0 : 1}
-                boundaryCount={1}
+        {/* =====================================
+            REQUESTED BY
+        ====================================== */}
+
+        <TableCell
+          sx={{
+            ...cellSx,
+            width: "11%",
+            maxWidth: 125,
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              title={String(requestedBy)}
+              sx={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#172033",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                cursor: "default",
+              }}
+            >
+              {requestedBy}
+            </Typography>
+
+            <Typography
+              title={getCreatorRole(request)}
+              sx={{
+                mt: 0.25,
+                fontSize: "10px",
+                color: "#84919B",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {getCreatorRole(request)}
+            </Typography>
+          </Box>
+        </TableCell>
+
+        {/* =====================================
+            TECHNICIAN / REPORT DATE
+        ====================================== */}
+
+        <TableCell
+          sx={{
+            ...cellSx,
+            width: "20%",
+            maxWidth: 205,
+          }}
+        >
+          <Stack spacing={0.65}>
+            {/* TECHNICIAN */}
+
+            {technicianName ? (
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={0.6}
                 sx={{
-                  "& .MuiPaginationItem-root": {
-                    minWidth: 30,
-                    height: 30,
+                  minWidth: 0,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    bgcolor: "#16A36A",
+                    flexShrink: 0,
+                  }}
+                />
+
+                <Typography
+                  title={technicianName}
+                  sx={{
+                    fontSize: "10.5px",
+                    color: "#52646B",
+                    fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    maxWidth: 150,
+                  }}
+                >
+                  {technicianName}
+                </Typography>
+              </Stack>
+            ) : (
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={0.4}
+              >
+                <Select
+                  size="small"
+                  value={technicianEmail}
+                  displayEmpty
+                  disabled={
+                    cancelled ||
+                    actionId === request.id ||
+                    !technicians.length ||
+                    !canAssignTechnician(request)
+                  }
+                  onChange={(event) => {
+                    if (event.target.value) {
+                      onAssignTechnician?.(
+                        request.id,
+                        event.target.value
+                      );
+                    }
+                  }}
+                  sx={{
+                    width: 155,
+                    height: 28,
                     borderRadius: "6px",
-                    fontSize: "11.5px",
+                    bgcolor: "#FAFCFC",
+                    fontSize: "10px",
+                    color: "#64748B",
+
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#DCE5E8",
+                    },
+
+                    "&:hover .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#B9CDCA",
+                      },
+
+                    "& .MuiSelect-select": {
+                      py: 0.45,
+                      px: 1,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    },
+                  }}
+                >
+                  <MenuItem
+                    value=""
+                    sx={{ fontSize: "10.5px" }}
+                  >
+                    {canAssignTechnician(request)
+                      ? "Assign technician"
+                      : technicians.length
+                        ? "Not assigned"
+                        : "Add technician first"}
+                  </MenuItem>
+
+                  {technicians.map((technician) => (
+                    <MenuItem
+                      key={technician.email}
+                      value={technician.email}
+                      title={technician.full_name}
+                      sx={{
+                        fontSize: "10.5px",
+                        maxWidth: 250,
+                      }}
+                    >
+                      {technician.full_name}
+                    </MenuItem>
+                  ))}
+                </Select>
+
+                {fieldUpdating("technician") && (
+                  <CircularProgress
+                    size={12}
+                    thickness={5}
+                    sx={{
+                      color: "#07876A",
+                    }}
+                  />
+                )}
+              </Stack>
+            )}
+
+            {/* REPORT DATE */}
+
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={0.4}
+            >
+              <CalendarMonthOutlinedIcon
+                sx={{
+                  fontSize: 13,
+                  color: "#84919B",
+                  flexShrink: 0,
+                }}
+              />
+
+              <TextField
+                type="datetime-local"
+                size="small"
+                value={
+                  dateDrafts[request.id] ??
+                  formatDateTimeInputValue(reportDate)
+                }
+                onChange={(event) => {
+                  const value = event.target.value;
+
+                  setDateDrafts((prev) => ({
+                    ...prev,
+                    [request.id]: value,
+                  }));
+                }}
+                onBlur={(event) => {
+                  const value = event.target.value;
+
+                  if (!isCompleteDateTimeValue(value)) {
+                    return;
+                  }
+
+                  const currentValue =
+                    formatDateTimeInputValue(reportDate);
+
+                  if (value === currentValue) {
+                    return;
+                  }
+
+                  onReportDateUpdate?.(
+                    request.id,
+                    value
+                  );
+                }}
+                disabled={
+                  cancelled ||
+                  fieldUpdating("reportDate")
+                }
+                sx={{
+                  width: 155,
+
+                  "& .MuiInputBase-root": {
+                    height: 28,
+                    fontSize: "9.5px",
+                    borderRadius: "6px",
+                    bgcolor: "#FAFCFC",
                   },
-                  "& .Mui-selected": {
-                    fontWeight: 700,
+
+                  "& .MuiOutlinedInput-notchedOutline":
+                    {
+                      borderColor: "#DCE5E8",
+                    },
+
+                  "&:hover .MuiOutlinedInput-notchedOutline":
+                    {
+                      borderColor: "#B9CDCA",
+                    },
+
+                  "& .MuiInputBase-input": {
+                    px: 0.75,
+                    py: 0.4,
                   },
                 }}
               />
-            </Stack>
-          ) : null
-        }
-      >
-        {visible.map((request, index) => {
-          const status = String(
-            request?.status || "PENDING"
-          ).toUpperCase();
 
-          const priority = String(
-            request?.priority || "NORMAL"
-          ).toUpperCase();
-
-          const statusStyle = getStatusStyle(status);
-          const allowedStatuses = [status, ...(STATUS_TRANSITIONS[status] || [])];
-          const priorityStyle = getPriorityStyle(priority);
-          const updating = actionId === request.id;
-          const fieldUpdating = (field) => actionId === request.id && actionField === field;
-          const cancelled = isCancelled(request);
-
-          const reason =
-            request.latest_status_note ||
-            request.latestStatusNote ||
-            request.status_note ||
-            request.note;
-          const currentDateTimeValue = formatDateTimeInputValue(
-            request.expected_report_at || request.expectedReportAt || ""
-          );
-          const draftDateTimeValue = dateDrafts[request.id] ?? currentDateTimeValue;
-
-          return (
-            <TableRow
-              key={request.id}
-              sx={{
-                transition: "background-color 0.15s ease",
-                "&:hover": {
-                  bgcolor: "#F8FBFC",
-                },
-                "&:last-child td": {
-                  borderBottom: 0,
-                },
-              }}
-            >
-              <TableCell
-                sx={{
-                  ...cellSx,
-                  fontWeight: 700,
-                  color: "#64748B",
-                }}
-              >
-                {startIndex + index + 1}
-              </TableCell>
-
-              <TableCell sx={{ ...cellSx, fontWeight: 700, color: "#0B5C8E" }}>
-                {request.order_id || request.orderId || "-"}
-              </TableCell>
-
-              <TableCell sx={{ ...cellSx, fontWeight: 600 }}>
-                <Typography sx={{ fontSize: "12.5px", fontWeight: 600 }}>
-                  {request.sample_type || request.sampleType || "-"}
-                </Typography>
-                {request.collection_slot || request.collectionSlot ? (
-                  <Typography variant="caption" display="block" color="text.secondary">
-                    Collection: {new Date(request.collection_slot || request.collectionSlot).toLocaleString()}
-                  </Typography>
-                ) : null}
-                {request.collection_token || request.collectionToken ? (
-                  <Typography variant="caption" display="block" color="text.secondary">
-                    Token: {request.collection_token || request.collectionToken}
-                  </Typography>
-                ) : null}
-              </TableCell>
-
-              <TableCell sx={{ ...cellSx, minWidth: 190 }}>
-                <Stack direction="row" alignItems="center" spacing={0.7}>
-                  <Select
-                    size="small"
-                    value={request.assigned_technician_email || ""}
-                    displayEmpty
-                    disabled={
-                      cancelled ||
-                      actionId === request.id ||
-                      !technicians.length ||
-                      !canAssignTechnician(request)
-                    }
-                    onChange={(event) => {
-                      if (event.target.value) onAssignTechnician?.(request.id, event.target.value);
-                    }}
-                    sx={{ minWidth: 175, height: 32, fontSize: "11px" }}
-                  >
-                    <MenuItem value="" sx={{ fontSize: "11px" }}>
-                      {canAssignTechnician(request)
-                        ? "Assign technician"
-                        : technicians.length
-                          ? "Approved or accepted requests only"
-                          : "Add technician first"}
-                    </MenuItem>
-                    {technicians.map((technician) => (
-                      <MenuItem key={technician.email} value={technician.email} sx={{ fontSize: "11px" }}>
-                        {technician.full_name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {fieldUpdating("technician") && (
-                    <CircularProgress size={15} thickness={5} sx={{ color: "#0B5C8E" }} />
-                  )}
-                </Stack>
-              </TableCell>
-
-              <TableCell
-                sx={{
-                  ...cellSx,
-                  minWidth: 150,
-                }}
-              >
-                <Typography
+              {fieldUpdating("reportDate") && (
+                <CircularProgress
+                  size={12}
+                  thickness={5}
                   sx={{
-                    fontSize: "12.5px",
-                    fontWeight: 700,
-                    color: "#24363D",
-                  }}
-                >
-                  {request.patient_name ||
-                    request.patient_id ||
-                    "-"}
-                </Typography>
-              </TableCell>
-
-              <TableCell
-                sx={{
-                  ...cellSx,
-                  minWidth: 145,
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontSize: "12.5px",
-                    fontWeight: 600,
-                    color: "#52646B",
-                  }}
-                >
-                  {request.doctor_name ||
-                    request.referring_doctor_name ||
-                    request.doctor_id ||
-                    "-"}
-                </Typography>
-                {request.referring_doctor_phone ? (
-                  <Typography variant="caption" display="block" color="text.secondary">
-                    {request.referring_doctor_phone}
-                  </Typography>
-                ) : null}
-              </TableCell>
-
-              <TableCell sx={{ ...cellSx, minWidth: 140 }}>
-                <Typography sx={{ fontSize: "11px", fontWeight: 700, color: "#0B5C8E" }}>
-                  {request.doctor_id || Number(request.created_by_role_id) === 2
-                    ? "Doctor"
-                    : Number(request.created_by_role_id) === 1
-                      ? "Patient"
-                      : Number(request.created_by_role_id) === 7
-                      ? "Technician"
-                      : Number(request.created_by_role_id) === 4
-                        ? "You (Lab)"
-                        : Number(request.created_by_role_id) === 5
-                          ? "Admin"
-                          : "Unknown"}
-                </Typography>
-                <Typography variant="caption" display="block" color="text.secondary">
-                  {request.created_by_name || request.doctor_name || "-"}
-                </Typography>
-              </TableCell>
-
-              <TableCell
-                sx={{
-                  ...cellSx,
-                  minWidth: 190,
-                  maxWidth: 260,
-                  whiteSpace: "normal",
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontSize: "12px",
-                    color: "#52646B",
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {Array.isArray(request.requested_tests)
-                    ? request.requested_tests.join(", ")
-                    : request.requested_tests || "-"}
-                </Typography>
-              </TableCell>
-
-              <TableCell sx={cellSx}>
-                <Chip
-                  size="small"
-                  label={priority}
-                  variant="outlined"
-                  sx={{
-                    height: 23,
-                    bgcolor: "transparent",
-                    color: priorityStyle.color,
-                    border: 0,
-                    fontSize: "9.5px",
-                    fontWeight: 700,
-                    "& .MuiChip-label": {
-                      px: 1,
-                    },
+                    color: "#07876A",
+                    flexShrink: 0,
                   }}
                 />
-              </TableCell>
+              )}
+            </Stack>
+          </Stack>
+        </TableCell>
 
-             <TableCell
-  sx={{
-    ...cellSx,
-    minWidth: 190,
-  }}
->
-  <Stack
-    direction="row"
-    alignItems="center"
-    spacing={0.7}
-  >
-    <TextField
-      size="small"
-      type="datetime-local"
-      value={draftDateTimeValue}
-      onChange={(event) => {
-        const nextValue = event.target.value || "";
-        setDateDrafts((current) => ({
-          ...current,
-          [request.id]: nextValue,
-        }));
-      }}
-      onBlur={() => {
-        const nextValue = dateDrafts[request.id] ?? currentDateTimeValue;
-        if (!isCompleteDateTimeValue(nextValue)) return;
+        {/* =====================================
+            PRIORITY / STATUS
+        ====================================== */}
 
-        if (nextValue === currentDateTimeValue) return;
+        <TableCell
+          sx={{
+            ...cellSx,
+            width: "15%",
+            maxWidth: 145,
+          }}
+        >
+          <Stack
+            spacing={0.55}
+            alignItems="flex-start"
+          >
+            <Chip
+              size="small"
+              label={priority}
+              sx={{
+                height: 21,
+                borderRadius: "5px",
 
-        onReportDateUpdate?.(request.id, nextValue);
-      }}
-      disabled={updating || cancelled}
-      InputLabelProps={{ shrink: true }}
-      sx={{
-        width: 175,
-        "& .MuiOutlinedInput-root": {
-          height: 34,
-          borderRadius: "6px",
-          bgcolor: cancelled ? "#F8FAFC" : "#FFFFFF",
-        },
-        "& .MuiInputBase-input": {
-          fontSize: "11px",
-          px: 1,
-          py: 0,
-        },
-        '& input[type="datetime-local"]::-webkit-calendar-picker-indicator': {
-          opacity: 1,
-          cursor: "pointer",
-          filter:
-            "invert(31%) sepia(37%) saturate(1329%) hue-rotate(158deg) brightness(85%) contrast(95%)",
-        },
-      }}
-    />
+                bgcolor:
+                  priority === "URGENT"
+                    ? "#FFF1F2"
+                    : "#EEF6FF",
 
-    {fieldUpdating("reportDate") && (
-      <CircularProgress
-        size={15}
-        thickness={5}
-        sx={{ color: "#0B5C8E" }}
-      />
-    )}
-  </Stack>
-</TableCell>
+                color:
+                  priority === "URGENT"
+                    ? "#DC2626"
+                    : "#2563EB",
 
-              <TableCell sx={cellSx}>
-                <Stack direction="row" alignItems="center" spacing={0.7}>
-                  <Select
-                    size="small"
-                    value={status}
-                    onChange={(event) => handleStatusChange(request, event.target.value)}
-                    disabled={updating || cancelled}
-                    sx={{
-                      minWidth: 155,
-                      height: 32,
-                      borderRadius: "6px",
-                      bgcolor: "transparent",
-                      color: statusStyle.color,
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        border: 0,
-                      },
-                      "& .MuiSvgIcon-root": { color: statusStyle.color },
-                      "& .MuiSelect-select": { py: 0.8 },
-                    }}
-                  >
-                    {REQUEST_STATUSES.map((item) => (
-                      <MenuItem key={item} value={item} disabled={!allowedStatuses.includes(item)} sx={{ fontSize: "12px" }}>
-                        {item.replaceAll("_", " ")}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {fieldUpdating("status") && (
-                    <CircularProgress size={15} thickness={5} sx={{ color: "#0B5C8E" }} />
-                  )}
-                </Stack>
-              </TableCell>
+                fontSize: "9px",
+                fontWeight: 800,
 
-              <TableCell
+                border: `1px solid ${
+                  priority === "URGENT"
+                    ? "#FFE0E4"
+                    : "#D7E8FF"
+                }`,
+
+                "& .MuiChip-label": {
+                  px: 0.8,
+                },
+              }}
+            />
+
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={0.3}
+            >
+              <Select
+                size="small"
+                value={status}
+                onChange={(event) =>
+                  handleStatusChange(
+                    request,
+                    event.target.value
+                  )
+                }
+                disabled={updating || cancelled}
                 sx={{
-                  ...cellSx,
-                  minWidth: 150,
-                  maxWidth: 220,
-                  whiteSpace: "normal",
+                  width: 125,
+                  height: 27,
+                  borderRadius: "6px",
+                  bgcolor: statusStyle.bgcolor,
+                  color: statusStyle.color,
+                  fontSize: "9px",
+                  fontWeight: 800,
+
+                  "& .MuiOutlinedInput-notchedOutline":
+                    {
+                      borderColor:
+                        statusStyle.borderColor,
+                    },
+
+                  "& .MuiSvgIcon-root": {
+                    fontSize: 15,
+                    color: statusStyle.color,
+                  },
+
+                  "& .MuiSelect-select": {
+                    py: 0.4,
+                    px: 0.8,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  },
                 }}
               >
-                {["REJECTED", "CANCELLED"].includes(status) ? (
-                  <Typography
-                    title={reason || "No reason provided."}
+                {REQUEST_STATUSES.map((item) => (
+                  <MenuItem
+                    key={item}
+                    value={item}
+                    disabled={
+                      !allowedStatuses.includes(item)
+                    }
                     sx={{
-                      fontSize: "11px",
-                      color: "#64748B",
-                      lineHeight: 1.4,
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
+                      fontSize: "10.5px",
                     }}
                   >
-                    {reason || "No reason provided."}
-                  </Typography>
-                ) : (
-                  <Typography
-                    sx={{
-                      fontSize: "11px",
-                      color: "#CBD5E1",
-                    }}
-                  >
-                    —
-                  </Typography>
-                )}
-              </TableCell>
+                    {item.replaceAll("_", " ")}
+                  </MenuItem>
+                ))}
+              </Select>
 
-              <TableCell sx={cellSx}>
-                <IconButton
-                  size="small"
-                  disabled={cancelled}
-                  onClick={(event) =>
-                    openActions(event, request)
-                  }
+              {fieldUpdating("status") && (
+                <CircularProgress
+                  size={12}
+                  thickness={5}
                   sx={{
-                    width: 30,
-                    height: 30,
-                    border: "1px solid #E2E8F0",
-                    borderRadius: "6px",
-                    color: "#64748B",
-                    "&:hover": {
-                      bgcolor: "#F1F7F9",
-                      color: "#0B5C8E",
-                      borderColor: "#BDD7E5",
-                    },
+                    color: "#07876A",
                   }}
-                >
-                  <MoreVertIcon sx={{ fontSize: 18 }} />
-                </IconButton>
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </DataTable>
+                />
+              )}
+            </Stack>
+          </Stack>
+        </TableCell>
+
+        {/* =====================================
+            ACTIONS
+        ====================================== */}
+
+        <TableCell
+          align="center"
+          sx={{
+            ...cellSx,
+            width: "6%",
+            px: 0.5,
+          }}
+        >
+          <IconButton
+            size="small"
+            disabled={cancelled}
+            onClick={(event) =>
+              openActions(event, request)
+            }
+            sx={{
+              width: 29,
+              height: 29,
+              border: "1px solid #E1E8EA",
+              borderRadius: "7px",
+              color: "#64748B",
+              bgcolor: "#FFFFFF",
+
+              "&:hover": {
+                bgcolor: "#F1F8F6",
+                color: "#07876A",
+                borderColor: "#C9E3DC",
+              },
+            }}
+          >
+            <MoreVertIcon
+              sx={{
+                fontSize: 17,
+              }}
+            />
+          </IconButton>
+        </TableCell>
+      </TableRow>
+    );
+  })}
+</DataTable>
 
       <Menu
         anchorEl={actionAnchor}
@@ -910,15 +1297,15 @@ export default function LabRequests({
           }}
           disabled={!uploadRequest || isCancelled(uploadRequest)}
         >
-          <DescriptionOutlinedIcon sx={{ mr: 1, fontSize: 17, color: "#0B5C8E" }} />
+          <DescriptionOutlinedIcon
+            sx={{ mr: 1, fontSize: 17, color: "#0B5C8E" }}
+          />
           Create report
         </MenuItem>
 
         <MenuItem
           onClick={openUpload}
-          disabled={
-            uploadRequest ? isCancelled(uploadRequest) : false
-          }
+          disabled={uploadRequest ? isCancelled(uploadRequest) : false}
         >
           <UploadFileIcon
             sx={{
@@ -930,8 +1317,13 @@ export default function LabRequests({
           Upload Report
         </MenuItem>
 
-        <MenuItem onClick={openCollectionDetails} disabled={uploadRequest ? isCancelled(uploadRequest) : false}>
-          <CalendarMonthOutlinedIcon sx={{ mr: 1, fontSize: 17, color: "#0B5C8E" }} />
+        <MenuItem
+          onClick={openCollectionDetails}
+          disabled={uploadRequest ? isCancelled(uploadRequest) : false}
+        >
+          <CalendarMonthOutlinedIcon
+            sx={{ mr: 1, fontSize: 17, color: "#0B5C8E" }}
+          />
           Collection slot & instructions
         </MenuItem>
 
@@ -959,9 +1351,7 @@ export default function LabRequests({
             onClick={openDeleteConfirmation}
             disabled={!selectedReport.canDelete}
             sx={{
-              color: selectedReport.canDelete
-                ? "#DC2626"
-                : "#94A3B8",
+              color: selectedReport.canDelete ? "#DC2626" : "#94A3B8",
             }}
           >
             <DeleteOutlineIcon
@@ -979,17 +1369,28 @@ export default function LabRequests({
 
       <Dialog
         open={collectionDialog.open}
-        onClose={() => actionId !== collectionDialog.request?.id && setCollectionDialog({ open: false, request: null, date: "", instructions: "" })}
+        onClose={() =>
+          actionId !== collectionDialog.request?.id &&
+          setCollectionDialog({
+            open: false,
+            request: null,
+            date: "",
+            instructions: "",
+          })
+        }
         maxWidth="sm"
         fullWidth
         PaperProps={{ sx: { borderRadius: "10px" } }}
       >
-        <DialogTitle sx={{ fontSize: "16px", fontWeight: 700, color: "#123F66" }}>
+        <DialogTitle
+          sx={{ fontSize: "16px", fontWeight: 700, color: "#123F66" }}
+        >
           Collection details
         </DialogTitle>
         <DialogContent sx={{ display: "grid", gap: 1.5, pt: 1 }}>
           <Typography sx={{ fontSize: "12px", color: "#64748B" }}>
-            Select the collection date. The collection time and next token number are assigned automatically from the lab schedule.
+            Select the collection date. The collection time and next token
+            number are assigned automatically from the lab schedule.
           </Typography>
           <TextField
             required
@@ -997,7 +1398,12 @@ export default function LabRequests({
             type="date"
             label="Collection date"
             value={collectionDialog.date}
-            onChange={(event) => setCollectionDialog((current) => ({ ...current, date: event.target.value }))}
+            onChange={(event) =>
+              setCollectionDialog((current) => ({
+                ...current,
+                date: event.target.value,
+              }))
+            }
             InputLabelProps={{ shrink: true }}
             fullWidth
           />
@@ -1009,17 +1415,38 @@ export default function LabRequests({
             label="Collection instructions"
             placeholder="Example: Call the patient 30 minutes before arrival. Keep the sample refrigerated."
             value={collectionDialog.instructions}
-            onChange={(event) => setCollectionDialog((current) => ({ ...current, instructions: event.target.value }))}
+            onChange={(event) =>
+              setCollectionDialog((current) => ({
+                ...current,
+                instructions: event.target.value,
+              }))
+            }
             fullWidth
           />
         </DialogContent>
         <DialogActions sx={{ px: 2.5, pb: 2 }}>
-          <Button onClick={() => setCollectionDialog({ open: false, request: null, date: "", instructions: "" })} disabled={actionId === collectionDialog.request?.id} sx={{ textTransform: "none" }}>
+          <Button
+            onClick={() =>
+              setCollectionDialog({
+                open: false,
+                request: null,
+                date: "",
+                instructions: "",
+              })
+            }
+            disabled={actionId === collectionDialog.request?.id}
+            sx={{ textTransform: "none" }}
+          >
             Cancel
           </Button>
           <Button
             variant="contained"
-            disabled={!collectionDialog.request || !collectionDialog.date || !collectionDialog.instructions.trim() || actionId === collectionDialog.request.id}
+            disabled={
+              !collectionDialog.request ||
+              !collectionDialog.date ||
+              !collectionDialog.instructions.trim() ||
+              actionId === collectionDialog.request.id
+            }
             onClick={async () => {
               const saved = await onCollectionDetailsUpdate?.(
                 collectionDialog.request.id,
@@ -1027,12 +1454,19 @@ export default function LabRequests({
                 collectionDialog.instructions,
               );
               if (saved !== false) {
-                setCollectionDialog({ open: false, request: null, date: "", instructions: "" });
+                setCollectionDialog({
+                  open: false,
+                  request: null,
+                  date: "",
+                  instructions: "",
+                });
               }
             }}
             sx={{ textTransform: "none" }}
           >
-            {actionId === collectionDialog.request?.id ? "Saving..." : "Save details"}
+            {actionId === collectionDialog.request?.id
+              ? "Saving..."
+              : "Save details"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1047,7 +1481,9 @@ export default function LabRequests({
         fullWidth
         PaperProps={{ sx: { borderRadius: "10px" } }}
       >
-        <DialogTitle sx={{ fontSize: "16px", fontWeight: 700, color: "#123F66" }}>
+        <DialogTitle
+          sx={{ fontSize: "16px", fontWeight: 700, color: "#123F66" }}
+        >
           Delete uploaded report?
         </DialogTitle>
         <DialogContent>
@@ -1056,10 +1492,15 @@ export default function LabRequests({
               {deleteError}
             </Alert>
           ) : null}
-          <Typography sx={{ fontSize: "13px", color: "#52646B", lineHeight: 1.6 }}>
-            This report will be removed from the request. You can upload a corrected PDF again while the request is not completed.
+          <Typography
+            sx={{ fontSize: "13px", color: "#52646B", lineHeight: 1.6 }}
+          >
+            This report will be removed from the request. You can upload a
+            corrected PDF again while the request is not completed.
           </Typography>
-          <Typography sx={{ mt: 1, fontSize: "12px", fontWeight: 700, color: "#334155" }}>
+          <Typography
+            sx={{ mt: 1, fontSize: "12px", fontWeight: 700, color: "#334155" }}
+          >
             {selectedReport?.originalFileName || "Uploaded report"}
           </Typography>
         </DialogContent>
@@ -1195,17 +1636,11 @@ export default function LabRequests({
                 type="file"
                 accept="application/pdf,.pdf"
                 onChange={(event) => {
-                  const selectedFile =
-                    event.target.files?.[0] || null;
+                  const selectedFile = event.target.files?.[0] || null;
 
-                  if (
-                    selectedFile &&
-                    selectedFile.size > MAX_PDF_SIZE
-                  ) {
+                  if (selectedFile && selectedFile.size > MAX_PDF_SIZE) {
                     setFile(null);
-                    setUploadError(
-                      "PDF file must be 10 MB or smaller."
-                    );
+                    setUploadError("PDF file must be 10 MB or smaller.");
                   } else {
                     setFile(selectedFile);
                     setUploadError("");
@@ -1249,10 +1684,7 @@ export default function LabRequests({
               disabled={uploading || !file}
               startIcon={
                 uploading ? (
-                  <CircularProgress
-                    size={13}
-                    color="inherit"
-                  />
+                  <CircularProgress size={13} color="inherit" />
                 ) : (
                   <UploadFileIcon />
                 )
@@ -1367,9 +1799,7 @@ export default function LabRequests({
           }}
         >
           <Button
-            disabled={
-              actionId === reasonDialog.request?.id
-            }
+            disabled={actionId === reasonDialog.request?.id}
             onClick={() =>
               setReasonDialog({
                 open: false,
@@ -1389,15 +1819,9 @@ export default function LabRequests({
 
           <Button
             variant="contained"
-            color={
-              reasonDialog.status === "CANCELLED"
-                ? "error"
-                : "warning"
-            }
+            color={reasonDialog.status === "CANCELLED" ? "error" : "warning"}
             onClick={submitReason}
-            disabled={
-              actionId === reasonDialog.request?.id
-            }
+            disabled={actionId === reasonDialog.request?.id}
             sx={{
               minWidth: 90,
               height: 34,

@@ -42,7 +42,7 @@ apiClient.interceptors.response.use(
 
         if (!refreshToken) {
           localStorage.clear();
-          window.location.href = "/login";
+          window.location.href = "/Home/pages/Login";
           return;
         }
 
@@ -66,7 +66,7 @@ apiClient.interceptors.response.use(
         console.log("❌ Refresh failed");
 
         localStorage.clear();
-        window.location.href = "/login";
+        window.location.href = "/Home/pages/Login";
       }
     }
 

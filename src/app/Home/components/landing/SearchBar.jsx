@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+
 import {
   Box,
   Paper,
@@ -15,13 +16,38 @@ import {
   CircularProgress,
   Typography,
 } from "@mui/material";
+
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import LocalHospitalRoundedIcon from "@mui/icons-material/LocalHospitalRounded";
+import MedicalServicesRoundedIcon from "@mui/icons-material/MedicalServicesRounded";
+import PersonSearchRoundedIcon from "@mui/icons-material/PersonSearchRounded";
+import FavoriteRoundedIcon from "@mui/icons-material/FavoriteRounded";
 import EmergencyRoundedIcon from "@mui/icons-material/EmergencyRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+
 import { useRouter } from "next/navigation";
 import api from "../../../../utils/axiosInstance";
+
+const searchHints = [
+  {
+    text: "Search for doctors near you...",
+    icon: PersonSearchRoundedIcon,
+  },
+  {
+    text: "Search for Cardiologists near you...",
+    icon: FavoriteRoundedIcon,
+  },
+  {
+    text: "Search hospitals and clinics near you...",
+    icon: LocalHospitalRoundedIcon,
+  },
+  {
+    text: "Search by medical specialty or treatment...",
+    icon: MedicalServicesRoundedIcon,
+  },
+];
 
 export default function SearchBar() {
   const router = useRouter();
@@ -31,86 +57,190 @@ export default function SearchBar() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Animated placeholder
+  const [hintIndex, setHintIndex] = useState(0);
+  const [typedPlaceholder, setTypedPlaceholder] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const debounceRef = useRef(null);
   const requestIdRef = useRef(0);
 
-  const fetchSuggestions = useCallback(async (query) => {
-    const trimmedQuery = query.trim();
+  // Input reference
+  const inputRef = useRef(null);
 
-    if (!trimmedQuery) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      setLoading(false);
-      return;
+  const CurrentSearchIcon = searchHints[hintIndex].icon;
+
+  // =====================================================
+  // PLACEHOLDER TYPING ANIMATION
+  // =====================================================
+
+  useEffect(() => {
+    // User kuch type kar raha hai to animation ko background
+    // me unnecessarily update karne ki zarurat nahi
+    if (searchQuery) return;
+
+    const currentText = searchHints[hintIndex].text;
+
+    let timeout;
+
+    if (
+      !isDeleting &&
+      typedPlaceholder.length < currentText.length
+    ) {
+      timeout = setTimeout(() => {
+        setTypedPlaceholder(
+          currentText.slice(
+            0,
+            typedPlaceholder.length + 1
+          )
+        );
+      }, 70);
+    } else if (
+      !isDeleting &&
+      typedPlaceholder.length === currentText.length
+    ) {
+      timeout = setTimeout(() => {
+        setIsDeleting(true);
+      }, 1700);
+    } else if (
+      isDeleting &&
+      typedPlaceholder.length > 0
+    ) {
+      timeout = setTimeout(() => {
+        setTypedPlaceholder(
+          currentText.slice(
+            0,
+            typedPlaceholder.length - 1
+          )
+        );
+      }, 35);
+    } else {
+      setIsDeleting(false);
+
+      setHintIndex(
+        (prev) =>
+          (prev + 1) % searchHints.length
+      );
     }
 
-    const requestId = ++requestIdRef.current;
+    return () => clearTimeout(timeout);
+  }, [
+    typedPlaceholder,
+    isDeleting,
+    hintIndex,
+    searchQuery,
+  ]);
 
-    setLoading(true);
+  // =====================================================
+  // CLICK SEARCH AREA -> ONLY FOCUS INPUT
+  // =====================================================
 
-    try {
-      const res = await api.get(
-        "/api/doctors/doctor/search",
-        {
-          params: {
-            search: trimmedQuery,
-          },
-        }
-      );
+  const focusSearchInput = () => {
+    inputRef.current?.focus();
+  };
 
-      if (requestId !== requestIdRef.current) return;
+  // =====================================================
+  // FETCH SUGGESTIONS
+  // =====================================================
 
-      const data = res.data;
+  const fetchSuggestions = useCallback(
+    async (query) => {
+      const trimmedQuery = query.trim();
 
-      const results = Array.isArray(data)
-        ? data
-        : data?.doctors ??
-          data?.results ??
-          data?.data ??
-          [];
-
-      const labels = results
-        .slice(0, 6)
-        .map((item) => {
-          if (typeof item === "string") {
-            return item;
-          }
-
-          return (
-            item?.name ||
-            item?.doctorName ||
-            item?.doctor_name ||
-            item?.fullName ||
-            item?.full_name ||
-            item?.hospitalName ||
-            item?.hospital_name ||
-            item?.specialization ||
-            item?.title ||
-            ""
-          );
-        })
-        .filter(Boolean);
-
-      const uniqueLabels = [...new Set(labels)];
-
-      setSuggestions(uniqueLabels);
-      setShowSuggestions(uniqueLabels.length > 0);
-    } catch (error) {
-      if (requestId !== requestIdRef.current) return;
-
-      console.error(
-        "Search suggestion error:",
-        error
-      );
-
-      setSuggestions([]);
-      setShowSuggestions(false);
-    } finally {
-      if (requestId === requestIdRef.current) {
+      if (!trimmedQuery) {
+        setSuggestions([]);
+        setShowSuggestions(false);
         setLoading(false);
+        return;
       }
-    }
-  }, []);
+
+      const requestId =
+        ++requestIdRef.current;
+
+      setLoading(true);
+
+      try {
+        const res = await api.get(
+          "/api/doctors/doctor/search",
+          {
+            params: {
+              search: trimmedQuery,
+            },
+          }
+        );
+
+        if (
+          requestId !== requestIdRef.current
+        )
+          return;
+
+        const data = res.data;
+
+        const results = Array.isArray(data)
+          ? data
+          : data?.doctors ??
+            data?.results ??
+            data?.data ??
+            [];
+
+        const labels = results
+          .slice(0, 6)
+          .map((item) => {
+            if (typeof item === "string") {
+              return item;
+            }
+
+            return (
+              item?.name ||
+              item?.doctorName ||
+              item?.doctor_name ||
+              item?.fullName ||
+              item?.full_name ||
+              item?.hospitalName ||
+              item?.hospital_name ||
+              item?.specialization ||
+              item?.title ||
+              ""
+            );
+          })
+          .filter(Boolean);
+
+        const uniqueLabels = [
+          ...new Set(labels),
+        ];
+
+        setSuggestions(uniqueLabels);
+
+        setShowSuggestions(
+          uniqueLabels.length > 0
+        );
+      } catch (error) {
+        if (
+          requestId !== requestIdRef.current
+        )
+          return;
+
+        console.error(
+          "Search suggestion error:",
+          error
+        );
+
+        setSuggestions([]);
+        setShowSuggestions(false);
+      } finally {
+        if (
+          requestId === requestIdRef.current
+        ) {
+          setLoading(false);
+        }
+      }
+    },
+    []
+  );
+
+  // =====================================================
+  // INPUT CHANGE
+  // =====================================================
 
   const handleQueryChange = (event) => {
     const newValue = event.target.value;
@@ -123,35 +253,51 @@ export default function SearchBar() {
 
     if (!newValue.trim()) {
       requestIdRef.current += 1;
+
       setSuggestions([]);
       setShowSuggestions(false);
       setLoading(false);
+
       return;
     }
 
-    debounceRef.current = setTimeout(() => {
-      fetchSuggestions(newValue);
-    }, 450);
+    debounceRef.current = setTimeout(
+      () => {
+        fetchSuggestions(newValue);
+      },
+      450
+    );
   };
+
+  // =====================================================
+  // SEARCH
+  // =====================================================
 
   const handleSearch = useCallback(
     (event) => {
       event?.preventDefault();
 
       if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
+        clearTimeout(
+          debounceRef.current
+        );
       }
 
       const query = searchQuery.trim();
 
-      if (!query) return;
+      // Empty hai to bas focus
+      if (!query) {
+        inputRef.current?.focus();
+        return;
+      }
 
       setShowSuggestions(false);
 
-      const queryParams = new URLSearchParams({
-        query,
-        filter: "all",
-      });
+      const queryParams =
+        new URLSearchParams({
+          query,
+          filter: "all",
+        });
 
       router.push(
         `/Home/pages/search?${queryParams.toString()}`
@@ -160,7 +306,13 @@ export default function SearchBar() {
     [searchQuery, router]
   );
 
-  const handleSuggestionClick = (item) => {
+  // =====================================================
+  // SUGGESTION CLICK
+  // =====================================================
+
+  const handleSuggestionClick = (
+    item
+  ) => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
@@ -168,15 +320,20 @@ export default function SearchBar() {
     setSearchQuery(item);
     setShowSuggestions(false);
 
-    const queryParams = new URLSearchParams({
-      query: item,
-      filter: "all",
-    });
+    const queryParams =
+      new URLSearchParams({
+        query: item,
+        filter: "all",
+      });
 
     router.push(
       `/Home/pages/search?${queryParams.toString()}`
     );
   };
+
+  // =====================================================
+  // EMERGENCY
+  // =====================================================
 
   const handleEmergency = () => {
     if (debounceRef.current) {
@@ -190,16 +347,26 @@ export default function SearchBar() {
     );
   };
 
+  // =====================================================
+  // INPUT FOCUS
+  // =====================================================
+
   const handleFocus = () => {
     if (suggestions.length > 0) {
       setShowSuggestions(true);
     }
   };
 
+  // =====================================================
+  // CLEANUP
+  // =====================================================
+
   useEffect(() => {
     return () => {
       if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
+        clearTimeout(
+          debounceRef.current
+        );
       }
 
       requestIdRef.current += 1;
@@ -217,15 +384,19 @@ export default function SearchBar() {
           width: "100%",
           maxWidth: "950px",
           mx: "auto",
+
           mt: {
             xs: 2.5,
             md: 3,
           },
+
           px: {
             xs: 2,
             sm: 0,
           },
+
           position: "relative",
+
           fontFamily:
             "var(--font-inter), Arial, sans-serif",
         }}
@@ -236,100 +407,161 @@ export default function SearchBar() {
           elevation={0}
           sx={{
             width: "100%",
-            bgcolor: "rgba(255,255,255,0.97)",
-            border: "1px solid #DFE9E6",
+
+            bgcolor:
+              "rgba(255,255,255,0.97)",
+
+            border:
+              "1px solid #DFE9E6",
+
             borderRadius: {
               xs: "17px",
               md: "20px",
             },
+
             boxShadow:
               "0 14px 36px rgba(23,32,51,0.08)",
+
             overflow: "hidden",
           }}
         >
+          {/* TOP AREA */}
+
           <Box
             sx={{
               minHeight: {
                 xs: "auto",
                 md: "76px",
               },
+
               px: {
                 xs: 1.3,
                 sm: 1.6,
                 md: 1.8,
               },
+
               pt: {
                 xs: 1.3,
                 md: 1.4,
               },
+
               pb: {
                 xs: 1.3,
                 md: 0.6,
               },
+
               display: "flex",
               alignItems: "center",
+
               gap: {
                 xs: 0.8,
                 md: 1.2,
               },
+
               flexWrap: {
                 xs: "wrap",
                 md: "nowrap",
               },
             }}
           >
+            {/* =================================================
+                SEARCH CLICKABLE AREA
+            ================================================= */}
+
             <Box
+              onClick={focusSearchInput}
               sx={{
                 flex: 1,
+
                 minWidth: {
                   xs: "100%",
                   md: 0,
                 },
+
                 display: "flex",
                 alignItems: "center",
+
+                cursor: "text",
               }}
             >
+              {/* ANIMATED ICON */}
+
               <Box
                 sx={{
                   width: {
                     xs: 44,
                     md: 48,
                   },
+
                   height: {
                     xs: 44,
                     md: 48,
                   },
+
                   flexShrink: 0,
+
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
+                  justifyContent:
+                    "center",
+
                   borderRadius: "13px",
+
                   bgcolor: "#EAF8F4",
                   color: "#07876A",
+
+                  cursor: "text",
+
+                  transition:
+                    "all 0.25s ease",
                 }}
               >
-                <SearchRoundedIcon
+                <CurrentSearchIcon
+                  key={hintIndex}
                   sx={{
                     fontSize: {
-                      xs: 18,
-                      md: 20,
+                      xs: 19,
+                      md: 21,
                     },
+
+                    animation:
+                      "searchIconIn 0.35s ease",
+
+                    "@keyframes searchIconIn":
+                      {
+                        "0%": {
+                          opacity: 0,
+
+                          transform:
+                            "scale(0.75) translateY(4px)",
+                        },
+
+                        "100%": {
+                          opacity: 1,
+
+                          transform:
+                            "scale(1) translateY(0)",
+                        },
+                      },
                   }}
                 />
               </Box>
+
+              {/* INPUT */}
 
               <Box
                 sx={{
                   flex: 1,
                   minWidth: 0,
+
                   ml: {
                     xs: 1.2,
                     md: 1.5,
                   },
+
                   textAlign: "left",
                 }}
               >
-               
                 <Box
                   sx={{
                     display: "flex",
@@ -337,10 +569,15 @@ export default function SearchBar() {
                   }}
                 >
                   <InputBase
+                    inputRef={inputRef}
                     value={searchQuery}
-                    onChange={handleQueryChange}
+                    onChange={
+                      handleQueryChange
+                    }
                     onFocus={handleFocus}
-                    placeholder="Doctor, specialty or hospital..."
+                    placeholder={
+                      typedPlaceholder
+                    }
                     inputProps={{
                       "aria-label":
                         "Search doctors, specialties or hospitals",
@@ -348,23 +585,35 @@ export default function SearchBar() {
                     sx={{
                       width: "100%",
                       flex: 1,
-                      fontFamily: "inherit",
+
+                      fontFamily:
+                        "inherit",
+
                       fontSize: {
                         xs: "12px",
                         md: "13px",
                       },
+
                       fontWeight: 400,
+
                       lineHeight: 1.4,
+
                       color: "#172033",
+
+                      cursor: "text",
 
                       "& input": {
                         p: 0,
+                        cursor: "text",
                       },
 
-                      "& input::placeholder": {
-                        color: "#8A94A3",
-                        opacity: 1,
-                      },
+                      "& input::placeholder":
+                        {
+                          color:
+                            "#8A94A3",
+
+                          opacity: 1,
+                        },
                     }}
                   />
 
@@ -375,14 +624,19 @@ export default function SearchBar() {
                       sx={{
                         ml: 1,
                         mr: 1,
+
                         flexShrink: 0,
-                        color: "#07876A",
+
+                        color:
+                          "#07876A",
                       }}
                     />
                   )}
                 </Box>
               </Box>
             </Box>
+
+            {/* EMERGENCY */}
 
             <Button
               type="button"
@@ -400,43 +654,59 @@ export default function SearchBar() {
                   xs: 44,
                   md: 48,
                 },
+
                 minWidth: {
                   xs: "calc(50% - 4px)",
                   sm: "125px",
                   md: "135px",
                 },
+
                 px: {
                   xs: 1.3,
                   md: 1.7,
                 },
+
                 borderRadius: "12px",
+
                 border:
                   "1px solid #FFD0D3",
+
                 bgcolor: "#FFF5F5",
                 color: "#E5484D",
+
                 fontFamily: "inherit",
+
                 fontSize: {
                   xs: "11px",
                   md: "12px",
                 },
+
                 fontWeight: 700,
+
                 textTransform: "none",
                 whiteSpace: "nowrap",
+
                 boxShadow: "none",
 
-                "& .MuiButton-startIcon": {
-                  mr: 0.6,
-                },
+                "& .MuiButton-startIcon":
+                  {
+                    mr: 0.6,
+                  },
 
                 "&:hover": {
                   bgcolor: "#FFECEE",
-                  borderColor: "#FFBEC3",
+
+                  borderColor:
+                    "#FFBEC3",
+
                   boxShadow: "none",
                 },
               }}
             >
               Emergency
             </Button>
+
+            {/* FIND DOCTOR */}
 
             <Button
               type="submit"
@@ -454,35 +724,46 @@ export default function SearchBar() {
                   xs: 44,
                   md: 48,
                 },
+
                 minWidth: {
                   xs: "calc(50% - 4px)",
                   sm: "140px",
                   md: "150px",
                 },
+
                 px: {
                   xs: 1.3,
                   md: 2,
                 },
+
                 borderRadius: "12px",
+
                 bgcolor: "#07876A",
                 color: "#FFFFFF",
+
                 fontFamily: "inherit",
+
                 fontSize: {
                   xs: "11px",
                   md: "12px",
                 },
+
                 fontWeight: 700,
+
                 textTransform: "none",
                 whiteSpace: "nowrap",
+
                 boxShadow:
                   "0 6px 15px rgba(7,135,106,0.18)",
 
-                "& .MuiButton-endIcon": {
-                  ml: 0.9,
-                },
+                "& .MuiButton-endIcon":
+                  {
+                    ml: 0.9,
+                  },
 
                 "&:hover": {
                   bgcolor: "#056C55",
+
                   boxShadow:
                     "0 8px 19px rgba(7,135,106,0.22)",
                 },
@@ -492,22 +773,28 @@ export default function SearchBar() {
             </Button>
           </Box>
 
+          {/* BOTTOM INFO */}
+
           <Box
             sx={{
               minHeight: {
                 xs: "30px",
                 md: "32px",
               },
+
               px: {
                 xs: 1.6,
                 md: 1.8,
               },
+
               pb: {
                 xs: 1,
                 md: 0.8,
               },
+
               display: "flex",
               alignItems: "center",
+
               gap: 0.9,
             }}
           >
@@ -527,13 +814,18 @@ export default function SearchBar() {
 
               <Typography
                 sx={{
-                  fontFamily: "inherit",
+                  fontFamily:
+                    "inherit",
+
                   fontSize: {
                     xs: "9px",
                     md: "10px",
                   },
+
                   color: "#758190",
-                  whiteSpace: "nowrap",
+
+                  whiteSpace:
+                    "nowrap",
                 }}
               >
                 Bhopal
@@ -544,6 +836,7 @@ export default function SearchBar() {
               sx={{
                 width: "1px",
                 height: "11px",
+
                 bgcolor: "#DFE7E4",
               }}
             />
@@ -564,13 +857,18 @@ export default function SearchBar() {
 
               <Typography
                 sx={{
-                  fontFamily: "inherit",
+                  fontFamily:
+                    "inherit",
+
                   fontSize: {
                     xs: "9px",
                     md: "10px",
                   },
+
                   color: "#758190",
-                  whiteSpace: "nowrap",
+
+                  whiteSpace:
+                    "nowrap",
                 }}
               >
                 Available today
@@ -580,13 +878,18 @@ export default function SearchBar() {
             <Typography
               sx={{
                 ml: "auto",
+
                 display: {
                   xs: "none",
                   sm: "block",
                 },
+
                 fontFamily: "inherit",
+
                 fontSize: "9.5px",
+
                 color: "#98A1AD",
+
                 whiteSpace: "nowrap",
               }}
             >
@@ -595,27 +898,41 @@ export default function SearchBar() {
           </Box>
         </Paper>
 
+        {/* =================================================
+            SUGGESTIONS
+        ================================================= */}
+
         {showSuggestions &&
           suggestions.length > 0 && (
             <Paper
               elevation={0}
               sx={{
                 position: "absolute",
-                top: "calc(100% + 7px)",
+
+                top:
+                  "calc(100% + 7px)",
+
                 left: {
                   xs: 16,
                   sm: 0,
                 },
+
                 right: {
                   xs: 16,
                   sm: 0,
                 },
+
                 zIndex: 30,
+
                 overflow: "hidden",
+
                 bgcolor: "#FFFFFF",
+
                 border:
                   "1px solid #DFE9E6",
+
                 borderRadius: "14px",
+
                 boxShadow:
                   "0 14px 35px rgba(15,23,42,0.11)",
               }}
@@ -629,12 +946,18 @@ export default function SearchBar() {
               >
                 <Typography
                   sx={{
-                    fontFamily: "inherit",
+                    fontFamily:
+                      "inherit",
+
                     fontSize: "9.5px",
+
                     fontWeight: 700,
+
                     color: "#758190",
+
                     textTransform:
                       "uppercase",
+
                     letterSpacing:
                       "0.6px",
                   }}
@@ -654,10 +977,15 @@ export default function SearchBar() {
                     }
                     sx={{
                       display: "flex",
-                      alignItems: "center",
+
+                      alignItems:
+                        "center",
+
                       gap: 1,
+
                       px: 1.8,
                       py: 1,
+
                       cursor: "pointer",
 
                       borderTop:
@@ -675,14 +1003,20 @@ export default function SearchBar() {
                       sx={{
                         width: 28,
                         height: 28,
+
                         flexShrink: 0,
+
                         borderRadius:
                           "8px",
+
                         bgcolor:
                           "#EAF8F4",
+
                         display: "flex",
+
                         alignItems:
                           "center",
+
                         justifyContent:
                           "center",
                       }}
@@ -690,6 +1024,7 @@ export default function SearchBar() {
                       <SearchRoundedIcon
                         sx={{
                           fontSize: 15,
+
                           color:
                             "#07876A",
                         }}
@@ -699,18 +1034,26 @@ export default function SearchBar() {
                     <Typography
                       sx={{
                         flex: 1,
+
                         minWidth: 0,
+
                         fontFamily:
                           "inherit",
+
                         fontSize:
                           "12px",
+
                         fontWeight: 500,
+
                         color:
                           "#172033",
+
                         overflow:
                           "hidden",
+
                         textOverflow:
                           "ellipsis",
+
                         whiteSpace:
                           "nowrap",
                       }}
@@ -721,8 +1064,10 @@ export default function SearchBar() {
                     <ArrowForwardRoundedIcon
                       sx={{
                         fontSize: 15,
+
                         color:
                           "#758190",
+
                         opacity: 0.6,
                       }}
                     />
