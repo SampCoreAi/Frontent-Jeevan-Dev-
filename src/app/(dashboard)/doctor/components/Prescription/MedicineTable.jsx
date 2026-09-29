@@ -1183,24 +1183,7 @@ const downloadRows = rows.filter(
             </div>
           </div>
         </div>
-      ) : (
-        <div
-          className="
-            rounded-lg
-            border
-            border-dashed
-            border-gray-300
-            bg-gray-50
-            px-4
-            py-5
-            text-center
-            text-[13px]
-            text-gray-500
-          "
-        >
-          No medicine entry available.
-        </div>
-      )}
+      ) : null}
 
       {/* ======================================================
           ADD MEDICINE BUTTON

@@ -41,38 +41,49 @@ export function SectionTitle({ title, description, action }) {
       sx={{
         width: "100%",
         display: "flex",
-        alignItems: { xs: "flex-start", sm: "center" },
+        alignItems: { xs: "stretch", sm: "center" },
         justifyContent: "space-between",
-        gap: 2,
-        mb: 2,
+        flexDirection: { xs: "column", sm: "row" },
+        gap: { xs: 1.5, sm: 2 },
+        mb: 1.75,
       }}
     >
-      <Box sx={{ minWidth: 0 }}>
-        <Typography
-          sx={{
-            fontSize: { xs: "15px", sm: "17px" },
-            fontWeight: 700,
-            lineHeight: 1.3,
-            color: "text.primary",
-            letterSpacing: "-0.2px",
-          }}
-        >
-          {title}
-        </Typography>
-
-        {description && (
+      <Box
+        sx={{
+          minWidth: 0,
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 1.25,
+        }}
+      >
+        <Box sx={{ minWidth: 0 }}>
           <Typography
             sx={{
-              mt: 0.4,
-              fontSize: { xs: "11.5px", sm: "12.5px" },
-              fontWeight: 400,
-              lineHeight: 1.5,
-              color: "text.secondary",
+              fontSize: { xs: "17px", sm: "19px" },
+              fontWeight: 750,
+              lineHeight: 1.25,
+              color: "#172033",
+              letterSpacing: "-0.35px",
             }}
           >
-            {description}
+            {title}
           </Typography>
-        )}
+
+          {description && (
+            <Typography
+              sx={{
+                mt: 0.35,
+                maxWidth: 650,
+                fontSize: { xs: "11.5px", sm: "12.5px" },
+                fontWeight: 400,
+                lineHeight: 1.5,
+                color: "#718087",
+              }}
+            >
+              {description}
+            </Typography>
+          )}
+        </Box>
       </Box>
 
       {action && (
@@ -80,6 +91,16 @@ export function SectionTitle({ title, description, action }) {
           sx={{
             flexShrink: 0,
             width: { xs: "100%", sm: "auto" },
+
+            "& .MuiButton-root": {
+              minHeight: 38,
+              borderRadius: "8px",
+              px: 1.8,
+              fontSize: "12px",
+              fontWeight: 700,
+              textTransform: "none",
+              boxShadow: "none",
+            },
           }}
         >
           {action}
@@ -341,47 +362,225 @@ export function WorkspaceDashboard({
 }) {
   return (
     <Box sx={{ width: "100%" }}>
-      <Paper elevation={0} sx={{ p: { xs: 2, sm: 2.5 }, mb: 2, border: `1px solid ${colors.border}`, borderRadius: "10px", bgcolor: colors.primaryLight }}>
-        <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} gap={1.5}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2, sm: 2.5 },
+          mb: 2,
+          border: `1px solid ${colors.border}`,
+          borderRadius: "10px",
+          bgcolor: colors.primaryLight,
+        }}
+      >
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          justifyContent="space-between"
+          alignItems={{ xs: "flex-start", sm: "center" }}
+          gap={1.5}
+        >
           <Box>
-            <Typography sx={{ color: colors.primary, fontSize: "10px", fontWeight: 800, letterSpacing: "0.12em" }}>{eyebrow}</Typography>
-            <Typography sx={{ color: colors.text, fontSize: { xs: "18px", sm: "21px" }, fontWeight: 800, mt: 0.5 }}>{title}</Typography>
-            <Typography sx={{ color: colors.secondary, fontSize: "12px", mt: 0.4 }}>{subtitle}</Typography>
+            <Typography
+              sx={{
+                color: colors.primary,
+                fontSize: "10px",
+                fontWeight: 800,
+                letterSpacing: "0.12em",
+              }}
+            >
+              {eyebrow}
+            </Typography>
+            <Typography
+              sx={{
+                color: colors.text,
+                fontSize: { xs: "18px", sm: "21px" },
+                fontWeight: 800,
+                mt: 0.5,
+              }}
+            >
+              {title}
+            </Typography>
+            <Typography
+              sx={{ color: colors.secondary, fontSize: "12px", mt: 0.4 }}
+            >
+              {subtitle}
+            </Typography>
           </Box>
-          <Chip size="small" label={statusLabel || "UNKNOWN"} color={statusLabel === "ACTIVE" ? "success" : "default"} />
+          <Chip
+            size="small"
+            label={statusLabel || "UNKNOWN"}
+            color={statusLabel === "ACTIVE" ? "success" : "default"}
+          />
         </Stack>
       </Paper>
 
       <SectionTitle title="Overview" description={subtitle} />
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(4, minmax(0, 1fr))" }, gap: 1.5, mb: 2 }}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "repeat(2, minmax(0, 1fr))",
+            md: "repeat(4, minmax(0, 1fr))",
+          },
+          gap: 1.5,
+          mb: 2,
+        }}
+      >
         {stats.map(([label, value, color]) => (
-          <Paper key={label} elevation={0} sx={{ p: 1.75, minHeight: 92, border: `1px solid ${colors.border}`, borderRadius: "10px" }}>
-            <Typography sx={{ color: colors.secondary, fontSize: "12px", fontWeight: 600 }}>{label}</Typography>
-            <Typography sx={{ color: color || colors.primary, fontSize: "24px", fontWeight: 800, mt: 0.5 }}>{value}</Typography>
+          <Paper
+            key={label}
+            elevation={0}
+            sx={{
+              p: 1.75,
+              minHeight: 92,
+              border: `1px solid ${colors.border}`,
+              borderRadius: "10px",
+            }}
+          >
+            <Typography
+              sx={{
+                color: colors.secondary,
+                fontSize: "12px",
+                fontWeight: 600,
+              }}
+            >
+              {label}
+            </Typography>
+            <Typography
+              sx={{
+                color: color || colors.primary,
+                fontSize: "24px",
+                fontWeight: 800,
+                mt: 0.5,
+              }}
+            >
+              {value}
+            </Typography>
           </Paper>
         ))}
       </Box>
 
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1.3fr 0.7fr" }, gap: 2 }}>
-        <Paper elevation={0} sx={{ p: { xs: 1.75, sm: 2.25 }, border: `1px solid ${colors.border}`, borderRadius: "10px" }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-            <Box><Typography sx={{ color: colors.text, fontWeight: 800 }}>{profileFields?.title}</Typography><Typography sx={{ color: colors.secondary, fontSize: "12px", mt: 0.35 }}>{profileFields?.description}</Typography></Box>
-            {profilePath ? <Button size="small" variant="outlined" onClick={() => onNavigate?.(profilePath)}>{profileButtonLabel}</Button> : null}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", lg: "1.3fr 0.7fr" },
+          gap: 2,
+        }}
+      >
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 1.75, sm: 2.25 },
+            border: `1px solid ${colors.border}`,
+            borderRadius: "10px",
+          }}
+        >
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            mb={2}
+          >
+            <Box>
+              <Typography sx={{ color: colors.text, fontWeight: 800 }}>
+                {profileFields?.title}
+              </Typography>
+              <Typography
+                sx={{ color: colors.secondary, fontSize: "12px", mt: 0.35 }}
+              >
+                {profileFields?.description}
+              </Typography>
+            </Box>
+            {profilePath ? (
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => onNavigate?.(profilePath)}
+              >
+                {profileButtonLabel}
+              </Button>
+            ) : null}
           </Stack>
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3, 1fr)" }, gap: 2 }}>
-            {(profileFields?.items || []).map(([label, value]) => <Box key={label}><Typography sx={{ color: colors.muted, fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</Typography><Typography sx={{ color: colors.text, fontSize: "13px", fontWeight: 650, mt: 0.35 }}>{value || "-"}</Typography></Box>)}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3, 1fr)" },
+              gap: 2,
+            }}
+          >
+            {(profileFields?.items || []).map(([label, value]) => (
+              <Box key={label}>
+                <Typography
+                  sx={{
+                    color: colors.muted,
+                    fontSize: "10px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  {label}
+                </Typography>
+                <Typography
+                  sx={{
+                    color: colors.text,
+                    fontSize: "13px",
+                    fontWeight: 650,
+                    mt: 0.35,
+                  }}
+                >
+                  {value || "-"}
+                </Typography>
+              </Box>
+            ))}
           </Box>
         </Paper>
-        <Paper elevation={0} sx={{ p: { xs: 1.75, sm: 2.25 }, border: `1px solid ${colors.border}`, borderRadius: "10px" }}>
-          <Typography sx={{ color: colors.text, fontWeight: 800 }}>Quick actions</Typography>
-          <Typography sx={{ color: colors.secondary, fontSize: "12px", mt: 0.35, mb: 1.5 }}>{quickActions?.description}</Typography>
-          <Stack spacing={1}>{(quickActions?.items || []).map((action) => <Button key={action.label} fullWidth variant={action.variant || "outlined"} onClick={() => onNavigate?.(action.route)} sx={{ justifyContent: "flex-start", ...(action.variant === "contained" ? { bgcolor: colors.primary, color: "#fff", "&:hover": { bgcolor: "#066f58" } } : {}) }}>{action.label}</Button>)}</Stack>
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 1.75, sm: 2.25 },
+            border: `1px solid ${colors.border}`,
+            borderRadius: "10px",
+          }}
+        >
+          <Typography sx={{ color: colors.text, fontWeight: 800 }}>
+            Quick actions
+          </Typography>
+          <Typography
+            sx={{
+              color: colors.secondary,
+              fontSize: "12px",
+              mt: 0.35,
+              mb: 1.5,
+            }}
+          >
+            {quickActions?.description}
+          </Typography>
+          <Stack spacing={1}>
+            {(quickActions?.items || []).map((action) => (
+              <Button
+                key={action.label}
+                fullWidth
+                variant={action.variant || "outlined"}
+                onClick={() => onNavigate?.(action.route)}
+                sx={{
+                  justifyContent: "flex-start",
+                  ...(action.variant === "contained"
+                    ? {
+                        bgcolor: colors.primary,
+                        color: "#fff",
+                        "&:hover": { bgcolor: "#066f58" },
+                      }
+                    : {}),
+                }}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </Stack>
         </Paper>
       </Box>
     </Box>
   );
 }
-
 export function TableFilters({
   search = "",
   status = "",
@@ -397,33 +596,48 @@ export function TableFilters({
 
   const fieldSx = {
     width: "100%",
+
     "& .MuiOutlinedInput-root": {
-      height: 40,
+      height: 38,
       bgcolor: "#FFFFFF",
       borderRadius: "8px",
-      fontSize: "12.5px",
-      transition: "all 0.15s ease",
+      fontSize: "12px",
+      transition: "all 0.16s ease",
+
       "& fieldset": {
-        borderColor: colors.border,
+        borderColor: "#E2E8F0",
       },
+
       "&:hover fieldset": {
-        borderColor: "#A7B4C4",
+        borderColor: "#B7C3CF",
       },
+
       "&.Mui-focused fieldset": {
         borderWidth: "1px",
-        borderColor: colors.primary,
+        borderColor: "#07876A",
       },
+
       "&.Mui-focused": {
-        boxShadow: "0 0 0 3px rgba(7,135,106,0.07)",
+        boxShadow: "0 0 0 3px rgba(7, 135, 106, 0.07)",
       },
     },
+
     "& .MuiOutlinedInput-input": {
-      fontSize: "12.5px",
-      color: colors.text,
+      fontSize: "12px",
+      color: "#172033",
+      py: 0,
     },
+
     "& .MuiOutlinedInput-input::placeholder": {
-      color: colors.muted,
+      color: "#94A3B8",
       opacity: 1,
+    },
+
+    "& .MuiSelect-select": {
+      display: "flex",
+      alignItems: "center",
+      fontSize: "12px",
+      color: "#475569",
     },
   };
 
@@ -439,165 +653,275 @@ export function TableFilters({
       elevation={0}
       sx={{
         width: "100%",
-        mt: 2,
-        display: "flex",
-        alignItems: { xs: "stretch", md: "center" },
-        flexDirection: { xs: "column", md: "row" },
-        gap: { xs: 1, md: 1.25 },
-        borderRadius: "12px",
+        p: { xs: 1, sm: 1.1 },
+        border: "1px solid #E5EAEF",
+        borderRadius: "10px",
+        bgcolor: "#FAFCFC",
+        boxShadow: "0 1px 2px rgba(15, 23, 42, 0.02)",
       }}
     >
-      
-
-      <TextField
-        size="small"
-        placeholder="Search name, order ID, test or technician"
-        value={search}
-        onChange={(event) => onSearch?.(event.target.value)}
+      <Box
         sx={{
-          ...fieldSx,
-          width: { xs: "100%", md: 320 },
-          flexShrink: 0,
+          width: "100%",
+          display: "flex",
+          alignItems: { xs: "stretch", lg: "center" },
+          flexDirection: { xs: "column", lg: "row" },
+          gap: 1,
         }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon
-                sx={{
-                  fontSize: 18,
-                  color: colors.muted,
-                }}
-              />
-            </InputAdornment>
-          ),
-        }}
-      />
-
-      {statusOptions.length > 0 ? (
+      >
+        {/* SEARCH */}
         <TextField
-          select
           size="small"
-          value={status}
-          onChange={(event) => onStatus?.(event.target.value)}
+          placeholder="Search patient, order ID, test..."
+          value={search}
+          onChange={(event) => onSearch?.(event.target.value)}
           sx={{
             ...fieldSx,
-            width: { xs: "100%", md: 190 },
+            width: {
+              xs: "100%",
+              lg: 330,
+            },
             flexShrink: 0,
           }}
-          SelectProps={{
-            displayEmpty: true,
-            renderValue: (selected) =>
-              selected
-                ? String(selected).replaceAll("_", " ")
-                : "All statuses",
-            MenuProps: {
-              PaperProps: {
-                sx: {
-                  mt: 0.5,
-                  p: 0.5,
-                  maxHeight: 300,
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: "8px",
-                  boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
-                  "& .MuiMenuItem-root": {
-                    minHeight: 36,
-                    px: 1.2,
-                    fontSize: "12.5px",
-                    borderRadius: "6px",
-                    color: colors.text,
-                    "&:hover": {
-                      bgcolor: colors.primaryLight,
-                    },
-                    "&.Mui-selected": {
-                      bgcolor: `${colors.primaryLight} !important`,
-                      color: colors.primary,
-                      fontWeight: 600,
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon
+                  sx={{
+                    fontSize: 17,
+                    color: search ? "#07876A" : "#94A3B8",
+                  }}
+                />
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        {/* STATUS */}
+        {statusOptions.length > 0 && (
+          <TextField
+            select
+            size="small"
+            value={status}
+            onChange={(event) => onStatus?.(event.target.value)}
+            sx={{
+              ...fieldSx,
+              width: {
+                xs: "100%",
+                sm: 190,
+              },
+              flexShrink: 0,
+            }}
+            SelectProps={{
+              displayEmpty: true,
+
+              renderValue: (selected) =>
+                selected
+                  ? String(selected).replaceAll("_", " ")
+                  : "All statuses",
+
+              MenuProps: {
+                PaperProps: {
+                  sx: {
+                    mt: 0.6,
+                    p: 0.5,
+                    maxHeight: 300,
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "9px",
+                    boxShadow: "0 12px 30px rgba(15, 23, 42, 0.10)",
+
+                    "& .MuiMenuItem-root": {
+                      minHeight: 34,
+                      px: 1.2,
+                      fontSize: "12px",
+                      borderRadius: "6px",
+                      color: "#334155",
+
+                      "&:hover": {
+                        bgcolor: "#F0F9F6",
+                      },
+
+                      "&.Mui-selected": {
+                        bgcolor: "#E8F6F2 !important",
+                        color: "#07876A",
+                        fontWeight: 700,
+                      },
                     },
                   },
                 },
               },
-            },
-          }}
-        >
-          <MenuItem value="">All statuses</MenuItem>
+            }}
+          >
+            <MenuItem value="">All statuses</MenuItem>
 
-          {statusOptions.map((option) => (
-            <MenuItem key={option} value={option}>
-              {String(option).replaceAll("_", " ")}
-            </MenuItem>
-          ))}
-        </TextField>
-      ) : null}
+            {statusOptions.map((option) => (
+              <MenuItem key={option} value={option}>
+                {String(option).replaceAll("_", " ")}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
 
-      <TextField
-        size="small"
-        type="date"
-        value={date}
-        onChange={(event) => onDate?.(event.target.value)}
-        sx={{
-          ...fieldSx,
-          width: { xs: "100%", md: 185 },
-          flexShrink: 0,
-        }}
-        inputProps={{
-          max: "9999-12-31",
-        }}
-      />
-
-      <Box
-        sx={{
-          ml: { md: "auto" },
-          pl: { md: 1.5 },
-          display: "flex",
-          alignItems: "center",
-          justifyContent: { xs: "flex-start", md: "center" },
-          gap: 1,
-          borderLeft: {
-            xs: "none",
-            md: `1px solid ${colors.border}`,
-          },
-          flexShrink: 0,
-        }}
-      >
-        {leftAction ? (
-          <Box sx={{ display: "flex", alignItems: "center" }}>{leftAction}</Box>
-        ) : null}
-
-        <Button
-          disabled={!hasFilters}
-          onClick={handleReset}
-          startIcon={
-            <RestartAltRoundedIcon
-              sx={{
-                fontSize: "17px !important",
-              }}
-            />
-          }
+        {/* DATE */}
+        <TextField
+          size="small"
+          type="date"
+          value={date}
+          onChange={(event) => onDate?.(event.target.value)}
           sx={{
-            height: 40,
-            minWidth: 92,
-            px: 1.5,
-            borderRadius: "8px",
-            border: `1px solid ${colors.primary}35`,
-            bgcolor: colors.primaryLight,
-            color: colors.primary,
-            fontSize: "12.5px",
-            fontWeight: 600,
-            textTransform: "none",
-            "&:hover": {
-              bgcolor: colors.primaryHover,
-              borderColor: colors.primary,
+            ...fieldSx,
+            width: {
+              xs: "100%",
+              sm: 170,
             },
-            "&.Mui-disabled": {
-              bgcolor: "#F8FAFC",
-              borderColor: colors.border,
-              color: "#B0BAC7",
+            flexShrink: 0,
+          }}
+          inputProps={{
+            max: "9999-12-31",
+          }}
+        />
+
+        {/* RIGHT ACTIONS */}
+        <Box
+          sx={{
+            ml: { lg: "auto" },
+
+            display: "flex",
+            alignItems: "center",
+            flexDirection: {
+              xs: "column",
+              sm: "row",
             },
+
+            width: {
+              xs: "100%",
+              lg: "auto",
+            },
+
+            gap: 0.8,
+
+            pl: {
+              lg: 1.25,
+            },
+
+            borderLeft: {
+              xs: "none",
+              lg: "1px solid #E2E8F0",
+            },
+
+            flexShrink: 0,
           }}
         >
-          Reset
-        </Button>
+          {leftAction && (
+            <Box
+              sx={{
+                width: {
+                  xs: "100%",
+                  sm: "auto",
+                },
+
+                display: "flex",
+
+                "& .MuiButton-root": {
+                  width: {
+                    xs: "100%",
+                    sm: "auto",
+                  },
+
+                  height: "38px !important",
+                  minHeight: "38px !important",
+                  borderRadius: "8px !important",
+                  fontSize: "11.5px !important",
+                  fontWeight: "650 !important",
+                  whiteSpace: "nowrap",
+                },
+              }}
+            >
+              {leftAction}
+            </Box>
+          )}
+
+          {/* RESET */}
+          <Button
+            disabled={!hasFilters}
+            onClick={handleReset}
+            startIcon={
+              <RestartAltRoundedIcon
+                sx={{
+                  fontSize: "16px !important",
+                }}
+              />
+            }
+            sx={{
+              height: 38,
+
+              width: {
+                xs: "100%",
+                sm: "auto",
+              },
+
+              minWidth: 82,
+              px: 1.35,
+
+              borderRadius: "8px",
+              border: "1px solid #DCE6E2",
+
+              bgcolor: "#FFFFFF",
+              color: "#52646B",
+
+              fontSize: "11.5px",
+              fontWeight: 650,
+              textTransform: "none",
+
+              "&:hover": {
+                bgcolor: "#F0F9F6",
+                borderColor: "#A9D8CC",
+                color: "#07876A",
+              },
+
+              "&.Mui-disabled": {
+                bgcolor: "#F8FAFC",
+                color: "#B5BEC8",
+                borderColor: "#EDF1F4",
+              },
+            }}
+          >
+            Reset
+          </Button>
+        </Box>
       </Box>
+
+      {/* ACTIVE FILTER INDICATOR */}
+      {hasFilters && (
+        <Box
+          sx={{
+            mt: 0.8,
+            pt: 0.8,
+            borderTop: "1px solid #EDF1F4",
+
+            display: "flex",
+            alignItems: "center",
+            gap: 0.7,
+          }}
+        >
+          <FilterAltOutlinedIcon
+            sx={{
+              fontSize: 14,
+              color: "#07876A",
+            }}
+          />
+
+          <Typography
+            sx={{
+              fontSize: "10.5px",
+              fontWeight: 600,
+              color: "#718087",
+            }}
+          >
+            Filters applied
+          </Typography>
+        </Box>
+      )}
     </Paper>
   );
 }

@@ -17,7 +17,14 @@ const initialForm = {
   labName: "",
   labCode: "",
   registrationNumber: "",
-  address: "",
+  buildingPlot: "",
+  streetName: "",
+  areaLocality: "",
+  landmark: "",
+  city: "",
+  district: "",
+  state: "",
+  pinCode: "",
 };
 
 const getErrorMessage = (error, fallback) =>
@@ -28,11 +35,14 @@ export default function LabsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusLabId, setStatusLabId] = useState(null);
+
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [formErrors, setFormErrors] = useState({});
+
   const [tableSearch, setTableSearch] = useState("");
   const [tableStatus, setTableStatus] = useState("");
   const [tableDate, setTableDate] = useState("");
@@ -40,13 +50,15 @@ export default function LabsPage() {
 
   const pageSize = 10;
 
-  // =========================================
-  // API CONFIG
-  // =========================================
   const requestConfig = () => {
     const token = localStorage.getItem("token");
+
     return {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {},
     };
   };
 
@@ -54,6 +66,7 @@ export default function LabsPage() {
     try {
       setLoading(true);
       setError("");
+
       const response = await axios.get(
         `${API_BASE_URL}/admin/getLabDetails`,
         {
@@ -65,23 +78,29 @@ export default function LabsPage() {
           },
         }
       );
+
       const data = response?.data?.data;
+
       setLabs(Array.isArray(data) ? data : []);
     } catch (requestError) {
       setLabs([]);
-      setError(getErrorMessage(requestError, "Unable to load labs."));
+
+      setError(
+        getErrorMessage(
+          requestError,
+          "Unable to load labs."
+        )
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // =========================================
-  // EFFECTS
-  // =========================================
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchLabs();
     }, tableSearch ? 350 : 0);
+
     return () => clearTimeout(timer);
   }, [tableSearch, tableStatus, tableDate]);
 
@@ -89,21 +108,24 @@ export default function LabsPage() {
     setTablePage(1);
   }, [tableSearch, tableStatus, tableDate]);
 
-  // =========================================
-  // DERIVED
-  // =========================================
   const stats = useMemo(
     () => ({
       total: labs.length,
+
       active: labs.filter(
-        (lab) => String(lab?.status).toUpperCase() === "ACTIVE"
+        (lab) =>
+          String(lab?.status).toUpperCase() === "ACTIVE"
       ).length,
+
       doctors: labs.reduce(
-        (sum, lab) => sum + Number(lab?.doctor_count || 0),
+        (sum, lab) =>
+          sum + Number(lab?.doctor_count || 0),
         0
       ),
+
       requests: labs.reduce(
-        (sum, lab) => sum + Number(lab?.request_count || 0),
+        (sum, lab) =>
+          sum + Number(lab?.request_count || 0),
         0
       ),
     }),
@@ -111,7 +133,9 @@ export default function LabsPage() {
   );
 
   const filteredLabs = useMemo(() => {
-    const query = tableSearch.trim().toLowerCase();
+    const query = tableSearch
+      .trim()
+      .toLowerCase();
 
     return labs.filter((lab) => {
       const matchesSearch =
@@ -123,139 +147,368 @@ export default function LabsPage() {
           lab?.email,
           lab?.phone_number,
         ].some((value) =>
-          String(value || "").toLowerCase().includes(query)
+          String(value || "")
+            .toLowerCase()
+            .includes(query)
         );
 
       const matchesStatus =
         !tableStatus ||
-        String(lab?.status).toUpperCase() === tableStatus;
+        String(lab?.status).toUpperCase() ===
+          tableStatus;
 
       const matchesDate =
         !tableDate ||
-        String(lab?.created_at || "").startsWith(tableDate);
+        String(lab?.created_at || "").startsWith(
+          tableDate
+        );
 
-      return matchesSearch && matchesStatus && matchesDate;
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesDate
+      );
     });
-  }, [labs, tableSearch, tableStatus, tableDate]);
+  }, [
+    labs,
+    tableSearch,
+    tableStatus,
+    tableDate,
+  ]);
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredLabs.length / pageSize)
+    Math.ceil(
+      filteredLabs.length / pageSize
+    )
   );
 
   const visibleLabs = useMemo(() => {
-    const start = (tablePage - 1) * pageSize;
-    return filteredLabs.slice(start, start + pageSize);
+    const start =
+      (tablePage - 1) * pageSize;
+
+    return filteredLabs.slice(
+      start,
+      start + pageSize
+    );
   }, [filteredLabs, tablePage]);
 
   useEffect(() => {
-    if (tablePage > totalPages) setTablePage(totalPages);
+    if (tablePage > totalPages) {
+      setTablePage(totalPages);
+    }
   }, [tablePage, totalPages]);
 
-  // =========================================
-  // FORM VALIDATION
-  // =========================================
   const validateForm = () => {
     const errors = {};
-    const fullName = form.fullName.trim();
-    const email = form.email.trim();
-    const phoneNumber = form.phoneNumber.trim();
-    const labName = form.labName.trim();
-    const labCode = form.labCode.trim();
-    const registrationNumber = form.registrationNumber.trim();
-    const address = form.address.trim();
 
-    if (!fullName) errors.fullName = "Lab owner name is required.";
-    else if (fullName.length < 2)
-      errors.fullName = "Name must be at least 2 characters.";
-    else if (fullName.length > 100)
-      errors.fullName = "Name must be under 100 characters.";
+    const fullName =
+      form.fullName.trim();
 
-    if (!email) errors.email = "Owner email is required.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      errors.email = "Enter a valid email address.";
-    else if (email.length > 150) errors.email = "Email is too long.";
+    const email =
+      form.email.trim();
 
-    if (!labName) errors.labName = "Lab name is required.";
-    else if (labName.length < 2)
-      errors.labName = "Lab name must be at least 2 characters.";
-    else if (labName.length > 120) errors.labName = "Lab name is too long.";
+    const phoneNumber =
+      form.phoneNumber.trim();
 
-    if (phoneNumber && !/^[6-9]\d{9}$/.test(phoneNumber))
-      errors.phoneNumber = "Enter a valid 10-digit mobile number.";
+    const labName =
+      form.labName.trim();
 
-    if (labCode && !/^[A-Za-z0-9_-]{2,30}$/.test(labCode))
-      errors.labCode = "Use 2-30 letters, numbers, _ or - only.";
+    const labCode =
+      form.labCode.trim();
 
-    if (registrationNumber.length > 100)
-      errors.registrationNumber = "Registration number is too long.";
+    const registrationNumber =
+      form.registrationNumber.trim();
 
-    if (address.length > 300)
-      errors.address = "Address must be under 300 characters.";
+    const buildingPlot =
+      form.buildingPlot.trim();
+
+    const streetName =
+      form.streetName.trim();
+
+    const areaLocality =
+      form.areaLocality.trim();
+
+    const landmark =
+      form.landmark.trim();
+
+    const city =
+      form.city.trim();
+
+    const district =
+      form.district.trim();
+
+    const state =
+      form.state.trim();
+
+    const pinCode =
+      form.pinCode.trim();
+
+    if (!fullName) {
+      errors.fullName =
+        "Lab owner name is required.";
+    } else if (fullName.length < 2) {
+      errors.fullName =
+        "Name must be at least 2 characters.";
+    } else if (fullName.length > 100) {
+      errors.fullName =
+        "Name must be under 100 characters.";
+    }
+
+    if (!email) {
+      errors.email =
+        "Owner email is required.";
+    } else if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        email
+      )
+    ) {
+      errors.email =
+        "Enter a valid email address.";
+    } else if (email.length > 150) {
+      errors.email =
+        "Email is too long.";
+    }
+
+    if (!phoneNumber) {
+      errors.phoneNumber =
+        "Phone number is required.";
+    } else if (
+      !/^[6-9]\d{9}$/.test(phoneNumber)
+    ) {
+      errors.phoneNumber =
+        "Enter a valid 10-digit mobile number.";
+    }
+
+    if (!labName) {
+      errors.labName =
+        "Lab name is required.";
+    } else if (labName.length < 2) {
+      errors.labName =
+        "Lab name must be at least 2 characters.";
+    } else if (labName.length > 120) {
+      errors.labName =
+        "Lab name is too long.";
+    }
+
+    if (
+      labCode &&
+      !/^[A-Za-z0-9_-]{2,30}$/.test(
+        labCode
+      )
+    ) {
+      errors.labCode =
+        "Use 2-30 letters, numbers, _ or - only.";
+    }
+
+    if (
+      registrationNumber.length > 100
+    ) {
+      errors.registrationNumber =
+        "Registration number is too long.";
+    }
+
+    if (!buildingPlot) {
+      errors.buildingPlot =
+        "Building / Plot No. is required.";
+    }
+
+    if (
+      streetName &&
+      streetName.length > 150
+    ) {
+      errors.streetName =
+        "Street / Road is too long.";
+    }
+
+    if (!areaLocality) {
+      errors.areaLocality =
+        "Area / Locality is required.";
+    }
+
+    if (
+      landmark &&
+      landmark.length > 150
+    ) {
+      errors.landmark =
+        "Landmark is too long.";
+    }
+
+    if (!city) {
+      errors.city =
+        "City is required.";
+    }
+
+    if (!district) {
+      errors.district =
+        "District is required.";
+    }
+
+    if (!state) {
+      errors.state =
+        "State is required.";
+    }
+
+    if (!pinCode) {
+      errors.pinCode =
+        "PIN Code is required.";
+    } else if (
+      !/^\d{6}$/.test(pinCode)
+    ) {
+      errors.pinCode =
+        "Enter a valid 6-digit PIN code.";
+    }
 
     setFormErrors(errors);
+
     return Object.keys(errors).length === 0;
   };
 
-  // =========================================
-  // HANDLERS
-  // =========================================
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!validateForm()) return;
+
+    if (!validateForm()) {
+      return;
+    }
 
     try {
       setSaving(true);
       setError("");
 
       const payload = {
-        fullName: form.fullName.trim(),
-        email: form.email.trim().toLowerCase(),
-        phoneNumber: form.phoneNumber.trim(),
-        labName: form.labName.trim(),
-        labCode: form.labCode.trim(),
-        registrationNumber: form.registrationNumber.trim(),
-        address: form.address.trim(),
+        fullName:
+          form.fullName.trim(),
+
+        email:
+          form.email
+            .trim()
+            .toLowerCase(),
+
+        phoneNumber:
+          form.phoneNumber.trim(),
+
+        labName:
+          form.labName.trim(),
+
+        labCode:
+          form.labCode.trim(),
+
+        registrationNumber:
+          form.registrationNumber.trim(),
+
+        address: {
+          building:
+            form.buildingPlot.trim(),
+
+          street:
+            form.streetName.trim(),
+
+          locality:
+            form.areaLocality.trim(),
+
+          landmark:
+            form.landmark.trim(),
+
+          city:
+            form.city.trim(),
+
+          district:
+            form.district.trim(),
+
+          state:
+            form.state.trim(),
+
+          pinCode:
+            form.pinCode.trim(),
+        },
       };
 
-      if (!payload.phoneNumber) delete payload.phoneNumber;
-      if (!payload.labCode) delete payload.labCode;
-      if (!payload.registrationNumber) delete payload.registrationNumber;
-      if (!payload.address) delete payload.address;
+      if (!payload.labCode) {
+        delete payload.labCode;
+      }
 
-      const response = await axios.post(
-        `${API_BASE_URL}/admin/createLabs`,
-        payload,
-        requestConfig()
+      if (!payload.registrationNumber) {
+        delete payload.registrationNumber;
+      }
+
+      if (!payload.address.street) {
+        delete payload.address.street;
+      }
+
+      if (!payload.address.landmark) {
+        delete payload.address.landmark;
+      }
+
+      console.log(
+        "Create Lab Payload:",
+        payload
       );
 
-      if (response?.data?.success === false) {
+      const response =
+        await axios.post(
+          `${API_BASE_URL}/admin/createLabs`,
+          payload,
+          requestConfig()
+        );
+
+      if (
+        response?.data?.success === false
+      ) {
         throw new Error(
-          response?.data?.message || "Unable to create lab."
+          response?.data?.message ||
+            "Unable to create lab."
         );
       }
 
       setDialogOpen(false);
       setForm(initialForm);
       setFormErrors({});
+
       setNotice(
-        response?.data?.data?.emailSent === false
+        response?.data?.data
+          ?.emailSent === false
           ? "Lab created, but credential email could not be sent. Check SMTP settings."
           : "Lab created successfully. Login credentials were emailed to the lab owner."
       );
+
       await fetchLabs();
     } catch (requestError) {
-      setError(getErrorMessage(requestError, "Unable to create lab."));
+      console.error(
+        "Create Lab Error:",
+        requestError
+      );
+
+      console.error(
+        "Backend Response:",
+        requestError?.response?.data
+      );
+
+      setError(
+        getErrorMessage(
+          requestError,
+          "Unable to create lab."
+        )
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  const handleStatusChange = async (lab) => {
-    if (!lab?.id || statusLabId) return;
+  const handleStatusChange = async (
+    lab
+  ) => {
+    if (!lab?.id || statusLabId) {
+      return;
+    }
 
-    const currentStatus = String(lab?.status || "").toUpperCase();
-    const nextStatus = currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    const currentStatus = String(
+      lab?.status || ""
+    ).toUpperCase();
+
+    const nextStatus =
+      currentStatus === "ACTIVE"
+        ? "INACTIVE"
+        : "ACTIVE";
 
     try {
       setStatusLabId(lab.id);
@@ -263,13 +516,20 @@ export default function LabsPage() {
 
       await axios.patch(
         `${API_BASE_URL}/admin/labs/${lab.id}/status`,
-        { status: nextStatus },
+        {
+          status: nextStatus,
+        },
         requestConfig()
       );
 
       setLabs((current) =>
         current.map((item) =>
-          item.id === lab.id ? { ...item, status: nextStatus } : item
+          item.id === lab.id
+            ? {
+                ...item,
+                status: nextStatus,
+              }
+            : item
         )
       );
 
@@ -280,7 +540,10 @@ export default function LabsPage() {
       );
     } catch (requestError) {
       setError(
-        getErrorMessage(requestError, "Unable to update lab status.")
+        getErrorMessage(
+          requestError,
+          "Unable to update lab status."
+        )
       );
     } finally {
       setStatusLabId(null);
@@ -288,17 +551,35 @@ export default function LabsPage() {
   };
 
   const updateField = (event) => {
-    const { name, value } = event.target;
+    const {
+      name,
+      value,
+    } = event.target;
+
     let nextValue = value;
 
     if (name === "phoneNumber") {
-      nextValue = value.replace(/\D/g, "").slice(0, 10);
+      nextValue = value
+        .replace(/\D/g, "")
+        .slice(0, 10);
     }
 
-    setForm((current) => ({ ...current, [name]: nextValue }));
+    if (name === "pinCode") {
+      nextValue = value
+        .replace(/\D/g, "")
+        .slice(0, 6);
+    }
+
+    setForm((current) => ({
+      ...current,
+      [name]: nextValue,
+    }));
 
     if (formErrors[name]) {
-      setFormErrors((current) => ({ ...current, [name]: "" }));
+      setFormErrors((current) => ({
+        ...current,
+        [name]: "",
+      }));
     }
   };
 
@@ -309,7 +590,10 @@ export default function LabsPage() {
   };
 
   const closeCreateDialog = () => {
-    if (saving) return;
+    if (saving) {
+      return;
+    }
+
     setDialogOpen(false);
     setForm(initialForm);
     setFormErrors({});
@@ -322,28 +606,38 @@ export default function LabsPage() {
     setTablePage(1);
   };
 
-  const statsData = [
-    { label: "Total Labs", value: stats.total },
-    { label: "Active Labs", value: stats.active },
-    { label: "Connected Doctors", value: stats.doctors },
-    { label: "Test Requests", value: stats.requests },
-  ];
-
-  // =========================================
-  // UI
-  // =========================================
   return (
     <Box
       sx={{
-        p: { xs: 1.5, sm: 2, md: 2.5 },
-        mt: { xs: 7, md: 8 },
+        p: {
+          xs: 1.5,
+          sm: 2,
+          md: 2.5,
+        },
+        mt: {
+          xs: 7,
+          md: 8,
+        },
         bgcolor: "white",
         minHeight: "100vh",
         overflowX: "hidden",
-        "& .MuiTypography-root": { fontSize: "13px" },
-        "& .MuiButton-root": { fontSize: "13px", textTransform: "none" },
-        "& .MuiTableCell-root": { fontSize: "13px" },
-        "& .MuiChip-label": { fontSize: "13px" },
+
+        "& .MuiTypography-root": {
+          fontSize: "13px",
+        },
+
+        "& .MuiButton-root": {
+          fontSize: "13px",
+          textTransform: "none",
+        },
+
+        "& .MuiTableCell-root": {
+          fontSize: "13px",
+        },
+
+        "& .MuiChip-label": {
+          fontSize: "13px",
+        },
       }}
     >
       <LabsHeader
@@ -351,8 +645,6 @@ export default function LabsPage() {
         onRefresh={fetchLabs}
         onAdd={openCreateDialog}
       />
-
-     
 
       <Paper
         elevation={0}
@@ -368,28 +660,44 @@ export default function LabsPage() {
           tableSearch={tableSearch}
           tableStatus={tableStatus}
           tableDate={tableDate}
-          onSearchChange={setTableSearch}
-          onStatusChange={setTableStatus}
-          onDateChange={setTableDate}
+          onSearchChange={
+            setTableSearch
+          }
+          onStatusChange={
+            setTableStatus
+          }
+          onDateChange={
+            setTableDate
+          }
           onClear={clearFilters}
         />
 
         <LabsTable
           loading={loading}
           labs={labs}
-          filteredLabs={filteredLabs}
+          filteredLabs={
+            filteredLabs
+          }
           visibleLabs={visibleLabs}
           totalPages={totalPages}
           tablePage={tablePage}
-          onPageChange={setTablePage}
-          statusLabId={statusLabId}
-          onStatusChange={handleStatusChange}
+          onPageChange={
+            setTablePage
+          }
+          statusLabId={
+            statusLabId
+          }
+          onStatusChange={
+            handleStatusChange
+          }
         />
       </Paper>
 
       <CreateLabDialog
         open={dialogOpen}
-        onClose={closeCreateDialog}
+        onClose={
+          closeCreateDialog
+        }
         form={form}
         formErrors={formErrors}
         onChange={updateField}
@@ -400,14 +708,23 @@ export default function LabsPage() {
       <Snackbar
         open={Boolean(error)}
         autoHideDuration={5000}
-        onClose={() => setError("")}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        onClose={() =>
+          setError("")
+        }
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
       >
         <Alert
           severity="error"
           variant="filled"
-          onClose={() => setError("")}
-          sx={{ fontSize: "12.5px" }}
+          onClose={() =>
+            setError("")
+          }
+          sx={{
+            fontSize: "12.5px",
+          }}
         >
           {error}
         </Alert>
@@ -416,14 +733,23 @@ export default function LabsPage() {
       <Snackbar
         open={Boolean(notice)}
         autoHideDuration={3000}
-        onClose={() => setNotice("")}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        onClose={() =>
+          setNotice("")
+        }
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
       >
         <Alert
           severity="success"
           variant="filled"
-          onClose={() => setNotice("")}
-          sx={{ fontSize: "12.5px" }}
+          onClose={() =>
+            setNotice("")
+          }
+          sx={{
+            fontSize: "12.5px",
+          }}
         >
           {notice}
         </Alert>

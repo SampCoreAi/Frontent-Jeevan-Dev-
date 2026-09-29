@@ -105,17 +105,6 @@ export default function PersonalInfoForm({
           "'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       }}
     >
-      <OnboardingHeader />
-
-      <Divider
-        sx={{
-          my: {
-            xs: 2.5,
-            sm: 3,
-          },
-          borderColor: COLORS.border,
-        }}
-      />
 
       <Grid
         container
