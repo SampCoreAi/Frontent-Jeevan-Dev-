@@ -105,8 +105,6 @@ export default function OnboardingSidebar({
           sm: 2,
           md: 2.2,
         },
-
-        border: `1px solid ${COLORS.border}`,
         borderRadius: "16px",
 
         bgcolor: COLORS.white,
@@ -547,52 +545,6 @@ export default function OnboardingSidebar({
         </Box>
       </Stack>
 
-      {/* REGISTRATION ID */}
-
-      {registrationId && (
-        <Box
-          sx={{
-            mt: 1.2,
-
-            px: 1.3,
-            py: 1,
-
-            borderRadius: "9px",
-
-            border: `1px dashed ${COLORS.border}`,
-
-            bgcolor: "#FCFDFC",
-          }}
-        >
-          <Typography
-            sx={{
-              fontSize: "9.5px",
-              color: COLORS.textMuted,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              fontWeight: 650,
-            }}
-          >
-            Registration ID
-          </Typography>
-
-          <Typography
-            sx={{
-              mt: 0.25,
-
-              fontSize: "11px",
-
-              color: COLORS.textPrimary,
-
-              fontWeight: 700,
-
-              wordBreak: "break-all",
-            }}
-          >
-            #{registrationId}
-          </Typography>
-        </Box>
-      )}
     </Paper>
   );
 }

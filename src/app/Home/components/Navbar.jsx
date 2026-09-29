@@ -80,7 +80,7 @@ export default function Navbar() {
     },
     {
       icon: EmailOutlinedIcon,
-      text: "support@mail.com",
+      text: "support@sampcoreai.com",
     },
     {
       icon: LocationOnOutlinedIcon,
@@ -438,40 +438,7 @@ export default function Navbar() {
               Login
             </Button>
 
-            <Button
-              variant="contained"
-              endIcon={
-                <ArrowForwardRoundedIcon
-                  sx={{
-                    fontSize: "16px !important",
-                  }}
-                />
-              }
-              onClick={() =>
-                handleNavigation(
-                  "/Home/pages/AllDoctors"
-                )
-              }
-              sx={{
-                height: 36,
-                px: 2,
-                borderRadius: 2,
-                bgcolor: "primary.main",
-                color: "primary.contrastText",
-                fontSize: "12.5px",
-                fontWeight: 700,
-                textTransform: "none",
-                boxShadow:
-                  "0 4px 12px rgba(7, 135, 106, 0.18)",
-                "&:hover": {
-                  bgcolor: "primary.dark",
-                  boxShadow:
-                    "0 6px 16px rgba(7, 135, 106, 0.24)",
-                },
-              }}
-            >
-              Find Doctor
-            </Button>
+           
           </Box>
 
           <IconButton
@@ -721,32 +688,6 @@ export default function Navbar() {
                 Login
               </Button>
 
-              <Button
-                fullWidth
-                variant="contained"
-                endIcon={<ArrowForwardRoundedIcon />}
-                onClick={() =>
-                  handleNavigation(
-                    "/Home/pages/AllDoctors"
-                  )
-                }
-                sx={{
-                  height: 42,
-                  borderRadius: 2,
-                  bgcolor: "primary.main",
-                  color: "primary.contrastText",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  textTransform: "none",
-                  boxShadow: "none",
-                  "&:hover": {
-                    bgcolor: "primary.dark",
-                    boxShadow: "none",
-                  },
-                }}
-              >
-                Find Doctor
-              </Button>
             </Box>
           </Box>
 

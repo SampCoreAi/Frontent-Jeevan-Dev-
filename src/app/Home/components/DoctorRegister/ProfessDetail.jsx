@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+
 import {
   Box,
   Button,
@@ -10,7 +11,6 @@ import {
   TextField,
   Typography,
   InputAdornment,
-  Stack,
   Divider,
   CircularProgress,
 } from "@mui/material";
@@ -60,7 +60,63 @@ const inputSx = {
   "& .MuiInputBase-input": {
     fontSize: "14px",
   },
+
+  "& .MuiSelect-select": {
+    fontSize: "14px",
+  },
+
+  "& .MuiFormHelperText-root": {
+    marginLeft: "4px",
+    marginTop: "5px",
+    fontSize: "11px",
+    lineHeight: 1.35,
+  },
 };
+
+const selectMenuProps = {
+  PaperProps: {
+    sx: {
+      mt: 0.5,
+      borderRadius: "10px",
+      border: `1px solid ${COLORS.border}`,
+      boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+      maxHeight: 320,
+
+      "& .MuiMenuItem-root": {
+        minHeight: "40px",
+        fontSize: "14px",
+        fontWeight: 400,
+        color: "#1F2A24",
+      },
+
+      // Placeholder / disabled option
+      "& .MuiMenuItem-root.Mui-disabled": {
+        color: "#1F2A24 !important",
+        opacity: "1 !important",
+        backgroundColor: "#F7F9F8",
+      },
+
+      "& .MuiMenuItem-root:hover": {
+        backgroundColor: "#F4F7F5",
+        color: "#1F2A24",
+      },
+
+      "& .MuiMenuItem-root.Mui-selected": {
+        backgroundColor: "#F0F5F2",
+        color: "#1F2A24",
+      },
+
+      "& .MuiMenuItem-root.Mui-selected:hover": {
+        backgroundColor: "#E8F0EC",
+        color: "#1F2A24",
+      },
+    },
+  },
+};
+
+/* =========================================================
+   OPTIONS
+========================================================= */
 
 const medicalCouncils = [
   "National Medical Commission",
@@ -71,16 +127,7 @@ const medicalCouncils = [
   "Tamil Nadu Medical Council",
 ];
 
-const qualifications = [
-  "MBBS",
-  "MD",
-  "MS",
-  "DM",
-  "MCh",
-  "DNB",
-  "BAMS",
-  "BHMS",
-];
+const qualifications = ["MBBS", "MD", "MS", "DM", "MCh", "DNB", "BAMS", "BHMS"];
 
 const specializations = [
   "General Physician",
@@ -92,6 +139,10 @@ const specializations = [
   "Psychiatry",
 ];
 
+/* =========================================================
+   COMPONENT
+========================================================= */
+
 export default function ProfessionalDetailsForm({
   data,
   onChange,
@@ -100,35 +151,296 @@ export default function ProfessionalDetailsForm({
   loading = false,
   doctorRegistrationId,
 }) {
-  const handleChange = (event) => {
-    onChange({
-      [event.target.name]: event.target.value,
-    });
+  const [errors, setErrors] = React.useState({});
+
+  /* =======================================================
+     HELPERS
+  ======================================================= */
+
+  const getToday = () => {
+    const date = new Date();
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
   };
-const isFormValid =
-  Boolean(data.medicalRegistrationNumber?.trim()) &&
-  Boolean(data.medicalCouncil?.trim()) &&
-  Boolean(data.qualification?.trim()) &&
-  Boolean(data.specialization?.trim());
+
+  /* =======================================================
+     MEDICAL REGISTRATION NUMBER VALIDATION
+  ======================================================= */
+
+  const validateRegistrationNumber = (value) => {
+    const registrationNumber = String(value || "").trim();
+
+    if (!registrationNumber) {
+      return "Medical registration number is required.";
+    }
+
+    if (registrationNumber.length < 4) {
+      return "Registration number must be at least 4 characters.";
+    }
+
+    if (registrationNumber.length > 30) {
+      return "Registration number cannot exceed 30 characters.";
+    }
+
+    /*
+      Allows:
+      ABC12345
+      MP/12345/2025
+      MP-12345
+      MCI/MP/123456
+    */
+    if (!/^[A-Za-z0-9/-]+$/.test(registrationNumber)) {
+      return "Only letters, numbers, / and - are allowed.";
+    }
+
+    // Must contain at least one number
+    if (!/\d/.test(registrationNumber)) {
+      return "Registration number must contain a number.";
+    }
+
+    // Prevent only special characters
+    if (!/[A-Za-z0-9]/.test(registrationNumber)) {
+      return "Please enter a valid registration number.";
+    }
+
+    return "";
+  };
+
+  /* =======================================================
+     MEDICAL COUNCIL VALIDATION
+  ======================================================= */
+
+  const validateMedicalCouncil = (value) => {
+    if (!value) {
+      return "Medical council is required.";
+    }
+
+    if (!medicalCouncils.includes(value)) {
+      return "Please select a valid medical council.";
+    }
+
+    return "";
+  };
+
+  /* =======================================================
+     QUALIFICATION VALIDATION
+  ======================================================= */
+
+  const validateQualification = (value) => {
+    if (!value) {
+      return "Qualification is required.";
+    }
+
+    if (!qualifications.includes(value)) {
+      return "Please select a valid medical qualification.";
+    }
+
+    return "";
+  };
+
+  /* =======================================================
+     SPECIALIZATION VALIDATION
+  ======================================================= */
+
+  const validateSpecialization = (value) => {
+    if (!value) {
+      return "Specialization is required.";
+    }
+
+    if (!specializations.includes(value)) {
+      return "Please select a valid specialization.";
+    }
+
+    return "";
+  };
+
+  /* =======================================================
+     EXPIRY DATE VALIDATION
+  ======================================================= */
+
+  const validateExpiryDate = (value) => {
+    // Optional field
+    if (!value) {
+      return "";
+    }
+
+    const selectedDate = new Date(`${value}T00:00:00`);
+
+    if (Number.isNaN(selectedDate.getTime())) {
+      return "Please enter a valid expiry date.";
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      return "Medical registration has already expired.";
+    }
+
+    return "";
+  };
+
+  /* =======================================================
+     SINGLE FIELD VALIDATION
+  ======================================================= */
+
+  const validateField = (name, value) => {
+    let error = "";
+
+    switch (name) {
+      case "medicalRegistrationNumber":
+        error = validateRegistrationNumber(value);
+        break;
+
+      case "medicalCouncil":
+        error = validateMedicalCouncil(value);
+        break;
+
+      case "qualification":
+        error = validateQualification(value);
+        break;
+
+      case "specialization":
+        error = validateSpecialization(value);
+        break;
+
+      case "registrationExpiryDate":
+        error = validateExpiryDate(value);
+        break;
+
+      default:
+        break;
+    }
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: error,
+    }));
+
+    return !error;
+  };
+
+  /* =======================================================
+     CHANGE HANDLER
+  ======================================================= */
+
+  const handleChange = (event) => {
+    const { name } = event.target;
+    let { value } = event.target;
+
+    /*
+      Registration number:
+      - uppercase
+      - no spaces
+      - only letters/numbers/-/
+      - max 30
+    */
+    if (name === "medicalRegistrationNumber") {
+      value = value
+        .toUpperCase()
+        .replace(/\s/g, "")
+        .replace(/[^A-Z0-9/-]/g, "")
+        .slice(0, 30);
+    }
+
+    onChange({
+      [name]: value,
+    });
+
+    /*
+      Once error is visible,
+      validate while user fixes it.
+    */
+    if (errors[name]) {
+      validateField(name, value);
+    }
+  };
+
+  /* =======================================================
+     BLUR HANDLER
+  ======================================================= */
+
+  const handleBlur = (event) => {
+    const { name, value } = event.target;
+
+    validateField(name, value);
+  };
+
+  /* =======================================================
+     COMPLETE FORM VALIDATION
+  ======================================================= */
+
+  const validateForm = () => {
+    const newErrors = {
+      medicalRegistrationNumber: validateRegistrationNumber(
+        data.medicalRegistrationNumber,
+      ),
+
+      medicalCouncil: validateMedicalCouncil(data.medicalCouncil),
+
+      qualification: validateQualification(data.qualification),
+
+      specialization: validateSpecialization(data.specialization),
+
+      registrationExpiryDate: validateExpiryDate(data.registrationExpiryDate),
+    };
+
+    // Remove empty error values
+    Object.keys(newErrors).forEach((key) => {
+      if (!newErrors[key]) {
+        delete newErrors[key];
+      }
+    });
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  /* =======================================================
+     NEXT
+  ======================================================= */
+
+  const handleNext = () => {
+    const valid = validateForm();
+
+    if (!valid) {
+      return;
+    }
+
+    onNext();
+  };
+
   return (
     <Paper
       elevation={0}
       sx={{
         width: "100%",
+        minHeight: "100%",
+
         p: {
           xs: 2,
           sm: 3,
           md: 4,
         },
+
         border: `1px solid ${COLORS.border}`,
+
         borderRadius: {
           xs: "14px",
           sm: "18px",
         },
+
         backgroundColor: COLORS.white,
       }}
     >
-      {/* Header */}
+      {/* ===================================================
+          HEADER
+      =================================================== */}
 
       <OnboardingHeader />
 
@@ -138,43 +450,14 @@ const isFormValid =
             xs: 2.5,
             sm: 3,
           },
+
           borderColor: COLORS.border,
         }}
       />
 
-      {/* Registration ID info */}
-
-      {doctorRegistrationId && (
-        <Box
-          sx={{
-            mb: 3,
-            px: 2,
-            py: 1.5,
-            borderRadius: "10px",
-            bgcolor: COLORS.primaryLight,
-            border: `1px solid ${COLORS.border}`,
-          }}
-        >
-          <Typography
-            sx={{
-              fontSize: "12px",
-              color: COLORS.textSecondary,
-            }}
-          >
-            Registration ID
-          </Typography>
-
-          <Typography
-            sx={{
-              fontSize: "15px",
-              fontWeight: 700,
-              color: COLORS.primary,
-            }}
-          >
-            #{doctorRegistrationId}
-          </Typography>
-        </Box>
-      )}
+      {/* ===================================================
+          FORM
+      =================================================== */}
 
       <Grid
         container
@@ -184,7 +467,12 @@ const isFormValid =
           md: 3,
         }}
       >
-        {/* Medical Registration Number */}
+        {/* =================================================
+            MEDICAL REGISTRATION NUMBER
+        ================================================= */}
+        {/* =================================================
+    MEDICAL REGISTRATION NUMBER
+================================================= */}
 
         <Grid size={{ xs: 12, md: 6 }}>
           <Typography
@@ -198,7 +486,9 @@ const isFormValid =
             Medical Registration Number{" "}
             <Box
               component="span"
-              sx={{ color: COLORS.error }}
+              sx={{
+                color: COLORS.error,
+              }}
             >
               *
             </Box>
@@ -209,34 +499,45 @@ const isFormValid =
             name="medicalRegistrationNumber"
             value={data.medicalRegistrationNumber || ""}
             onChange={handleChange}
-            placeholder="Enter your registration number"
-            sx={inputSx}
+            onBlur={handleBlur}
+            placeholder="e.g. MP/12345/2025"
+            error={Boolean(errors.medicalRegistrationNumber)}
+            helperText={
+              errors.medicalRegistrationNumber ||
+              "Enter exactly as shown on your medical registration"
+            }
+            sx={{
+              ...inputSx,
+
+              "& .MuiInputBase-input::placeholder": {
+                color: "#1F2A24",
+                opacity: 0.65,
+              },
+            }}
+            inputProps={{
+              maxLength: 30,
+              autoComplete: "off",
+            }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
                   <BadgeOutlinedIcon
                     fontSize="small"
                     sx={{
-                      color: COLORS.textSecondary,
+                      color: errors.medicalRegistrationNumber
+                        ? COLORS.error
+                        : COLORS.textSecondary,
                     }}
                   />
                 </InputAdornment>
               ),
             }}
           />
-
-          <Typography
-            sx={{
-              mt: 0.7,
-              fontSize: "11px",
-              color: COLORS.textSecondary,
-            }}
-          >
-            Enter your valid medical registration number
-          </Typography>
         </Grid>
 
-        {/* Medical Council */}
+        {/* =================================================
+    MEDICAL COUNCIL
+================================================= */}
 
         <Grid size={{ xs: 12, md: 6 }}>
           <Typography
@@ -250,7 +551,9 @@ const isFormValid =
             Medical Council{" "}
             <Box
               component="span"
-              sx={{ color: COLORS.error }}
+              sx={{
+                color: COLORS.error,
+              }}
             >
               *
             </Box>
@@ -262,9 +565,24 @@ const isFormValid =
             name="medicalCouncil"
             value={data.medicalCouncil || ""}
             onChange={handleChange}
-            sx={inputSx}
+            onBlur={handleBlur}
+            error={Boolean(errors.medicalCouncil)}
+            helperText={
+              errors.medicalCouncil ||
+              "Select the council where you are registered"
+            }
+            sx={{
+              ...inputSx,
+
+              // Selected text black
+              "& .MuiSelect-select": {
+                color: "#1F2A24",
+                fontSize: "14px",
+              },
+            }}
             SelectProps={{
               displayEmpty: true,
+              MenuProps: selectMenuProps,
             }}
             InputProps={{
               startAdornment: (
@@ -272,7 +590,9 @@ const isFormValid =
                   <AccountBalanceOutlinedIcon
                     fontSize="small"
                     sx={{
-                      color: COLORS.textSecondary,
+                      color: errors.medicalCouncil
+                        ? COLORS.error
+                        : COLORS.textSecondary,
                     }}
                   />
                 </InputAdornment>
@@ -284,24 +604,22 @@ const isFormValid =
             </MenuItem>
 
             {medicalCouncils.map((item) => (
-              <MenuItem key={item} value={item}>
+              <MenuItem
+                key={item}
+                value={item}
+                sx={{
+                  color: "#1F2A24",
+                }}
+              >
                 {item}
               </MenuItem>
             ))}
           </TextField>
-
-          <Typography
-            sx={{
-              mt: 0.7,
-              fontSize: "11px",
-              color: COLORS.textSecondary,
-            }}
-          >
-            Select your state or national medical council
-          </Typography>
         </Grid>
 
-        {/* Qualification */}
+        {/* =================================================
+    QUALIFICATION
+================================================= */}
 
         <Grid size={{ xs: 12, md: 6 }}>
           <Typography
@@ -315,7 +633,9 @@ const isFormValid =
             Qualification{" "}
             <Box
               component="span"
-              sx={{ color: COLORS.error }}
+              sx={{
+                color: COLORS.error,
+              }}
             >
               *
             </Box>
@@ -327,9 +647,23 @@ const isFormValid =
             name="qualification"
             value={data.qualification || ""}
             onChange={handleChange}
-            sx={inputSx}
+            onBlur={handleBlur}
+            error={Boolean(errors.qualification)}
+            helperText={
+              errors.qualification ||
+              "Select your highest medical qualification"
+            }
+            sx={{
+              ...inputSx,
+
+              "& .MuiSelect-select": {
+                color: "#1F2A24",
+                fontSize: "14px",
+              },
+            }}
             SelectProps={{
               displayEmpty: true,
+              MenuProps: selectMenuProps,
             }}
             InputProps={{
               startAdornment: (
@@ -337,7 +671,9 @@ const isFormValid =
                   <SchoolOutlinedIcon
                     fontSize="small"
                     sx={{
-                      color: COLORS.textSecondary,
+                      color: errors.qualification
+                        ? COLORS.error
+                        : COLORS.textSecondary,
                     }}
                   />
                 </InputAdornment>
@@ -349,24 +685,22 @@ const isFormValid =
             </MenuItem>
 
             {qualifications.map((item) => (
-              <MenuItem key={item} value={item}>
+              <MenuItem
+                key={item}
+                value={item}
+                sx={{
+                  color: "#1F2A24",
+                }}
+              >
                 {item}
               </MenuItem>
             ))}
           </TextField>
-
-          <Typography
-            sx={{
-              mt: 0.7,
-              fontSize: "11px",
-              color: COLORS.textSecondary,
-            }}
-          >
-            Choose your highest medical qualification
-          </Typography>
         </Grid>
 
-        {/* Specialization */}
+        {/* =================================================
+    SPECIALIZATION
+================================================= */}
 
         <Grid size={{ xs: 12, md: 6 }}>
           <Typography
@@ -380,7 +714,9 @@ const isFormValid =
             Specialization{" "}
             <Box
               component="span"
-              sx={{ color: COLORS.error }}
+              sx={{
+                color: COLORS.error,
+              }}
             >
               *
             </Box>
@@ -392,9 +728,23 @@ const isFormValid =
             name="specialization"
             value={data.specialization || ""}
             onChange={handleChange}
-            sx={inputSx}
+            onBlur={handleBlur}
+            error={Boolean(errors.specialization)}
+            helperText={
+              errors.specialization ||
+              "Select your primary medical specialization"
+            }
+            sx={{
+              ...inputSx,
+
+              "& .MuiSelect-select": {
+                color: "#1F2A24",
+                fontSize: "14px",
+              },
+            }}
             SelectProps={{
               displayEmpty: true,
+              MenuProps: selectMenuProps,
             }}
             InputProps={{
               startAdornment: (
@@ -402,7 +752,9 @@ const isFormValid =
                   <MedicalServicesOutlinedIcon
                     fontSize="small"
                     sx={{
-                      color: COLORS.textSecondary,
+                      color: errors.specialization
+                        ? COLORS.error
+                        : COLORS.textSecondary,
                     }}
                   />
                 </InputAdornment>
@@ -414,24 +766,21 @@ const isFormValid =
             </MenuItem>
 
             {specializations.map((item) => (
-              <MenuItem key={item} value={item}>
+              <MenuItem
+                key={item}
+                value={item}
+                sx={{
+                  color: "#1F2A24",
+                }}
+              >
                 {item}
               </MenuItem>
             ))}
           </TextField>
-
-          <Typography
-            sx={{
-              mt: 0.7,
-              fontSize: "11px",
-              color: COLORS.textSecondary,
-            }}
-          >
-            Choose your area of specialization
-          </Typography>
         </Grid>
-
-        {/* Expiry Date */}
+        {/* =================================================
+            REGISTRATION EXPIRY DATE
+        ================================================= */}
 
         <Grid size={{ xs: 12, md: 6 }}>
           <Typography
@@ -451,105 +800,122 @@ const isFormValid =
             name="registrationExpiryDate"
             value={data.registrationExpiryDate || ""}
             onChange={handleChange}
+            onBlur={handleBlur}
+            error={Boolean(errors.registrationExpiryDate)}
+            helperText={
+              errors.registrationExpiryDate ||
+              "Leave blank if your registration has no expiry date"
+            }
+            inputProps={{
+              min: getToday(),
+            }}
             sx={inputSx}
             InputLabelProps={{
               shrink: true,
             }}
           />
-
-          <Typography
-            sx={{
-              mt: 0.7,
-              fontSize: "11px",
-              color: COLORS.textSecondary,
-            }}
-          >
-            Select expiry date if applicable
-          </Typography>
         </Grid>
 
-        {/* Tip */}
+        {/* =================================================
+            INFORMATION BOX
+        ================================================= */}
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <Stack
-            direction="row"
-            spacing={1.5}
-            alignItems="flex-start"
+          <Box
             sx={{
-              minHeight: 120,
-              p: 2,
-              borderRadius: "12px",
-              bgcolor: COLORS.primaryLight,
+       
+
+              display: "flex",
+              alignItems: "center",
+
+              px: 2,
+              py: 1.5,
+mt:3,
+              borderRadius: "10px",
+
               border: `1px solid ${COLORS.border}`,
+
+              backgroundColor: "#F8FBF9",
             }}
           >
             <Box
               sx={{
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-                bgcolor: COLORS.primary,
-                color: "#fff",
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
+                alignItems: "flex-start",
+                gap: 1.2,
               }}
             >
-              <LightbulbIcon sx={{ fontSize: 18 }} />
-            </Box>
-
-            <Box>
-              <Typography
+              <LightbulbIcon
                 sx={{
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  color: COLORS.textPrimary,
+                  fontSize: 19,
+                  color: COLORS.primary,
+                  mt: "2px",
                 }}
-              >
-                Keep your details accurate
-              </Typography>
+              />
 
-              <Typography
-                sx={{
-                  fontSize: "12px",
-                  lineHeight: 1.6,
-                  color: COLORS.textSecondary,
-                  mt: 0.5,
-                }}
-              >
-                Make sure these details match your official
-                medical registration documents.
-              </Typography>
+              <Box>
+                <Typography
+                  sx={{
+                    fontSize: "12.5px",
+                    fontWeight: 600,
+                    color: COLORS.textPrimary,
+                    mb: 0.3,
+                  }}
+                >
+                  Registration details
+                </Typography>
+
+                <Typography
+                  sx={{
+                    fontSize: "11.5px",
+                    lineHeight: 1.5,
+                    color: COLORS.textSecondary,
+                  }}
+                >
+                  Enter details exactly as registered.
+                </Typography>
+              </Box>
             </Box>
-          </Stack>
+          </Box>
         </Grid>
       </Grid>
 
-      {/* Bottom Buttons */}
+      {/* ===================================================
+          BUTTONS
+      =================================================== */}
 
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+
           mt: 4,
-          pt: 2.5,
+          pt: 2,
+
           borderTop: `1px solid ${COLORS.border}`,
         }}
       >
+        {/* BACK */}
+
         <Button
           variant="outlined"
           onClick={onBack}
-        disabled={loading || !isFormValid}
+          // Back should NOT depend on form validity
+          disabled={loading}
           startIcon={<ArrowBackIcon />}
           sx={{
             height: 46,
             minWidth: 120,
+
             borderRadius: "10px",
+
             borderColor: COLORS.border,
+
             color: COLORS.textPrimary,
+
             textTransform: "none",
+
             fontWeight: 600,
 
             "&:hover": {
@@ -562,16 +928,17 @@ const isFormValid =
           Back
         </Button>
 
+        {/* NEXT */}
+
         <Button
           variant="contained"
-          onClick={onNext}
+          // Important:
+          // validate first, API call after validation
+          onClick={handleNext}
           disabled={loading}
           endIcon={
             loading ? (
-              <CircularProgress
-                size={18}
-                color="inherit"
-              />
+              <CircularProgress size={18} color="inherit" />
             ) : (
               <ArrowForwardIcon />
             )
@@ -579,16 +946,26 @@ const isFormValid =
           sx={{
             height: 46,
             minWidth: 140,
+
             borderRadius: "10px",
+
             bgcolor: COLORS.primary,
+
             textTransform: "none",
+
             fontWeight: 600,
+
             boxShadow: "none",
 
             "&:hover": {
               bgcolor: COLORS.primaryHover,
-              boxShadow:
-                "0 4px 12px rgba(27,110,79,0.18)",
+
+              boxShadow: "0 4px 12px rgba(27,110,79,0.18)",
+            },
+
+            "&.Mui-disabled": {
+              bgcolor: "#A8BDB3",
+              color: "#FFFFFF",
             },
           }}
         >

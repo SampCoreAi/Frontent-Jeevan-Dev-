@@ -3,15 +3,16 @@
 import * as React from "react";
 
 import {
+  Alert,
   Box,
   Button,
   Chip,
+  CircularProgress,
   Grid,
   Paper,
+  Snackbar,
   Stack,
   Typography,
-  Snackbar,
-  Alert,
 } from "@mui/material";
 
 import Webcam from "react-webcam";
@@ -23,30 +24,67 @@ import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 
 import OnboardingHeader from "./OnboardingHeader";
 
 import doctorRegistrationApi from "../../components/services/doctorRegistrationApi";
 
+/* =========================================================
+   CONSTANTS
+========================================================= */
+
 const COLORS = {
   primary: "#1B6E4F",
+  primaryHover: "#15593E",
   primaryLight: "#E8F5EE",
+
   border: "#E6EBE8",
+
   textPrimary: "#1F2A24",
   textSecondary: "#6B7A72",
+
+  error: "#E0483C",
+  errorLight: "#FFF5F4",
+
+  white: "#FFFFFF",
 };
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+const ALLOWED_FILE_TYPES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+];
+
+const ALLOWED_EXTENSIONS = [
+  "pdf",
+  "jpg",
+  "jpeg",
+  "png",
+];
+
+/* =========================================================
+   DOCUMENT CONFIG
+========================================================= */
 
 const documents = [
   {
     id: "registration",
 
-    title: "Medical Registration Certificate",
+    title: "Medical Registration",
 
     description:
-      "Upload your valid medical registration certificate.",
+      "Upload your valid registration certificate.",
 
     icon: (
-      <DescriptionOutlinedIcon fontSize="large" />
+      <DescriptionOutlinedIcon
+        sx={{ fontSize: 26 }}
+      />
     ),
 
     fieldName:
@@ -58,13 +96,15 @@ const documents = [
   {
     id: "degree",
 
-    title: "Medical Degree Certificate",
+    title: "Medical Degree",
 
     description:
-      "Upload your MBBS / MD / MS degree certificate.",
+      "Upload your MBBS / MD / MS certificate.",
 
     icon: (
-      <SchoolOutlinedIcon fontSize="large" />
+      <SchoolOutlinedIcon
+        sx={{ fontSize: 26 }}
+      />
     ),
 
     fieldName:
@@ -76,13 +116,15 @@ const documents = [
   {
     id: "government",
 
-    title: "Government ID Proof",
+    title: "Government ID",
 
     description:
-      "Upload Aadhaar / PAN / Passport / Driving License.",
+      "Upload Aadhaar / PAN / Passport / DL.",
 
     icon: (
-      <BadgeOutlinedIcon fontSize="large" />
+      <BadgeOutlinedIcon
+        sx={{ fontSize: 26 }}
+      />
     ),
 
     fieldName:
@@ -94,13 +136,15 @@ const documents = [
   {
     id: "selfie",
 
-    title: "Selfie",
+    title: "Live Selfie",
 
     description:
-      "Take a live selfie using your device camera.",
+      "Take a clear live photo using your camera.",
 
     icon: (
-      <PhotoCameraOutlinedIcon fontSize="large" />
+      <PhotoCameraOutlinedIcon
+        sx={{ fontSize: 26 }}
+      />
     ),
 
     fieldName: "selfie",
@@ -110,6 +154,10 @@ const documents = [
     cameraOnly: true,
   },
 ];
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 export default function DocumentsForm({
   data,
@@ -122,34 +170,50 @@ export default function DocumentsForm({
 
   const [openCamera, setOpenCamera] =
     React.useState(false);
-const [snackbar, setSnackbar] = React.useState({
-  open: false,
-  message: "",
-  severity: "success",
-});
 
-const showSnackbar = (message, severity = "success") => {
-  setSnackbar({
-    open: true,
-    message,
-    severity,
-  });
-};
-
-const handleCloseSnackbar = (_, reason) => {
-  if (reason === "clickaway") return;
-
-  setSnackbar((prev) => ({
-    ...prev,
-    open: false,
-  }));
-};
   const [uploading, setUploading] =
     React.useState({});
 
-  // ==========================================
-  // CHECK ALL DOCUMENTS
-  // ==========================================
+  const [fileErrors, setFileErrors] =
+    React.useState({});
+
+  const [snackbar, setSnackbar] =
+    React.useState({
+      open: false,
+      message: "",
+      severity: "success",
+    });
+
+  /* =======================================================
+     SNACKBAR
+  ======================================================= */
+
+  const showSnackbar = (
+    message,
+    severity = "success"
+  ) => {
+    setSnackbar({
+      open: true,
+      message,
+      severity,
+    });
+  };
+
+  const handleCloseSnackbar = (_, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+
+    setSnackbar((prev) => ({
+      ...prev,
+      open: false,
+    }));
+  };
+
+  /* =======================================================
+     DOCUMENT STATUS
+  ======================================================= */
+
   const allDocumentsUploaded =
     Boolean(
       data?.medicalRegistrationCertificate
@@ -160,33 +224,164 @@ const handleCloseSnackbar = (_, reason) => {
     Boolean(data?.governmentIdProof) &&
     Boolean(data?.selfie);
 
-  // ==========================================
-  // UPLOAD DOCUMENT
-  // ==========================================
+  /* =======================================================
+     FILE VALIDATION
+  ======================================================= */
+
+  const validateFile = (file) => {
+    if (!file) {
+      return "Please select a file.";
+    }
+
+    /* -------------------------------
+       Empty file
+    -------------------------------- */
+
+    if (file.size <= 0) {
+      return "The selected file is empty.";
+    }
+
+    /* -------------------------------
+       5MB validation
+    -------------------------------- */
+
+    if (file.size > MAX_FILE_SIZE) {
+      return "File size must not exceed 5MB.";
+    }
+
+    /* -------------------------------
+       Extension
+    -------------------------------- */
+
+    const extension =
+      file.name
+        ?.split(".")
+        .pop()
+        ?.toLowerCase() || "";
+
+    if (
+      !ALLOWED_EXTENSIONS.includes(extension)
+    ) {
+      return "Only PDF, JPG, JPEG and PNG files are allowed.";
+    }
+
+    /* -------------------------------
+       MIME type
+    -------------------------------- */
+
+    if (
+      file.type &&
+      !ALLOWED_FILE_TYPES.includes(file.type)
+    ) {
+      return "Invalid file format. Upload PDF, JPG, JPEG or PNG.";
+    }
+
+    return "";
+  };
+
+  /* =======================================================
+     SET / CLEAR DOCUMENT ERROR
+  ======================================================= */
+
+  const setDocumentError = (
+    id,
+    message
+  ) => {
+    setFileErrors((prev) => ({
+      ...prev,
+      [id]: message,
+    }));
+  };
+
+  const clearDocumentError = (id) => {
+    setFileErrors((prev) => {
+      const next = {
+        ...prev,
+      };
+
+      delete next[id];
+
+      return next;
+    });
+  };
+
+  /* =======================================================
+     UPLOAD DOCUMENT
+  ======================================================= */
+
   const handleUpload = async (
     id,
     file
   ) => {
-    if (!file) return;
+    if (!file) {
+      return false;
+    }
+
+    /* -------------------------------
+       Frontend validation FIRST
+    -------------------------------- */
+
+    const validationError =
+      validateFile(file);
+
+    if (validationError) {
+      setDocumentError(
+        id,
+        validationError
+      );
+
+      showSnackbar(
+        validationError,
+        "error"
+      );
+
+      return false;
+    }
+
+    clearDocumentError(id);
+
+    /* -------------------------------
+       Registration ID
+    -------------------------------- */
 
     const currentRegistrationId =
       registrationId ||
       localStorage.getItem(
         "doctorRegistrationId"
       );
-if (!currentRegistrationId) {
-  showSnackbar(
-    "Registration ID not found. Please try again.",
-    "error"
-  );
-  return;
-}
+
+    if (!currentRegistrationId) {
+      const message =
+        "Registration ID not found. Please try again.";
+
+      setDocumentError(
+        id,
+        message
+      );
+
+      showSnackbar(
+        message,
+        "error"
+      );
+
+      return false;
+    }
+
+    /* -------------------------------
+       Document config
+    -------------------------------- */
+
     const document = documents.find(
       (item) => item.id === id
     );
 
     if (!document) {
-      return;
+      showSnackbar(
+        "Invalid document type.",
+        "error"
+      );
+
+      return false;
     }
 
     const fieldName =
@@ -198,7 +393,9 @@ if (!currentRegistrationId) {
         [id]: true,
       }));
 
-    
+      /* -----------------------------
+         API CALL
+      ----------------------------- */
 
       const response =
         await doctorRegistrationApi.uploadDocument(
@@ -207,10 +404,10 @@ if (!currentRegistrationId) {
           fieldName
         );
 
-      /*
-       * Backend response se path
-       * nikalne ki koshish.
-       */
+      /* -----------------------------
+         Extract uploaded path
+      ----------------------------- */
+
       const uploadedPath =
         response?.data?.data?.[
           fieldName
@@ -222,42 +419,60 @@ if (!currentRegistrationId) {
         response?.data?.path ||
         response?.data?.url;
 
+      /* -----------------------------
+         Parent state
+      ----------------------------- */
+
       if (uploadedPath) {
-        /*
-         * Parent doctorData update
-         */
         onChange({
           [fieldName]:
             uploadedPath,
         });
       } else {
         /*
-         * Agar API sirf success return
-         * kar rahi hai aur path nahi de rahi
-         *
-         * to parent ko filename de rahe hain.
-         *
-         * Better option:
-         * Upload ke baad DB GET API call
-         * karna.
-         */
+          Ideally backend should return
+          the uploaded file path/key.
+
+          Keeping filename fallback
+          because your existing code
+          already uses this behaviour.
+        */
+
         onChange({
           [fieldName]:
             file.name,
         });
       }
 
+      clearDocumentError(id);
+
+      showSnackbar(
+        `${document.title} uploaded successfully.`,
+        "success"
+      );
+
+      return true;
     } catch (error) {
       console.error(
         "UPLOAD ERROR:",
         error
       );
 
-    showSnackbar(
-  error?.response?.data?.message ||
-    "Failed to upload the document. Please try again.",
-  "error"
-);
+      const message =
+        error?.response?.data?.message ||
+        "Failed to upload the document. Please try again.";
+
+      setDocumentError(
+        id,
+        message
+      );
+
+      showSnackbar(
+        message,
+        "error"
+      );
+
+      return false;
     } finally {
       setUploading((prev) => ({
         ...prev,
@@ -266,215 +481,592 @@ if (!currentRegistrationId) {
     }
   };
 
+  /* =======================================================
+     FILE INPUT
+  ======================================================= */
+
+  const handleFileSelect = (
+    doc,
+    event
+  ) => {
+    const file =
+      event.target.files?.[0];
+
+    /*
+      Reset immediately so same file
+      can be selected again.
+    */
+
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    const error =
+      validateFile(file);
+
+    if (error) {
+      setDocumentError(
+        doc.id,
+        error
+      );
+
+      showSnackbar(
+        error,
+        "error"
+      );
+
+      return;
+    }
+
+    clearDocumentError(doc.id);
+
+    handleUpload(
+      doc.id,
+      file
+    );
+  };
+
+  /* =======================================================
+     NEXT VALIDATION
+  ======================================================= */
+
+  const handleNext = () => {
+    const missingDocuments =
+      documents.filter(
+        (doc) =>
+          doc.required &&
+          !data?.[doc.fieldName]
+      );
+
+    if (missingDocuments.length > 0) {
+      const newErrors = {};
+
+      missingDocuments.forEach(
+        (doc) => {
+          newErrors[doc.id] =
+            `${doc.title} is required.`;
+        }
+      );
+
+      setFileErrors((prev) => ({
+        ...prev,
+        ...newErrors,
+      }));
+
+      showSnackbar(
+        "Please upload all required documents.",
+        "error"
+      );
+
+      return;
+    }
+
+    onNext();
+  };
+
+  /* =======================================================
+     CAMERA CAPTURE
+  ======================================================= */
+
+  const handleCaptureSelfie =
+    async () => {
+      const imageSrc =
+        webcamRef.current?.getScreenshot();
+
+      if (!imageSrc) {
+        showSnackbar(
+          "Unable to capture the photo. Please try again.",
+          "error"
+        );
+
+        return;
+      }
+
+      try {
+        const blob = await fetch(
+          imageSrc
+        ).then((response) =>
+          response.blob()
+        );
+
+        const file = new File(
+          [blob],
+          `selfie-${Date.now()}.jpg`,
+          {
+            type: "image/jpeg",
+          }
+        );
+
+        /*
+          Selfie also passes through
+          the SAME 5MB validation.
+        */
+
+        const error =
+          validateFile(file);
+
+        if (error) {
+          setDocumentError(
+            "selfie",
+            error
+          );
+
+          showSnackbar(
+            error,
+            "error"
+          );
+
+          return;
+        }
+
+        const uploaded =
+          await handleUpload(
+            "selfie",
+            file
+          );
+
+        if (uploaded) {
+          setOpenCamera(false);
+        }
+      } catch (error) {
+        console.error(
+          "SELFIE ERROR:",
+          error
+        );
+
+        showSnackbar(
+          "Selfie upload failed. Please try again.",
+          "error"
+        );
+      }
+    };
+
+  /* =======================================================
+     UI
+  ======================================================= */
+
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: {
-          xs: 3,
-          md: 4,
-        },
+    <>
+      <Paper
+        elevation={0}
+        sx={{
+          width: "100%",
+          minHeight: "100%",
 
-        border: "1px solid",
+          p: {
+            xs: 2,
+            sm: 2.5,
+            md: 3,
+          },
 
-        borderColor:
-          COLORS.border,
+          border:
+            `1px solid ${COLORS.border}`,
 
-        borderRadius: 3,
-      }}
-    >
-      {/* HEADER */}
-      <OnboardingHeader />
+          borderRadius: {
+            xs: "14px",
+            sm: "18px",
+          },
 
-      {/* =====================================
-          DOCUMENT CARDS
-      ====================================== */}
-      <Grid
-        container
-        spacing={3}
+          bgcolor: COLORS.white,
+        }}
       >
-        {documents.map((doc) => {
-          /*
-           * IMPORTANT
-           *
-           * DB se aane wali value
-           * doctorData se le rahe hain.
-           */
-          const uploadedFile =
-            data?.[doc.fieldName];
+        {/* ===============================================
+            HEADER
+        =============================================== */}
 
-          const isUploaded =
-            Boolean(uploadedFile);
+        <OnboardingHeader />
 
-          const isUploading =
-            Boolean(
-              uploading[doc.id]
-            );
+        {/* ===============================================
+            SMALL INFO ROW
+        =============================================== */}
 
-          /*
-           * Example:
-           *
-           * doctor-registration/
-           * 059e33d8-xxxx.jpeg
-           *
-           * UI mein sirf:
-           *
-           * 059e33d8-xxxx.jpeg
-           */
-          const fileName =
-            typeof uploadedFile ===
-            "string"
-              ? uploadedFile
-                  .split("/")
-                  .pop()
-              : uploadedFile?.name ||
-                "Document uploaded";
+        <Box
+          sx={{
+            mt: 2,
+            mb: 2.2,
 
-          return (
-            <Grid
-              key={doc.id}
-              size={{
-                xs: 12,
-                sm: 6,
-                md: 3,
+            display: "flex",
+
+            alignItems: {
+              xs: "flex-start",
+              sm: "center",
+            },
+
+            justifyContent:
+              "space-between",
+
+            flexDirection: {
+              xs: "column",
+              sm: "row",
+            },
+
+            gap: 1,
+
+            px: 1.5,
+            py: 1.1,
+
+            bgcolor: "#F8FAF9",
+
+            border:
+              `1px solid ${COLORS.border}`,
+
+            borderRadius: "10px",
+          }}
+        >
+          <Box>
+            <Typography
+              sx={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color:
+                  COLORS.textPrimary,
               }}
             >
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 3,
+              Verification documents
+            </Typography>
 
-                  border: "1px solid",
+            <Typography
+              sx={{
+                mt: 0.15,
+                fontSize: "10.5px",
+                color:
+                  COLORS.textSecondary,
+              }}
+            >
+              Upload clear and valid
+              documents for verification.
+            </Typography>
+          </Box>
 
-                  borderColor:
-                    isUploaded
-                      ? COLORS.primary
-                      : COLORS.border,
+          <Typography
+            sx={{
+              flexShrink: 0,
 
-                  borderRadius: 3,
+              fontSize: "10.5px",
+              fontWeight: 600,
 
-                  position:
-                    "relative",
+              color:
+                COLORS.textSecondary,
+            }}
+          >
+            PDF, JPG, PNG • Max 5MB
+          </Typography>
+        </Box>
 
-                  height: "100%",
+        {/* ===============================================
+            DOCUMENT CARDS
+        =============================================== */}
 
-                  bgcolor:
-                    isUploaded
-                      ? "#FBFEFC"
-                      : "#FFFFFF",
+        <Grid
+          container
+          spacing={{
+            xs: 1.5,
+            sm: 1.8,
+          }}
+        >
+          {documents.map((doc) => {
+            const uploadedFile =
+              data?.[doc.fieldName];
+
+            const isUploaded =
+              Boolean(uploadedFile);
+
+            const isUploading =
+              Boolean(
+                uploading[doc.id]
+              );
+
+            const error =
+              fileErrors[doc.id];
+
+            const fileName =
+              typeof uploadedFile ===
+              "string"
+                ? uploadedFile
+                    .split("/")
+                    .pop()
+                : uploadedFile?.name ||
+                  "Document uploaded";
+
+            return (
+              <Grid
+                key={doc.id}
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  md: 3,
                 }}
               >
-                {/* STATUS CHIP */}
-                <Chip
-                  label={
-                    isUploaded
-                      ? "Uploaded"
-                      : "Required"
-                  }
-                  size="small"
+                <Paper
+                  elevation={0}
                   sx={{
                     position:
-                      "absolute",
+                      "relative",
 
-                    right: 16,
+                    height: "100%",
 
-                    top: 16,
+                    minHeight: "250px",
 
-                    bgcolor:
-                      COLORS.primaryLight,
+                    p: 2,
 
-                    color:
-                      COLORS.primary,
+                    display: "flex",
 
-                    fontWeight: 600,
-                  }}
-                />
+                    flexDirection:
+                      "column",
 
-                {/* ICON */}
-                <Box
-                  sx={{
-                    width: 72,
+                    border: "1px solid",
 
-                    height: 72,
+                    borderColor:
+                      error
+                        ? COLORS.error
+                        : isUploaded
+                        ? COLORS.primary
+                        : COLORS.border,
 
                     borderRadius:
-                      "50%",
+                      "12px",
 
                     bgcolor:
-                      COLORS.primaryLight,
+                      error
+                        ? COLORS.errorLight
+                        : isUploaded
+                        ? "#FBFEFC"
+                        : COLORS.white,
 
-                    display:
-                      "flex",
+                    transition:
+                      "border-color .2s ease, box-shadow .2s ease",
 
-                    alignItems:
-                      "center",
-
-                    justifyContent:
-                      "center",
-
-                    color:
-                      COLORS.primary,
-
-                    mx: "auto",
+                    "&:hover": {
+                      boxShadow:
+                        "0 5px 18px rgba(31,42,36,0.06)",
+                    },
                   }}
                 >
-                  {doc.icon}
-                </Box>
+                  {/* STATUS */}
 
-                {/* TITLE */}
-                <Typography
-                  align="center"
-                  sx={{
-                    mt: 2,
-                    fontWeight: 700,
-                  }}
-                >
-                  {doc.title}
-                </Typography>
-
-                {/* DESCRIPTION */}
-                <Typography
-                  align="center"
-                  variant="body2"
-                  sx={{
-                    color:
-                      COLORS.textSecondary,
-
-                    mt: 1,
-
-                    minHeight: 42,
-                  }}
-                >
-                  {doc.description}
-                </Typography>
-
-                {/* =================================
-                    ALREADY UPLOADED
-                ================================== */}
-                {isUploaded ? (
-                  <Paper
-                    variant="outlined"
+                  <Chip
+                    size="small"
+                    label={
+                      error
+                        ? "Error"
+                        : isUploaded
+                        ? "Uploaded"
+                        : "Required"
+                    }
                     sx={{
-                      mt: 3,
+                      position:
+                        "absolute",
 
-                      p: 2,
+                      top: 12,
+                      right: 12,
 
-                      borderColor:
-                        COLORS.primary,
+                      height: 23,
+
+                      fontSize:
+                        "10px",
+
+                      fontWeight: 700,
 
                       bgcolor:
-                        COLORS.primaryLight,
+                        error
+                          ? "#FDECEA"
+                          : isUploaded
+                          ? COLORS.primaryLight
+                          : "#F3F5F4",
+
+                      color:
+                        error
+                          ? COLORS.error
+                          : isUploaded
+                          ? COLORS.primary
+                          : COLORS.textSecondary,
+                    }}
+                  />
+
+                  {/* ICON */}
+
+                  <Box
+                    sx={{
+                      width: 50,
+                      height: 50,
+
+                      borderRadius:
+                        "12px",
+
+                      bgcolor:
+                        error
+                          ? "#FDECEA"
+                          : COLORS.primaryLight,
+
+                      display:
+                        "flex",
+
+                      alignItems:
+                        "center",
+
+                      justifyContent:
+                        "center",
+
+                      color:
+                        error
+                          ? COLORS.error
+                          : COLORS.primary,
+
+                      mb: 1.6,
                     }}
                   >
+                    {doc.icon}
+                  </Box>
+
+                  {/* TITLE */}
+
+                  <Typography
+                    sx={{
+                      pr: 7,
+
+                      fontSize:
+                        "13px",
+
+                      lineHeight:
+                        1.35,
+
+                      fontWeight:
+                        700,
+
+                      color:
+                        COLORS.textPrimary,
+                    }}
+                  >
+                    {doc.title}
+                  </Typography>
+
+                  {/* DESCRIPTION */}
+
+                  <Typography
+                    sx={{
+                      mt: 0.6,
+
+                      fontSize:
+                        "10.5px",
+
+                      lineHeight:
+                        1.45,
+
+                      color:
+                        COLORS.textSecondary,
+
+                      minHeight:
+                        "31px",
+                    }}
+                  >
+                    {doc.description}
+                  </Typography>
+
+                  {/* =====================================
+                      ERROR
+                  ===================================== */}
+
+                  {error && (
+                    <Stack
+                      direction="row"
+                      spacing={0.7}
+                      alignItems="flex-start"
+                      sx={{
+                        mt: 1.2,
+
+                        px: 1,
+                        py: 0.8,
+
+                        borderRadius:
+                          "7px",
+
+                        bgcolor:
+                          "#FDECEA",
+                      }}
+                    >
+                      <ErrorOutlineRoundedIcon
+                        sx={{
+                          mt: "1px",
+
+                          fontSize:
+                            15,
+
+                          flexShrink:
+                            0,
+
+                          color:
+                            COLORS.error,
+                        }}
+                      />
+
+                      <Typography
+                        sx={{
+                          fontSize:
+                            "10px",
+
+                          lineHeight:
+                            1.35,
+
+                          fontWeight:
+                            600,
+
+                          color:
+                            COLORS.error,
+                        }}
+                      >
+                        {error}
+                      </Typography>
+                    </Stack>
+                  )}
+
+                  <Box
+                    sx={{
+                      flexGrow: 1,
+                    }}
+                  />
+
+                  {/* =====================================
+                      UPLOADED
+                  ===================================== */}
+
+                  {isUploaded ? (
                     <Box
-                      display="flex"
-                      alignItems="center"
-                      gap={1}
+                      sx={{
+                        mt: 1.5,
+
+                        px: 1.2,
+                        py: 1,
+
+                        display:
+                          "flex",
+
+                        alignItems:
+                          "center",
+
+                        gap: 0.8,
+
+                        border:
+                          `1px solid ${COLORS.primary}`,
+
+                        borderRadius:
+                          "8px",
+
+                        bgcolor:
+                          COLORS.primaryLight,
+                      }}
                     >
                       <CheckCircleRoundedIcon
                         sx={{
+                          fontSize:
+                            17,
+
                           color:
                             COLORS.primary,
+
+                          flexShrink:
+                            0,
                         }}
                       />
 
@@ -484,247 +1076,345 @@ if (!currentRegistrationId) {
                         }}
                       >
                         <Typography
-                          fontSize={13}
-                          fontWeight={700}
-                          color={
-                            COLORS.primary
-                          }
+                          sx={{
+                            fontSize:
+                              "10.5px",
+
+                            fontWeight:
+                              700,
+
+                            color:
+                              COLORS.primary,
+                          }}
                         >
-                          Uploaded Successfully
+                          Uploaded successfully
                         </Typography>
 
+                        <Typography
+                          noWrap
+                          title={
+                            fileName
+                          }
+                          sx={{
+                            maxWidth:
+                              "150px",
+
+                            mt: 0.1,
+
+                            fontSize:
+                              "9.5px",
+
+                            color:
+                              COLORS.textSecondary,
+                          }}
+                        >
+                          {fileName}
+                        </Typography>
                       </Box>
                     </Box>
-                  </Paper>
-                ) : doc.cameraOnly ? (
-                  /* =================================
-                     SELFIE BUTTON
-                  ================================== */
-                  <Button
-                    fullWidth
-                    startIcon={
-                      <PhotoCameraOutlinedIcon />
-                    }
-                    variant="outlined"
-                    disabled={
-                      isUploading
-                    }
-                    onClick={() =>
-                      setOpenCamera(
-                        true
-                      )
-                    }
-                    sx={{
-                      mt: 3,
+                  ) : doc.cameraOnly ? (
+                    /* ===================================
+                       SELFIE
+                    =================================== */
 
-                      py: 1.2,
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      startIcon={
+                        isUploading ? (
+                          <CircularProgress
+                            size={
+                              15
+                            }
+                          />
+                        ) : (
+                          <PhotoCameraOutlinedIcon
+                            sx={{
+                              fontSize:
+                                "17px !important",
+                            }}
+                          />
+                        )
+                      }
+                      disabled={
+                        isUploading
+                      }
+                      onClick={() => {
+                        clearDocumentError(
+                          doc.id
+                        );
 
-                      borderStyle:
-                        "dashed",
-
-                      borderColor:
-                        COLORS.primary,
-
-                      color:
-                        COLORS.primary,
-
-                      textTransform:
-                        "none",
-                    }}
-                  >
-                    {isUploading
-                      ? "Uploading..."
-                      : "Take Selfie"}
-                  </Button>
-                ) : (
-                  /* =================================
-                     UPLOAD BUTTON
-                  ================================== */
-                  <Button
-                    component="label"
-                    fullWidth
-                    disabled={
-                      isUploading
-                    }
-                    startIcon={
-                      <CloudUploadOutlinedIcon />
-                    }
-                    variant="outlined"
-                    sx={{
-                      mt: 3,
-
-                      py: 1.2,
-
-                      borderStyle:
-                        "dashed",
-
-                      borderColor:
-                        COLORS.primary,
-
-                      color:
-                        COLORS.primary,
-
-                      textTransform:
-                        "none",
-                    }}
-                  >
-                    {isUploading
-                      ? "Uploading..."
-                      : "Upload File"}
-
-                    <input
-                      hidden
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(
-                        event
-                      ) => {
-                        const file =
-                          event.target
-                            .files?.[0];
-
-                        if (file) {
-                          handleUpload(
-                            doc.id,
-                            file
-                          );
-                        }
-
-                        /*
-                         * Same file dobara
-                         * select kar sakte ho.
-                         */
-                        event.target.value =
-                          "";
+                        setOpenCamera(
+                          true
+                        );
                       }}
-                    />
-                  </Button>
-                )}
-              </Paper>
-            </Grid>
-          );
-        })}
-      </Grid>
+                      sx={{
+                        mt: 1.5,
 
-      {/* =====================================
-          SECURITY NOTICE
-      ====================================== */}
-      <Stack
-        direction="row"
-        spacing={1.5}
-        alignItems="flex-start"
-        sx={{
-          p: 2,
+                        height: 39,
 
-          borderRadius: 2,
+                        borderRadius:
+                          "8px",
 
-          bgcolor:
-            COLORS.primaryLight,
+                        borderStyle:
+                          "dashed",
 
-          mt: 3,
-        }}
-      >
-        <Box
+                        borderColor:
+                          error
+                            ? COLORS.error
+                            : COLORS.primary,
+
+                        color:
+                          error
+                            ? COLORS.error
+                            : COLORS.primary,
+
+                        textTransform:
+                          "none",
+
+                        fontSize:
+                          "11px",
+
+                        fontWeight:
+                          700,
+
+                        "&:hover": {
+                          borderStyle:
+                            "dashed",
+
+                          bgcolor:
+                            COLORS.primaryLight,
+                        },
+                      }}
+                    >
+                      {isUploading
+                        ? "Uploading..."
+                        : "Take Selfie"}
+                    </Button>
+                  ) : (
+                    /* ===================================
+                       FILE UPLOAD
+                    =================================== */
+
+                    <Button
+                      component="label"
+                      fullWidth
+                      variant="outlined"
+                      disabled={
+                        isUploading
+                      }
+                      startIcon={
+                        isUploading ? (
+                          <CircularProgress
+                            size={
+                              15
+                            }
+                          />
+                        ) : (
+                          <CloudUploadOutlinedIcon
+                            sx={{
+                              fontSize:
+                                "17px !important",
+                            }}
+                          />
+                        )
+                      }
+                      sx={{
+                        mt: 1.5,
+
+                        height: 39,
+
+                        borderRadius:
+                          "8px",
+
+                        borderStyle:
+                          "dashed",
+
+                        borderColor:
+                          error
+                            ? COLORS.error
+                            : COLORS.primary,
+
+                        color:
+                          error
+                            ? COLORS.error
+                            : COLORS.primary,
+
+                        textTransform:
+                          "none",
+
+                        fontSize:
+                          "11px",
+
+                        fontWeight:
+                          700,
+
+                        "&:hover": {
+                          borderStyle:
+                            "dashed",
+
+                          bgcolor:
+                            COLORS.primaryLight,
+                        },
+                      }}
+                    >
+                      {isUploading
+                        ? "Uploading..."
+                        : "Choose File"}
+
+                      <input
+                        hidden
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                        onChange={(
+                          event
+                        ) =>
+                          handleFileSelect(
+                            doc,
+                            event
+                          )
+                        }
+                      />
+                    </Button>
+                  )}
+                </Paper>
+              </Grid>
+            );
+          })}
+        </Grid>
+
+        
+
+        {/* ===============================================
+            ACTION BUTTONS
+        =============================================== */}
+
+        <Stack
+          direction="row"
+          spacing={2}
+          justifyContent="space-between"
           sx={{
-            width: 26,
+            mt: 2,
 
-            height: 26,
+            pt: 2,
 
-            flexShrink: 0,
-
-            borderRadius:
-              "50%",
-
-            bgcolor:
-              COLORS.primary,
-
-            color: "#fff",
-
-            display:
-              "flex",
-
-            alignItems:
-              "center",
-
-            justifyContent:
-              "center",
+            borderTop:
+              `1px solid ${COLORS.border}`,
           }}
         >
-          <GppGoodIcon
+          <Button
+            variant="outlined"
+            onClick={onBack}
+            startIcon={
+              <ArrowBackRoundedIcon />
+            }
+            disabled={Object.values(
+              uploading
+            ).some(Boolean)}
             sx={{
-              fontSize: 15,
-            }}
-          />
-        </Box>
+              height: 41,
 
-        <Box>
-          <Typography
-            variant="body2"
-            sx={{
-              fontWeight: 600,
+              px: 2.5,
+
+              borderRadius:
+                "9px",
+
+              borderColor:
+                COLORS.border,
 
               color:
                 COLORS.textPrimary,
+
+              textTransform:
+                "none",
+
+              fontSize:
+                "12px",
+
+              fontWeight:
+                600,
+
+              "&:hover": {
+                borderColor:
+                  COLORS.primary,
+
+                bgcolor:
+                  COLORS.primaryLight,
+              },
             }}
           >
-            Supported formats:
-            PDF, JPG, PNG •
-            Maximum file size:
-            5MB per file
-          </Typography>
+            Back
+          </Button>
 
-          <Typography
-            variant="body2"
+          <Button
+            variant="contained"
+            onClick={handleNext}
+            endIcon={
+              <ArrowForwardRoundedIcon />
+            }
+
+            /*
+              Don't disable because docs
+              are missing.
+
+              Let user click Next so exact
+              validation errors can appear.
+            */
+            disabled={Object.values(
+              uploading
+            ).some(Boolean)}
             sx={{
-              color:
-                COLORS.textSecondary,
+              minWidth:
+                "125px",
+
+              height: 41,
+
+              px: 2.5,
+
+              borderRadius:
+                "9px",
+
+              bgcolor:
+                COLORS.primary,
+
+              textTransform:
+                "none",
+
+              fontSize:
+                "12px",
+
+              fontWeight:
+                700,
+
+              boxShadow:
+                "none",
+
+              "&:hover": {
+                bgcolor:
+                  COLORS.primaryHover,
+
+                boxShadow:
+                  "0 4px 12px rgba(27,110,79,0.16)",
+              },
+
+              "&.Mui-disabled": {
+                bgcolor:
+                  "#A8BDB3",
+
+                color:
+                  COLORS.white,
+              },
             }}
           >
-            Please ensure all
-            documents are clear,
-            valid and up-to-date.
-          </Typography>
-        </Box>
-      </Stack>
+            Next
+          </Button>
+        </Stack>
+      </Paper>
 
-      {/* =====================================
-          ACTION BUTTONS
-      ====================================== */}
-      <Stack
-        direction="row"
-        spacing={2}
-        justifyContent="space-between"
-        sx={{ mt: 3 }}
-      >
-        <Button
-          variant="outlined"
-          onClick={onBack}
-          sx={{
-            textTransform:
-              "none",
-          }}
-        >
-          Back
-        </Button>
-
-        <Button
-          variant="contained"
-          disabled={
-            !allDocumentsUploaded
-          }
-          onClick={onNext}
-          sx={{
-            textTransform:
-              "none",
-          }}
-        >
-          Next
-        </Button>
-      </Stack>
-
-      {/* =====================================
+      {/* =================================================
           CAMERA MODAL
-      ====================================== */}
+      ================================================= */}
+
       {openCamera && (
         <Box
           sx={{
@@ -732,10 +1422,13 @@ if (!currentRegistrationId) {
 
             inset: 0,
 
-            bgcolor:
-              "rgba(0,0,0,0.8)",
-
             zIndex: 9999,
+
+            bgcolor:
+              "rgba(10,15,12,0.82)",
+
+            backdropFilter:
+              "blur(4px)",
 
             display: "flex",
 
@@ -749,38 +1442,134 @@ if (!currentRegistrationId) {
           }}
         >
           <Paper
+            elevation={0}
             sx={{
-              p: 2,
-
-              borderRadius: 3,
-
-              maxWidth: 500,
+              position:
+                "relative",
 
               width: "100%",
+
+              maxWidth:
+                "460px",
+
+              p: 2,
+
+              borderRadius:
+                "16px",
+
+              bgcolor:
+                COLORS.white,
             }}
           >
+            {/* CLOSE */}
+
+            <Button
+              onClick={() =>
+                setOpenCamera(false)
+              }
+              sx={{
+                position:
+                  "absolute",
+
+                right: 8,
+                top: 8,
+
+                zIndex: 2,
+
+                minWidth: 34,
+                width: 34,
+                height: 34,
+
+                borderRadius:
+                  "50%",
+
+                color:
+                  COLORS.textPrimary,
+
+                bgcolor:
+                  "rgba(255,255,255,.9)",
+              }}
+            >
+              <CloseRoundedIcon
+                sx={{
+                  fontSize: 18,
+                }}
+              />
+            </Button>
+
+            {/* TITLE */}
+
+            <Typography
+              sx={{
+                mb: 0.4,
+
+                fontSize:
+                  "15px",
+
+                fontWeight:
+                  700,
+
+                color:
+                  COLORS.textPrimary,
+              }}
+            >
+              Take a live selfie
+            </Typography>
+
+            <Typography
+              sx={{
+                mb: 1.5,
+
+                fontSize:
+                  "11px",
+
+                color:
+                  COLORS.textSecondary,
+              }}
+            >
+              Keep your face clearly visible and look directly at the camera.
+            </Typography>
+
             {/* CAMERA */}
-            <Webcam
-              ref={webcamRef}
-              audio={false}
-              screenshotFormat="image/jpeg"
-              videoConstraints={{
-                facingMode:
-                  "user",
-              }}
-              style={{
-                width: "100%",
 
-                borderRadius: 12,
-              }}
-            />
+            <Box
+              sx={{
+                overflow:
+                  "hidden",
 
-            {/* CAMERA BUTTONS */}
+                borderRadius:
+                  "12px",
+
+                bgcolor:
+                  "#111",
+              }}
+            >
+              <Webcam
+                ref={webcamRef}
+                audio={false}
+                screenshotFormat="image/jpeg"
+                screenshotQuality={0.9}
+                videoConstraints={{
+                  facingMode:
+                    "user",
+                }}
+                style={{
+                  display:
+                    "block",
+
+                  width:
+                    "100%",
+                }}
+              />
+            </Box>
+
+            {/* CAMERA ACTIONS */}
+
             <Stack
               direction="row"
-              spacing={2}
+              spacing={1.2}
               sx={{
-                mt: 2,
+                mt: 1.5,
               }}
             >
               <Button
@@ -791,6 +1580,30 @@ if (!currentRegistrationId) {
                     false
                   )
                 }
+                disabled={
+                  uploading.selfie
+                }
+                sx={{
+                  height: 42,
+
+                  borderRadius:
+                    "9px",
+
+                  borderColor:
+                    COLORS.border,
+
+                  color:
+                    COLORS.textPrimary,
+
+                  textTransform:
+                    "none",
+
+                  fontSize:
+                    "12px",
+
+                  fontWeight:
+                    600,
+                }}
               >
                 Cancel
               </Button>
@@ -798,86 +1611,102 @@ if (!currentRegistrationId) {
               <Button
                 fullWidth
                 variant="contained"
-                onClick={async () => {
-                  const imageSrc =
-                    webcamRef.current?.getScreenshot();
-if (!imageSrc) {
-  showSnackbar(
-    "Unable to capture the photo. Please try again.",
-    "error"
-  );
-  return;
-}
-                  try {
-                    const blob =
-                      await fetch(
-                        imageSrc
-                      ).then(
-                        (res) =>
-                          res.blob()
-                      );
+                onClick={
+                  handleCaptureSelfie
+                }
+                disabled={
+                  uploading.selfie
+                }
+                startIcon={
+                  uploading.selfie ? (
+                    <CircularProgress
+                      size={15}
+                      color="inherit"
+                    />
+                  ) : (
+                    <PhotoCameraOutlinedIcon />
+                  )
+                }
+                sx={{
+                  height: 42,
 
-                    const file =
-                      new File(
-                        [blob],
-                        "selfie.jpg",
-                        {
-                          type: "image/jpeg",
-                        }
-                      );
+                  borderRadius:
+                    "9px",
 
-                    await handleUpload(
-                      "selfie",
-                      file
-                    );
+                  bgcolor:
+                    COLORS.primary,
 
-                    setOpenCamera(
-                      false
-                    );
-                } catch (error) {
-  console.error(
-    "SELFIE ERROR:",
-    error
-  );
+                  boxShadow:
+                    "none",
 
-  alert(
-    "Selfie upload failed."
-  );
-}
+                  textTransform:
+                    "none",
+
+                  fontSize:
+                    "12px",
+
+                  fontWeight:
+                    700,
+
+                  "&:hover": {
+                    bgcolor:
+                      COLORS.primaryHover,
+                  },
                 }}
               >
-                Capture & Upload
+                {uploading.selfie
+                  ? "Uploading..."
+                  : "Capture & Upload"}
               </Button>
             </Stack>
           </Paper>
         </Box>
       )}
+
+      {/* =================================================
+          SNACKBAR
+      ================================================= */}
+
       <Snackbar
-  open={snackbar.open}
-  autoHideDuration={4000}
-  onClose={handleCloseSnackbar}
-  anchorOrigin={{
-    vertical: "top",
-    horizontal: "center",
-  }}
->
-  <Alert
-    onClose={handleCloseSnackbar}
-    severity={snackbar.severity}
-    variant="filled"
-    sx={{
-      width: "100%",
-      minWidth: {
-        xs: "280px",
-        sm: "380px",
-      },
-      borderRadius: 2,
-      fontWeight: 600,
-    }}
-  >
-    {snackbar.message}
-  </Alert>
-</Snackbar>
-    </Paper>
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={
+          handleCloseSnackbar
+        }
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+      >
+        <Alert
+          onClose={
+            handleCloseSnackbar
+          }
+          severity={
+            snackbar.severity
+          }
+          variant="filled"
+          sx={{
+            width: "100%",
+
+            minWidth: {
+              xs: "280px",
+              sm: "380px",
+            },
+
+            borderRadius:
+              "9px",
+
+            fontSize:
+              "12px",
+
+            fontWeight:
+              600,
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 }
