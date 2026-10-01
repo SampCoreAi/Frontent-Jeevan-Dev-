@@ -14,6 +14,7 @@ import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { resolvePrescriptionImageUrl } from "./imageUtils";
 
 export default function PrescriptionFooter({
   remark,
@@ -32,6 +33,9 @@ export default function PrescriptionFooter({
 
   const hospital = doctor?.hospital_detail?.[0];
   const availability = doctor?.availability?.[0];
+  const signatureUrl = resolvePrescriptionImageUrl(
+    doctor?.doctor_signature
+  );
 
   const quickRemarks = [
     "Take adequate rest",
@@ -448,67 +452,59 @@ export default function PrescriptionFooter({
           )}
         </Box>
 
-        <Box
-          sx={{
-            width: {
-              xs: "100%",
-              sm: 250,
-            },
-            textAlign: {
-              xs: "center",
-              sm: "right",
-            },
-          }}
-        >
-          
-          <Box
-            sx={{
-              width: 210,
-              ml: "auto",
-              mr: {
-                xs: "auto",
-                sm: 0,
-              },
-              borderTop: `1px solid ${theme.palette.text.secondary}`,
-              pt: 0.75,
-            }}
-          >
-            <Typography
-              sx={{
-                fontSize: "13px",
-                fontWeight: 700,
-                color: theme.palette.text.primary,
-              }}
-            >
-              {doctor?.name || "Doctor"}
-            </Typography>
+      <Box
+  sx={{
+    width: 210,
+    ml: "auto",
+    textAlign: "center",
+  }}
+>
+  {signatureUrl && (
+    <Box
+      component="img"
+      src={signatureUrl}
+      alt="Doctor Signature"
+      onError={(e) => {
+        e.currentTarget.style.display = "none";
+      }}
+      sx={{
+        width: 150,
+        height: 60,
+        objectFit: "contain",
+        display: "block",
+        mx: "auto",
+        mb: 0.5,
+      }}
+    />
+  )}
 
-            {doctor?.qualification && (
-              <Typography
-                sx={{
-                  mt: 0.15,
-                  fontSize: "11px",
-                  color: theme.palette.text.secondary,
-                }}
-              >
-                {doctor.qualification}
-              </Typography>
-            )}
+  <Box
+    sx={{
+      borderTop: "1px solid #64748B",
+      pt: 0.75,
+    }}
+  >
+    <Typography
+      sx={{
+        fontSize: "13px",
+        fontWeight: 700,
+      }}
+    >
+      {doctor?.name || "Doctor"}
+    </Typography>
 
-            {doctor?.specialization && (
-              <Typography
-                sx={{
-                  mt: 0.15,
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  color: theme.palette.primary.main,
-                }}
-              >
-                {doctor.specialization}
-              </Typography>
-            )}
-          </Box>
-        </Box>
+    {doctor?.specialization && (
+      <Typography
+        sx={{
+          fontSize: "11px",
+          color: "#07876A",
+        }}
+      >
+        {doctor.specialization}
+      </Typography>
+    )}
+  </Box>
+</Box>
       </Box>
 
       <Box

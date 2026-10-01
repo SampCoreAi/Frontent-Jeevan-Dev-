@@ -21,12 +21,10 @@ import WorkHistoryOutlinedIcon from "@mui/icons-material/WorkHistoryOutlined";
 import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
 import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
-import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 
-import WorkingHoursModal from "./WorkingHoursModal";
 
 // ============================================================
 // COMMON STYLE
@@ -212,16 +210,10 @@ const ProfileDetails = ({
   profileData,
   isEditing,
   onFieldChange,
-  onWorkingHoursChange,
 }) => {
   const [
     documentsModalOpen,
     setDocumentsModalOpen,
-  ] = useState(false);
-
-  const [
-    workingHoursModalOpen,
-    setWorkingHoursModalOpen,
   ] = useState(false);
 
   const languageValue = Array.isArray(profileData?.language)
@@ -231,31 +223,6 @@ const ProfileDetails = ({
   // ============================================================
   // TIME
   // ============================================================
-
-  const formatDisplayTime = (time) => {
-    if (!time) return "";
-
-    const [hour, minute] = time.split(":").map(Number);
-
-    const ampm = hour >= 12 ? "PM" : "AM";
-
-    const displayHour = hour % 12 || 12;
-
-    return `${displayHour}:${String(minute).padStart(
-      2,
-      "0"
-    )} ${ampm}`;
-  };
-
-  const days = [
-    ["monday", "Mon"],
-    ["tuesday", "Tue"],
-    ["wednesday", "Wed"],
-    ["thursday", "Thu"],
-    ["friday", "Fri"],
-    ["saturday", "Sat"],
-    ["sunday", "Sun"],
-  ];
 
   // ============================================================
   // DOCUMENTS
@@ -524,185 +491,6 @@ const ProfileDetails = ({
           }}
         >
           {/* ==================================================
-              WORKING HOURS
-          ================================================== */}
-
-          <Box
-            sx={{
-              p: {
-                xs: "10px",
-                sm: "12px",
-              },
-
-              border: "1px solid",
-              borderColor: "divider",
-
-              borderRadius: "10px",
-
-              bgcolor: "background.paper",
-
-              width: "100%",
-              boxSizing: "border-box",
-              minWidth: 0,
-            }}
-          >
-            {/* HEADER */}
-
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "8px",
-                mb: "10px",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  minWidth: 0,
-                }}
-              >
-                <Box sx={iconSx}>
-                  <AccessTimeOutlinedIcon />
-                </Box>
-
-                <Typography
-                  sx={{
-                    fontSize: {
-                      xs: "14px",
-                      sm: "15px",
-                    },
-                    fontWeight: 700,
-                    color: "text.primary",
-                  }}
-                >
-                  Working Hours
-                </Typography>
-              </Box>
-
-              {isEditing && (
-                <Typography
-                  component="button"
-                  onClick={() =>
-                    setWorkingHoursModalOpen(true)
-                  }
-                  sx={{
-                    border: 0,
-                    background: "none",
-                    cursor: "pointer",
-                    fontSize: "12.5px",
-                    fontWeight: 600,
-                    color: "primary.main",
-                    flexShrink: 0,
-                    p: 0,
-                  }}
-                >
-                  Change
-                </Typography>
-              )}
-            </Box>
-
-            {/* DAYS */}
-
-            <Box
-              sx={{
-                display: "grid",
-
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "repeat(2, minmax(0, 1fr))",
-                },
-
-                gap: "6px",
-                width: "100%",
-              }}
-            >
-              {days.map(([key, label]) => {
-                const day =
-                  profileData?.workingHours?.[key] || {};
-
-                const closed = !day.start || !day.end;
-
-                return (
-                  <Box
-                    key={key}
-                    sx={{
-                      minHeight: "42px",
-
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-
-                      gap: "8px",
-
-                      px: {
-                        xs: "8px",
-                        sm: "10px",
-                      },
-
-                      py: "6px",
-
-                      border: "1px solid",
-                      borderColor: "divider",
-
-                      borderRadius: "7px",
-
-                      bgcolor: "background.default",
-
-                      minWidth: 0,
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontSize: {
-                          xs: "12px",
-                          sm: "12.5px",
-                        },
-
-                        fontWeight: 650,
-
-                        color: "text.primary",
-
-                        flexShrink: 0,
-                      }}
-                    >
-                      {label}
-                    </Typography>
-
-                    <Typography
-                      sx={{
-                        fontSize: {
-                          xs: "11.5px",
-                          sm: "12.5px",
-                        },
-
-                        color: closed
-                          ? "text.disabled"
-                          : "text.secondary",
-
-                        textAlign: "right",
-
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      {closed
-                        ? "Closed"
-                        : `${formatDisplayTime(
-                            day.start
-                          )} - ${formatDisplayTime(
-                            day.end
-                          )}`}
-                    </Typography>
-                  </Box>
-                );
-              })}
-            </Box>
-          </Box>
-
-          {/* ==================================================
               DOCUMENTS
           ================================================== */}
 
@@ -832,21 +620,6 @@ const ProfileDetails = ({
           </Box>
         </Box>
       </Box>
-
-      {/* ======================================================
-          WORKING HOURS MODAL
-      ====================================================== */}
-
-      <WorkingHoursModal
-        open={workingHoursModalOpen}
-        onClose={() =>
-          setWorkingHoursModalOpen(false)
-        }
-        workingHours={profileData?.workingHours}
-        onWorkingHoursChange={
-          onWorkingHoursChange
-        }
-      />
 
       {/* ======================================================
           DOCUMENT DIALOG

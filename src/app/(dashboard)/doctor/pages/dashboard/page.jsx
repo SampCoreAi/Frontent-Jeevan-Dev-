@@ -66,12 +66,15 @@ export default function Page() {
 
       const user = JSON.parse(userData);
 
-      // Doctor role_id = 2
-      // Only doctor can access doctor dashboard
-      if (user.role_id !== 2) {
-        router.replace("/Home/pages/Login");
-        return;
-      }
+     // Doctor = 2
+// Assistant = 3
+
+const allowedRoles = [2, 3];
+
+if (!allowedRoles.includes(Number(user.role_id))) {
+  router.replace("/Home/pages/Login");
+  return;
+}
     } catch (error) {
       console.error("Invalid user data:", error);
 

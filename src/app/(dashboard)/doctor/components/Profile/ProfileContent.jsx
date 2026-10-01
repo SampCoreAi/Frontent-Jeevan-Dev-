@@ -1,16 +1,20 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Box, CircularProgress } from "@mui/material";
+
 import ProfileSnackbar from "./ProfileSnackbar";
 import ProfileSidebar from "./ProfileSidebar";
 import ProfileBio from "./ProfileBio";
 import ProfileDetails from "./ProfileDetails";
 import ProfileAddress from "./ProfileAddress";
 import ProfileActions from "./ProfileActions";
+import DoctorBranding from "./DoctorBranding";
+import WorkingHoursModal from "./WorkingHoursModal";
 
 const ProfileContent = ({
   loading,
+  saving,
   profileData,
   isEditing,
   editingChip,
@@ -22,7 +26,12 @@ const ProfileContent = ({
   onOnlineVisibilityChange,
   onLicenseUpload,
   onImageUpload,
-  onWorkingHoursChange,
+  onLogoUpload,
+  onSignatureUpload,
+  logoUploading,
+  signatureUploading,
+  profileImageUploading,
+  onClinicWorkingHoursChange,
   onUpdateClick,
   onSaveClick,
   onCloseSnackbar,
@@ -30,6 +39,33 @@ const ProfileContent = ({
   onAddHospital,
   onRemoveHospital,
 }) => {
+  // ==========================================
+  // SELECTED HOSPITAL FOR WORKING HOURS
+  // ==========================================
+
+  const [workingHoursOpen, setWorkingHoursOpen] =
+    useState(false);
+
+  const [selectedHospital, setSelectedHospital] =
+    useState(null);
+
+  const handleOpenWorkingHours = (hospital) => {
+    console.log(
+      "Selected hospital:",
+      hospital
+    );
+
+    console.log(
+      "Selected clinicId:",
+      hospital?.clinicId
+    );
+
+    setSelectedHospital(hospital);
+    setWorkingHoursOpen(true);
+  };
+
+  // ==========================================
+
   if (loading) {
     return (
       <Box
@@ -38,7 +74,9 @@ const ProfileContent = ({
         alignItems="center"
         minHeight="400px"
       >
-        <CircularProgress sx={{ color: "#14b8a6" }} />
+        <CircularProgress
+          sx={{ color: "#14b8a6" }}
+        />
       </Box>
     );
   }
@@ -49,11 +87,9 @@ const ProfileContent = ({
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        
         marginTop: 8,
       }}
     >
-      {/* Snackbar for notifications */}
       <ProfileSnackbar
         open={snackbar.open}
         message={snackbar.message}
@@ -68,11 +104,13 @@ const ProfileContent = ({
           boxShadow: "0 4px 12px #0f7468",
           overflow: "hidden",
           display: "flex",
-          flexDirection: { xs: "column", lg: "row" },
+          flexDirection: {
+            xs: "column",
+            lg: "row",
+          },
           height: "100%",
         }}
       >
-        {/* Profile Sidebar */}
         <ProfileSidebar
           profileData={profileData}
           isEditing={isEditing}
@@ -81,15 +119,23 @@ const ProfileContent = ({
           onChipClick={onChipClick}
           onChipSave={onChipSave}
           onRatingChange={onRatingChange}
-          onOnlineVisibilityChange={onOnlineVisibilityChange}
+          onOnlineVisibilityChange={
+            onOnlineVisibilityChange
+          }
           onAvatarChange={onImageUpload}
+          avatarUploading={
+            profileImageUploading
+          }
         />
 
-        {/* Main Profile Area */}
         <Box
           sx={{
             flex: 1,
-            padding: { xs: 2, sm: 3, md: 4 },
+            padding: {
+              xs: 2,
+              sm: 3,
+              md: 4,
+            },
           }}
         >
           <ProfileBio
@@ -103,24 +149,74 @@ const ProfileContent = ({
             isEditing={isEditing}
             onFieldChange={onFieldChange}
             onLicenseUpload={onLicenseUpload}
-            onWorkingHoursChange={onWorkingHoursChange}
           />
 
           <ProfileAddress
             profileData={profileData}
             isEditing={isEditing}
-            onHospitalChange={onHospitalChange}
-            onAddHospital={onAddHospital}
-            onRemoveHospital={onRemoveHospital}
+            onHospitalChange={
+              onHospitalChange
+            }
+            onAddHospital={
+              onAddHospital
+            }
+            onRemoveHospital={
+              onRemoveHospital
+            }
+            onWorkingHours={
+              handleOpenWorkingHours
+            }
+          />
+
+          <DoctorBranding
+            logoUrl={
+              profileData?.logoPreviewUrl ||
+              profileData?.logoUrl
+            }
+            signatureUrl={
+              profileData?.signaturePreviewUrl ||
+              profileData?.signatureUrl
+            }
+            isEditing={isEditing}
+            logoUploading={logoUploading}
+            signatureUploading={
+              signatureUploading
+            }
+            onLogoUpload={onLogoUpload}
+            onSignatureUpload={
+              onSignatureUpload
+            }
           />
 
           <ProfileActions
             isEditing={isEditing}
+            saving={saving}
             onUpdateClick={onUpdateClick}
             onSaveClick={onSaveClick}
           />
         </Box>
       </Box>
+     <WorkingHoursModal
+  open={workingHoursOpen}
+  onClose={() => {
+    setWorkingHoursOpen(false);
+    setSelectedHospital(null);
+  }}
+  workingHours={selectedHospital?.workingHours || {}}
+  onWorkingHoursChange={(day, field, value) => {
+    if (!selectedHospital?.clinicId) {
+      console.error("Clinic ID missing");
+      return;
+    }
+
+    onClinicWorkingHoursChange?.(
+      selectedHospital.clinicId,
+      day,
+      field,
+      value
+    );
+  }}
+/>
     </Box>
   );
 };

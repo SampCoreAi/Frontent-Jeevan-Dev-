@@ -2,6 +2,7 @@
 
 import React from "react";
 import dayjs from "dayjs";
+import { resolvePrescriptionImageUrl } from "./imageUtils";
 
 const C = {
   ink: "#172033",
@@ -42,6 +43,12 @@ export default function PrescriptionPdfView({
       ? doctor.name
       : `Dr. ${doctor.name}`
     : "Doctor";
+  const logoUrl = resolvePrescriptionImageUrl(
+    doctor?.logo || doctor?.logoUrl || doctor?.logo_url || doctor?.logo_key
+  );
+  const signatureUrl = resolvePrescriptionImageUrl(
+    doctor?.doctor_signature
+  );
 
   const hospitalName =
     hospital?.hospitalName ||
@@ -92,41 +99,62 @@ export default function PrescriptionPdfView({
           style={{
             flex: 1,
             minWidth: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: compact ? "8px" : "12px",
           }}
         >
-          <div
-            style={{
-              fontSize: compact ? "12.5px" : "16px",
-              fontWeight: 700,
-              lineHeight: 1.4,
-              wordBreak: "break-word",
-            }}
-          >
-            {doctorName}
-          </div>
+          {logoUrl && (
+            <img
+              src={logoUrl}
+              alt="Doctor logo"
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+              }}
+              style={{
+                display: "block",
+                width: compact ? "42px" : "56px",
+                height: compact ? "42px" : "56px",
+                flexShrink: 0,
+                objectFit: "contain",
+              }}
+            />
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: compact ? "12.5px" : "16px",
+                fontWeight: 700,
+                lineHeight: 1.4,
+                wordBreak: "break-word",
+              }}
+            >
+              {doctorName}
+            </div>
 
-          {doctor?.qualification && (
+            {doctor?.qualification && (
+              <div
+                style={{
+                  fontSize: compact ? "10.5px" : "13px",
+                  color: C.muted,
+                  lineHeight: 1.45,
+                }}
+              >
+                {doctor.qualification}
+              </div>
+            )}
+
             <div
               style={{
                 fontSize: compact ? "10.5px" : "13px",
                 color: C.muted,
                 lineHeight: 1.45,
+                wordBreak: "break-word",
               }}
             >
-              {doctor.qualification}
+              Registration Number:{" "}
+              {doctor?.registration_number || "—"}
             </div>
-          )}
-
-          <div
-            style={{
-              fontSize: compact ? "10.5px" : "13px",
-              color: C.muted,
-              lineHeight: 1.45,
-              wordBreak: "break-word",
-            }}
-          >
-            Registration Number:{" "}
-            {doctor?.registration_number || "—"}
           </div>
         </div>
 
@@ -544,11 +572,22 @@ export default function PrescriptionPdfView({
             minWidth: 0,
           }}
         >
-          <div
-            style={{
-              height: compact ? "24px" : "36px",
-            }}
-          />
+          {signatureUrl && (
+            <img
+              src={signatureUrl}
+              alt="Doctor signature"
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+              }}
+              style={{
+                display: "block",
+                width: "100%",
+                height: compact ? "30px" : "42px",
+                marginBottom: compact ? "3px" : "5px",
+                objectFit: "contain",
+              }}
+            />
+          )}
 
           <div
             style={{

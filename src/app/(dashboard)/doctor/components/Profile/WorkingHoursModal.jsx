@@ -528,27 +528,16 @@ const WorkingHoursModal = ({
           end: "",
         };
 
-      if (
-        oldDay.start !==
+      onWorkingHoursChange(
+        key,
+        "start",
         newDay.start
-      ) {
-        onWorkingHoursChange(
-          key,
-          "start",
-          newDay.start
-        );
-      }
-
-      if (
-        oldDay.end !==
+      );
+      onWorkingHoursChange(
+        key,
+        "end",
         newDay.end
-      ) {
-        onWorkingHoursChange(
-          key,
-          "end",
-          newDay.end
-        );
-      }
+      );
     });
 
     setError("");

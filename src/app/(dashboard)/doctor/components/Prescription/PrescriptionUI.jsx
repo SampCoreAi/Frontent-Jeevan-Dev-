@@ -30,6 +30,7 @@ import LabTestRequestForm from "./LabTestRequestForm";
 import MedicalStoreRequestForm from "./MedicalStoreRequestForm";
 
 import PrescriptionPdfView from "./PrescriptionPdfView";
+import { waitForPrescriptionImages } from "./imageUtils";
 
 import {
   PRIMARY_COLOR,
@@ -601,6 +602,8 @@ export default function PrescriptionUI(props) {
 
     documentTitle: `Prescription-${patient?.name || "patient"}`,
     pageStyle: PRINT_PAGE_STYLE,
+    onBeforePrint: () =>
+      waitForPrescriptionImages(printRef.current),
   });
 
   return (

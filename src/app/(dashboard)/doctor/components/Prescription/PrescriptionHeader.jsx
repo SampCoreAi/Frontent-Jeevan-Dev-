@@ -4,6 +4,7 @@ import {
   Typography,
   Divider,
 } from "@mui/material";
+import { resolvePrescriptionImageUrl } from "./imageUtils";
 
 export default function PrescriptionHeader({ doctor = {} }) {
   // ============================================
@@ -17,6 +18,9 @@ export default function PrescriptionHeader({ doctor = {} }) {
   // ============================================
 
   const doctorName = doctor?.name || "";
+  const logoUrl = resolvePrescriptionImageUrl(
+    doctor?.logo || doctor?.logoUrl || doctor?.logo_url || doctor?.logo_key
+  );
 
   const doctorTitle = doctorName
     ? doctorName.toLowerCase().startsWith("dr")
@@ -101,33 +105,74 @@ export default function PrescriptionHeader({ doctor = {} }) {
           sx={{
             flex: 1,
             minWidth: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 1.25,
           }}
         >
-          {/* DOCTOR NAME */}
+          {logoUrl && (
+            <Box
+              component="img"
+              src={logoUrl}
+              alt="Doctor logo"
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+              }}
+              sx={{
+                width: { xs: 42, sm: 76 },
+                height: { xs: 42, sm: 76 },
+                flexShrink: 0,
+                objectFit: "contain",
+              }}
+            />
+          )}
 
-          <Typography
-            sx={{
-              fontSize: {
-                xs: "14px",
-                sm: "16px",
-              },
+          <Box sx={{ minWidth: 0 }}>
+            {/* DOCTOR NAME */}
 
-              fontWeight: 700,
-
-              color: "text.primary",
-
-              lineHeight: 1.25,
-            }}
-          >
-            {doctorTitle}
-          </Typography>
-
-          {/* QUALIFICATION */}
-
-          {qualificationText && (
             <Typography
               sx={{
-                mt: 0.25,
+                fontSize: {
+                  xs: "14px",
+                  sm: "16px",
+                },
+
+                fontWeight: 700,
+
+                color: "text.primary",
+
+                lineHeight: 1.25,
+              }}
+            >
+              {doctorTitle}
+            </Typography>
+
+            {/* QUALIFICATION */}
+
+            {qualificationText && (
+              <Typography
+                sx={{
+                  mt: 0.25,
+
+                  fontSize: {
+                    xs: "12px",
+                    sm: "13px",
+                  },
+
+                  color: "text.secondary",
+
+                  lineHeight: 1.4,
+                }}
+              >
+                {qualificationText}
+              </Typography>
+            )}
+
+            {/* REGISTRATION NUMBER */}
+
+            <Typography
+              sx={{
+                mt: 0.2,
 
                 fontSize: {
                   xs: "12px",
@@ -139,28 +184,9 @@ export default function PrescriptionHeader({ doctor = {} }) {
                 lineHeight: 1.4,
               }}
             >
-              {qualificationText}
+              Registration Number: {registrationNumber || "—"}
             </Typography>
-          )}
-
-          {/* REGISTRATION NUMBER */}
-
-          <Typography
-            sx={{
-              mt: 0.2,
-
-              fontSize: {
-                xs: "12px",
-                sm: "13px",
-              },
-
-              color: "text.secondary",
-
-              lineHeight: 1.4,
-            }}
-          >
-            Registration Number: {registrationNumber || "—"}
-          </Typography>
+          </Box>
         </Box>
 
         {/* =========================================

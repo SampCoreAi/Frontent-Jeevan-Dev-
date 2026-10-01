@@ -10,6 +10,7 @@ import React, {
 import {
   Avatar,
   Box,
+  CircularProgress,
   FormControlLabel,
   IconButton,
   InputAdornment,
@@ -47,6 +48,7 @@ const ProfileSidebar = ({
   onRatingChange,
   onOnlineVisibilityChange,
   onAvatarChange,
+  avatarUploading,
 }) => {
   const theme = useTheme();
 
@@ -107,6 +109,9 @@ const ProfileSidebar = ({
   const [isHydrated, setIsHydrated] =
     useState(false);
 
+  const [avatarImageFailed, setAvatarImageFailed] =
+    useState(false);
+
   const open = Boolean(anchorEl);
 
   // ============================================================
@@ -144,6 +149,10 @@ const ProfileSidebar = ({
           .charAt(0)
           .toUpperCase()
       : "D";
+
+  useEffect(() => {
+    setAvatarImageFailed(false);
+  }, [profileData?.avatarUrl]);
 
   // ============================================================
   // SAVED USERNAME
@@ -731,13 +740,14 @@ fontSize: "12.5px",
                 )}`,
               }}
             >
-              {profileData?.avatarUrl ? (
+              {profileData?.avatarUrl && !avatarImageFailed ? (
                 <Box
                   component="img"
                   src={
                     profileData.avatarUrl
                   }
                   alt="Profile"
+                  onError={() => setAvatarImageFailed(true)}
                   sx={{
                     width: "100%",
 
@@ -803,6 +813,21 @@ fontSize: "12.5px",
                       avatarInitial
                     }
                   </Avatar>
+                </Box>
+              )}
+              {avatarUploading && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: "rgba(255, 255, 255, 0.62)",
+                    zIndex: 1,
+                  }}
+                >
+                  <CircularProgress size={28} />
                 </Box>
               )}
             </Box>

@@ -35,6 +35,7 @@ import Footer from "../components/Footer";
 import HowItWorks from "../components/landing/HowItWorks";
 import Main from "../components/DoctorRegister/EntryDoctor";
 
+import HealthcareEcosystem from "../components/landing/HealthcareEcosystem";
 const slideUpFade = keyframes`
   0% {
     opacity: 0;
@@ -446,11 +447,11 @@ export default function Landing() {
           />
         </StyledContainer>
       </Box>
-
+    <HealthcareEcosystem />
+{/* <ConnectedHealthcare /> */}
       <div>
         <RadialOrbitalTimelineDemo />
       </div>
-
       <HowItWorks />
 
       <AppSvg />

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
 import {
   Alert,
   Box,
@@ -23,9 +24,13 @@ import LocalPharmacyOutlinedIcon from "@mui/icons-material/LocalPharmacyOutlined
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import MedicalServicesOutlinedIcon from "@mui/icons-material/MedicalServicesOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
+
+import MedicineBillingTable from "./MedicineBillingTable";
+
+/* =========================================================
+   MAIN COMPONENT
+========================================================= */
 
 export default function MedicalRequestDetailsDialog({
   open,
@@ -39,6 +44,10 @@ export default function MedicalRequestDetailsDialog({
   const [note, setNote] = useState("");
   const [validation, setValidation] = useState("");
 
+  /* =========================================================
+     NORMALIZE REQUEST
+  ========================================================= */
+
   useEffect(() => {
     if (!request) return;
 
@@ -48,9 +57,7 @@ export default function MedicalRequestDetailsDialog({
       }
 
       try {
-        const parsed = JSON.parse(
-          request.medicine_items || "[]"
-        );
+        const parsed = JSON.parse(request.medicine_items || "[]");
 
         if (Array.isArray(parsed) && parsed.length) {
           return parsed;
@@ -69,35 +76,20 @@ export default function MedicalRequestDetailsDialog({
     const normalizedPrescription = items.map((item) => ({
       ...item,
       medicine_name:
-        item.medicine_name ||
-        request.medicine_name ||
-        "-",
+        item.medicine_name || item.name || request.medicine_name || "-",
       quantity: Number(item.quantity || 1),
       dose: item.dose || item.note || "",
     }));
 
-    const normalizedInvoice = normalizedPrescription.map(
-      (item) => ({
-        ...item,
-        batch_number:
-          item.batch_number ||
-          request.batch_number ||
-          "",
-        expiry_date:
-          item.expiry_date ||
-          request.expiry_date ||
-          "",
-        quantity: Number(item.quantity || 1),
-        unit_price:
-          item.unit_price ??
-          request.unit_price ??
-          "",
-        gst_rate:
-          item.gst_rate ??
-          request.gst_rate ??
-          "",
-      })
-    );
+    const normalizedInvoice = normalizedPrescription.map((item, index) => ({
+      ...item,
+      _rowId: item.id || `${request.id}-${index}`,
+      batch_number: item.batch_number || request.batch_number || "",
+      expiry_date: item.expiry_date || request.expiry_date || "",
+      quantity: Number(item.quantity || 1),
+      unit_price: item.unit_price ?? request.unit_price ?? "",
+      gst_rate: item.gst_rate ?? request.gst_rate ?? "",
+    }));
 
     setPrescriptionLines(normalizedPrescription);
     setInvoiceLines(normalizedInvoice);
@@ -105,22 +97,44 @@ export default function MedicalRequestDetailsDialog({
     setValidation("");
   }, [request]);
 
-  if (!request) return null;
+  const updateLine = useCallback((index, field, value) => {
+    setInvoiceLines((previous) =>
+      previous.map((line, lineIndex) =>
+        lineIndex === index ? { ...line, [field]: value } : line
+      )
+    );
+  }, []);
 
-  const status = String(
-    request.status || "PENDING"
-  ).toUpperCase();
+  const handleRemoveLine = useCallback((index) => {
+    setInvoiceLines((previous) =>
+      previous.filter((_, lineIndex) => lineIndex !== index)
+    );
+  }, []);
 
+  if (!request) {
+    return null;
+  }
+
+  /* =========================================================
+     STATUS
+  ========================================================= */
+
+  const status = String(request.status || "PENDING").toUpperCase();
   const isCompleted = status === "COMPLETED";
+
+  /* =========================================================
+     INVOICE NUMBER
+  ========================================================= */
 
   const invoiceNumber =
     request.invoice_number ||
-    `INV-${new Date(
-      request.created_at || Date.now()
-    ).getFullYear()}-${String(request.id).padStart(
-      6,
-      "0"
-    )}`;
+    `INV-${new Date(request.created_at || Date.now()).getFullYear()}-${String(
+      request.id
+    ).padStart(6, "0")}`;
+
+  /* =========================================================
+     DATE
+  ========================================================= */
 
   const invoiceDate = new Date(
     request.created_at || Date.now()
@@ -130,205 +144,120 @@ export default function MedicalRequestDetailsDialog({
     year: "numeric",
   });
 
-  const calculatedAmount = invoiceLines.reduce(
-    (total, line) => {
-      const lineTotal =
-        Number(line.quantity || 0) *
-        Number(line.unit_price || 0);
+  /* =========================================================
+     CALCULATE TOTAL
+  ========================================================= */
 
-      return (
-        total +
-        lineTotal +
-        (lineTotal *
-          Number(line.gst_rate || 0)) /
-          100
-      );
-    },
-    0
-  );
+  const calculatedAmount = invoiceLines.reduce((total, line) => {
+    const quantity = Number(line.quantity || 0);
+    const price = Number(line.unit_price || 0);
+    const gst = Number(line.gst_rate || 0);
 
-  const getMedicineKey = (medicine = {}) =>
-    String(
-      medicine.medicine_name ||
-        medicine.name ||
-        ""
-    )
-      .trim()
-      .toLowerCase();
+    const subtotal = quantity * price;
+    const gstAmount = (subtotal * gst) / 100;
 
-  const updateLine = (index, field, value) => {
-    setInvoiceLines((lines) =>
-      lines.map((line, lineIndex) =>
-        lineIndex === index
-          ? { ...line, [field]: value }
-          : line
-      )
-    );
-  };
+    return total + subtotal + gstAmount;
+  }, 0);
 
-  const handleRemoveLine = (index) => {
-    setInvoiceLines((lines) =>
-      lines.filter(
-        (_, lineIndex) => lineIndex !== index
-      )
-    );
-  };
+  const subtotalAmount = invoiceLines.reduce((total, line) => {
+    return total + Number(line.quantity || 0) * Number(line.unit_price || 0);
+  }, 0);
 
-  const handleAddBackLine = (prescriptionLine) => {
-    setInvoiceLines((lines) => [
-      ...lines,
-      {
-        ...prescriptionLine,
-        batch_number: "",
-        expiry_date: "",
-        quantity: Number(
-          prescriptionLine.quantity || 1
-        ),
-        unit_price: "",
-        gst_rate: "",
-      },
-    ]);
-  };
+  const gstAmount = calculatedAmount - subtotalAmount;
+
+  /* =========================================================
+     COMPLETE
+  ========================================================= */
 
   const handleComplete = () => {
     if (!invoiceLines.length) {
-      setValidation(
-        "Invoice me kam se kam ek medicine hona chahiye."
-      );
+      setValidation("Invoice me kam se kam ek medicine hona chahiye.");
       return;
     }
 
-    if (
-      invoiceLines.some(
-        (line) =>
-          !String(line.batch_number).trim() ||
-          !line.expiry_date ||
-          !String(line.unit_price).trim() ||
-          !String(line.gst_rate).trim()
-      )
-    ) {
+    const hasEmptyFields = invoiceLines.some(
+      (line) =>
+        !String(line.batch_number || "").trim() ||
+        !line.expiry_date ||
+        !String(line.unit_price ?? "").trim() ||
+        !String(line.gst_rate ?? "").trim()
+    );
+
+    if (hasEmptyFields) {
       setValidation(
         "Har medicine ke batch, expiry, unit price aur GST details fill karein."
       );
       return;
     }
 
-    if (
-      invoiceLines.some(
-        (line) =>
-          Number(line.quantity) <= 0 ||
-          Number(line.unit_price) < 0 ||
-          Number(line.gst_rate) < 0
-      )
-    ) {
+    const hasInvalidValues = invoiceLines.some(
+      (line) =>
+        Number(line.quantity) <= 0 ||
+        Number(line.unit_price) < 0 ||
+        Number(line.gst_rate) < 0
+    );
+
+    if (hasInvalidValues) {
       setValidation(
         "Quantity, unit price aur GST valid value honi chahiye."
       );
       return;
     }
 
-    onComplete(
-      request.id,
-      "COMPLETED",
-      note.trim() || null,
-      {
-        totalAmount: calculatedAmount,
-        invoiceItems: invoiceLines,
-        batchNumber:
-          invoiceLines[0].batch_number,
-        expiryDate:
-          invoiceLines[0].expiry_date,
-        unitPrice: Number(
-          invoiceLines[0].unit_price
-        ),
-        gstRate: Number(
-          invoiceLines[0].gst_rate
-        ),
-        amount: calculatedAmount,
-      }
-    );
+    setValidation("");
+
+    onComplete(request.id, "COMPLETED", note.trim() || null, {
+      totalAmount: calculatedAmount,
+      invoiceItems: invoiceLines,
+      batchNumber: invoiceLines[0]?.batch_number,
+      expiryDate: invoiceLines[0]?.expiry_date,
+      unitPrice: Number(invoiceLines[0]?.unit_price || 0),
+      gstRate: Number(invoiceLines[0]?.gst_rate || 0),
+      amount: calculatedAmount,
+    });
   };
+
+  /* =========================================================
+     STATUS STYLE
+  ========================================================= */
 
   const statusStyle =
     status === "COMPLETED"
-      ? {
-          color: "#07876A",
-          bgcolor: "#ECFDF5",
-          border: "1px solid #A7F3D0",
-        }
+      ? { color: "#07876A", bgcolor: "#ECFDF5", border: "1px solid #A7F3D0" }
       : status === "REJECTED"
-      ? {
-          color: "#DC2626",
-          bgcolor: "#FEF2F2",
-          border: "1px solid #FECACA",
-        }
-      : {
-          color: "#B45309",
-          bgcolor: "#FFFBEB",
-          border: "1px solid #FDE68A",
-        };
+      ? { color: "#DC2626", bgcolor: "#FEF2F2", border: "1px solid #FECACA" }
+      : { color: "#B45309", bgcolor: "#FFFBEB", border: "1px solid #FDE68A" };
 
-  const inputSx = {
-    "& .MuiOutlinedInput-root": {
-      minHeight: 36,
-      fontSize: "12.5px",
-      bgcolor: "#FFFFFF",
-      borderRadius: "6px",
-
-      "& fieldset": {
-        borderColor: "#D8E0E8",
-      },
-
-      "&:hover fieldset": {
-        borderColor: "#AEBAC6",
-      },
-
-      "&.Mui-focused fieldset": {
-        borderColor: "#07876A",
-        borderWidth: "1px",
-      },
-    },
-
-    "& .MuiInputBase-input": {
-      px: 1,
-      py: 0.8,
-    },
-  };
+  /* =========================================================
+     RETURN
+  ========================================================= */
 
   return (
     <Dialog
       open={open}
       onClose={loading ? undefined : onClose}
       fullWidth
-      maxWidth="md"
+      maxWidth="lg"
       PaperProps={{
         sx: {
-          width: "100%",
-          maxHeight: "92vh",
-          m: {
-            xs: 1,
-            sm: 2,
-          },
-          borderRadius: "10px",
-          boxShadow:
-            "0 16px 50px rgba(15, 23, 42, 0.12)",
+          width: "59%",
+          maxHeight: "94vh",
+          m: { xs: 1, sm: 2 },
+          borderRadius: "12px",
+          boxShadow: "0 20px 60px rgba(15,23,42,.14)",
           overflow: "hidden",
         },
       }}
     >
-      <DialogTitle
-        sx={{
-          p: 0,
-          bgcolor: "#FFFFFF",
-        }}
-      >
+      {/* =====================================================
+          HEADER
+      ====================================================== */}
+
+      <DialogTitle sx={{ p: 0, bgcolor: "#FFFFFF" }}>
         <Box
           sx={{
-            px: {
-              xs: 1.5,
-              sm: 2.5,
-            },
-            py: 1.7,
+            px: { xs: 1.5, sm: 2.5 },
+            py: 1.6,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -357,48 +286,25 @@ export default function MedicalRequestDetailsDialog({
               }}
             >
               <ReceiptLongOutlinedIcon
-                sx={{
-                  color: "#07876A",
-                  fontSize: 20,
-                }}
+                sx={{ color: "#07876A", fontSize: 20 }}
               />
             </Box>
 
-            <Box sx={{ minWidth: 0 }}>
+            <Box>
               <Typography
                 sx={{
                   color: "#172033",
-                  fontSize: {
-                    xs: "15px",
-                    sm: "17px",
-                  },
-                  lineHeight: 1.3,
+                  fontSize: { xs: "15px", sm: "17px" },
                   fontWeight: 700,
                 }}
               >
-                Medical Request
+                Medical Request Details
               </Typography>
 
-              <Typography
-                sx={{
-                  mt: 0.2,
-                  color: "#64748B",
-                  fontSize: "11.5px",
-                  lineHeight: 1.4,
-                }}
-              >
-                Invoice #{invoiceNumber}
-              </Typography>
             </Box>
           </Box>
 
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-            }}
-          >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Chip
               label={status.replaceAll("_", " ")}
               size="small"
@@ -408,10 +314,6 @@ export default function MedicalRequestDetailsDialog({
                 borderRadius: "6px",
                 fontSize: "10.5px",
                 fontWeight: 700,
-
-                "& .MuiChip-label": {
-                  px: 1.1,
-                },
               }}
             />
 
@@ -433,24 +335,25 @@ export default function MedicalRequestDetailsDialog({
         </Box>
       </DialogTitle>
 
+      {/* =====================================================
+          CONTENT
+      ====================================================== */}
+
       <DialogContent
         sx={{
-          p: {
-            xs: 1.5,
-            sm: 2.5,
-          },
+          p: { xs: 1.5, sm: 2.5 },
           bgcolor: "#F8FAF9",
         }}
       >
         <Stack spacing={2}>
+          {/* VALIDATION */}
+
           {validation && (
             <Alert
               severity="error"
-              onClose={() =>
-                setValidation("")
-              }
+              onClose={() => setValidation("")}
               sx={{
-                fontSize: "12.5px",
+                fontSize: "12px",
                 borderRadius: "7px",
                 border: "1px solid #FECACA",
                 bgcolor: "#FEF2F2",
@@ -460,31 +363,27 @@ export default function MedicalRequestDetailsDialog({
             </Alert>
           )}
 
+          {/* =================================================
+              REQUEST INFORMATION
+          ================================================= */}
+
           <Box
             sx={{
               bgcolor: "#FFFFFF",
               border: "1px solid #E2E8F0",
-              borderRadius: "8px",
+              borderRadius: "9px",
               overflow: "hidden",
             }}
           >
             <Box
               sx={{
-                px: {
-                  xs: 1.5,
-                  sm: 2,
-                },
-                py: 1.2,
-                borderBottom:
-                  "1px solid #E2E8F0",
+                px: 2,
+                py: 1.1,
+                borderBottom: "1px solid #E2E8F0",
               }}
             >
               <Typography
-                sx={{
-                  color: "#172033",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                }}
+                sx={{ color: "#172033", fontSize: "13px", fontWeight: 700 }}
               >
                 Request Information
               </Typography>
@@ -492,28 +391,20 @@ export default function MedicalRequestDetailsDialog({
 
             <Box
               sx={{
-                p: {
-                  xs: 1.5,
-                  sm: 2,
-                },
+                p: 2,
                 display: "grid",
                 gridTemplateColumns: {
                   xs: "1fr",
-                  sm: "repeat(2, 1fr)",
-                  md: "repeat(4, 1fr)",
+                  sm: "repeat(2,1fr)",
+                  md: "repeat(4,1fr)",
                 },
                 gap: 1.5,
               }}
             >
               <InfoItem
-                icon={
-                  <LocalPharmacyOutlinedIcon />
-                }
+                icon={<LocalPharmacyOutlinedIcon />}
                 label="Medical Store"
-                value={
-                  request.store_name ||
-                  "Medical Store"
-                }
+                value={request.store_name || "Medical Store"}
                 subValue={
                   request.store_address ||
                   request.address ||
@@ -522,29 +413,19 @@ export default function MedicalRequestDetailsDialog({
               />
 
               <InfoItem
-                icon={
-                  <PersonOutlineRoundedIcon />
-                }
+                icon={<PersonOutlineRoundedIcon />}
                 label="Patient"
-                value={
-                  request.patient_name || "-"
-                }
+                value={request.patient_name || "-"}
               />
 
               <InfoItem
-                icon={
-                  <MedicalServicesOutlinedIcon />
-                }
+                icon={<MedicalServicesOutlinedIcon />}
                 label="Doctor"
-                value={
-                  request.doctor_name || "-"
-                }
+                value={request.doctor_name || "-"}
               />
 
               <InfoItem
-                icon={
-                  <ReceiptLongOutlinedIcon />
-                }
+                icon={<ReceiptLongOutlinedIcon />}
                 label="Invoice"
                 value={invoiceNumber}
                 subValue={invoiceDate}
@@ -552,814 +433,174 @@ export default function MedicalRequestDetailsDialog({
             </Box>
           </Box>
 
-          <Box
-            sx={{
-              bgcolor: "#FFFFFF",
-              border: "1px solid #E2E8F0",
-              borderRadius: "8px",
-              overflow: "hidden",
-            }}
-          >
-            <Box
-              sx={{
-                px: 2,
-                py: 1.2,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 1,
-                borderBottom:
-                  "1px solid #E2E8F0",
-              }}
-            >
-              <Box>
-                <Typography
-                  sx={{
-                    color: "#172033",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                  }}
-                >
-                  Doctor Prescription
-                </Typography>
+          {/* =================================================
+              MEDICINE & BILLING DETAILS (EXTRACTED COMPONENT)
+          ================================================= */}
 
-                <Typography
-                  sx={{
-                    mt: 0.2,
-                    color: "#64748B",
-                    fontSize: "11px",
-                  }}
-                >
-                  Medicines requested by doctor
-                </Typography>
-              </Box>
+          <MedicineBillingTable
+            invoiceLines={invoiceLines}
+            onUpdateLine={updateLine}
+            onRemoveLine={handleRemoveLine}
+          />
 
-              <Chip
-                label={`${prescriptionLines.length} medicine${
-                  prescriptionLines.length === 1
-                    ? ""
-                    : "s"
-                }`}
-                size="small"
-                sx={{
-                  height: 24,
-                  bgcolor: "#F1F5F9",
-                  color: "#475569",
-                  fontSize: "10.5px",
-                  fontWeight: 600,
-                }}
-              />
-            </Box>
+          {/* =================================================
+              NOTE + SUMMARY
+          ================================================= */}
+{/* =================================================
+    PAYMENT SUMMARY + SIGNATURE
+================================================= */}
 
-            <Box
-              sx={{
-                overflowX: "auto",
-              }}
-            >
-              <Box
-                sx={{
-                  minWidth: 620,
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "50px minmax(220px, 1fr) 130px 100px",
-                    alignItems: "center",
-                    px: 2,
-                    py: 1,
-                    bgcolor: "#F8FAFC",
-                    borderBottom:
-                      "1px solid #E2E8F0",
-                  }}
-                >
-                  {[
-                    "#",
-                    "MEDICINE",
-                    "REQUESTED QTY",
-                    "ACTION",
-                  ].map((item) => (
-                    <Typography
-                      key={item}
-                      sx={{
-                        color: "#64748B",
-                        fontSize: "10.5px",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {item}
-                    </Typography>
-                  ))}
-                </Box>
+<Box
+  sx={{
+    display: "grid",
+    gridTemplateColumns: {
+      xs: "1fr",
+      md: isCompleted ? "1fr 320px" : "1fr",
+    },
+    gap: 2,
+    alignItems: "stretch",
+  }}
+>
+  {/* ================= PAYMENT SUMMARY - LEFT ================= */}
 
-                {prescriptionLines.map(
-                  (medicine, index) => {
-                    const isRemoved =
-                      !invoiceLines.some(
-                        (invoiceLine) =>
-                          getMedicineKey(
-                            invoiceLine
-                          ) ===
-                          getMedicineKey(
-                            medicine
-                          )
-                      );
+  <Box
+    sx={{
+      bgcolor: "#FFFFFF",
+      border: "1px solid #E2E8F0",
+      borderRadius: "9px",
+      p: 2,
+    }}
+  >
+    <Typography
+      sx={{
+        color: "#64748B",
+        fontSize: "10.5px",
+        fontWeight: 700,
+        letterSpacing: ".3px",
+      }}
+    >
+      PAYMENT SUMMARY
+    </Typography>
 
-                    return (
-                      <Box
-                        key={`prescription-${medicine.medicine_name}-${index}`}
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns:
-                            "50px minmax(220px, 1fr) 130px 100px",
-                          alignItems: "center",
-                          px: 2,
-                          py: 1.15,
-                          borderBottom:
-                            index !==
-                            prescriptionLines.length -
-                              1
-                              ? "1px solid #EEF2F6"
-                              : "none",
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            color: "#64748B",
-                            fontSize: "12px",
-                          }}
-                        >
-                          {index + 1}
-                        </Typography>
+    <Divider sx={{ my: 1.3 }} />
 
-                        <Box>
-                          <Typography
-                            sx={{
-                              color: "#172033",
-                              fontSize: "12.5px",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {medicine.medicine_name ||
-                              "-"}
-                          </Typography>
+    <SummaryRow
+      label="Items"
+      value={invoiceLines.length}
+    />
 
-                          {medicine.dose && (
-                            <Typography
-                              sx={{
-                                mt: 0.2,
-                                color: "#64748B",
-                                fontSize: "10.5px",
-                              }}
-                            >
-                              {medicine.dose}
-                            </Typography>
-                          )}
-                        </Box>
+    <SummaryRow
+      label="Subtotal"
+      value={`₹${subtotalAmount.toFixed(2)}`}
+    />
 
-                        <Typography
-                          sx={{
-                            color: "#172033",
-                            fontSize: "12.5px",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {Number(
-                            medicine.quantity || 1
-                          )}
-                        </Typography>
+    <SummaryRow
+      label="GST"
+      value={`₹${gstAmount.toFixed(2)}`}
+    />
 
-                        {isRemoved ? (
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={
-                              <AddRoundedIcon
-                                sx={{
-                                  fontSize:
-                                    "15px !important",
-                                }}
-                              />
-                            }
-                            onClick={() =>
-                              handleAddBackLine(
-                                medicine
-                              )
-                            }
-                            disabled={
-                              isCompleted ||
-                              loading
-                            }
-                            sx={{
-                              width: "fit-content",
-                              minWidth: 0,
-                              height: 30,
-                              px: 1,
-                              borderRadius: "6px",
-                              borderColor:
-                                "#B7E4D8",
-                              color: "#07876A",
-                              fontSize: "11px",
-                              fontWeight: 600,
-                              textTransform: "none",
-                            }}
-                          >
-                            Add
-                          </Button>
-                        ) : (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                            }}
-                          >
-                            <CheckCircleOutlineRoundedIcon
-                              sx={{
-                                fontSize: 15,
-                                color: "#07876A",
-                              }}
-                            />
+    {/* GRAND TOTAL */}
 
-                            <Typography
-                              sx={{
-                                color: "#07876A",
-                                fontSize: "11px",
-                                fontWeight: 600,
-                              }}
-                            >
-                              Added
-                            </Typography>
-                          </Box>
-                        )}
-                      </Box>
-                    );
-                  }
-                )}
-              </Box>
-            </Box>
-          </Box>
+    <Box
+      sx={{
+        mt: 1.5,
+        pt: 1.5,
+        borderTop: "1px dashed #CBD5E1",
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "space-between",
+        gap: 2,
+      }}
+    >
+      <Typography
+        sx={{
+          color: "#172033",
+          fontSize: "13px",
+          fontWeight: 700,
+        }}
+      >
+        Grand Total
+      </Typography>
 
-          <Box
-            sx={{
-              bgcolor: "#FFFFFF",
-              border: "1px solid #E2E8F0",
-              borderRadius: "8px",
-              overflow: "hidden",
-            }}
-          >
-            <Box
-              sx={{
-                px: 2,
-                py: 1.2,
-                display: "flex",
-                alignItems: {
-                  xs: "flex-start",
-                  sm: "center",
-                },
-                flexDirection: {
-                  xs: "column",
-                  sm: "row",
-                },
-                justifyContent: "space-between",
-                gap: 0.5,
-                borderBottom:
-                  "1px solid #E2E8F0",
-              }}
-            >
-              <Box>
-                <Typography
-                  sx={{
-                    color: "#172033",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                  }}
-                >
-                  Medicine & Billing Details
-                </Typography>
+      <Typography
+        sx={{
+          color: "#07876A",
+          fontSize: "20px",
+          lineHeight: 1,
+          fontWeight: 800,
+        }}
+      >
+        ₹{calculatedAmount.toFixed(2)}
+      </Typography>
+    </Box>
+  </Box>
 
-                <Typography
-                  sx={{
-                    mt: 0.2,
-                    color: "#64748B",
-                    fontSize: "11px",
-                  }}
-                >
-                  Add batch, expiry and pricing details
-                </Typography>
-              </Box>
+  {/* ================= SIGNATURE - RIGHT ================= */}
 
-              <Typography
-                sx={{
-                  color: "#64748B",
-                  fontSize: "11px",
-                }}
-              >
-                {invoiceLines.length} item(s)
-              </Typography>
-            </Box>
+  {isCompleted && (
+    <Box
+      sx={{
+        borderRadius: "9px",
+        p: 2,
 
-            {invoiceLines.length === 0 ? (
-              <Box
-                sx={{
-                  py: 5,
-                  px: 2,
-                  textAlign: "center",
-                }}
-              >
-                <Typography
-                  sx={{
-                    color: "#64748B",
-                    fontSize: "12.5px",
-                  }}
-                >
-                  No medicines added to invoice.
-                </Typography>
-              </Box>
-            ) : (
-              <Box
-                sx={{
-                  overflowX: "auto",
-                }}
-              >
-                <Box
-                  sx={{
-                    minWidth: 1030,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "40px 170px 120px 140px 70px 110px 80px 110px 70px",
-                      gap: 1,
-                      alignItems: "center",
-                      px: 1.5,
-                      py: 1,
-                      bgcolor: "#F8FAFC",
-                      borderBottom:
-                        "1px solid #E2E8F0",
-                    }}
-                  >
-                    {[
-                      "#",
-                      "MEDICINE",
-                      "BATCH NO.",
-                      "EXPIRY",
-                      "QTY",
-                      "UNIT PRICE",
-                      "GST %",
-                      "AMOUNT",
-                      "",
-                    ].map((item, index) => (
-                      <Typography
-                        key={`${item}-${index}`}
-                        sx={{
-                          color: "#64748B",
-                          fontSize: "10px",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {item}
-                      </Typography>
-                    ))}
-                  </Box>
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-end",
+        alignItems: "center",
 
-                  {invoiceLines.map(
-                    (medicine, index) => {
-                      const lineTotal =
-                        Number(
-                          medicine.quantity || 0
-                        ) *
-                        Number(
-                          medicine.unit_price || 0
-                        ) *
-                        (1 +
-                          Number(
-                            medicine.gst_rate || 0
-                          ) /
-                            100);
+        minHeight: 170,
+      }}
+    >
+      <Box
+        sx={{
+          width: "100%",
+          maxWidth: 220,
+          textAlign: "center",
+        }}
+      >
+        {/* signature space */}
 
-                      return (
-                        <Box
-                          key={`${medicine.medicine_name}-${index}`}
-                          sx={{
-                            display: "grid",
-                            gridTemplateColumns:
-                              "40px 170px 120px 140px 70px 110px 80px 110px 70px",
-                            gap: 1,
-                            alignItems: "center",
-                            px: 1.5,
-                            py: 1,
-                            borderBottom:
-                              index !==
-                              invoiceLines.length -
-                                1
-                                ? "1px solid #EEF2F6"
-                                : "none",
-                          }}
-                        >
-                          <Typography
-                            sx={{
-                              color: "#64748B",
-                              fontSize: "12px",
-                            }}
-                          >
-                            {index + 1}
-                          </Typography>
+        <Box
+          sx={{
+            height: 75,
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
+          }}
+        >
+          {/* Future signature image can come here */}
+        </Box>
 
-                          <Typography
-                            sx={{
-                              color: "#172033",
-                              fontSize: "12px",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {medicine.medicine_name ||
-                              "-"}
-                          </Typography>
+        <Box
+          sx={{
+            borderTop: "1px solid #94A3B8",
+            mb: 0.7,
+          }}
+        />
 
-                          <TextField
-                            size="small"
-                            placeholder="Batch"
-                            value={
-                              medicine.batch_number
-                            }
-                            onChange={(event) =>
-                              updateLine(
-                                index,
-                                "batch_number",
-                                event.target.value
-                              )
-                            }
-                            disabled={
-                              isCompleted ||
-                              loading
-                            }
-                            sx={inputSx}
-                          />
-
-                          <TextField
-                            size="small"
-                            type="date"
-                            value={
-                              medicine.expiry_date
-                            }
-                            onChange={(event) =>
-                              updateLine(
-                                index,
-                                "expiry_date",
-                                event.target.value
-                              )
-                            }
-                            disabled={
-                              isCompleted ||
-                              loading
-                            }
-                            sx={inputSx}
-                          />
-
-                          <TextField
-                            size="small"
-                            type="number"
-                            value={
-                              medicine.quantity
-                            }
-                            onChange={(event) =>
-                              updateLine(
-                                index,
-                                "quantity",
-                                event.target.value
-                              )
-                            }
-                            disabled={
-                              isCompleted ||
-                              loading
-                            }
-                            inputProps={{
-                              min: 1,
-                            }}
-                            sx={inputSx}
-                          />
-
-                          <TextField
-                            size="small"
-                            type="number"
-                            placeholder="₹ 0"
-                            value={
-                              medicine.unit_price
-                            }
-                            onChange={(event) =>
-                              updateLine(
-                                index,
-                                "unit_price",
-                                event.target.value
-                              )
-                            }
-                            disabled={
-                              isCompleted ||
-                              loading
-                            }
-                            inputProps={{
-                              min: 0,
-                            }}
-                            sx={inputSx}
-                          />
-
-                          <TextField
-                            size="small"
-                            type="number"
-                            placeholder="0"
-                            value={
-                              medicine.gst_rate
-                            }
-                            onChange={(event) =>
-                              updateLine(
-                                index,
-                                "gst_rate",
-                                event.target.value
-                              )
-                            }
-                            disabled={
-                              isCompleted ||
-                              loading
-                            }
-                            inputProps={{
-                              min: 0,
-                            }}
-                            sx={inputSx}
-                          />
-
-                          <Typography
-                            sx={{
-                              color: "#172033",
-                              fontSize: "12px",
-                              fontWeight: 700,
-                            }}
-                          >
-                            ₹
-                            {lineTotal.toFixed(
-                              2
-                            )}
-                          </Typography>
-
-                          <IconButton
-                            size="small"
-                            onClick={() =>
-                              handleRemoveLine(
-                                index
-                              )
-                            }
-                            disabled={
-                              isCompleted ||
-                              loading
-                            }
-                            sx={{
-                              width: 30,
-                              height: 30,
-                              color: "#DC2626",
-                              border:
-                                "1px solid #FECACA",
-                              borderRadius:
-                                "6px",
-
-                              "&:hover": {
-                                bgcolor:
-                                  "#FEF2F2",
-                              },
-                            }}
-                          >
-                            <DeleteOutlineRoundedIcon
-                              sx={{
-                                fontSize: 17,
-                              }}
-                            />
-                          </IconButton>
-                        </Box>
-                      );
-                    }
-                  )}
-                </Box>
-              </Box>
-            )}
-          </Box>
-
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                md: "1fr 300px",
-              },
-              gap: 2,
-              alignItems: "stretch",
-            }}
-          >
-            <Box
-              sx={{
-                bgcolor: "#FFFFFF",
-                border: "1px solid #E2E8F0",
-                borderRadius: "8px",
-                p: 2,
-              }}
-            >
-              <Typography
-                sx={{
-                  mb: 1,
-                  color: "#172033",
-                  fontSize: "12.5px",
-                  fontWeight: 700,
-                }}
-              >
-                Delivery Note
-              </Typography>
-
-              <TextField
-                value={note}
-                onChange={(event) =>
-                  setNote(event.target.value)
-                }
-                disabled={
-                  isCompleted || loading
-                }
-                placeholder="Add a note for the patient..."
-                multiline
-                minRows={3}
-                fullWidth
-                sx={{
-                  ...inputSx,
-
-                  "& .MuiOutlinedInput-root":
-                    {
-                      minHeight: 88,
-                      alignItems:
-                        "flex-start",
-                      fontSize: "12.5px",
-                      bgcolor: "#FFFFFF",
-                      borderRadius: "6px",
-
-                      "& fieldset": {
-                        borderColor:
-                          "#D8E0E8",
-                      },
-
-                      "&:hover fieldset":
-                        {
-                          borderColor:
-                            "#AEBAC6",
-                        },
-
-                      "&.Mui-focused fieldset":
-                        {
-                          borderColor:
-                            "#07876A",
-                          borderWidth:
-                            "1px",
-                        },
-                    },
-                }}
-              />
-            </Box>
-
-            <Box
-              sx={{
-                bgcolor: "#FFFFFF",
-                border: "1px solid #E2E8F0",
-                borderRadius: "8px",
-                p: 2,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent:
-                  "space-between",
-              }}
-            >
-              <Box>
-                <Typography
-                  sx={{
-                    color: "#64748B",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                  }}
-                >
-                  PAYMENT SUMMARY
-                </Typography>
-
-                <Divider sx={{ my: 1.5 }} />
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent:
-                      "space-between",
-                    gap: 2,
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      color: "#475569",
-                      fontSize: "12px",
-                    }}
-                  >
-                    Items
-                  </Typography>
-
-                  <Typography
-                    sx={{
-                      color: "#172033",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {invoiceLines.length}
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Box
-                sx={{
-                  mt: 3,
-                  pt: 1.5,
-                  borderTop:
-                    "1px dashed #CBD5E1",
-                  display: "flex",
-                  alignItems: "flex-end",
-                  justifyContent:
-                    "space-between",
-                  gap: 2,
-                }}
-              >
-                <Typography
-                  sx={{
-                    color: "#172033",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                  }}
-                >
-                  Grand Total
-                </Typography>
-
-                <Typography
-                  sx={{
-                    color: "#07876A",
-                    fontSize: "20px",
-                    lineHeight: 1,
-                    fontWeight: 800,
-                  }}
-                >
-                  ₹
-                  {calculatedAmount.toFixed(
-                    2
-                  )}
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-
-          {isCompleted && (
-            <Box
-              sx={{
-                pt: 2,
-                display: "flex",
-                justifyContent:
-                  "flex-end",
-              }}
-            >
-              <Box
-                sx={{
-                  width: 190,
-                  textAlign: "center",
-                }}
-              >
-                <Box
-                  sx={{
-                    borderTop:
-                      "1px solid #94A3B8",
-                    mb: 0.7,
-                  }}
-                />
-
-                <Typography
-                  sx={{
-                    color: "#475569",
-                    fontSize: "11.5px",
-                    fontWeight: 600,
-                  }}
-                >
-                  Authorized Signature
-                </Typography>
-              </Box>
-            </Box>
-          )}
+        <Typography
+          sx={{
+            color: "#475569",
+            fontSize: "11px",
+            fontWeight: 600,
+          }}
+        >
+          Authorized Signature
+        </Typography>
+      </Box>
+    </Box>
+  )}
+</Box>
         </Stack>
       </DialogContent>
 
+      {/* =====================================================
+          ACTIONS
+      ====================================================== */}
+
       <DialogActions
         sx={{
-          px: {
-            xs: 1.5,
-            sm: 2.5,
-          },
+          px: { xs: 1.5, sm: 2.5 },
           py: 1.5,
           bgcolor: "#FFFFFF",
           borderTop: "1px solid #E2E8F0",
@@ -1369,9 +610,7 @@ export default function MedicalRequestDetailsDialog({
         <Button
           onClick={onClose}
           disabled={loading}
-          startIcon={
-            <ArrowBackOutlinedIcon />
-          }
+          startIcon={<ArrowBackOutlinedIcon />}
           sx={{
             height: 36,
             px: 1.5,
@@ -1390,9 +629,7 @@ export default function MedicalRequestDetailsDialog({
             variant="contained"
             onClick={handleComplete}
             disabled={loading}
-            startIcon={
-              <CheckCircleOutlineRoundedIcon />
-            }
+            startIcon={<CheckCircleOutlineRoundedIcon />}
             sx={{
               height: 38,
               px: 2,
@@ -1409,9 +646,7 @@ export default function MedicalRequestDetailsDialog({
               },
             }}
           >
-            {loading
-              ? "Completing..."
-              : "Complete & Deliver"}
+            {loading ? "Completing..." : "Complete & Deliver"}
           </Button>
         )}
       </DialogActions>
@@ -1419,12 +654,11 @@ export default function MedicalRequestDetailsDialog({
   );
 }
 
-function InfoItem({
-  icon,
-  label,
-  value,
-  subValue,
-}) {
+/* =========================================================
+   INFO ITEM
+========================================================= */
+
+function InfoItem({ icon, label, value, subValue }) {
   return (
     <Box
       sx={{
@@ -1446,9 +680,7 @@ function InfoItem({
           alignItems: "center",
           justifyContent: "center",
 
-          "& svg": {
-            fontSize: 17,
-          },
+          "& svg": { fontSize: 17 },
         }}
       >
         {icon}
@@ -1456,11 +688,7 @@ function InfoItem({
 
       <Box sx={{ minWidth: 0 }}>
         <Typography
-          sx={{
-            color: "#64748B",
-            fontSize: "10.5px",
-            fontWeight: 500,
-          }}
+          sx={{ color: "#64748B", fontSize: "10.5px", fontWeight: 500 }}
         >
           {label}
         </Typography>
@@ -1492,6 +720,34 @@ function InfoItem({
           </Typography>
         )}
       </Box>
+    </Box>
+  );
+}
+
+/* =========================================================
+   SUMMARY ROW
+========================================================= */
+
+function SummaryRow({ label, value }) {
+  return (
+    <Box
+      sx={{
+        py: 0.45,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 2,
+      }}
+    >
+      <Typography sx={{ color: "#64748B", fontSize: "11.5px" }}>
+        {label}
+      </Typography>
+
+      <Typography
+        sx={{ color: "#172033", fontSize: "11.5px", fontWeight: 650 }}
+      >
+        {value}
+      </Typography>
     </Box>
   );
 }

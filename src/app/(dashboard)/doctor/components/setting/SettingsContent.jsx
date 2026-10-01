@@ -16,8 +16,14 @@ import {
   Grid,
   Snackbar,
   TextField,
+  InputAdornment,
+  IconButton,
   Typography,
 } from "@mui/material";
+
+
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import axios from "axios";
 import UserPrivacySettings from "../../../component/Setting/UserPrivacySettings";
 import UserHelpSupport from "../../../component/Setting/UserHelpSupport";
@@ -132,7 +138,9 @@ const SettingsContent = () => {
   const [userEmail, setUserEmail] = useState("");
   const [oldPassword, setOldPassword] = useState("");
     const { mode, setColorMode } = useColorMode();
-
+const [showOldPassword, setShowOldPassword] = useState(false);
+const [showNewPassword, setShowNewPassword] = useState(false);
+const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
@@ -285,52 +293,111 @@ const SettingsContent = () => {
           </Typography>
         </Box>
       </Box>
+<DialogContent sx={{ p: 2.5 }}>
+  <Box
+    sx={{
+      display: "flex",
+      flexDirection: "column",
+      gap: 1.7,
+    }}
+  >
+    {/* OLD PASSWORD */}
+    <TextField
+      fullWidth
+      label="Old Password"
+      type={showOldPassword ? "text" : "password"}
+      value={oldPassword}
+      onChange={(e) => setOldPassword(e.target.value)}
+      size="small"
+      sx={fieldSx}
+      slotProps={{
+        input: {
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                onClick={() => setShowOldPassword((prev) => !prev)}
+                edge="end"
+                size="small"
+              >
+                {showOldPassword ? (
+                  <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} />
+                ) : (
+                  <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
+                )}
+              </IconButton>
+            </InputAdornment>
+          ),
+        },
+      }}
+    />
 
-      <DialogContent sx={{ p: 2.5 }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 1.7,
-          }}
-        >
-          <TextField
-            fullWidth
-            label="Old Password"
-            type="password"
-            value={oldPassword}
-            onChange={(e) => setOldPassword(e.target.value)}
-            size="small"
-            sx={fieldSx}
-          />
+    {/* NEW PASSWORD */}
+    <TextField
+      fullWidth
+      label="New Password"
+      type={showNewPassword ? "text" : "password"}
+      value={newPassword}
+      onChange={(e) => setNewPassword(e.target.value)}
+      size="small"
+      sx={fieldSx}
+      slotProps={{
+        input: {
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                onClick={() => setShowNewPassword((prev) => !prev)}
+                edge="end"
+                size="small"
+              >
+                {showNewPassword ? (
+                  <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} />
+                ) : (
+                  <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
+                )}
+              </IconButton>
+            </InputAdornment>
+          ),
+        },
+      }}
+    />
 
-          <TextField
-            fullWidth
-            label="New Password"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            size="small"
-            sx={fieldSx}
-          />
-
-          <TextField
-            fullWidth
-            label="Confirm Password"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            size="small"
-            error={confirmPassword !== "" && newPassword !== confirmPassword}
-            helperText={
-              confirmPassword !== "" && newPassword !== confirmPassword
-                ? "Passwords do not match"
-                : ""
-            }
-            sx={fieldSx}
-          />
-        </Box>
-      </DialogContent>
+    {/* CONFIRM PASSWORD */}
+    <TextField
+      fullWidth
+      label="Confirm Password"
+      type={showConfirmPassword ? "text" : "password"}
+      value={confirmPassword}
+      onChange={(e) => setConfirmPassword(e.target.value)}
+      size="small"
+      error={confirmPassword !== "" && newPassword !== confirmPassword}
+      helperText={
+        confirmPassword !== "" && newPassword !== confirmPassword
+          ? "Passwords do not match"
+          : ""
+      }
+      sx={fieldSx}
+      slotProps={{
+        input: {
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                edge="end"
+                size="small"
+              >
+                {showConfirmPassword ? (
+                  <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} />
+                ) : (
+                  <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
+                )}
+              </IconButton>
+            </InputAdornment>
+          ),
+        },
+      }}
+    />
+  </Box>
+</DialogContent>
 
       <DialogActions
         sx={{

@@ -145,6 +145,9 @@ export default function Prescription({
   }, [apiData]);
 
   const doctor = apiData?.doctor;
+const prescriptionDoctor = apiData?.prescription
+  ? doctor
+  : { ...doctor, doctor_signature: null };
   const patientApi = apiData?.patient;
   const appointment = apiData?.appointment;
 const appointmentDate =
@@ -605,7 +608,7 @@ return (
             }}
           >
             <PrescriptionPdfView
-              doctor={doctor}
+              doctor={prescriptionDoctor}
               patient={patient}
               dateNow={dateNow}
               diagnosis={diagnosis}
@@ -632,7 +635,7 @@ return (
         handleClick={handleClick}
         downloadPdf={downloadPdf}
         pdfRef={pdfRef}
-        doctor={doctor}
+        doctor={prescriptionDoctor}
         patient={patient}
         patientId={patientId}
         appointmentId={appointmentId}
@@ -664,7 +667,7 @@ return (
       >
         <div ref={pdfDownloadRef}>
           <PrescriptionPdfView
-            doctor={doctor}
+            doctor={prescriptionDoctor}
             patient={patient}
             dateNow={dateNow}
             diagnosis={diagnosis}

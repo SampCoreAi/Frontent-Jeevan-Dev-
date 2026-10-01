@@ -70,6 +70,7 @@ export default function Verification({
   registrationId,
   onBack,
   onSubmit,
+  onEmailVerified,
 }) {
   const theme = useTheme();
 
@@ -145,10 +146,20 @@ export default function Verification({
       Number(data?.email_verified) === 1;
 
     if (verified) {
-      setOtpVerified(true);
-      setOtpSent(false);
-      setOtp(EMPTY_OTP);
-      setResendTimer(0);
+     setOtpVerified(true);
+
+if (typeof onEmailVerified === "function") {
+  onEmailVerified();
+}
+
+setOtpSent(false);
+setOtp(EMPTY_OTP);
+setResendTimer(0);
+
+showSnackbar(
+  "Email verified successfully.",
+  "success"
+);
     }
   }, [data?.email_verified]);
 
@@ -642,10 +653,14 @@ export default function Verification({
               "Invalid OTP."
           );
         }
+setOtpVerified(true);
 
-        setOtpVerified(true);
+// Parent component ko bhi update karo
+if (typeof onEmailVerified === "function") {
+  onEmailVerified();
+}
 
-        setOtpSent(false);
+setOtpSent(false);
 
         setOtp(EMPTY_OTP);
 

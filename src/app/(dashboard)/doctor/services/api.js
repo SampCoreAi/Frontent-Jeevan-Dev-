@@ -249,8 +249,31 @@ export const profileService = {
   getProfile: () => apiRequest('GET', API_ENDPOINTS.PROFILE.GET_PROFILE),
 
  
-  updateProfile: (profileData) =>
-    apiRequest('PATCH', API_ENDPOINTS.PROFILE.UPDATE_PROFILE, profileData),
+ updateProfile: (profileData) => {
+  const payload = { ...profileData };
+
+  if (Array.isArray(payload.hospitalDetail)) {
+    payload.hospitalDetail = payload.hospitalDetail.map((hospital) => {
+      const { clinicId, ...hospitalData } = hospital;
+
+    
+      if (clinicId !== null && clinicId !== undefined && clinicId !== "") {
+        return {
+          ...hospitalData,
+          clinicId: String(clinicId).trim(),
+        };
+      }
+
+      return hospitalData;
+    });
+  }
+
+  return apiRequest(
+    "PATCH",
+    API_ENDPOINTS.PROFILE.UPDATE_PROFILE,
+    payload
+  );
+},
 
   changePassword: (passwordData) =>
     apiRequest('PUT', API_ENDPOINTS.PROFILE.CHANGE_PASSWORD, passwordData),
@@ -272,6 +295,32 @@ export const profileService = {
     const config = {
       method: 'POST',
       url: `${API_ENDPOINTS.PROFILE.UPLOAD_IMAGE}?folder=doctor-profile`,
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    };
+
+    return apiClient(config).then(response => response.data);
+  },
+
+  uploadLogo: (formData) => {
+    const config = {
+      method: 'POST',
+      url: `${API_ENDPOINTS.PROFILE.UPLOAD_IMAGE}?folder=logo`,
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    };
+
+    return apiClient(config).then(response => response.data);
+  },
+
+  uploadSignature: (formData) => {
+    const config = {
+      method: 'POST',
+      url: `${API_ENDPOINTS.PROFILE.UPLOAD_IMAGE}?folder=doctor-signature`,
       data: formData,
       headers: {
         'Content-Type': 'multipart/form-data',

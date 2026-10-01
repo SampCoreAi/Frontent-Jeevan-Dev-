@@ -78,6 +78,8 @@ export const SUCCESS_MESSAGES = {
   PROFILE_UPDATED: 'Profile updated successfully',
   LICENSE_UPLOADED: 'License uploaded successfully',
   IMAGE_UPLOADED: 'Profile image uploaded successfully',
+  LOGO_UPLOADED: 'Doctor logo uploaded successfully',
+  SIGNATURE_UPLOADED: 'Doctor signature uploaded successfully',
   PASSWORD_CHANGED: 'Password changed successfully',
   FEEDBACK_SUBMITTED: 'Feedback submitted successfully',
 };

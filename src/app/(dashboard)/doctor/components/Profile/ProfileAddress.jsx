@@ -14,6 +14,7 @@ import {
 
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import LocalHospitalOutlinedIcon from "@mui/icons-material/LocalHospitalOutlined";
@@ -90,6 +91,7 @@ const HospitalCard = ({
   canRemove,
   onChange,
   onRemove,
+  onWorkingHours,
 }) => {
   const [open, setOpen] =
     useState(false);
@@ -207,7 +209,25 @@ const HospitalCard = ({
             )}
           </Typography>
         </Box>
+<IconButton
+  size="small"
+  onClick={(event) => {
+    event.stopPropagation();
 
+    onWorkingHours?.(hospital);
+  }}
+  sx={{
+    width: 30,
+    height: 30,
+    color: "primary.main",
+    border: "1px solid",
+    borderColor: "divider",
+  }}
+>
+  <AccessTimeOutlinedIcon
+    sx={{ fontSize: "17px" }}
+  />
+</IconButton>
         {isEditing && canRemove && (
           <IconButton
             size="small"
@@ -335,6 +355,7 @@ const ProfileAddress = ({
   onHospitalChange,
   onAddHospital,
   onRemoveHospital,
+  onWorkingHours,
 }) => {
   const hospitals =
     profileData?.hospitalDetail ||
@@ -472,30 +493,29 @@ const ProfileAddress = ({
       >
         {hospitals.map(
           (hospital, index) => (
-            <HospitalCard
-              key={index}
-              hospital={hospital}
-              index={index}
-              isEditing={isEditing}
-              canRemove={
-                hospitals.length > 1
-              }
-              onChange={(
-                field,
-                value
-              ) =>
-                onHospitalChange?.(
-                  index,
-                  field,
-                  value
-                )
-              }
-              onRemove={() =>
-                onRemoveHospital?.(
-                  index
-                )
-              }
-            />
+           <HospitalCard
+  key={hospital.clinicId || index}
+  hospital={hospital}
+  index={index}
+  isEditing={isEditing}
+  canRemove={hospitals.length > 1}
+
+  onWorkingHours={() =>
+    onWorkingHours?.(hospital)
+  }
+
+  onChange={(field, value) =>
+    onHospitalChange?.(
+      index,
+      field,
+      value
+    )
+  }
+
+  onRemove={() =>
+    onRemoveHospital?.(index)
+  }
+/>
           )
         )}
 
@@ -530,4 +550,4 @@ const ProfileAddress = ({
   );
 };
 
-export default ProfileAddress;
+export default ProfileAddress;  

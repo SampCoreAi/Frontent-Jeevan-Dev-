@@ -9,8 +9,11 @@ import {
   updateDoctorProfile,
   uploadLicense,
   uploadProfileImage,
+  uploadDoctorLogo,
+  uploadDoctorSignature,
+  setProfileData,
   handleFieldChange,
-  handleWorkingHoursChange,
+  handleClinicWorkingHoursChange,
   handleHospitalChange,
   handleAddHospital,
   handleRemoveHospital,
@@ -22,9 +25,14 @@ import {
 import {
   selectProfileData,
   selectProfileLoading,
+  selectProfileLoaded,
+  selectProfileSaving,
   selectProfileError,
   selectProfileSuccessMessage,
   selectIsEditing,
+  selectLogoUploading,
+  selectSignatureUploading,
+  selectProfileImageUploading,
 } from "../../store/profileSlice";
 
 const Page = () => {
@@ -32,11 +40,16 @@ const Page = () => {
 
   const profileData = useSelector(selectProfileData);
   const loading = useSelector(selectProfileLoading);
+  const profileLoaded = useSelector(selectProfileLoaded);
+  const saving = useSelector(selectProfileSaving);
   const error = useSelector(selectProfileError);
   const successMessage = useSelector(
     selectProfileSuccessMessage
   );
   const isEditing = useSelector(selectIsEditing);
+  const logoUploading = useSelector(selectLogoUploading);
+  const signatureUploading = useSelector(selectSignatureUploading);
+  const profileImageUploading = useSelector(selectProfileImageUploading);
 
   // Track only fields changed by the user
   const [changedFields, setChangedFields] =
@@ -118,13 +131,15 @@ const Page = () => {
 
   // ================= WORKING HOURS =================
 
-  const handleWorkingHoursChangeLocal = (
+  const handleClinicWorkingHoursChangeLocal = (
+    clinicId,
     day,
     field,
     value
   ) => {
     dispatch(
-      handleWorkingHoursChange({
+      handleClinicWorkingHoursChange({
+        clinicId,
         day,
         field,
         value,
@@ -232,35 +247,28 @@ if (changedFields.registration_number) {
             );
     }
 
-   if (changedFields.accept_emergency_patients) {
+  if (changedFields.accept_emergency_patients) {
   payload.acceptEmergencyPatients =
-    profileData.accept_emergency_patients
-      ? "YES"
-      : "NO";
+    Boolean(profileData.accept_emergency_patients);
 }
     // Availability / Working Hours
     if (changedFields.availability) {
-      const formatDay = (day) => {
-        return (
-          day.charAt(0).toUpperCase() +
-          day.slice(1)
-        );
-      };
+      payload.availability = (profileData.availability || [])
+        .filter((item) => item.clinicId !== null && item.clinicId !== undefined && item.clinicId !== "")
+        .map((item) => {
+          const startTime = item.startTime || "";
+          const endTime = item.endTime || "";
+          const day = String(item.day || "");
 
-      const availability = Object.entries(
-        profileData.workingHours || {}
-      )
-        .filter(
-          ([_, value]) =>
-            value.start && value.end
-        )
-        .map(([day, value]) => ({
-          day: formatDay(day),
-          startTime: value.start,
-          endTime: value.end,
-        }));
-
-      payload.availability = availability;
+          return {
+            ...item,
+            clinicId: item.clinicId,
+            day: day.charAt(0).toUpperCase() + day.slice(1).toLowerCase(),
+            startTime,
+            endTime,
+            isAvailable: Boolean(startTime && endTime && item.isAvailable !== false),
+          };
+        });
     }
 
     // Hospital Details
@@ -272,6 +280,9 @@ if (changedFields.registration_number) {
           hospital.hospitalName?.trim()
         )
         .map((hospital) => ({
+        ...(hospital.clinicId
+  ? { clinicId: String(hospital.clinicId) }
+  : {}),
           hospitalName:
             hospital.hospitalName?.trim() ||
             "",
@@ -297,6 +308,14 @@ if (changedFields.registration_number) {
 
       payload.hospitalDetail =
         hospitalDetail;
+    }
+
+    if (profileData.logoKey) {
+      payload.logo = profileData.logoKey;
+    }
+
+    if (profileData.signatureKey) {
+      payload.doctor_signature = profileData.signatureKey;
     }
 
 
@@ -344,11 +363,44 @@ if (changedFields.registration_number) {
   const handleImageUpload = async (file) => {
     if (!file) return;
 
-    await dispatch(
-      uploadProfileImage(file)
-    );
+    const previousAvatarUrl = profileData.avatarUrl;
+    const localPreviewUrl = URL.createObjectURL(file);
+    dispatch(setProfileData({ avatarUrl: localPreviewUrl }));
 
-    dispatch(fetchDoctorProfile());
+    try {
+      const uploadedUrl = await dispatch(
+        uploadProfileImage(file)
+      ).unwrap();
+
+      dispatch(setProfileData({ avatarUrl: localPreviewUrl }));
+
+      try {
+        await dispatch(fetchDoctorProfile()).unwrap();
+      } catch {
+        dispatch(setProfileData({ avatarUrl: uploadedUrl }));
+      }
+    } catch {
+      dispatch(setProfileData({ avatarUrl: previousAvatarUrl }));
+    } finally {
+      URL.revokeObjectURL(localPreviewUrl);
+    }
+  };
+
+  const handleBrandingUpload = async (file, uploadThunk) => {
+    if (!file) return;
+
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      showSnackbar("Choose a PNG, JPG, JPEG, or WebP image.", "error");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showSnackbar("Image must be 5 MB or smaller.", "error");
+      return;
+    }
+
+    return await dispatch(uploadThunk(file)).unwrap();
   };
 
   // ================= UPDATE BUTTON =================
@@ -362,14 +414,13 @@ if (changedFields.registration_number) {
 
   return (
     <ProfileContent
-      loading={loading}
+      loading={loading && !profileLoaded}
+      saving={saving}
       profileData={profileData}
       isEditing={isEditing}
       snackbar={snackbar}
       onFieldChange={handleChange}
-      onWorkingHoursChange={
-        handleWorkingHoursChangeLocal
-      }
+      onClinicWorkingHoursChange={handleClinicWorkingHoursChangeLocal}
       onUpdateClick={handleUpdateClick}
       onSaveClick={saveDoctorProfile}
       onCloseSnackbar={
@@ -390,6 +441,11 @@ if (changedFields.registration_number) {
       onImageUpload={
         handleImageUpload
       }
+      onLogoUpload={(file) => handleBrandingUpload(file, uploadDoctorLogo)}
+      onSignatureUpload={(file) => handleBrandingUpload(file, uploadDoctorSignature)}
+      logoUploading={logoUploading}
+      signatureUploading={signatureUploading}
+      profileImageUploading={profileImageUploading}
     />
   );
 };

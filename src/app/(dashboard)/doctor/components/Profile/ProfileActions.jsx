@@ -5,6 +5,7 @@ import React from "react";
 import {
   Box,
   Button,
+  CircularProgress,
 } from "@mui/material";
 
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -12,6 +13,7 @@ import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 
 const ProfileActions = ({
   isEditing,
+  saving,
   onUpdateClick,
   onSaveClick,
 }) => {
@@ -38,7 +40,9 @@ const ProfileActions = ({
         variant="contained"
         color="primary"
         startIcon={
-          isEditing ? (
+          isEditing && saving ? (
+            <CircularProgress size={16} color="inherit" />
+          ) : isEditing ? (
             <SaveOutlinedIcon />
           ) : (
             <EditOutlinedIcon />
@@ -49,6 +53,7 @@ const ProfileActions = ({
             ? onSaveClick
             : onUpdateClick
         }
+        disabled={isEditing && saving}
         sx={{
           minWidth: {
             xs: "100%",

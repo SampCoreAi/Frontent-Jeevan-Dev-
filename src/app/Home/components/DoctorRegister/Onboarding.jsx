@@ -1387,22 +1387,18 @@ export default function DoctorOnboardingPage() {
               {/* STEP 5 */}
 
               {activeStep === 5 && (
-                <Verification
-                  data={
-                    doctorData
-                  }
-                  registrationId={
-                    registrationId
-                  }
-                  onBack={() =>
-                    setActiveStep(
-                      4
-                    )
-                  }
-                  onSubmit={
-                    handleFinalVerificationSubmit
-                  }
-                />
+               <Verification
+  data={doctorData}
+  registrationId={registrationId}
+  onBack={() => setActiveStep(4)}
+  onSubmit={handleFinalVerificationSubmit}
+  onEmailVerified={() => {
+    setDoctorData((prev) => ({
+      ...prev,
+      email_verified: 1,
+    }));
+  }}
+/>
               )}
             </Grid>
           </Grid>
