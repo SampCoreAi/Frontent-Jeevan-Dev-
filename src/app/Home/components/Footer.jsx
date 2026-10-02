@@ -41,7 +41,7 @@ export default function Footer() {
         borderTop: "1px solid rgba(30, 102, 88, 0.15)",
       }}
     >
-      <Container maxWidth="lg">
+      <Container >
         {/* Main Footer Content */}
         <Box
           sx={{

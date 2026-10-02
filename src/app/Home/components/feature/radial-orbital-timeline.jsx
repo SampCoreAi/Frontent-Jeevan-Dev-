@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowRight, Link, Zap, Pause, Play, RotateCcw, Maximize2 } from "lucide-react";
+import {
+  ArrowRight,
+  Link,
+  Zap,
+  Pause,
+  Play,
+  RotateCcw,
+  Maximize2,
+} from "lucide-react";
 import { Badge } from "../feature/Badge";
 import { Button } from "../feature/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "../feature/card";
@@ -34,8 +42,8 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
       setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const handleContainerClick = useCallback((e) => {
@@ -81,16 +89,22 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
     });
   }, []);
 
-  const getRelatedItems = useCallback((itemId) => {
-    const currentItem = timelineData.find((item) => item.id === itemId);
-    return currentItem ? currentItem.relatedIds : [];
-  }, [timelineData]);
+  const getRelatedItems = useCallback(
+    (itemId) => {
+      const currentItem = timelineData.find((item) => item.id === itemId);
+      return currentItem ? currentItem.relatedIds : [];
+    },
+    [timelineData],
+  );
 
-  const isRelatedToActive = useCallback((itemId) => {
-    if (!activeNodeId) return false;
-    const relatedItems = getRelatedItems(activeNodeId);
-    return relatedItems.includes(itemId);
-  }, [activeNodeId, getRelatedItems]);
+  const isRelatedToActive = useCallback(
+    (itemId) => {
+      if (!activeNodeId) return false;
+      const relatedItems = getRelatedItems(activeNodeId);
+      return relatedItems.includes(itemId);
+    },
+    [activeNodeId, getRelatedItems],
+  );
 
   // Auto-rotation effect
   useEffect(() => {
@@ -112,36 +126,42 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
     };
   }, [autoRotate, viewMode, isDragging]);
 
-  const centerViewOnNode = useCallback((nodeId) => {
-    if (viewMode !== "orbital" || !nodeRefs.current[nodeId]) return;
+  const centerViewOnNode = useCallback(
+    (nodeId) => {
+      if (viewMode !== "orbital" || !nodeRefs.current[nodeId]) return;
 
-    const nodeIndex = timelineData.findIndex((item) => item.id === nodeId);
-    const totalNodes = timelineData.length;
-    const targetAngle = (nodeIndex / totalNodes) * 360;
+      const nodeIndex = timelineData.findIndex((item) => item.id === nodeId);
+      const totalNodes = timelineData.length;
+      const targetAngle = (nodeIndex / totalNodes) * 360;
 
-    setRotationAngle(270 - targetAngle);
-  }, [viewMode, timelineData]);
+      setRotationAngle(270 - targetAngle);
+    },
+    [viewMode, timelineData],
+  );
 
-  const calculateNodePosition = useCallback((index, total) => {
-    const angle = ((index / total) * 360 + rotationAngle) % 360;
+  const calculateNodePosition = useCallback(
+    (index, total) => {
+      const angle = ((index / total) * 360 + rotationAngle) % 360;
 
-    // Responsive radius
-    const radius = isMobile ? 125 : 220;
+      // Responsive radius
+      const radius = isMobile ? 125 : 220;
 
-    const radian = (angle * Math.PI) / 180;
+      const radian = (angle * Math.PI) / 180;
 
-    const x = radius * Math.cos(radian) + centerOffset.x;
-    const y = radius * Math.sin(radian) + centerOffset.y;
+      const x = radius * Math.cos(radian) + centerOffset.x;
+      const y = radius * Math.sin(radian) + centerOffset.y;
 
-    const zIndex = Math.round(100 + 50 * Math.cos(radian));
-    const opacity = Math.max(
-      0.5,
-      Math.min(1, 0.5 + 0.5 * ((1 + Math.sin(radian)) / 2))
-    );
-    const scale = 0.8 + 0.2 * ((1 + Math.sin(radian)) / 2);
+      const zIndex = Math.round(100 + 50 * Math.cos(radian));
+      const opacity = Math.max(
+        0.5,
+        Math.min(1, 0.5 + 0.5 * ((1 + Math.sin(radian)) / 2)),
+      );
+      const scale = 0.8 + 0.2 * ((1 + Math.sin(radian)) / 2);
 
-    return { x, y, angle, zIndex, opacity, scale };
-  }, [rotationAngle, centerOffset, isMobile]);
+      return { x, y, angle, zIndex, opacity, scale };
+    },
+    [rotationAngle, centerOffset, isMobile],
+  );
 
   const getStatusStyles = useCallback((status) => {
     switch (status) {
@@ -170,44 +190,64 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
   }, []);
 
   // Drag handlers for manual rotation
-  const handleMouseDown = useCallback((e) => {
-    if (e.target === containerRef.current || e.target === orbitRef.current) {
-      setIsDragging(true);
-      setAutoRotate(false);
-      dragStartRef.current = { x: e.clientX, y: e.clientY, angle: rotationAngle };
-    }
-  }, [rotationAngle]);
+  const handleMouseDown = useCallback(
+    (e) => {
+      if (e.target === containerRef.current || e.target === orbitRef.current) {
+        setIsDragging(true);
+        setAutoRotate(false);
+        dragStartRef.current = {
+          x: e.clientX,
+          y: e.clientY,
+          angle: rotationAngle,
+        };
+      }
+    },
+    [rotationAngle],
+  );
 
   // Touch handlers for mobile
-  const handleTouchStart = useCallback((e) => {
-    const touch = e.touches[0];
-    if (e.target === containerRef.current || e.target === orbitRef.current) {
-      setIsDragging(true);
-      setAutoRotate(false);
-      dragStartRef.current = { x: touch.clientX, y: touch.clientY, angle: rotationAngle };
-    }
-  }, [rotationAngle]);
+  const handleTouchStart = useCallback(
+    (e) => {
+      const touch = e.touches[0];
+      if (e.target === containerRef.current || e.target === orbitRef.current) {
+        setIsDragging(true);
+        setAutoRotate(false);
+        dragStartRef.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+          angle: rotationAngle,
+        };
+      }
+    },
+    [rotationAngle],
+  );
 
-  const handleTouchMove = useCallback((e) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    const touch = e.touches[0];
-    const deltaX = touch.clientX - dragStartRef.current.x;
-    const newAngle = (dragStartRef.current.angle + deltaX * 0.5) % 360;
-    setRotationAngle(Number(newAngle.toFixed(3)));
-  }, [isDragging]);
+  const handleTouchMove = useCallback(
+    (e) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - dragStartRef.current.x;
+      const newAngle = (dragStartRef.current.angle + deltaX * 0.5) % 360;
+      setRotationAngle(Number(newAngle.toFixed(3)));
+    },
+    [isDragging],
+  );
 
   const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
   }, []);
 
-  const handleMouseMove = useCallback((e) => {
-    if (!isDragging) return;
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (!isDragging) return;
 
-    const deltaX = e.clientX - dragStartRef.current.x;
-    const newAngle = (dragStartRef.current.angle + deltaX * 0.5) % 360;
-    setRotationAngle(Number(newAngle.toFixed(3)));
-  }, [isDragging]);
+      const deltaX = e.clientX - dragStartRef.current.x;
+      const newAngle = (dragStartRef.current.angle + deltaX * 0.5) % 360;
+      setRotationAngle(Number(newAngle.toFixed(3)));
+    },
+    [isDragging],
+  );
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -216,23 +256,32 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
   useEffect(() => {
     if (isDragging) {
       if (!isMobile) {
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", handleMouseUp);
       } else {
-        window.addEventListener('touchmove', handleTouchMove, { passive: false });
-        window.addEventListener('touchend', handleTouchEnd);
+        window.addEventListener("touchmove", handleTouchMove, {
+          passive: false,
+        });
+        window.addEventListener("touchend", handleTouchEnd);
       }
       return () => {
         if (!isMobile) {
-          window.removeEventListener('mousemove', handleMouseMove);
-          window.removeEventListener('mouseup', handleMouseUp);
+          window.removeEventListener("mousemove", handleMouseMove);
+          window.removeEventListener("mouseup", handleMouseUp);
         } else {
-          window.removeEventListener('touchmove', handleTouchMove);
-          window.removeEventListener('touchend', handleTouchEnd);
+          window.removeEventListener("touchmove", handleTouchMove);
+          window.removeEventListener("touchend", handleTouchEnd);
         }
       };
     }
-  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd, isMobile]);
+  }, [
+    isDragging,
+    handleMouseMove,
+    handleMouseUp,
+    handleTouchMove,
+    handleTouchEnd,
+    isMobile,
+  ]);
 
   const resetView = useCallback(() => {
     setRotationAngle(0);
@@ -246,22 +295,29 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
   const getConnectionLines = useCallback(() => {
     if (!showConnections || !activeNodeId) return [];
 
-    const activeNode = timelineData.find(item => item.id === activeNodeId);
+    const activeNode = timelineData.find((item) => item.id === activeNodeId);
     if (!activeNode) return [];
 
-    const activeIndex = timelineData.findIndex(item => item.id === activeNodeId);
+    const activeIndex = timelineData.findIndex(
+      (item) => item.id === activeNodeId,
+    );
     const activePos = calculateNodePosition(activeIndex, timelineData.length);
 
-    return activeNode.relatedIds.map(relatedId => {
-      const relatedIndex = timelineData.findIndex(item => item.id === relatedId);
-      const relatedPos = calculateNodePosition(relatedIndex, timelineData.length);
+    return activeNode.relatedIds.map((relatedId) => {
+      const relatedIndex = timelineData.findIndex(
+        (item) => item.id === relatedId,
+      );
+      const relatedPos = calculateNodePosition(
+        relatedIndex,
+        timelineData.length,
+      );
 
       return {
         x1: activePos.x,
         y1: activePos.y,
         x2: relatedPos.x,
         y2: relatedPos.y,
-        id: `${activeNodeId}-${relatedId}`
+        id: `${activeNodeId}-${relatedId}`,
       };
     });
   }, [activeNodeId, showConnections, timelineData, calculateNodePosition]);
@@ -282,12 +338,12 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
     <div
       className="
         w-full
-        h-auto
-        md:h-screen
+        
+     min-h-screen
         flex flex-col
         items-center
         justify-start md:justify-center
-        overflow-hidden
+  overflow-visible
         relative
         select-none
       "
@@ -297,102 +353,145 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
       onTouchStart={handleTouchStart}
       style={{ cursor: isDragging ? "grabbing" : "grab" }}
     >
-      {/* Background */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* Gradient */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(135deg, #dcfce7 0%, #ecfdf5 45%, #ffffff 100%)",
-          }}
-        />
+      {/* Same Background as Landing Page */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          backgroundColor: "#FFFFFF",
+          backgroundImage: `
+      linear-gradient(
+        90deg,
+        rgba(7, 135, 106, 0.13) 0%,
+        rgba(7, 135, 106, 0.04) 25%,
+        rgba(255, 255, 255, 0.96) 45%,
+        rgba(255, 255, 255, 0.96) 55%,
+        rgba(7, 135, 106, 0.04) 75%,
+        rgba(7, 135, 106, 0.13) 100%
+      ),
+      linear-gradient(
+        135deg,
+        rgba(7, 135, 106, 0.09) 0%,
+        rgba(52, 211, 153, 0.035) 45%,
+        rgba(255, 255, 255, 0.08) 100%
+      ),
+      linear-gradient(
+        rgba(7, 135, 106, 0.10) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        rgba(7, 135, 106, 0.10) 1px,
+        transparent 1px
+      )
+    `,
+          backgroundSize: `
+      100% 100%,
+      40px 40px,
+      40px 40px,
+      40px 40px
+    `,
+          backgroundPosition: `
+      center,
+      0 0,
+      0 0,
+      0 0
+    `,
+        }}
+      />
 
-        {/* Large Grid */}
-        <div
-          className="absolute inset-0"
-          style={{
-            opacity: 0.18,
-            backgroundImage: `
-          linear-gradient(to right,#16a34a 1px,transparent 1px),
-          linear-gradient(to bottom,#16a34a 1px,transparent 1px)
-        `,
-            backgroundSize: isMobile ? "40px 40px" : "60px 60px",
-          }}
-        />
-
-        {/* Small Grid */}
-        <div
-          className="absolute inset-0"
-          style={{
-            opacity: 0.08,
-            backgroundImage: `
-          linear-gradient(to right,#15803d 1px,transparent 1px),
-          linear-gradient(to bottom,#15803d 1px,transparent 1px)
-        `,
-            backgroundSize: isMobile ? "15px 15px" : "20px 20px",
-          }}
-        />
-
-        {/* White Radial */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(circle at center,transparent 0%,rgba(255,255,255,.3) 50%,rgba(255,255,255,.9) 100%)",
-          }}
-        />
-      </div>
+      {/* Content */}
 
       {/* Content */}
       <div
-        className="
-          relative z-10
-          w-full
-          h-auto md:h-full
-          flex flex-col
-          items-center
-          justify-start md:justify-center
-          px-3 md:px-4
-          py-6 md:py-0
-        "
+className="
+  relative z-10
+  w-full
+
+  flex flex-col
+  items-center
+  justify-start
+
+  px-3 md:px-4
+  py-10 md:py-14
+"
       >
+      <div className="w-full text-center flex flex-col items-center">
+  {/* Badge */}
+  <div
+    className="
+      mb-4
+      inline-flex items-center gap-2
+      rounded-full
+      border border-[#D8E7E2]
+      bg-white/80
+      px-3 py-1.5
+      shadow-sm
+      backdrop-blur-sm
+    "
+  >
+    <span className="relative flex h-2 w-2">
+      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#07876A] opacity-30" />
+      <span className="relative inline-flex h-2 w-2 rounded-full bg-[#07876A]" />
+    </span>
 
-        <div className="mb-2 flex justify-center w-full max-w-2xl">
-          <div className="w-32 md:w-74 h-1 bg-[#1e6658] rounded-full animate-pulse"></div>
-        </div>
+    <span className="text-[11px] font-semibold text-[#64748B]">
+      All Your Healthcare Needs
+    </span>
+  </div>
 
-        <div className="inline-block mb-2 text-center px-2">
-          <h1 className={`${titleFontSize} md:text-7xl font-black tracking-tighter leading-[0.9]`}>
-            <span className="text-[#1e6658]">OUR</span>
-            <span
-              className="text-transparent"
-              style={{
-                WebkitTextStroke: isMobile ? '1.5px #1e6658' : '2px #1e6658',
-                marginLeft: isMobile ? 4 : 10
-              }}
-            >
-              FEATURE
-            </span>
-          </h1>
-        </div>
-        <div className="w-full mb-4 flex justify-center">
-          <div className="w-1/2 md:w-[30%] h-1 bg-[#1e6658] rounded-full animate-pulse"></div>
-        </div>
+  {/* Heading */}
+  <h2
+    className="
+      max-w-[950px]
+      text-[32px]
+      sm:text-[38px]
+      md:text-[44px]
+      lg:text-[48px]
+      font-black
+      leading-[1.08]
+      tracking-[-0.04em]
+      text-[#172033]
+    "
+  >
+    Our Features.{" "}
+    <span className="text-[#07876A]">
+      Everything for better care.
+    </span>
+  </h2>
 
-        <div
-          className="
-            relative
-            w-full
-            max-w-5xl
-            h-[420px]
-            sm:h-[480px]
-            md:h-full
-            flex
-            items-center
-            justify-center
-          "
-        >
+  {/* Description */}
+  <p
+    className="
+      mt-3
+      max-w-[680px]
+      text-[13px]
+      leading-[1.7]
+      text-[#64748B]
+    "
+  >
+    From finding the right doctor to managing prescriptions, lab reports
+    and medical records — Jeevan Ndev keeps your healthcare connected in
+    one place.
+  </p>
+</div>
+      <div
+  className="
+    relative
+    w-full
+    max-w-5xl
+
+    h-[420px]
+    sm:h-[480px]
+    md:h-[540px]
+
+    flex
+    items-center
+    justify-center
+
+    mt-6
+    md:mt-8
+  "
+>
           <div
             className="absolute w-full h-full flex items-center justify-center"
             ref={orbitRef}
@@ -402,8 +501,11 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
             }}
           >
             {/* Connection Lines SVG */}
-            <svg className="absolute w-full h-full pointer-events-none z-0" style={{ overflow: 'visible' }}>
-              {connections.map(conn => (
+            <svg
+              className="absolute w-full h-full pointer-events-none z-0"
+              style={{ overflow: "visible" }}
+            >
+              {connections.map((conn) => (
                 <line
                   key={conn.id}
                   x1={conn.x1}
@@ -430,11 +532,18 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
               ></div>
               <div
                 className="absolute rounded-full border border-[#063e2a]/10 animate-ping"
-                style={{ width: pingRing2Size, height: pingRing2Size, animationDelay: "0.5s" }}
+                style={{
+                  width: pingRing2Size,
+                  height: pingRing2Size,
+                  animationDelay: "0.5s",
+                }}
               ></div>
               <div
                 className="rounded-full bg-white shadow-inner flex items-center justify-center"
-                style={{ width: centralHubInnerSize, height: centralHubInnerSize }}
+                style={{
+                  width: centralHubInnerSize,
+                  height: centralHubInnerSize,
+                }}
               >
                 <Zap size={isMobile ? 16 : 20} className="text-[#063e2a]" />
               </div>
@@ -452,7 +561,10 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
 
             {/* Timeline Nodes */}
             {timelineData.map((item, index) => {
-              const position = calculateNodePosition(index, timelineData.length);
+              const position = calculateNodePosition(
+                index,
+                timelineData.length,
+              );
               const isExpanded = expandedItems[item.id];
               const isRelated = isRelatedToActive(item.id);
               const isPulsing = pulseEffect[item.id];
@@ -488,7 +600,7 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
                 >
                   {/* Energy Glow Effect */}
                   <div
-                    className={`absolute rounded-full transition-all duration-500 ${isPulsing ? 'animate-pulse' : ''}`}
+                    className={`absolute rounded-full transition-all duration-500 ${isPulsing ? "animate-pulse" : ""}`}
                     style={{
                       background: `radial-gradient(circle, ${getStatusColor(item.status)}20 0%, transparent 70%)`,
                       width: `${item.energy * 0.8 + energySize}px`,
@@ -511,8 +623,8 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
                       width: `${nodeSize}px`,
                       height: `${nodeSize}px`,
                       border: `3px solid #063e2a`,
-                      backgroundColor: isExpanded ? '#063e2a' : '#ffffff',
-                      color: isExpanded ? '#ffffff' : '#063e2a',
+                      backgroundColor: isExpanded ? "#063e2a" : "#ffffff",
+                      color: isExpanded ? "#ffffff" : "#063e2a",
                     }}
                   >
                     <Icon size={iconSize} strokeWidth={2} />
@@ -524,18 +636,19 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
                     absolute top-14 left-1/2 -translate-x-1/2 whitespace-nowrap
                     text-xs md:text-sm font-bold tracking-wide
                     transition-all duration-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full
-                    ${isExpanded
+                    ${
+                      isExpanded
                         ? "text-[#063e2a] bg-white shadow-md scale-110"
                         : isRelated
                           ? "text-[#063e2a] bg-[#063e2a]/10"
                           : "text-gray-600 bg-white/80 backdrop-blur-sm"
-                      }
+                    }
                   `}
                     style={{
-                      fontSize: isMobile ? '10px' : '14px',
-                      maxWidth: isMobile ? '80px' : 'none',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
+                      fontSize: isMobile ? "10px" : "14px",
+                      maxWidth: isMobile ? "80px" : "none",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
                     }}
                   >
                     {item.title}
@@ -543,10 +656,12 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
 
                   {/* Expanded Card - Mobile Responsive */}
                   {isExpanded && (
-                    <Card className={`absolute top-${isMobile ? '16' : '20'} left-1/2 -translate-x-1/2 
-                      ${isMobile ? 'w-64' : 'w-72'} 
+                    <Card
+                      className={`absolute top-${isMobile ? "16" : "20"} left-1/2 -translate-x-1/2 
+                      ${isMobile ? "w-64" : "w-72"} 
                       bg-white shadow-2xl border-[#063e2a]/20 overflow-visible animate-in fade-in zoom-in duration-300
-                      ${isMobile ? 'max-w-[90vw]' : ''}`}>
+                      ${isMobile ? "max-w-[90vw]" : ""}`}
+                    >
                       <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-[#063e2a]/30"></div>
                       <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white rotate-45 border-t border-l border-[#063e2a]/20"></div>
 
@@ -563,7 +678,10 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
                         {item.relatedIds.length > 0 && (
                           <div className="mt-4 pt-4 border-t border-gray-100">
                             <div className="flex items-center mb-3">
-                              <Link size={isMobile ? 10 : 12} className="text-[#063e2a] mr-2" />
+                              <Link
+                                size={isMobile ? 10 : 12}
+                                className="text-[#063e2a] mr-2"
+                              />
                               <h4 className="text-2xs md:text-xs uppercase tracking-wider font-bold text-[#063e2a]">
                                 Connected Phases
                               </h4>
@@ -571,7 +689,7 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
                             <div className="flex flex-wrap gap-1 md:gap-2">
                               {item.relatedIds.map((relatedId) => {
                                 const relatedItem = timelineData.find(
-                                  (i) => i.id === relatedId
+                                  (i) => i.id === relatedId,
                                 );
                                 return (
                                   <Button
@@ -585,7 +703,10 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
                                     }}
                                   >
                                     {relatedItem?.title}
-                                    <ArrowRight size={isMobile ? 8 : 10} className="ml-1" />
+                                    <ArrowRight
+                                      size={isMobile ? 8 : 10}
+                                      className="ml-1"
+                                    />
                                   </Button>
                                 );
                               })}
@@ -600,8 +721,6 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
             })}
           </div>
         </div>
-
-
       </div>
     </div>
   );

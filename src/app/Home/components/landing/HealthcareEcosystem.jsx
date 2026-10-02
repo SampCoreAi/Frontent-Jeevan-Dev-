@@ -727,7 +727,7 @@ export default function HealthcareEcosystem() {
       xs: 5,
       sm: 6,
       md: 7,
-      lg: 7.5,
+      lg: 2,
     },
 
     /* =========================================
@@ -968,190 +968,127 @@ export default function HealthcareEcosystem() {
           </Typography>
         </Stack>
 
-        {/* =================================================
-            MOBILE HUB
-        ================================================= */}
+      {/* =================================================
+    MOBILE HUB
+================================================= */}
 
-        <Box
-          sx={{
-            mt: {
-              xs: 3.5,
-              lg: 0,
-            },
-          }}
-        >
-          <MobileHub />
-        </Box>
+<Box
+  sx={{
+    mt: {
+      xs: 3,
+      lg: 0,
+    },
+    display: {
+      xs: "flex",
+      lg: "block",
+    },
+    justifyContent: "center",
+  }}
+>
+  <MobileHub />
+</Box>
 
-        {/* =================================================
-            ECOSYSTEM AREA
-        ================================================= */}
+{/* =================================================
+    ECOSYSTEM AREA
+================================================= */}
 
-        <Box
-          sx={{
-            position: "relative",
+<Box
+  sx={{
+    position: "relative",
 
-            mt: {
-              xs: 0,
-              md: 2,
-              lg: 4.5,
-            },
+    mt: {
+      xs: 1.5,
+      md: 2.5,
+      lg: 4.5,
+    },
 
-            minHeight: {
-              xs: "auto",
-              lg: 545,
-            },
+    minHeight: {
+      xs: "auto",
+      lg: 545,
+    },
 
-            display: "grid",
+    display: "grid",
 
-            /* ===============================================
-               RESPONSIVE COLUMNS
-            =============================================== */
+  gridTemplateColumns: {
+  xs: "1fr", // mobile
+  sm: "repeat(2, minmax(0, 1fr))", // tablet
+  lg: "430px minmax(170px,1fr) 430px", // desktop SAME
+},
 
-            gridTemplateColumns: {
-              xs: "1fr",
+    gridTemplateRows: {
+      xs: "auto",
+      lg: "240px 240px",
+    },
+columnGap: {
+  sm: 1.6,
+  md: 2,
+  lg: "80px",
+},
 
-              md:
-                "repeat(2, minmax(0, 1fr))",
+rowGap: {
+  xs: 1.4,
+  sm: 1.8,
+  lg: "42px",
+},
 
-              lg:
-                "430px minmax(170px,1fr) 430px",
-            },
+    alignItems: "stretch",
+  }}
+>
+  <ConnectionLines />
+  <CenterHub />
 
-            /* ===============================================
-               DESKTOP ROWS
-            =============================================== */
+  {/* DOCTOR */}
+  <Box
+    sx={{
+      position: "relative",
+      zIndex: 5,
+      minWidth: 0,
+      gridColumn: { lg: "1" },
+      gridRow: { lg: "1" },
+    }}
+  >
+    <EcosystemCard {...cards[0]} />
+  </Box>
 
-            gridTemplateRows: {
-              lg: "240px 240px",
-            },
+  {/* LAB */}
+  <Box
+    sx={{
+      position: "relative",
+      zIndex: 5,
+      minWidth: 0,
+      gridColumn: { lg: "3" },
+      gridRow: { lg: "1" },
+    }}
+  >
+    <EcosystemCard {...cards[1]} />
+  </Box>
 
-            columnGap: {
-              md: 2,
-              lg: "80px",
-            },
+  {/* PATIENT */}
+  <Box
+    sx={{
+      position: "relative",
+      zIndex: 5,
+      minWidth: 0,
+      gridColumn: { lg: "1" },
+      gridRow: { lg: "2" },
+    }}
+  >
+    <EcosystemCard {...cards[2]} />
+  </Box>
 
-            rowGap: {
-              xs: 2,
-              md: 2,
-              lg: "42px",
-            },
-
-            alignItems: "center",
-          }}
-        >
-          {/* CONNECTION LINES */}
-
-          <ConnectionLines />
-
-          {/* CENTER JEEVAN DEV */}
-
-          <CenterHub />
-
-          {/* =================================================
-              DOCTOR
-          ================================================= */}
-
-          <Box
-            sx={{
-              position: "relative",
-
-              zIndex: 5,
-
-              minWidth: 0,
-
-              gridColumn: {
-                lg: "1",
-              },
-
-              gridRow: {
-                lg: "1",
-              },
-            }}
-          >
-            <EcosystemCard
-              {...cards[0]}
-            />
-          </Box>
-
-          {/* =================================================
-              DIAGNOSTIC LAB
-          ================================================= */}
-
-          <Box
-            sx={{
-              position: "relative",
-
-              zIndex: 5,
-
-              minWidth: 0,
-
-              gridColumn: {
-                lg: "3",
-              },
-
-              gridRow: {
-                lg: "1",
-              },
-            }}
-          >
-            <EcosystemCard
-              {...cards[1]}
-            />
-          </Box>
-
-          {/* =================================================
-              PATIENT
-          ================================================= */}
-
-          <Box
-            sx={{
-              position: "relative",
-
-              zIndex: 5,
-
-              minWidth: 0,
-
-              gridColumn: {
-                lg: "1",
-              },
-
-              gridRow: {
-                lg: "2",
-              },
-            }}
-          >
-            <EcosystemCard
-              {...cards[2]}
-            />
-          </Box>
-
-          {/* =================================================
-              MEDICAL STORE
-          ================================================= */}
-
-          <Box
-            sx={{
-              position: "relative",
-
-              zIndex: 5,
-
-              minWidth: 0,
-
-              gridColumn: {
-                lg: "3",
-              },
-
-              gridRow: {
-                lg: "2",
-              },
-            }}
-          >
-            <EcosystemCard
-              {...cards[3]}
-            />
-          </Box>
-        </Box>
+  {/* MEDICAL STORE */}
+  <Box
+    sx={{
+      position: "relative",
+      zIndex: 5,
+      minWidth: 0,
+      gridColumn: { lg: "3" },
+      gridRow: { lg: "2" },
+    }}
+  >
+    <EcosystemCard {...cards[3]} />
+  </Box>
+</Box>
       </Container>
     </Box>
   );

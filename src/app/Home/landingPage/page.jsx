@@ -1,8 +1,9 @@
 "use client";
-
+import Lenis from "lenis";
 import React, { useState, useEffect, useCallback } from "react";
 import SearchBar from "../components/landing/SearchBar";
 import HeroContent from "../components/landing/HeroContent";
+import JeevanShowcase from "../components/MobileUi/JeevanShowcase";
 import {
   Box,
   Container,
@@ -34,8 +35,9 @@ import { RadialOrbitalTimelineDemo } from "../components/feature/demo";
 import Footer from "../components/Footer";
 import HowItWorks from "../components/landing/HowItWorks";
 import Main from "../components/DoctorRegister/EntryDoctor";
-
+import ElasticLine from "../components/ElasticLine";
 import HealthcareEcosystem from "../components/landing/HealthcareEcosystem";
+import FeedbackCTA from "../components/landing/FeedbackCTA";
 const slideUpFade = keyframes`
   0% {
     opacity: 0;
@@ -89,6 +91,29 @@ export default function Landing() {
   const router = useRouter();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+  useEffect(() => {
+    const lenis = new Lenis({
+      lerp: 0.1,
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      touchMultiplier: 1,
+    });
+
+    let rafId;
+
+    const raf = (time) => {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    };
+
+    rafId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+    };
+  }, []);
+
   const popularSearches = [
     "All",
     "Cardiology",
@@ -124,7 +149,7 @@ export default function Landing() {
 
       router.push(`/Home/pages/search?${queryParams.toString()}`);
     },
-    [searchQuery, city, router]
+    [searchQuery, city, router],
   );
 
   const toggleMobileMenu = () => {
@@ -179,16 +204,16 @@ export default function Landing() {
     <Box
       sx={{
         bgcolor: "#F8FAFC",
-        overflow: "hidden",
+        overflowX: "clip",
       }}
     >
       <Navbar />
 
-     <Box
-  sx={{
-    backgroundColor: "#FFFFFF",
+      <Box
+        sx={{
+          backgroundColor: "#FFFFFF",
 
-    backgroundImage: `
+          backgroundImage: `
       linear-gradient(
         90deg,
         rgba(7, 135, 106, 0.13) 0%,
@@ -218,44 +243,39 @@ export default function Landing() {
       )
     `,
 
-    backgroundSize: `
+          backgroundSize: `
       100% 100%,
       40px 40px,
       40px 40px,
       40px 40px
     `,
 
-    backgroundPosition: `
+          backgroundPosition: `
       center,
       0 0,
       0 0,
       0 0
     `,
 
-    pt: {
-      xs: 6,
-      md: 2,
-    },
+          pt: {
+            xs: 6,
+            md: 2,
+          },
 
-    pb: {
-      xs: 8,
-      md: 12,
-    },
+          textAlign: "center",
+          position: "relative",
+          overflow: "hidden",
 
-    textAlign: "center",
-    position: "relative",
-    overflow: "hidden",
+          minHeight: {
+            xs: "auto",
+            md: "90vh",
+          },
 
-    minHeight: {
-      xs: "auto",
-      md: "90vh",
-    },
-
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-  }}
->
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}
+      >
         {!isMobile && (
           <Zoom
             in={isVisible}
@@ -312,17 +332,14 @@ export default function Landing() {
               right: 20,
               zIndex: 10,
 
-              background:
-                "linear-gradient(135deg, #FFFFFF 0%, #ECFDF5 100%)",
+              background: "linear-gradient(135deg, #FFFFFF 0%, #ECFDF5 100%)",
 
               border: "1px solid rgba(7,135,106,0.12)",
 
-              boxShadow:
-                "0 8px 25px rgba(7,135,106,0.10)",
+              boxShadow: "0 8px 25px rgba(7,135,106,0.10)",
 
               "&:hover": {
-                background:
-                  "linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)",
+                background: "linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)",
               },
             }}
           >
@@ -369,11 +386,9 @@ export default function Landing() {
                 borderRadius: 2,
                 mb: 1.2,
 
-                background:
-                  "linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)",
+                background: "linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)",
 
-                border:
-                  "1px solid rgba(16,185,129,0.12)",
+                border: "1px solid rgba(16,185,129,0.12)",
 
                 transition: "all 0.25s ease",
 
@@ -401,11 +416,9 @@ export default function Landing() {
                 borderRadius: 2,
                 mb: 1,
 
-                background:
-                  "linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)",
+                background: "linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)",
 
-                border:
-                  "1px solid rgba(59,130,246,0.12)",
+                border: "1px solid rgba(59,130,246,0.12)",
 
                 transition: "all 0.25s ease",
 
@@ -447,17 +460,22 @@ export default function Landing() {
           />
         </StyledContainer>
       </Box>
-    <HealthcareEcosystem />
-{/* <ConnectedHealthcare /> */}
+
+      <ElasticLine />
+      <HealthcareEcosystem />
+      <ElasticLine />
+
       <div>
         <RadialOrbitalTimelineDemo />
       </div>
+      <ElasticLine />
       <HowItWorks />
-
-      <AppSvg />
+      <JeevanShowcase />
+      <ElasticLine />
+      {/* <AppSvg /> */}
 
       <Main />
-
+<FeedbackCTA />
       <JeevanDevLogo />
 
       <Footer />
