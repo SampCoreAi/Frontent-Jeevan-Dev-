@@ -21,6 +21,7 @@ const ProfileContent = ({
   snackbar,
   onFieldChange,
   onChipClick,
+  onWorkingHoursSaved,
   onChipSave,
   onRatingChange,
   onOnlineVisibilityChange,
@@ -63,7 +64,24 @@ const ProfileContent = ({
     setSelectedHospital(hospital);
     setWorkingHoursOpen(true);
   };
+const getWorkingHours = (hospital) => {
+  const result = {};
 
+  (hospital?.availability || []).forEach(
+    (item) => {
+      const key = String(
+        item.day || ""
+      ).toLowerCase();
+
+      result[key] = {
+        start: item.startTime || "",
+        end: item.endTime || "",
+      };
+    }
+  );
+
+  return result;
+};
   // ==========================================
 
   if (loading) {
@@ -80,7 +98,12 @@ const ProfileContent = ({
       </Box>
     );
   }
-
+const currentSelectedHospital =
+  profileData?.hospitalDetail?.find(
+    (hospital) =>
+      String(hospital.clinicId) ===
+      String(selectedHospital?.clinicId)
+  ) || selectedHospital;
   return (
     <Box
       sx={{
@@ -196,13 +219,13 @@ const ProfileContent = ({
           />
         </Box>
       </Box>
-     <WorkingHoursModal
+   <WorkingHoursModal
   open={workingHoursOpen}
   onClose={() => {
     setWorkingHoursOpen(false);
     setSelectedHospital(null);
   }}
-  workingHours={selectedHospital?.workingHours || {}}
+  workingHours={getWorkingHours(selectedHospital)}
   onWorkingHoursChange={(day, field, value) => {
     if (!selectedHospital?.clinicId) {
       console.error("Clinic ID missing");
@@ -215,6 +238,9 @@ const ProfileContent = ({
       field,
       value
     );
+  }}
+  onSaved={() => {
+    onWorkingHoursSaved?.();
   }}
 />
     </Box>

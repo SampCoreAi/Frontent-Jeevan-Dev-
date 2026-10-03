@@ -139,6 +139,7 @@ const WorkingHoursModal = ({
   onClose,
   workingHours,
   onWorkingHoursChange,
+  onSaved,
 }) => {
   const [draftHours, setDraftHours] =
     useState(createEmptyHours());
@@ -542,7 +543,7 @@ const WorkingHoursModal = ({
 
     setError("");
     setEditingDay(null);
-
+onSaved?.();
     onClose();
   };
 

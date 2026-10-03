@@ -146,12 +146,18 @@ const Page = () => {
       })
     );
 
-    setChangedFields((prev) => ({
-      ...prev,
-      availability: true,
-    }));
+setChangedFields((prev) => ({
+  ...prev,
+  hospitalDetail: true,
+}));
   };
 
+  const handleWorkingHoursSaved = () => {
+  setChangedFields((prev) => ({
+    ...prev,
+    hospitalDetail: true,
+  }));
+};
   // ================= HOSPITAL =================
 
   const handleHospitalChangeLocal = (
@@ -251,65 +257,93 @@ if (changedFields.registration_number) {
   payload.acceptEmergencyPatients =
     Boolean(profileData.accept_emergency_patients);
 }
-    // Availability / Working Hours
-    if (changedFields.availability) {
-      payload.availability = (profileData.availability || [])
-        .filter((item) => item.clinicId !== null && item.clinicId !== undefined && item.clinicId !== "")
-        .map((item) => {
-          const startTime = item.startTime || "";
-          const endTime = item.endTime || "";
-          const day = String(item.day || "");
-
-          return {
-            ...item,
-            clinicId: item.clinicId,
-            day: day.charAt(0).toUpperCase() + day.slice(1).toLowerCase(),
-            startTime,
-            endTime,
-            isAvailable: Boolean(startTime && endTime && item.isAvailable !== false),
-          };
-        });
-    }
+   
 
     // Hospital Details
-    if (changedFields.hospitalDetail) {
-      const hospitalDetail = (
-        profileData.hospitalDetail || []
-      )
-        .filter((hospital) =>
-          hospital.hospitalName?.trim()
-        )
-        .map((hospital) => ({
-        ...(hospital.clinicId
-  ? { clinicId: String(hospital.clinicId) }
-  : {}),
-          hospitalName:
-            hospital.hospitalName?.trim() ||
-            "",
-          flatPlotNo:
-            hospital.flatNo?.trim() || "",
-          buildingSociety:
-            hospital.building?.trim() || "",
-          streetName:
-            hospital.street?.trim() || "",
-          areaLocality:
-            hospital.area?.trim() || "",
-          landmark:
-            hospital.landmark?.trim() || "",
-          city:
-            hospital.city?.trim() || "",
-          district:
-            hospital.district?.trim() || "",
-          state:
-            hospital.state?.trim() || "",
-          pinCode:
-            hospital.pinCode?.trim() || "",
-        }));
+  // ================= HOSPITAL DETAILS =================
 
-      payload.hospitalDetail =
-        hospitalDetail;
+if (changedFields.hospitalDetail) {
+  const hospitalDetail = (
+    profileData.hospitalDetail || []
+  )
+    .filter((hospital) =>
+      hospital.hospitalName?.trim()
+    )
+    .map((hospital) => ({
+      ...(hospital.clinicId
+        ? {
+            clinicId: String(
+              hospital.clinicId
+            ),
+          }
+        : {}),
+
+      hospitalName:
+        hospital.hospitalName?.trim() || "",
+
+      flatPlotNo:
+        hospital.flatNo?.trim() || "",
+
+      buildingSociety:
+        hospital.building?.trim() || "",
+
+      streetName:
+        hospital.street?.trim() || "",
+
+      areaLocality:
+        hospital.area?.trim() || "",
+
+      landmark:
+        hospital.landmark?.trim() || "",
+
+      city:
+        hospital.city?.trim() || "",
+
+      district:
+        hospital.district?.trim() || "",
+
+      state:
+        hospital.state?.trim() || "",
+
+      pinCode:
+        hospital.pinCode?.trim() || "",
+    }));
+
+  payload.hospitalDetail = hospitalDetail;
+
+  // ================= AVAILABILITY =================
+
+  payload.availability = (
+    profileData.hospitalDetail || []
+  ).flatMap((hospital) => {
+    if (!hospital.clinicId) {
+      return [];
     }
 
+    return (hospital.availability || [])
+      .filter(
+        (item) =>
+          item.startTime &&
+          item.endTime
+      )
+      .map((item) => ({
+        day: item.day,
+
+        startTime:
+          item.startTime || "",
+
+        endTime:
+          item.endTime || "",
+
+        clinicId: String(
+          hospital.clinicId
+        ),
+
+        isAvailable:
+          item.isAvailable !== false,
+      }));
+  });
+}
     if (profileData.logoKey) {
       payload.logo = profileData.logoKey;
     }
@@ -413,40 +447,62 @@ if (changedFields.registration_number) {
   };
 
   return (
-    <ProfileContent
-      loading={loading && !profileLoaded}
-      saving={saving}
-      profileData={profileData}
-      isEditing={isEditing}
-      snackbar={snackbar}
-      onFieldChange={handleChange}
-      onClinicWorkingHoursChange={handleClinicWorkingHoursChangeLocal}
-      onUpdateClick={handleUpdateClick}
-      onSaveClick={saveDoctorProfile}
-      onCloseSnackbar={
-        handleCloseSnackbar
-      }
-      onHospitalChange={
-        handleHospitalChangeLocal
-      }
-      onAddHospital={
-        handleAddHospitalLocal
-      }
-      onRemoveHospital={
-        handleRemoveHospitalLocal
-      }
-      onLicenseUpload={
-        handleLicenseUpload
-      }
-      onImageUpload={
-        handleImageUpload
-      }
-      onLogoUpload={(file) => handleBrandingUpload(file, uploadDoctorLogo)}
-      onSignatureUpload={(file) => handleBrandingUpload(file, uploadDoctorSignature)}
-      logoUploading={logoUploading}
-      signatureUploading={signatureUploading}
-      profileImageUploading={profileImageUploading}
-    />
+   <ProfileContent
+  loading={loading && !profileLoaded}
+  saving={saving}
+  profileData={profileData}
+  isEditing={isEditing}
+  snackbar={snackbar}
+
+  onFieldChange={handleChange}
+
+  onClinicWorkingHoursChange={
+    handleClinicWorkingHoursChangeLocal
+  }
+
+  onWorkingHoursSaved={
+    handleWorkingHoursSaved
+  }
+
+  onUpdateClick={handleUpdateClick}
+  onSaveClick={saveDoctorProfile}
+  onCloseSnackbar={handleCloseSnackbar}
+
+  onHospitalChange={
+    handleHospitalChangeLocal
+  }
+
+  onAddHospital={
+    handleAddHospitalLocal
+  }
+
+  onRemoveHospital={
+    handleRemoveHospitalLocal
+  }
+
+  onLicenseUpload={handleLicenseUpload}
+  onImageUpload={handleImageUpload}
+
+  onLogoUpload={(file) =>
+    handleBrandingUpload(
+      file,
+      uploadDoctorLogo
+    )
+  }
+
+  onSignatureUpload={(file) =>
+    handleBrandingUpload(
+      file,
+      uploadDoctorSignature
+    )
+  }
+
+  logoUploading={logoUploading}
+  signatureUploading={signatureUploading}
+  profileImageUploading={
+    profileImageUploading
+  }
+/>
   );
 };
 

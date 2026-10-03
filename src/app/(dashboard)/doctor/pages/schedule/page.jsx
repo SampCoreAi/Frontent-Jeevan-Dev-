@@ -254,12 +254,12 @@ useEffect(() => {
   />
 </Typography>
 
-      <SavedSchedules
-        schedules={schedules}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        loading={loading}
-      />
+<SavedSchedules
+  schedules={schedules}
+  hospitals={hospitals}
+  onEdit={handleEdit}
+  onDelete={handleDelete}
+/>
 
       <Snackbar
         open={snackbar.open}

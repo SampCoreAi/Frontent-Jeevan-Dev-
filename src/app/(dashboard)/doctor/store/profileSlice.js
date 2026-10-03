@@ -134,21 +134,21 @@ const getLocalUserData = () => {
 // Helper function to transform API data to form data
 const transformApiDataToForm = (apiData, userData) => {
   const emptyHospital = {
-    clinicId: null,
-    hospitalName: '',
-    flatNo: '',
-    building: '',
-    street: '',
-    area: '',
-    landmark: '',
-    city: '',
-    district: '',
-    state: '',
-    pinCode: '',
-  };
+  clinicId: null,
+  hospitalName: "",
+  flatNo: "",
+  building: "",
+  street: "",
+  area: "",
+  landmark: "",
+  city: "",
+  district: "",
+  state: "",
+  pinCode: "",
+  availability: [],
+};
 
-  // Transform hospital details
- const hospitalsFromApi = (apiData.hospital_detail || []).map((h) => ({
+const hospitalsFromApi = (apiData.hospital_detail || []).map((h) => ({
   clinicId: h.clinicId ?? null,
   hospitalName: h.hospitalName || "",
   flatNo: h.flatPlotNo || "",
@@ -160,6 +160,10 @@ const transformApiDataToForm = (apiData, userData) => {
   district: h.district || "",
   state: h.state || "",
   pinCode: h.pinCode || "",
+
+  availability: Array.isArray(h.availability)
+    ? h.availability
+    : [],
 }));
   // Ensure at least one hospital exists
   if (hospitalsFromApi.length === 0) {
@@ -246,10 +250,6 @@ registration_number: apiData.registration_number || "",
     apiData.accept_emergency_patients === "1" ||
     apiData.accept_emergency_patients === true,
 
-  // UI transformed data
-  availability: Array.isArray(apiData.availability)
-    ? apiData.availability
-    : [],
   hospitalDetail: hospitalsFromApi,
 
   rating: apiData.avgRating || 0,
@@ -280,7 +280,6 @@ const buildInitialState = () => {
       accept_emergency_patients: false,
       
       licenseFile: null,
-      availability: [],
       avatarUrl: '',
       logoUrl: '',
       signatureUrl: '',
@@ -288,19 +287,22 @@ const buildInitialState = () => {
       signatureKey: '',
       logoPreviewUrl: '',
       signaturePreviewUrl: '',
-      hospitalDetail: [{
-        clinicId: null,
-        hospitalName: '',
-        flatNo: '',
-        building: '',
-        street: '',
-        area: '',
-        landmark: '',
-        city: '',
-        district: '',
-        state: '',
-        pinCode: '',
-      }],
+     hospitalDetail: [
+  {
+    clinicId: null,
+    hospitalName: "",
+    flatNo: "",
+    building: "",
+    street: "",
+    area: "",
+    landmark: "",
+    city: "",
+    district: "",
+    state: "",
+    pinCode: "",
+    availability: [],
+  },
+],
     },
     loading: false,
     profileLoaded: false,
@@ -344,56 +346,85 @@ const profileSlice = createSlice({
       const { field, value } = action.payload;
       state.profileData[field] = value;
     },
-    handleClinicWorkingHoursChange: (state, action) => {
-      const { clinicId, day, field, value } = action.payload;
-      if (clinicId === null || clinicId === undefined || clinicId === '') return;
+   handleClinicWorkingHoursChange: (state, action) => {
+  const { clinicId, day, field, value } = action.payload;
 
-      const dayLabel = String(day || '');
-      const normalizedDay =
-        dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1).toLowerCase();
-      const availability = state.profileData.availability || [];
-      state.profileData.availability = availability;
+  if (
+    clinicId === null ||
+    clinicId === undefined ||
+    clinicId === ""
+  ) {
+    return;
+  }
 
-      let entry = availability.find(
-        (item) =>
-          String(item.clinicId) === String(clinicId) &&
-          String(item.day).toLowerCase() === normalizedDay.toLowerCase()
-      );
+  const hospital = state.profileData.hospitalDetail.find(
+    (item) =>
+      String(item.clinicId) === String(clinicId)
+  );
 
-      if (!entry) {
-        entry = {
-          clinicId,
-          day: normalizedDay,
-          startTime: '',
-          endTime: '',
-          isAvailable: false,
-        };
-        availability.push(entry);
-      }
+  if (!hospital) {
+    return;
+  }
 
-      if (field === 'start') entry.startTime = value || '';
-      if (field === 'end') entry.endTime = value || '';
-      entry.isAvailable = Boolean(entry.startTime && entry.endTime);
-    },
+  if (!Array.isArray(hospital.availability)) {
+    hospital.availability = [];
+  }
+
+  const dayLabel = String(day || "");
+
+  const normalizedDay =
+    dayLabel.charAt(0).toUpperCase() +
+    dayLabel.slice(1).toLowerCase();
+
+  let entry = hospital.availability.find(
+    (item) =>
+      String(item.day).toLowerCase() ===
+      normalizedDay.toLowerCase()
+  );
+
+  if (!entry) {
+    entry = {
+      day: normalizedDay,
+      startTime: "",
+      endTime: "",
+      isAvailable: false,
+    };
+
+    hospital.availability.push(entry);
+  }
+
+  if (field === "start") {
+    entry.startTime = value || "";
+  }
+
+  if (field === "end") {
+    entry.endTime = value || "";
+  }
+
+  entry.isAvailable = Boolean(
+    entry.startTime && entry.endTime
+  );
+},
     handleHospitalChange: (state, action) => {
       const { index, field, value } = action.payload;
       state.profileData.hospitalDetail[index][field] = value;
     },
     handleAddHospital: (state) => {
-      state.profileData.hospitalDetail.push({
-        clinicId: null,
-        hospitalName: '',
-        flatNo: '',
-        building: '',
-        street: '',
-        area: '',
-        landmark: '',
-        city: '',
-        district: '',
-        state: '',
-        pinCode: '',
-      });
-    },
+  state.profileData.hospitalDetail.push({
+    clinicId: null,
+    hospitalName: "",
+    flatNo: "",
+    building: "",
+    street: "",
+    area: "",
+    landmark: "",
+    city: "",
+    district: "",
+    state: "",
+    pinCode: "",
+    availability: [],
+  });
+},
     handleRemoveHospital: (state, action) => {
       const index = action.payload;
       if (state.profileData.hospitalDetail.length > 1) {

@@ -1,4 +1,4 @@
-// SavedSchedules.js
+// SavedSchedules.jsx
 
 import React, { memo, useState } from "react";
 
@@ -19,7 +19,6 @@ import {
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
-import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import LocalHospitalOutlinedIcon from "@mui/icons-material/LocalHospitalOutlined";
 
 import { useTheme } from "@mui/material/styles";
@@ -52,7 +51,9 @@ const getHospitalName = (schedule) => {
 
   try {
     const hospitalInfo = JSON.parse(
-      schedule.location || schedule.hospital_name || "{}"
+      schedule.location ||
+        schedule.hospital_name ||
+        "{}"
     );
 
     return (
@@ -71,21 +72,90 @@ const getHospitalName = (schedule) => {
 };
 
 // ============================================================
+// SAVED SCHEDULE ADDRESS FALLBACK
+// ============================================================
+
+const getScheduleAddressDetails = (schedule) => {
+  if (!schedule) return "";
+
+  // ----------------------------------------------------------
+  // Direct schedule.address
+  // ----------------------------------------------------------
+
+  if (schedule?.address) {
+    let address = schedule.address;
+
+    if (typeof address === "string") {
+      try {
+        address = JSON.parse(address);
+      } catch {
+        address = null;
+      }
+    }
+
+    if (address) {
+      const details = [
+        address?.landmark,
+        address?.areaLocality,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      if (details) {
+        return details;
+      }
+    }
+  }
+
+  // ----------------------------------------------------------
+  // location / hospital_name JSON fallback
+  // ----------------------------------------------------------
+
+  try {
+    const hospitalInfo = JSON.parse(
+      schedule.location ||
+        schedule.hospital_name ||
+        "{}"
+    );
+
+    return [
+      hospitalInfo?.landmark,
+      hospitalInfo?.areaLocality,
+    ]
+      .filter(Boolean)
+      .join(", ");
+  } catch {
+    return "";
+  }
+};
+
+// ============================================================
 // COMPONENT
 // ============================================================
 
 function SavedSchedules({
   schedules = [],
+
+  // IMPORTANT:
+  // getHospitalsName API wala hospitals array yahan pass karo
+  hospitals = [],
+
   onView,
   onEdit,
   onDelete,
 }) {
   const theme = useTheme();
 
-  const [deleteDialog, setDeleteDialog] = useState(false);
-  const [scheduleId, setScheduleId] = useState(null);
+  const [deleteDialog, setDeleteDialog] =
+    useState(false);
 
-  const [slotsDialogOpen, setSlotsDialogOpen] = useState(false);
+  const [scheduleId, setScheduleId] =
+    useState(null);
+
+  const [
+    slotsDialogOpen,
+    setSlotsDialogOpen,
+  ] = useState(false);
 
   const [
     selectedScheduleForSlots,
@@ -101,22 +171,38 @@ function SavedSchedules({
   // THEME
   // ============================================================
 
-  const primaryColor = theme.palette.primary.main;
-  const textColor = theme.palette.text.primary;
-  const secondaryText = theme.palette.text.secondary;
-  const dividerColor = theme.palette.divider;
-  const paperColor = theme.palette.background.paper;
-  const backgroundColor = theme.palette.background.default;
+  const primaryColor =
+    theme.palette.primary.main;
+
+  const textColor =
+    theme.palette.text.primary;
+
+  const secondaryText =
+    theme.palette.text.secondary;
+
+  const dividerColor =
+    theme.palette.divider;
+
+  const paperColor =
+    theme.palette.background.paper;
+
+  const backgroundColor =
+    theme.palette.background.default;
 
   // ============================================================
   // VIEW SLOTS
   // ============================================================
 
   const handleViewSlots = (schedule) => {
-    const hospitalName = getHospitalName(schedule);
+    const hospitalName =
+      getHospitalName(schedule);
 
     setSelectedScheduleForSlots(schedule);
-    setSelectedHospitalForSlots(hospitalName);
+
+    setSelectedHospitalForSlots(
+      hospitalName
+    );
+
     setSlotsDialogOpen(true);
   };
 
@@ -125,9 +211,13 @@ function SavedSchedules({
   // ============================================================
 
   const handleDeleteClick = (schedule) => {
-    const id = schedule?.scheduleId || schedule?.id;
+    const id =
+      schedule?.scheduleId ||
+      schedule?.id;
 
-    if (Number(schedule?.booking_length) === 0) {
+    if (
+      Number(schedule?.booking_length) === 0
+    ) {
       onDelete(id, "");
       return;
     }
@@ -140,7 +230,10 @@ function SavedSchedules({
   // EMPTY STATE
   // ============================================================
 
-  if (!Array.isArray(schedules) || schedules.length === 0) {
+  if (
+    !Array.isArray(schedules) ||
+    schedules.length === 0
+  ) {
     return (
       <Box
         sx={{
@@ -182,369 +275,615 @@ function SavedSchedules({
               color: secondaryText,
             }}
           >
-            Create a schedule to start generating
-            appointment slots.
+            Create a schedule to start
+            generating appointment slots.
           </Typography>
         </Stack>
       </Box>
     );
   }
 
+  // ============================================================
+  // RENDER
+  // ============================================================
+
   return (
     <>
       <Grid container spacing={1.5}>
-        {schedules.map((schedule, index) => {
-          const hospitalName = getHospitalName(schedule);
+        {schedules.map(
+          (schedule, index) => {
+            // ==================================================
+            // HOSPITAL NAME
+            // ==================================================
 
-          const activeDays = Array.isArray(
-            schedule?.activeDays
-          )
-            ? schedule.activeDays
-            : [];
+            const hospitalName =
+              getHospitalName(schedule);
 
-          return (
-            <Grid
-              key={
-                schedule?.scheduleId ||
-                schedule?.id ||
-                index
-              }
-              size={{
-                xs: 12,
-                sm: 6,
-                lg: 4,
-              }}
-            >
-              <Card
-                variant="outlined"
-                sx={{
-                  height: "100%",
-                  borderRadius: "10px",
-                  borderColor: dividerColor,
-                  backgroundColor: paperColor,
-                  boxShadow: "none",
-                  transition:
-                    "border-color 0.2s ease, box-shadow 0.2s ease",
+            // ==================================================
+            // MATCH HOSPITAL FROM HOSPITAL API
+            // ==================================================
 
-                  "&:hover": {
-                    borderColor: `${primaryColor}80`,
-                    boxShadow:
-                      "0 4px 14px rgba(0,0,0,0.05)",
-                  },
+            const matchedHospital =
+              Array.isArray(hospitals)
+                ? hospitals.find(
+                    (hospital) =>
+                      hospital?.hospitalName
+                        ?.trim()
+                        ?.toLowerCase() ===
+                      hospitalName
+                        ?.trim()
+                        ?.toLowerCase()
+                  )
+                : null;
+
+            // ==================================================
+            // LANDMARK + AREA LOCALITY
+            // ==================================================
+
+            const apiAddressDetails = [
+              matchedHospital?.landmark,
+              matchedHospital?.areaLocality,
+            ]
+              .filter(Boolean)
+              .join(", ");
+
+            /*
+             * Priority:
+             *
+             * 1. Hospitals API
+             * 2. Saved schedule address fallback
+             */
+            const hospitalAddressDetails =
+              apiAddressDetails ||
+              getScheduleAddressDetails(
+                schedule
+              );
+
+            // ==================================================
+            // ACTIVE DAYS
+            // ==================================================
+
+            const activeDays =
+              Array.isArray(
+                schedule?.activeDays
+              )
+                ? schedule.activeDays
+                : [];
+
+            return (
+              <Grid
+                key={
+                  schedule?.scheduleId ||
+                  schedule?.id ||
+                  index
+                }
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  lg: 4,
                 }}
               >
-                <CardContent
+                <Card
+                  variant="outlined"
                   sx={{
-                    p: 1.7,
+                    height: "100%",
+                    borderRadius: "10px",
+                    borderColor:
+                      dividerColor,
+                    backgroundColor:
+                      paperColor,
+                    boxShadow: "none",
 
-                    "&:last-child": {
-                      pb: 1.7,
+                    transition:
+                      "border-color 0.2s ease, box-shadow 0.2s ease",
+
+                    "&:hover": {
+                      borderColor:
+                        `${primaryColor}80`,
+
+                      boxShadow:
+                        "0 4px 14px rgba(0,0,0,0.05)",
                     },
                   }}
                 >
-                  {/* ================================
-                      HOSPITAL + TIME
-                  ================================= */}
+                  <CardContent
+                    sx={{
+                      p: 1.7,
 
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="flex-start"
-                    gap={1}
+                      "&:last-child": {
+                        pb: 1.7,
+                      },
+                    }}
                   >
-                    <Box
-                      sx={{
-                        minWidth: 0,
-                        flex: 1,
-                      }}
+                    {/* =========================================
+                        HOSPITAL
+                    ========================================== */}
+
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="flex-start"
+                      gap={1}
                     >
+                      <Box
+                        sx={{
+                          minWidth: 0,
+                          flex: 1,
+                        }}
+                      >
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={0.7}
+                        >
+                          <LocalHospitalOutlinedIcon
+                            sx={{
+                              fontSize: 17,
+                              color:
+                                primaryColor,
+                              flexShrink: 0,
+                            }}
+                          />
+
+                          {/* HOSPITAL NAME + ADDRESS */}
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems:
+                                "center",
+                              gap: 0.5,
+                              minWidth: 0,
+                              flex: 1,
+                            }}
+                          >
+                            {/* HOSPITAL NAME */}
+
+                            <Typography
+                              component="span"
+                              title={
+                                hospitalName
+                              }
+                              sx={{
+                                flexShrink: 0,
+                                fontSize:
+                                  "13px",
+                                fontWeight:
+                                  600,
+                                color:
+                                  textColor,
+                                whiteSpace:
+                                  "nowrap",
+                              }}
+                            >
+                              {
+                                hospitalName
+                              }
+                            </Typography>
+
+                            {/* LANDMARK + AREA */}
+
+                            {hospitalAddressDetails && (
+                              <Typography
+                                component="span"
+                                title={
+                                  hospitalAddressDetails
+                                }
+                                sx={{
+                                  minWidth: 0,
+
+                                  overflow:
+                                    "hidden",
+
+                                  textOverflow:
+                                    "ellipsis",
+
+                                  whiteSpace:
+                                    "nowrap",
+
+                                  fontSize:
+                                    "11.5px",
+
+                                  fontWeight:
+                                    400,
+
+                                  color:
+                                    secondaryText,
+                                }}
+                              >
+                                {" — "}
+                                {
+                                  hospitalAddressDetails
+                                }
+                              </Typography>
+                            )}
+                          </Box>
+                        </Stack>
+                      </Box>
+                    </Stack>
+
+                    <Divider
+                      sx={{ my: 1.3 }}
+                    />
+
+                    {/* =========================================
+                        SLOT + BREAK
+                    ========================================== */}
+
+                    <Grid
+                      container
+                      spacing={1}
+                    >
+                      {/* SLOT */}
+
+                      <Grid size={6}>
+                        <Box
+                          sx={{
+                            backgroundColor:
+                              backgroundColor,
+
+                            borderRadius:
+                              "7px",
+
+                            px: 1.2,
+                            py: 0.9,
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              fontSize:
+                                "10.5px",
+
+                              color:
+                                secondaryText,
+
+                              mb: 0.2,
+                            }}
+                          >
+                            Slot Duration
+                          </Typography>
+
+                          <Typography
+                            sx={{
+                              fontSize:
+                                "12.5px",
+
+                              fontWeight:
+                                600,
+
+                              color:
+                                textColor,
+                            }}
+                          >
+                            {schedule?.slotDuration ||
+                              0}{" "}
+                            min
+                          </Typography>
+                        </Box>
+                      </Grid>
+
+                      {/* BREAK */}
+
+                      <Grid size={6}>
+                        <Box
+                          sx={{
+                            backgroundColor:
+                              backgroundColor,
+
+                            borderRadius:
+                              "7px",
+
+                            px: 1.2,
+                            py: 0.9,
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              fontSize:
+                                "10.5px",
+
+                              color:
+                                secondaryText,
+
+                              mb: 0.2,
+                            }}
+                          >
+                            Break Duration
+                          </Typography>
+
+                          <Typography
+                            sx={{
+                              fontSize:
+                                "12.5px",
+
+                              fontWeight:
+                                600,
+
+                              color:
+                                textColor,
+                            }}
+                          >
+                            {schedule?.breakDuration ||
+                              0}{" "}
+                            min
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+
+                    {/* =========================================
+                        DATE RANGE
+                    ========================================== */}
+
+                    {(schedule?.startDate ||
+                      schedule?.endDate) && (
                       <Stack
                         direction="row"
                         alignItems="center"
-                        spacing={0.7}
+                        spacing={0.8}
+                        mt={1.3}
                       >
-                        <LocalHospitalOutlinedIcon
+                        <CalendarTodayOutlinedIcon
                           sx={{
-                            fontSize: 17,
-                            color: primaryColor,
-                            flexShrink: 0,
+                            fontSize: 15,
+                            color:
+                              primaryColor,
                           }}
                         />
 
                         <Typography
-                          title={hospitalName}
                           sx={{
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            color: textColor,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
+                            fontSize:
+                              "11.5px",
+
+                            color:
+                              textColor,
                           }}
                         >
-                          {hospitalName}
+                          {formatDate(
+                            schedule?.startDate
+                          )}
+
+                          {" → "}
+
+                          {formatDate(
+                            schedule?.endDate
+                          )}
                         </Typography>
                       </Stack>
+                    )}
 
+                    {/* =========================================
+                        ACTIVE DAYS
+                    ========================================== */}
+
+                    <Box mt={1.3}>
+                      <Typography
+                        sx={{
+                          fontSize:
+                            "10.5px",
+
+                          color:
+                            secondaryText,
+
+                          mb: 0.7,
+                        }}
+                      >
+                        Active Days
+                      </Typography>
+
+                      {activeDays.length >
+                      0 ? (
+                        <Stack
+                          direction="row"
+                          gap={0.6}
+                          flexWrap="wrap"
+                        >
+                          {activeDays.map(
+                            (day) => (
+                              <Chip
+                                key={day}
+                                label={day}
+                                size="small"
+                                sx={{
+                                  height: 24,
+
+                                  borderRadius:
+                                    "5px",
+
+                                  backgroundColor:
+                                    `${primaryColor}12`,
+
+                                  color:
+                                    primaryColor,
+
+                                  border:
+                                    `1px solid ${primaryColor}30`,
+
+                                  "& .MuiChip-label":
+                                    {
+                                      px: 1,
+
+                                      fontSize:
+                                        "10.5px",
+
+                                      fontWeight: 500,
+                                    },
+                                }}
+                              />
+                            )
+                          )}
+                        </Stack>
+                      ) : (
+                        <Typography
+                          sx={{
+                            fontSize:
+                              "11px",
+
+                            color:
+                              secondaryText,
+                          }}
+                        >
+                          No active days
+                        </Typography>
+                      )}
                     </Box>
-                  </Stack>
 
-                  <Divider sx={{ my: 1.3 }} />
+                    <Divider
+                      sx={{ my: 1.4 }}
+                    />
 
-                  {/* ================================
-                      SLOT + BREAK
-                  ================================= */}
+                    {/* =========================================
+                        ACTIONS
+                    ========================================== */}
 
-                  <Grid container spacing={1}>
-                    <Grid size={6}>
-                      <Box
-                        sx={{
-                          backgroundColor: backgroundColor,
-                          borderRadius: "7px",
-                          px: 1.2,
-                          py: 0.9,
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            fontSize: "10.5px",
-                            color: secondaryText,
-                            mb: 0.2,
-                          }}
-                        >
-                          Slot Duration
-                        </Typography>
-
-                        <Typography
-                          sx={{
-                            fontSize: "12.5px",
-                            fontWeight: 600,
-                            color: textColor,
-                          }}
-                        >
-                          {schedule?.slotDuration || 0} min
-                        </Typography>
-                      </Box>
-                    </Grid>
-
-                    <Grid size={6}>
-                      <Box
-                        sx={{
-                          backgroundColor: backgroundColor,
-                          borderRadius: "7px",
-                          px: 1.2,
-                          py: 0.9,
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            fontSize: "10.5px",
-                            color: secondaryText,
-                            mb: 0.2,
-                          }}
-                        >
-                          Break Duration
-                        </Typography>
-
-                        <Typography
-                          sx={{
-                            fontSize: "12.5px",
-                            fontWeight: 600,
-                            color: textColor,
-                          }}
-                        >
-                          {schedule?.breakDuration || 0} min
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
-
-                  {/* ================================
-                      DATE RANGE
-                  ================================= */}
-
-                  {(schedule?.startDate ||
-                    schedule?.endDate) && (
                     <Stack
                       direction="row"
                       alignItems="center"
-                      spacing={0.8}
-                      mt={1.3}
+                      justifyContent="space-between"
+                      gap={1}
                     >
-                      <CalendarTodayOutlinedIcon
-                        sx={{
-                          fontSize: 15,
-                          color: primaryColor,
-                        }}
-                      />
+                      {/* VIEW SLOTS */}
 
-                      <Typography
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={() =>
+                          handleViewSlots(
+                            schedule
+                          )
+                        }
                         sx={{
-                          fontSize: "11.5px",
-                          color: textColor,
+                          height: 32,
+
+                          px: 1.7,
+
+                          borderRadius:
+                            "6px",
+
+                          backgroundColor:
+                            primaryColor,
+
+                          color: "#fff",
+
+                          textTransform:
+                            "none",
+
+                          fontSize:
+                            "11.5px",
+
+                          fontWeight: 600,
+
+                          boxShadow: "none",
+
+                          "&:hover": {
+                            backgroundColor:
+                              primaryColor,
+
+                            boxShadow:
+                              "none",
+
+                            opacity: 0.92,
+                          },
                         }}
                       >
-                        {formatDate(schedule?.startDate)}
-                        {"  →  "}
-                        {formatDate(schedule?.endDate)}
-                      </Typography>
-                    </Stack>
-                  )}
+                        View Slots
+                      </Button>
 
-                  {/* ================================
-                      ACTIVE DAYS
-                  ================================= */}
+                      {/* EDIT + DELETE */}
 
-                  <Box mt={1.3}>
-                    <Typography
-                      sx={{
-                        fontSize: "10.5px",
-                        color: secondaryText,
-                        mb: 0.7,
-                      }}
-                    >
-                      Active Days
-                    </Typography>
-
-                    {activeDays.length > 0 ? (
                       <Stack
                         direction="row"
-                        gap={0.6}
-                        flexWrap="wrap"
+                        spacing={0.4}
                       >
-                        {activeDays.map((day) => (
-                          <Chip
-                            key={day}
-                            label={day}
-                            size="small"
-                            sx={{
-                              height: 24,
-                              borderRadius: "5px",
-                              backgroundColor:
-                                `${primaryColor}12`,
-                              color: primaryColor,
-                              border: `1px solid ${primaryColor}30`,
+                        {/* EDIT */}
 
-                              "& .MuiChip-label": {
-                                px: 1,
-                                fontSize: "10.5px",
-                                fontWeight: 500,
+                        <Tooltip title="Edit schedule">
+                          <IconButton
+                            size="small"
+                            onClick={() =>
+                              onEdit(index)
+                            }
+                            sx={{
+                              width: 32,
+                              height: 32,
+
+                              borderRadius:
+                                "6px",
+
+                              color:
+                                primaryColor,
+
+                              border:
+                                `1px solid ${dividerColor}`,
+
+                              "&:hover": {
+                                backgroundColor:
+                                  `${primaryColor}0D`,
                               },
                             }}
-                          />
-                        ))}
+                          >
+                            <EditOutlinedIcon
+                              sx={{
+                                fontSize: 17,
+                              }}
+                            />
+                          </IconButton>
+                        </Tooltip>
+
+                        {/* DELETE */}
+
+                        <Tooltip title="Delete schedule">
+                          <IconButton
+                            size="small"
+                            onClick={() =>
+                              handleDeleteClick(
+                                schedule
+                              )
+                            }
+                            sx={{
+                              width: 32,
+                              height: 32,
+
+                              borderRadius:
+                                "6px",
+
+                              color:
+                                theme.palette
+                                  .error.main,
+
+                              border:
+                                `1px solid ${dividerColor}`,
+
+                              "&:hover": {
+                                backgroundColor:
+                                  theme.palette
+                                    .error
+                                    .main +
+                                  "0D",
+                              },
+                            }}
+                          >
+                            <DeleteOutlineIcon
+                              sx={{
+                                fontSize: 17,
+                              }}
+                            />
+                          </IconButton>
+                        </Tooltip>
                       </Stack>
-                    ) : (
-                      <Typography
-                        sx={{
-                          fontSize: "11px",
-                          color: secondaryText,
-                        }}
-                      >
-                        No active days
-                      </Typography>
-                    )}
-                  </Box>
-
-                  <Divider sx={{ my: 1.4 }} />
-
-                  {/* ================================
-                      ACTIONS
-                  ================================= */}
-
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    justifyContent="space-between"
-                    gap={1}
-                  >
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={() =>
-                        handleViewSlots(schedule)
-                      }
-                      sx={{
-                        height: 32,
-                        px: 1.7,
-                        borderRadius: "6px",
-                        backgroundColor: primaryColor,
-                        color: "#fff",
-                        textTransform: "none",
-                        fontSize: "11.5px",
-                        fontWeight: 600,
-                        boxShadow: "none",
-
-                        "&:hover": {
-                          backgroundColor: primaryColor,
-                          boxShadow: "none",
-                          opacity: 0.92,
-                        },
-                      }}
-                    >
-                      View Slots
-                    </Button>
-
-                    <Stack direction="row" spacing={0.4}>
-                      <Tooltip title="Edit schedule">
-                        <IconButton
-                          size="small"
-                          onClick={() => onEdit(index)}
-                          sx={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: "6px",
-                            color: primaryColor,
-                            border: `1px solid ${dividerColor}`,
-
-                            "&:hover": {
-                              backgroundColor:
-                                `${primaryColor}0D`,
-                            },
-                          }}
-                        >
-                          <EditOutlinedIcon
-                            sx={{ fontSize: 17 }}
-                          />
-                        </IconButton>
-                      </Tooltip>
-
-                      <Tooltip title="Delete schedule">
-                        <IconButton
-                          size="small"
-                          onClick={() =>
-                            handleDeleteClick(schedule)
-                          }
-                          sx={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: "6px",
-                            color:
-                              theme.palette.error.main,
-                            border: `1px solid ${dividerColor}`,
-
-                            "&:hover": {
-                              backgroundColor:
-                                theme.palette.error
-                                  .main + "0D",
-                            },
-                          }}
-                        >
-                          <DeleteOutlineIcon
-                            sx={{ fontSize: 17 }}
-                          />
-                        </IconButton>
-                      </Tooltip>
                     </Stack>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-          );
-        })}
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          }
+        )}
       </Grid>
 
-      {/* DELETE REASON */}
+      {/* ======================================================
+          DELETE REASON
+      ======================================================= */}
 
       <DeleteReasonDialog
         open={deleteDialog}
@@ -554,24 +893,39 @@ function SavedSchedules({
           setScheduleId(null);
         }}
         onSubmit={(reason) => {
-          onDelete(scheduleId, reason);
+          onDelete(
+            scheduleId,
+            reason
+          );
 
           setDeleteDialog(false);
           setScheduleId(null);
         }}
       />
 
-      {/* SCHEDULE SLOTS */}
+      {/* ======================================================
+          SCHEDULE SLOTS
+      ======================================================= */}
 
       <DoctorScheduleSlots
         open={slotsDialogOpen}
         onClose={() => {
           setSlotsDialogOpen(false);
-          setSelectedScheduleForSlots(null);
-          setSelectedHospitalForSlots("");
+
+          setSelectedScheduleForSlots(
+            null
+          );
+
+          setSelectedHospitalForSlots(
+            ""
+          );
         }}
-        schedule={selectedScheduleForSlots}
-        hospitalName={selectedHospitalForSlots}
+        schedule={
+          selectedScheduleForSlots
+        }
+        hospitalName={
+          selectedHospitalForSlots
+        }
       />
     </>
   );

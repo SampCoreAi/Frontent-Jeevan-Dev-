@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import Grid from "@mui/material/Grid";
 import dayjs from "dayjs";
 
-import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -23,7 +22,15 @@ import {
 
 import { useTheme } from "@mui/material/styles";
 
-const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const daysOfWeek = [
+  "Sun",
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
+];
 
 const dayMap = {
   Sunday: "Sun",
@@ -72,48 +79,79 @@ export default function ScheduleForm({
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
 
-  const startTimeRef = useRef(null);
-  const endTimeRef = useRef(null);
   const slotDurationRef = useRef(null);
   const breakDurationRef = useRef(null);
   const startDateRef = useRef(null);
   const endDateRef = useRef(null);
 
   // ============================================================
-  // AVAILABLE DAYS
+  // HELPERS
   // ============================================================
 
-  const availableDays = Array.isArray(availability)
-    ? availability
-        .map((item) => dayMap[item?.day])
-        .filter(Boolean)
-    : [];
+  const getHospitalId = (hospital) =>
+    hospital?.hospitalId ??
+    hospital?.id ??
+    hospital?._id ??
+    null;
+
+  const getHospitalAddress = (hospital) => {
+    if (!hospital) return null;
+
+    return {
+      hospitalName: hospital?.hospitalName || "",
+      landmark: hospital?.landmark || "",
+      areaLocality: hospital?.areaLocality || "",
+      city: hospital?.city || "",
+      state: hospital?.state || "",
+    };
+  };
+
+  const getHospitalAvailableDays = (hospital) => {
+    if (!hospital) return [];
+
+    /*
+     * Preferred:
+     * hospital.availability
+     *
+     * Fallback:
+     * top-level availability prop
+     *
+     * This fallback keeps compatibility with the older API structure.
+     */
+    const sourceAvailability =
+      Array.isArray(hospital?.availability) &&
+      hospital.availability.length > 0
+        ? hospital.availability
+        : Array.isArray(availability)
+          ? availability
+          : [];
+
+    return [
+      ...new Set(
+        sourceAvailability
+          .map((item) => dayMap[item?.day])
+          .filter(Boolean)
+      ),
+    ];
+  };
 
   // ============================================================
-  // ACTIVE DAYS FROM AVAILABILITY
-  // Redux-safe: function payload nahi bhejna
+  // SELECTED HOSPITAL
   // ============================================================
 
-  useEffect(() => {
-    if (!Array.isArray(availability) || availability.length === 0) {
-      return;
-    }
+  const selectedHospital = hospitals.find(
+    (hospital) =>
+      hospital?.hospitalName === formData?.location
+  );
 
-    const daysFromAvailability = availability
-      .map((item) => dayMap[item?.day])
-      .filter(Boolean);
-
-    setFormData({
-      ...formData,
-      activeDays: daysFromAvailability,
-    });
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [availability]);
+  // API me jo days hain, sirf wahi available rahenge.
+  const availableDays =
+    getHospitalAvailableDays(selectedHospital);
 
   // ============================================================
   // DEFAULT HOSPITAL
-  // Agar already selected nahi hai to first hospital select hoga
+  // First hospital automatically select hoga.
+  // Uske available days bhi automatically select honge.
   // ============================================================
 
   useEffect(() => {
@@ -121,7 +159,7 @@ export default function ScheduleForm({
       return;
     }
 
-    // Existing/edit selection ko overwrite nahi karna
+    // Already selected hospital ko overwrite mat karo.
     if (formData?.location) {
       return;
     }
@@ -132,28 +170,83 @@ export default function ScheduleForm({
       return;
     }
 
-    const hospitalId =
-      firstHospital?.hospitalId ??
-      firstHospital?.id ??
-      firstHospital?._id ??
-      null;
-
-    const hospitalAddress = {
-      hospitalName: firstHospital?.hospitalName || "",
-      landmark: firstHospital?.landmark || "",
-      city: firstHospital?.city || "",
-      state: firstHospital?.state || "",
-    };
+    const daysFromApi =
+      getHospitalAvailableDays(firstHospital);
 
     setFormData({
       ...formData,
       location: firstHospital.hospitalName,
-      hospitalId,
-      address: hospitalAddress,
+      hospitalId: getHospitalId(firstHospital),
+      address: getHospitalAddress(firstHospital),
+      activeDays: daysFromApi,
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hospitals]);
+
+  // ============================================================
+  // EDIT / EXISTING HOSPITAL SAFETY
+  //
+  // Agar selected hospital aa gaya lekin activeDays empty hain,
+  // to API ke available days automatically select karo.
+  //
+  // IMPORTANT:
+  // User manually sab days unselect kare to ye effect unko
+  // turant wapas select nahi karega, kyunki ye hospital/load
+  // changes par hi run hota hai.
+  // ============================================================
+
+  useEffect(() => {
+    if (!formData?.location) {
+      return;
+    }
+
+    const hospital = hospitals.find(
+      (item) =>
+        item?.hospitalName === formData.location
+    );
+
+    if (!hospital) {
+      return;
+    }
+
+    /*
+     * Edit mode me existing saved activeDays ko preserve karo.
+     * Create mode me hospital selection handler/default effect
+     * available days set karega.
+     */
+    if (
+      editIndex !== null &&
+      Array.isArray(formData?.activeDays) &&
+      formData.activeDays.length > 0
+    ) {
+      return;
+    }
+
+    // Agar already active days hain to unnecessary overwrite nahi.
+    if (
+      Array.isArray(formData?.activeDays) &&
+      formData.activeDays.length > 0
+    ) {
+      return;
+    }
+
+    const daysFromApi =
+      getHospitalAvailableDays(hospital);
+
+    if (daysFromApi.length === 0) {
+      return;
+    }
+
+    setFormData({
+      ...formData,
+      hospitalId: getHospitalId(hospital),
+      address: getHospitalAddress(hospital),
+      activeDays: daysFromApi,
+    });
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData?.location, hospitals]);
 
   // ============================================================
   // CLEAR ERROR
@@ -203,33 +296,45 @@ export default function ScheduleForm({
   // ============================================================
 
   const handleLocationChange = (selectedHospitalName) => {
-    const selectedHospital = hospitals.find(
-      (hospital) => hospital?.hospitalName === selectedHospitalName
+    const hospital = hospitals.find(
+      (item) =>
+        item?.hospitalName === selectedHospitalName
     );
 
-    const hospitalAddress = selectedHospital
-      ? {
-          hospitalName: selectedHospital?.hospitalName || "",
-          landmark: selectedHospital?.landmark || "",
-          city: selectedHospital?.city || "",
-          state: selectedHospital?.state || "",
-        }
-      : null;
+    if (!hospital) {
+      setFormData({
+        ...formData,
+        location: "",
+        hospitalId: null,
+        address: null,
+        activeDays: [],
+      });
 
-    const hospitalId =
-      selectedHospital?.hospitalId ??
-      selectedHospital?.id ??
-      selectedHospital?._id ??
-      null;
+      return;
+    }
+
+    const daysFromApi =
+      getHospitalAvailableDays(hospital);
 
     setFormData({
       ...formData,
+
       location: selectedHospitalName,
-      hospitalId,
-      address: hospitalAddress,
+
+      hospitalId: getHospitalId(hospital),
+
+      address: getHospitalAddress(hospital),
+
+      /*
+       * IMPORTANT:
+       * Hospital change hote hi API ke saare
+       * available days selected honge.
+       */
+      activeDays: daysFromApi,
     });
 
     clearError("location");
+    clearError("activeDays");
   };
 
   // ============================================================
@@ -239,33 +344,12 @@ export default function ScheduleForm({
   const validateForm = () => {
     const newErrors = {};
 
+    // Hospital
     if (!formData?.location?.trim()) {
       newErrors.location = "Hospital is required.";
     }
 
-
-    if (formData?.startTime && formData?.endTime) {
-      const start = dayjs(formData.startTime, "h:mm A");
-      const end = dayjs(formData.endTime, "h:mm A");
-
-      if (!start.isValid()) {
-        newErrors.startTime = "Invalid start time.";
-      }
-
-      if (!end.isValid()) {
-        newErrors.endTime = "Invalid end time.";
-      }
-
-      if (
-        start.isValid() &&
-        end.isValid() &&
-        !end.isAfter(start)
-      ) {
-        newErrors.endTime =
-          "End time must be after start time.";
-      }
-    }
-
+    // Slot duration
     if (
       formData?.slotDuration === "" ||
       formData?.slotDuration === null ||
@@ -285,6 +369,7 @@ export default function ScheduleForm({
       }
     }
 
+    // Break duration
     if (
       formData?.breakDuration !== "" &&
       formData?.breakDuration !== null &&
@@ -306,11 +391,13 @@ export default function ScheduleForm({
       }
     }
 
+    // Start date
     if (!formData?.startDate) {
       newErrors.startDate =
         "Start date is required.";
     }
 
+    // End date
     if (!formData?.endDate) {
       newErrors.endDate =
         "End date is required.";
@@ -327,13 +414,16 @@ export default function ScheduleForm({
     const today = dayjs().startOf("day");
 
     if (startDate && !startDate.isValid()) {
-      newErrors.startDate = "Invalid start date.";
+      newErrors.startDate =
+        "Invalid start date.";
     }
 
     if (endDate && !endDate.isValid()) {
-      newErrors.endDate = "Invalid end date.";
+      newErrors.endDate =
+        "Invalid end date.";
     }
 
+    // Create mode me past date allow nahi.
     if (
       editIndex === null &&
       startDate?.isValid() &&
@@ -352,12 +442,33 @@ export default function ScheduleForm({
         "End date cannot be before start date.";
     }
 
+    // Active Days
     if (
       !Array.isArray(formData?.activeDays) ||
       formData.activeDays.length === 0
     ) {
       newErrors.activeDays =
         "Select at least one active day.";
+    }
+
+    /*
+     * Safety validation:
+     * selected active day selected hospital ke
+     * working hours me hona chahiye.
+     */
+    if (
+      Array.isArray(formData?.activeDays) &&
+      formData.activeDays.length > 0
+    ) {
+      const invalidDays =
+        formData.activeDays.filter(
+          (day) => !availableDays.includes(day)
+        );
+
+      if (invalidDays.length > 0) {
+        newErrors.activeDays =
+          "Some selected days are not available in this hospital's Working Hours.";
+      }
     }
 
     setErrors(newErrors);
@@ -424,126 +535,118 @@ export default function ScheduleForm({
 
   // ============================================================
   // FIELD STYLES
-  // Sab fields same height
   // ============================================================
 
-  const FIELD_HEIGHT = 48;
+  const commonTextFieldSx = {
+    "& .MuiOutlinedInput-root": {
+      height: 48,
+      minHeight: 48,
+      borderRadius: "7px",
+      backgroundColor: PAPER_COLOR,
+      display: "flex",
+      alignItems: "center",
 
-const commonTextFieldSx = {
-  "& .MuiOutlinedInput-root": {
-    height: 48,
-    minHeight: 48,
-    borderRadius: "7px",
-    backgroundColor: PAPER_COLOR,
-    display: "flex",
-    alignItems: "center",
+      "& fieldset": {
+        borderColor: DIVIDER_COLOR,
+        borderWidth: "1px",
+      },
 
-    "& fieldset": {
-      borderColor: DIVIDER_COLOR,
-      borderWidth: "1px",
+      "&:hover fieldset": {
+        borderColor: PRIMARY_COLOR,
+      },
+
+      "&.Mui-focused fieldset": {
+        borderColor: PRIMARY_COLOR,
+        borderWidth: "1px",
+      },
+
+      "&.Mui-error fieldset": {
+        borderColor: ERROR_COLOR,
+      },
     },
 
-    "&:hover fieldset": {
-      borderColor: PRIMARY_COLOR,
+    "& .MuiInputBase-input": {
+      height: "48px",
+      boxSizing: "border-box",
+      padding: "0 14px !important",
+      display: "flex",
+      alignItems: "center",
+      fontSize: "12.5px",
+      lineHeight: "48px",
+      color: TEXT_COLOR,
     },
 
-    "&.Mui-focused fieldset": {
-      borderColor: PRIMARY_COLOR,
-      borderWidth: "1px",
+    "& .MuiPickersInputBase-root": {
+      height: 48,
+      minHeight: 48,
+      display: "flex",
+      alignItems: "center",
+      borderRadius: "7px",
+      backgroundColor: PAPER_COLOR,
     },
 
-    "&.Mui-error fieldset": {
-      borderColor: ERROR_COLOR,
+    "& .MuiPickersSectionList-root": {
+      height: "48px",
+      minHeight: "48px",
+      boxSizing: "border-box",
+      padding: "0 14px !important",
+      display: "flex",
+      alignItems: "center",
     },
-  },
 
-  // Normal input text center
-  "& .MuiInputBase-input": {
-    height: "48px",
-    boxSizing: "border-box",
-    padding: "0 14px !important",
-    display: "flex",
-    alignItems: "center",
-    fontSize: "12.5px",
-    lineHeight: "48px",
-    color: TEXT_COLOR,
-  },
+    "& .MuiPickersInputBase-sectionsContainer": {
+      height: "48px",
+      display: "flex",
+      alignItems: "center",
+    },
 
-  // Date / Time picker main root
-  "& .MuiPickersInputBase-root": {
-    height: 48,
-    minHeight: 48,
-    display: "flex",
-    alignItems: "center",
-    borderRadius: "7px",
-    backgroundColor: PAPER_COLOR,
-  },
+    "& .MuiSelect-select": {
+      height: "48px !important",
+      minHeight: "48px !important",
+      boxSizing: "border-box",
+      paddingTop: "0 !important",
+      paddingBottom: "0 !important",
+      display: "flex",
+      alignItems: "center",
+      fontSize: "12.5px",
+    },
 
-  // Date / Time actual text section
-  "& .MuiPickersSectionList-root": {
-    height: "48px",
-    minHeight: "48px",
-    boxSizing: "border-box",
-    padding: "0 14px !important",
-    display: "flex",
-    alignItems: "center",
-  },
+    "& .MuiInputAdornment-root": {
+      height: "48px",
+      maxHeight: "48px",
+      display: "flex",
+      alignItems: "center",
+    },
 
-  "& .MuiPickersInputBase-sectionsContainer": {
-    height: "48px",
-    display: "flex",
-    alignItems: "center",
-  },
+    "& .MuiInputLabel-root:not(.MuiInputLabel-shrink)": {
+      top: "50%",
+      transform:
+        "translate(14px, -50%) scale(1)",
+      transformOrigin: "top left",
+    },
 
-  // Select / Hospital text center
-  "& .MuiSelect-select": {
-    height: "48px !important",
-    minHeight: "48px !important",
-    boxSizing: "border-box",
-    paddingTop: "0 !important",
-    paddingBottom: "0 !important",
-    display: "flex",
-    alignItems: "center",
-    fontSize: "12.5px",
-  },
+    "& .MuiInputLabel-root.MuiInputLabel-shrink": {
+      top: 0,
+      transform:
+        "translate(14px, -9px) scale(0.75)",
+    },
 
-  // Icons center
-  "& .MuiInputAdornment-root": {
-    height: "48px",
-    maxHeight: "48px",
-    display: "flex",
-    alignItems: "center",
-  },
+    "& .MuiInputLabel-root": {
+      fontSize: "12.5px",
+      color: SECONDARY_TEXT,
+    },
 
-  // IMPORTANT: empty field ka label vertically center
-  "& .MuiInputLabel-root:not(.MuiInputLabel-shrink)": {
-    top: "50%",
-    transform: "translate(14px, -50%) scale(1)",
-    transformOrigin: "top left",
-  },
+    "& .MuiInputLabel-root.Mui-focused": {
+      color: PRIMARY_COLOR,
+    },
 
-  // Filled/focused label normal MUI position
-  "& .MuiInputLabel-root.MuiInputLabel-shrink": {
-    top: 0,
-    transform: "translate(14px, -9px) scale(0.75)",
-  },
-
-  "& .MuiInputLabel-root": {
-    fontSize: "12.5px",
-    color: SECONDARY_TEXT,
-  },
-
-  "& .MuiInputLabel-root.Mui-focused": {
-    color: PRIMARY_COLOR,
-  },
-
-  "& .MuiFormHelperText-root": {
-    marginLeft: "3px",
-    mt: "3px",
-    fontSize: "10.5px",
-    lineHeight: 1.2,
-  },
-};
+    "& .MuiFormHelperText-root": {
+      marginLeft: "3px",
+      mt: "3px",
+      fontSize: "10.5px",
+      lineHeight: 1.2,
+    },
+  };
 
   const hospitalFieldSx = {
     ...commonTextFieldSx,
@@ -551,19 +654,6 @@ const commonTextFieldSx = {
 
   const normalFieldSx = {
     ...commonTextFieldSx,
-  };
-
-  const timeFieldSx = {
-    ...commonTextFieldSx,
-
-    "& .MuiIconButton-root": {
-      color: PRIMARY_COLOR,
-      p: 0.7,
-    },
-
-    "& .MuiSvgIcon-root": {
-      fontSize: "19px",
-    },
   };
 
   const dateFieldSx = {
@@ -576,115 +666,6 @@ const commonTextFieldSx = {
 
     "& .MuiSvgIcon-root": {
       fontSize: "19px",
-    },
-  };
-
-  // ============================================================
-  // TIME PICKER POPUP
-  // ============================================================
-
-  const timePickerPopupSx = {
-    "& .MuiPaper-root": {
-      backgroundColor: PAPER_COLOR,
-      borderRadius: "10px",
-    },
-
-    "& .MuiPickersToolbar-root": {
-      backgroundColor: PAPER_COLOR,
-      color: TEXT_COLOR,
-    },
-
-    "& .MuiPickersToolbarText-root": {
-      color: TEXT_COLOR,
-    },
-
-    "& .MuiPickersToolbarText-root.Mui-selected": {
-      color: `${PRIMARY_COLOR} !important`,
-    },
-
-    "& .MuiTimePickerToolbar-hourMinuteLabel .MuiTypography-root":
-      {
-        color: TEXT_COLOR,
-      },
-
-    "& .MuiTimePickerToolbar-hourMinuteLabel .Mui-selected":
-      {
-        color: `${PRIMARY_COLOR} !important`,
-      },
-
-    "& .MuiTimePickerToolbar-ampmSelection .MuiTypography-root":
-      {
-        color: TEXT_COLOR,
-      },
-
-    "& .MuiTimePickerToolbar-ampmSelection .Mui-selected":
-      {
-        color: `${PRIMARY_COLOR} !important`,
-      },
-
-    "& .MuiMultiSectionDigitalClockSection-item": {
-      color: TEXT_COLOR,
-      fontSize: "12.5px",
-    },
-
-    "& .MuiMultiSectionDigitalClockSection-item.Mui-selected":
-      {
-        backgroundColor: `${PRIMARY_COLOR} !important`,
-        color: "#fff !important",
-      },
-
-    "& .MuiMultiSectionDigitalClockSection-item[aria-selected='true']":
-      {
-        backgroundColor: `${PRIMARY_COLOR} !important`,
-        color: "#fff !important",
-      },
-
-    "& .MuiMultiSectionDigitalClockSection-item:hover": {
-      backgroundColor: `${PRIMARY_COLOR}12`,
-    },
-
-    "& .MuiPickersClock-root": {
-      backgroundColor: PAPER_COLOR,
-    },
-
-    "& .MuiPickersClockNumber-root": {
-      color: TEXT_COLOR,
-    },
-
-    "& .MuiPickersClockNumber-root.Mui-selected":
-      {
-        backgroundColor: PRIMARY_COLOR,
-        color: "#fff !important",
-      },
-
-    "& .MuiPickersClockPointer-root": {
-      backgroundColor: PRIMARY_COLOR,
-    },
-
-    "& .MuiPickersClockPointer-thumb": {
-      backgroundColor: PRIMARY_COLOR,
-      borderColor: PRIMARY_COLOR,
-    },
-
-    "& .MuiPickersClockPointer-noPoint": {
-      backgroundColor: PRIMARY_COLOR,
-    },
-
-    "& .MuiDialogActions-root button": {
-      color: `${PRIMARY_COLOR} !important`,
-    },
-
-    "& .MuiPickersLayout-actionBar button": {
-      color: `${PRIMARY_COLOR} !important`,
-    },
-
-    "& .MuiButton-root": {
-      color: `${PRIMARY_COLOR} !important`,
-      fontSize: "12px",
-    },
-
-    "& .MuiSvgIcon-root": {
-      color: PRIMARY_COLOR,
     },
   };
 
@@ -708,10 +689,9 @@ const commonTextFieldSx = {
       fontSize: "13px",
     },
 
-    "& .MuiPickersCalendarHeader-switchViewButton":
-      {
-        color: PRIMARY_COLOR,
-      },
+    "& .MuiPickersCalendarHeader-switchViewButton": {
+      color: PRIMARY_COLOR,
+    },
 
     "& .MuiPickersArrowSwitcher-button": {
       color: PRIMARY_COLOR,
@@ -754,21 +734,19 @@ const commonTextFieldSx = {
       color: TEXT_COLOR,
     },
 
-    "& .MuiPickersMonth-monthButton.Mui-selected":
-      {
-        backgroundColor: `${PRIMARY_COLOR} !important`,
-        color: "#fff !important",
-      },
+    "& .MuiPickersMonth-monthButton.Mui-selected": {
+      backgroundColor: `${PRIMARY_COLOR} !important`,
+      color: "#fff !important",
+    },
 
     "& .MuiPickersYear-yearButton": {
       color: TEXT_COLOR,
     },
 
-    "& .MuiPickersYear-yearButton.Mui-selected":
-      {
-        backgroundColor: `${PRIMARY_COLOR} !important`,
-        color: "#fff !important",
-      },
+    "& .MuiPickersYear-yearButton.Mui-selected": {
+      backgroundColor: `${PRIMARY_COLOR} !important`,
+      color: "#fff !important",
+    },
   };
 
   // ============================================================
@@ -787,7 +765,8 @@ const commonTextFieldSx = {
             xs: 1.5,
             sm: 2,
           },
-          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+          boxShadow:
+            "0 2px 8px rgba(0,0,0,0.04)",
         }}
       >
         {/* HEADER */}
@@ -826,59 +805,59 @@ const commonTextFieldSx = {
             </Typography>
           </Box>
 
-         <Button
-  onClick={handleSave}
-  variant="contained"
-  disabled={loading}
-  startIcon={
-    loading ? (
-      <CircularProgress
-        size={15}
-        thickness={5}
-        sx={{ color: "inherit" }}
-      />
-    ) : null
-  }
-  sx={{
-    flexShrink: 0,
-    height: 36,
-    minWidth: {
-      xs: 105,
-      sm: 135,
-    },
-    px: {
-      xs: 1.5,
-      sm: 2.5,
-    },
-    borderRadius: "7px",
-    backgroundColor: PRIMARY_COLOR,
-    color: "#fff",
-    textTransform: "none",
-    fontSize: "12px",
-    fontWeight: 600,
-    boxShadow: "none",
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            disabled={loading}
+            startIcon={
+              loading ? (
+                <CircularProgress
+                  size={15}
+                  thickness={5}
+                  sx={{ color: "inherit" }}
+                />
+              ) : null
+            }
+            sx={{
+              flexShrink: 0,
+              height: 36,
+              minWidth: {
+                xs: 105,
+                sm: 135,
+              },
+              px: {
+                xs: 1.5,
+                sm: 2.5,
+              },
+              borderRadius: "7px",
+              backgroundColor: PRIMARY_COLOR,
+              color: "#fff",
+              textTransform: "none",
+              fontSize: "12px",
+              fontWeight: 600,
+              boxShadow: "none",
 
-    "&:hover": {
-      backgroundColor: PRIMARY_COLOR,
-      boxShadow: "none",
-      opacity: 0.92,
-    },
+              "&:hover": {
+                backgroundColor: PRIMARY_COLOR,
+                boxShadow: "none",
+                opacity: 0.92,
+              },
 
-    "&.Mui-disabled": {
-      backgroundColor: PRIMARY_COLOR,
-      color: "#fff",
-      opacity: 0.7,
-    },
-  }}
->
-  {loading
-    ? editIndex !== null
-      ? "Updating..."
-      : "Saving..."
-    : editIndex !== null
-      ? "Update Schedule"
-      : "Save Schedule"}
-</Button>
+              "&.Mui-disabled": {
+                backgroundColor: PRIMARY_COLOR,
+                color: "#fff",
+                opacity: 0.7,
+              },
+            }}
+          >
+            {loading
+              ? editIndex !== null
+                ? "Updating..."
+                : "Saving..."
+              : editIndex !== null
+                ? "Update Schedule"
+                : "Save Schedule"}
+          </Button>
         </Box>
 
         <Divider sx={{ mb: 2 }} />
@@ -921,36 +900,124 @@ const commonTextFieldSx = {
               error={Boolean(errors.location)}
               helperText={errors.location}
               sx={hospitalFieldSx}
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    sx: {
+                      mt: 0.5,
+                      maxHeight: 300,
+                      borderRadius: "8px",
+                      border: `1px solid ${DIVIDER_COLOR}`,
+                      boxShadow:
+                        "0 6px 20px rgba(0,0,0,0.08)",
+                    },
+                  },
+                },
+              }}
             >
               {hospitals.length === 0 ? (
                 <MenuItem
                   disabled
-                  sx={{ fontSize: "12.5px" }}
+                  sx={{
+                    fontSize: "12.5px",
+                    color: SECONDARY_TEXT,
+                  }}
                 >
                   No hospitals found
                 </MenuItem>
               ) : (
-                hospitals.map((hospital, index) => (
-                  <MenuItem
-                    key={
-                      hospital?.id ??
-                      hospital?._id ??
-                      hospital?.hospitalId ??
-                      index
-                    }
-                    value={
-                      hospital?.hospitalName || ""
-                    }
-                    sx={{ fontSize: "12.5px" }}
-                  >
-                    {hospital?.hospitalName}
-                  </MenuItem>
-                ))
+                hospitals.map((hospital, index) => {
+                  const hospitalName =
+                    hospital?.hospitalName ||
+                    "Hospital";
+
+                  const addressDetails = [
+                    hospital?.landmark,
+                    hospital?.areaLocality,
+                  ]
+                    .filter(Boolean)
+                    .join(", ");
+
+                  return (
+                    <MenuItem
+                      key={
+                        hospital?.id ??
+                        hospital?._id ??
+                        hospital?.hospitalId ??
+                        `${hospitalName}-${index}`
+                      }
+                      value={hospitalName}
+                      sx={{
+                        minHeight: "42px",
+                        px: 1.5,
+                        py: 0.8,
+
+                        "&:hover": {
+                          backgroundColor:
+                            `${PRIMARY_COLOR}0A`,
+                        },
+
+                        "&.Mui-selected": {
+                          backgroundColor:
+                            `${PRIMARY_COLOR}0D`,
+                        },
+
+                        "&.Mui-selected:hover": {
+                          backgroundColor:
+                            `${PRIMARY_COLOR}14`,
+                        },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          width: "100%",
+                          minWidth: 0,
+                          gap: 0.6,
+                        }}
+                      >
+                        <Typography
+                          component="span"
+                          sx={{
+                            flexShrink: 0,
+                            fontSize: "12.5px",
+                            fontWeight: 600,
+                            color: TEXT_COLOR,
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {hospitalName}
+                        </Typography>
+
+                        {addressDetails && (
+                          <Typography
+                            component="span"
+                            sx={{
+                              minWidth: 0,
+                              overflow: "hidden",
+                              textOverflow:
+                                "ellipsis",
+                              whiteSpace: "nowrap",
+                              fontSize: "11.5px",
+                              fontWeight: 400,
+                              color:
+                                SECONDARY_TEXT,
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            — {addressDetails}
+                          </Typography>
+                        )}
+                      </Box>
+                    </MenuItem>
+                  );
+                })
               )}
             </TextField>
           </Grid>
 
-      
+          {/* SLOT DURATION */}
 
           <Grid size={{ xs: 6, sm: 6, md: 3 }}>
             <TextField
@@ -958,7 +1025,9 @@ const commonTextFieldSx = {
               fullWidth
               size="small"
               label="Slot Duration (min)"
-              value={formData?.slotDuration ?? ""}
+              value={
+                formData?.slotDuration ?? ""
+              }
               onChange={(e) => {
                 const value = e.target.value;
 
@@ -995,34 +1064,45 @@ const commonTextFieldSx = {
           {/* BREAK DURATION */}
 
           <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-          <TextField
-  type="number"
-  fullWidth
-  size="small"
-  label="Break Duration (min)"
-  value={formData?.breakDuration ?? ""}
-  onChange={(e) => {
-    const value = e.target.value;
+            <TextField
+              type="number"
+              fullWidth
+              size="small"
+              label="Break Duration (min)"
+              value={
+                formData?.breakDuration ?? ""
+              }
+              onChange={(e) => {
+                const value = e.target.value;
 
-    if (
-      value === "" ||
-      (/^\d+$/.test(value) && Number(value) >= 0)
-    ) {
-      updateField("breakDuration", value);
-    }
-  }}
-  error={Boolean(errors.breakDuration)}
-  helperText={errors.breakDuration}
-  inputRef={breakDurationRef}
-  onKeyDown={(e) =>
-    handleEnter(e, startDateRef)
-  }
-  inputProps={{
-    min: 0,
-    step: 1,
-  }}
-  sx={normalFieldSx}
-/>
+                if (
+                  value === "" ||
+                  (/^\d+$/.test(value) &&
+                    Number(value) >= 0)
+                ) {
+                  updateField(
+                    "breakDuration",
+                    value
+                  );
+                }
+              }}
+              error={Boolean(
+                errors.breakDuration
+              )}
+              helperText={errors.breakDuration}
+              inputRef={breakDurationRef}
+              onKeyDown={(e) =>
+                handleEnter(
+                  e,
+                  startDateRef
+                )
+              }
+              inputProps={{
+                min: 0,
+                step: 1,
+              }}
+              sx={normalFieldSx}
+            />
           </Grid>
 
           {/* START DATE */}
@@ -1058,10 +1138,16 @@ const commonTextFieldSx = {
                   fullWidth: true,
                   size: "small",
                   inputRef: startDateRef,
-                  error: Boolean(errors.startDate),
-                  helperText: errors.startDate,
+                  error: Boolean(
+                    errors.startDate
+                  ),
+                  helperText:
+                    errors.startDate,
                   onKeyDown: (e) =>
-                    handleEnter(e, endDateRef),
+                    handleEnter(
+                      e,
+                      endDateRef
+                    ),
                   sx: dateFieldSx,
                 },
 
@@ -1115,8 +1201,11 @@ const commonTextFieldSx = {
                   fullWidth: true,
                   size: "small",
                   inputRef: endDateRef,
-                  error: Boolean(errors.endDate),
-                  helperText: errors.endDate,
+                  error: Boolean(
+                    errors.endDate
+                  ),
+                  helperText:
+                    errors.endDate,
                   sx: dateFieldSx,
                 },
 
@@ -1176,7 +1265,10 @@ const commonTextFieldSx = {
                   mt: 0.2,
                 }}
               >
-               Slots will be created only for selected days. To add more days, update Working Hours in your Profile.
+                Available days are based on this
+                hospital&apos;s Working Hours. You can
+                unselect days you do not want to create
+                slots for.
               </Typography>
 
               <Stack
@@ -1202,17 +1294,25 @@ const commonTextFieldSx = {
                   return (
                     <Button
                       key={day}
+
+                      // API me day nahi -> disabled
                       disabled={!isAvailable}
+
                       variant={
                         isSelected
                           ? "contained"
                           : "outlined"
                       }
+
                       onClick={() => {
                         if (!isAvailable) {
                           return;
                         }
 
+                        /*
+                         * Selected -> click -> unselect
+                         * Unselected -> click -> select
+                         */
                         const updatedDays =
                           isSelected
                             ? currentDays.filter(
@@ -1232,6 +1332,7 @@ const commonTextFieldSx = {
                           updatedDays
                         );
                       }}
+
                       sx={{
                         minWidth: 55,
                         height: 30,
@@ -1270,14 +1371,15 @@ const commonTextFieldSx = {
 
                         "&.Mui-disabled": {
                           color:
-                            muiTheme.palette.text
-                              .disabled,
+                            muiTheme.palette
+                              .text.disabled,
 
                           borderColor:
                             DIVIDER_COLOR,
 
                           backgroundColor:
-                            muiTheme.palette.action
+                            muiTheme.palette
+                              .action
                               .disabledBackground,
                         },
                       }}

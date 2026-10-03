@@ -215,7 +215,7 @@ const ProfileDetails = ({
     documentsModalOpen,
     setDocumentsModalOpen,
   ] = useState(false);
-
+const [languageInput, setLanguageInput] = useState("");
   const languageValue = Array.isArray(profileData?.language)
     ? profileData.language.join(", ")
     : profileData?.language || "";
@@ -338,52 +338,242 @@ const ProfileDetails = ({
               width: "100%",
             }}
           >
-            {/* LANGUAGE */}
+           {/* LANGUAGES */}
+<Box sx={rowSx}>
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      width: {
+        xs: "100%",
+        sm: "auto",
+      },
+    }}
+  >
+    <Box sx={iconSx}>
+      <LanguageOutlinedIcon />
+    </Box>
 
-            <Box sx={rowSx}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  width: {
-                    xs: "100%",
-                    sm: "auto",
-                  },
-                }}
-              >
-                <Box sx={iconSx}>
-                  <LanguageOutlinedIcon />
-                </Box>
+    <Typography sx={labelSx}>
+      Languages
+    </Typography>
+  </Box>
 
-                <Typography sx={labelSx}>
-                  Language
-                </Typography>
-              </Box>
+  {isEditing ? (
+    <Box
+      sx={{
+        flex: 1,
+        width: {
+          xs: "100%",
+          sm: "auto",
+        },
+        minWidth: 0,
 
-              {isEditing ? (
-                <TextField
-                  fullWidth
-                  size="small"
-                  value={languageValue}
-                  placeholder="Hindi, English"
-                  onChange={(event) =>
-                    onFieldChange?.(
-                      "language",
-                      event.target.value
-                        .split(",")
-                        .map((item) => item.trim())
-                        .filter(Boolean)
-                    )
-                  }
-                  sx={inputSx}
-                />
-              ) : (
-                <Typography sx={valueSx}>
-                  {languageValue || "Not provided"}
-                </Typography>
-              )}
-            </Box>
+        display: "flex",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: "5px",
+
+        minHeight: "36px",
+        px: "8px",
+        py: "4px",
+
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: "7px",
+        bgcolor: "background.paper",
+
+        "&:focus-within": {
+          borderColor: "primary.main",
+        },
+      }}
+    >
+      {/* EXISTING LANGUAGES */}
+      {(Array.isArray(profileData?.language)
+        ? profileData.language
+        : []
+      ).map((language) => (
+        <Box
+          key={language}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+
+            px: "7px",
+            py: "3px",
+
+            bgcolor: "#EEF8F5",
+            border: "1px solid #D5EDE6",
+            borderRadius: "6px",
+
+            fontSize: "11.5px",
+            fontWeight: 600,
+            color: "#172033",
+          }}
+        >
+          {language}
+
+          <CloseIcon
+            onClick={() => {
+              const updatedLanguages =
+                profileData.language.filter(
+                  (item) => item !== language
+                );
+
+              onFieldChange?.(
+                "language",
+                updatedLanguages
+              );
+            }}
+            sx={{
+              fontSize: "13px",
+              cursor: "pointer",
+              color: "#74807B",
+
+              "&:hover": {
+                color: "#07876A",
+              },
+            }}
+          />
+        </Box>
+      ))}
+
+      {/* INPUT */}
+      <Box
+        component="input"
+        value={languageInput}
+        placeholder={
+          profileData?.language?.length
+            ? "Add language..."
+            : "Hindi, English..."
+        }
+        onChange={(event) => {
+          const value = event.target.value;
+
+          // comma detected
+          if (value.includes(",")) {
+            const newLanguage = value
+              .replace(",", "")
+              .trim();
+
+            if (newLanguage) {
+              const currentLanguages =
+                Array.isArray(profileData?.language)
+                  ? profileData.language
+                  : [];
+
+              const alreadyExists =
+                currentLanguages.some(
+                  (item) =>
+                    item.toLowerCase() ===
+                    newLanguage.toLowerCase()
+                );
+
+              if (!alreadyExists) {
+                onFieldChange?.("language", [
+                  ...currentLanguages,
+                  newLanguage,
+                ]);
+              }
+            }
+
+            setLanguageInput("");
+            return;
+          }
+
+          setLanguageInput(value);
+        }}
+        onKeyDown={(event) => {
+          // ENTER se bhi add
+          if (event.key === "Enter") {
+            event.preventDefault();
+
+            const newLanguage =
+              languageInput.trim();
+
+            if (!newLanguage) return;
+
+            const currentLanguages =
+              Array.isArray(profileData?.language)
+                ? profileData.language
+                : [];
+
+            const alreadyExists =
+              currentLanguages.some(
+                (item) =>
+                  item.toLowerCase() ===
+                  newLanguage.toLowerCase()
+              );
+
+            if (!alreadyExists) {
+              onFieldChange?.("language", [
+                ...currentLanguages,
+                newLanguage,
+              ]);
+            }
+
+            setLanguageInput("");
+          }
+        }}
+        sx={{
+          flex: 1,
+          minWidth: "100px",
+
+          border: "none",
+          outline: "none",
+          bgcolor: "transparent",
+
+          fontFamily: "inherit",
+          fontSize: "12.5px",
+          color: "text.primary",
+
+          py: "4px",
+
+          "&::placeholder": {
+            color: "#94A3B8",
+            opacity: 1,
+          },
+        }}
+      />
+    </Box>
+  ) : (
+    <Box
+      sx={{
+        ...valueSx,
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "5px",
+      }}
+    >
+      {Array.isArray(profileData?.language) &&
+      profileData.language.length ? (
+        profileData.language.map((language) => (
+          <Box
+            key={language}
+            sx={{
+              px: "7px",
+              py: "3px",
+
+              bgcolor: "#F1F7F5",
+              border: "1px solid #DDE9E5",
+              borderRadius: "6px",
+
+              fontSize: "11.5px",
+              fontWeight: 600,
+              color: "#475569",
+            }}
+          >
+            {language}
+          </Box>
+        ))
+      ) : (
+        "Not provided"
+      )}
+    </Box>
+  )}
+</Box>
 
             {/* EMAIL */}
 
@@ -401,41 +591,9 @@ const ProfileDetails = ({
               value={profileData?.mobile}
             />
 
-            {/* EXPERIENCE */}
-
-            <DetailRow
-              icon={<WorkHistoryOutlinedIcon />}
-              label="Experience"
-              value={profileData?.experience}
-              isEditing={isEditing}
-              editable
-              type="number"
-              placeholder="Years"
-              onChange={(event) =>
-                onFieldChange?.(
-                  "experience",
-                  event.target.value
-                )
-              }
-            />
+          
 
             {/* CONSULTATION FEE */}
-
-            <DetailRow
-              icon={<PaymentsOutlinedIcon />}
-              label="Consultation Fee"
-              value={profileData?.consultation_fee}
-              isEditing={isEditing}
-              editable
-              type="number"
-              placeholder="Fee"
-              onChange={(event) =>
-                onFieldChange?.(
-                  "consultation_fee",
-                  event.target.value
-                )
-              }
-            />
 
             {/* MEDICAL LICENSE */}
 
@@ -456,24 +614,6 @@ const ProfileDetails = ({
               }
             />
 
-            {/* REGISTRATION NUMBER */}
-
-            <DetailRow
-              icon={<ConfirmationNumberOutlinedIcon />}
-              label="Registration Number"
-              value={
-                profileData?.registration_number
-              }
-              isEditing={isEditing}
-              editable
-              placeholder="Registration number"
-              onChange={(event) =>
-                onFieldChange?.(
-                  "registration_number",
-                  event.target.value
-                )
-              }
-            />
           </Box>
         </Box>
 
@@ -618,6 +758,42 @@ const ProfileDetails = ({
               />
             </Box>
           </Box>
+
+            {/* EXPERIENCE */}
+
+            <DetailRow
+              icon={<WorkHistoryOutlinedIcon />}
+              label="Experience"
+              value={profileData?.experience}
+              isEditing={isEditing}
+              editable
+              type="number"
+              placeholder="Years"
+              onChange={(event) =>
+                onFieldChange?.(
+                  "experience",
+                  event.target.value
+                )
+              }
+            />
+
+            
+            <DetailRow
+              icon={<PaymentsOutlinedIcon />}
+              label="Consultation Fee"
+              value={profileData?.consultation_fee}
+              isEditing={isEditing}
+              editable
+              type="number"
+              placeholder="Fee"
+              onChange={(event) =>
+                onFieldChange?.(
+                  "consultation_fee",
+                  event.target.value
+                )
+              }
+            />
+
         </Box>
       </Box>
 
