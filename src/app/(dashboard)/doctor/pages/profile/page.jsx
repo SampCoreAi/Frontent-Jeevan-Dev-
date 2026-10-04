@@ -88,13 +88,59 @@ const Page = () => {
     }
   }, [successMessage, dispatch]);
 
-  // Redux error message
-  React.useEffect(() => {
-    if (error) {
-      showSnackbar(error, "error");
-      dispatch(clearError());
-    }
-  }, [error, dispatch]);
+React.useEffect(() => {
+  if (!error) return;
+
+  let userMessage = error;
+
+  const message =
+    typeof error === "string"
+      ? error
+      : error?.message || "";
+
+  const match = message.match(
+    /Clinic\s+([^\s]+)\s+on\s+(\w+)\s+must start at or after Clinic\s+([^\s]+)\s+ends/i
+  );
+
+  if (match) {
+    const [, firstClinicId, day, secondClinicId] = match;
+
+    const hospitals =
+      profileData?.hospitalDetail || [];
+
+    const firstHospital = hospitals.find(
+      (hospital) =>
+        String(hospital.clinicId) ===
+        String(firstClinicId)
+    );
+
+    const secondHospital = hospitals.find(
+      (hospital) =>
+        String(hospital.clinicId) ===
+        String(secondClinicId)
+    );
+
+    const firstHospitalName =
+      firstHospital?.hospitalName ||
+      "one clinic";
+
+    const secondHospitalName =
+      secondHospital?.hospitalName ||
+      "another clinic";
+
+userMessage =
+  `${day} has a timing conflict. ` +
+  `${firstHospitalName}'s working hours must start after ` +
+  `${secondHospitalName}'s working hours end.`;
+
+  } else {
+    userMessage =
+      "Profile update nahi ho saka. Please timing check karke dobara try karein.";
+  }
+
+  showSnackbar(userMessage, "error");
+  dispatch(clearError());
+}, [error, profileData, dispatch]);
 
   // Fetch doctor profile
   React.useEffect(() => {

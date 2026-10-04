@@ -33,6 +33,8 @@ export default function UsersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [statsRefreshKey, setStatsRefreshKey] = useState(0);
+
   const [viewOpen, setViewOpen] = useState(false);
   const [selectedAssistant, setSelectedAssistant] = useState(null);
   const [form, setForm] = useState(initialForm);
@@ -222,7 +224,12 @@ export default function UsersPage() {
         }
       );
       await fetchUsers();
-      showSnackbar("Assistant created successfully");
+     await fetchUsers();
+
+setStatsRefreshKey((prev) => prev + 1);
+
+showSnackbar("Assistant created successfully");
+
       setDialogOpen(false);
       resetForm();
     } catch (err) {
@@ -392,7 +399,8 @@ export default function UsersPage() {
           </Button>
         </Box>
         <Box sx={{ px: { xs: 1.5, sm: 2 }, py: 2 }}>
-          <DashboardCard />
+        <DashboardCard refreshKey={statsRefreshKey} />
+
         </Box>
         <Box
           sx={{

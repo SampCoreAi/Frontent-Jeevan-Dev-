@@ -57,11 +57,8 @@ const fieldSx = {
 // ADDRESS
 // ============================================================
 
-const getAddressSummary = (
-  hospital
-) => {
-  if (!hospital)
-    return "Address not provided";
+const getAddressSummary = (hospital) => {
+  if (!hospital) return "Address not provided";
 
   const values = [
     hospital.flatNo,
@@ -75,9 +72,7 @@ const getAddressSummary = (
     hospital.pinCode,
   ].filter(Boolean);
 
-  return values.length
-    ? values.join(", ")
-    : "Address not provided";
+  return values.length ? values.join(", ") : "Address not provided";
 };
 
 // ============================================================
@@ -93,8 +88,7 @@ const HospitalCard = ({
   onRemove,
   onWorkingHours,
 }) => {
-  const [open, setOpen] =
-    useState(false);
+  const [open, setOpen] = useState(false);
 
   const fields = [
     ["flatNo", "Flat / Plot No.", 4],
@@ -124,9 +118,7 @@ const HospitalCard = ({
       {/* HEADER */}
 
       <Box
-        onClick={() =>
-          setOpen((prev) => !prev)
-        }
+        onClick={() => setOpen((prev) => !prev)}
         sx={{
           minHeight: "56px",
 
@@ -140,8 +132,7 @@ const HospitalCard = ({
           cursor: "pointer",
 
           "&:hover": {
-            bgcolor:
-              "secondary.light",
+            bgcolor: "secondary.light",
           },
         }}
       >
@@ -158,8 +149,7 @@ const HospitalCard = ({
 
             borderRadius: "7px",
 
-            bgcolor:
-              "secondary.light",
+            bgcolor: "secondary.light",
 
             color: "primary.main",
           }}
@@ -185,8 +175,7 @@ const HospitalCard = ({
               color: "text.primary",
             }}
           >
-            {hospital.hospitalName ||
-              `Hospital ${index + 1}`}
+            {hospital.hospitalName || `Hospital ${index + 1}`}
           </Typography>
 
           <Typography
@@ -195,39 +184,33 @@ const HospitalCard = ({
 
               fontSize: "11px",
 
-              color:
-                "text.secondary",
+              color: "text.secondary",
 
               overflow: "hidden",
-              textOverflow:
-                "ellipsis",
+              textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}
           >
-            {getAddressSummary(
-              hospital
-            )}
+            {getAddressSummary(hospital)}
           </Typography>
         </Box>
-<IconButton
-  size="small"
-  onClick={(event) => {
-    event.stopPropagation();
+        <IconButton
+          size="small"
+          onClick={(event) => {
+            event.stopPropagation();
 
-    onWorkingHours?.(hospital);
-  }}
-  sx={{
-    width: 30,
-    height: 30,
-    color: "primary.main",
-    border: "1px solid",
-    borderColor: "divider",
-  }}
->
-  <AccessTimeOutlinedIcon
-    sx={{ fontSize: "17px" }}
-  />
-</IconButton>
+            onWorkingHours?.(hospital);
+          }}
+          sx={{
+            width: 30,
+            height: 30,
+            color: "primary.main",
+            border: "1px solid",
+            borderColor: "divider",
+          }}
+        >
+          <AccessTimeOutlinedIcon sx={{ fontSize: "17px" }} />
+        </IconButton>
         {isEditing && canRemove && (
           <IconButton
             size="small"
@@ -249,11 +232,7 @@ const HospitalCard = ({
         )}
 
         <IconButton size="small">
-          {open ? (
-            <KeyboardArrowUpIcon />
-          ) : (
-            <KeyboardArrowDownIcon />
-          )}
+          {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
         </IconButton>
       </Box>
 
@@ -264,28 +243,18 @@ const HospitalCard = ({
           sx={{
             p: "12px",
 
-            borderTop:
-              "1px solid",
+            borderTop: "1px solid",
 
-            borderColor:
-              "divider",
+            borderColor: "divider",
           }}
         >
           <TextField
             fullWidth
             size="small"
             label="Hospital Name"
-            value={
-              hospital.hospitalName ||
-              ""
-            }
+            value={hospital.hospitalName || ""}
             disabled={!isEditing}
-            onChange={(event) =>
-              onChange(
-                "hospitalName",
-                event.target.value
-              )
-            }
+            onChange={(event) => onChange("hospitalName", event.target.value)}
             sx={{
               ...fieldSx,
 
@@ -293,51 +262,20 @@ const HospitalCard = ({
             }}
           />
 
-          <Grid
-            container
-            spacing={1.25}
-          >
-            {fields.map(
-              ([
-                key,
-                label,
-                size,
-              ]) => (
-                <Grid
-                  item
-                  xs={12}
-                  sm={size}
-                  key={key}
-                >
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label={label}
-                    value={
-                      hospital?.[
-                        key
-                      ] || ""
-                    }
-                    disabled={
-                      !isEditing
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      onChange(
-                        key,
-                        event
-                          .target
-                          .value
-                      )
-                    }
-                    sx={
-                      fieldSx
-                    }
-                  />
-                </Grid>
-              )
-            )}
+          <Grid container spacing={1.25}>
+            {fields.map(([key, label, size]) => (
+              <Grid item xs={12} sm={size} key={key}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label={label}
+                  value={hospital?.[key] || ""}
+                  disabled={!isEditing}
+                  onChange={(event) => onChange(key, event.target.value)}
+                  sx={fieldSx}
+                />
+              </Grid>
+            ))}
           </Grid>
         </Box>
       </Collapse>
@@ -357,9 +295,7 @@ const ProfileAddress = ({
   onRemoveHospital,
   onWorkingHours,
 }) => {
-  const hospitals =
-    profileData?.hospitalDetail ||
-    [];
+  const hospitals = profileData?.hospitalDetail || [];
 
   return (
     <Box
@@ -382,8 +318,7 @@ const ProfileAddress = ({
         sx={{
           display: "flex",
           alignItems: "center",
-          justifyContent:
-            "space-between",
+          justifyContent: "space-between",
 
           mb: "10px",
         }}
@@ -407,11 +342,9 @@ const ProfileAddress = ({
 
               borderRadius: "7px",
 
-              bgcolor:
-                "secondary.light",
+              bgcolor: "secondary.light",
 
-              color:
-                "primary.main",
+              color: "primary.main",
             }}
           >
             <LocalHospitalOutlinedIcon
@@ -427,8 +360,7 @@ const ProfileAddress = ({
                 fontSize: "15px",
                 fontWeight: 700,
 
-                color:
-                  "text.primary",
+                color: "text.primary",
               }}
             >
               Hospital Address
@@ -438,15 +370,11 @@ const ProfileAddress = ({
               sx={{
                 fontSize: "11px",
 
-                color:
-                  "text.secondary",
+                color: "text.secondary",
               }}
             >
               {hospitals.length}{" "}
-              {hospitals.length === 1
-                ? "hospital"
-                : "hospitals"}{" "}
-              added
+              {hospitals.length === 1 ? "hospital" : "hospitals"} added
             </Typography>
           </Box>
         </Box>
@@ -460,8 +388,7 @@ const ProfileAddress = ({
             startIcon={
               <AddIcon
                 sx={{
-                  fontSize:
-                    "16px !important",
+                  fontSize: "16px !important",
                 }}
               />
             }
@@ -491,33 +418,18 @@ const ProfileAddress = ({
           gap: "7px",
         }}
       >
-        {hospitals.map(
-          (hospital, index) => (
-           <HospitalCard
-  key={hospital.clinicId || index}
-  hospital={hospital}
-  index={index}
-  isEditing={isEditing}
-  canRemove={hospitals.length > 1}
-
-  onWorkingHours={() =>
-    onWorkingHours?.(hospital)
-  }
-
-  onChange={(field, value) =>
-    onHospitalChange?.(
-      index,
-      field,
-      value
-    )
-  }
-
-  onRemove={() =>
-    onRemoveHospital?.(index)
-  }
-/>
-          )
-        )}
+        {hospitals.map((hospital, index) => (
+          <HospitalCard
+            key={hospital.clinicId || index}
+            hospital={hospital}
+            index={index}
+            isEditing={isEditing}
+            canRemove={hospitals.length > 1}
+            onWorkingHours={() => onWorkingHours?.(hospital)}
+            onChange={(field, value) => onHospitalChange?.(index, field, value)}
+            onRemove={() => onRemoveHospital?.(index)}
+          />
+        ))}
 
         {!hospitals.length && (
           <Box
@@ -536,12 +448,10 @@ const ProfileAddress = ({
               sx={{
                 fontSize: "12.5px",
 
-                color:
-                  "text.secondary",
+                color: "text.secondary",
               }}
             >
-              No hospital address
-              added
+              No hospital address added
             </Typography>
           </Box>
         )}
@@ -550,4 +460,4 @@ const ProfileAddress = ({
   );
 };
 
-export default ProfileAddress;  
+export default ProfileAddress;

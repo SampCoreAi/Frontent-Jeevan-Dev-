@@ -51,24 +51,14 @@ const ProfileContent = ({
     useState(null);
 
   const handleOpenWorkingHours = (hospital) => {
-    console.log(
-      "Selected hospital:",
-      hospital
-    );
-
-    console.log(
-      "Selected clinicId:",
-      hospital?.clinicId
-    );
-
     setSelectedHospital(hospital);
     setWorkingHoursOpen(true);
   };
-const getWorkingHours = (hospital) => {
-  const result = {};
 
-  (hospital?.availability || []).forEach(
-    (item) => {
+  const getWorkingHours = (hospital) => {
+    const result = {};
+
+    (hospital?.availability || []).forEach((item) => {
       const key = String(
         item.day || ""
       ).toLowerCase();
@@ -77,11 +67,13 @@ const getWorkingHours = (hospital) => {
         start: item.startTime || "",
         end: item.endTime || "",
       };
-    }
-  );
+    });
 
-  return result;
-};
+    return result;
+  };
+
+  // ==========================================
+  // LOADING
   // ==========================================
 
   if (loading) {
@@ -98,12 +90,18 @@ const getWorkingHours = (hospital) => {
       </Box>
     );
   }
-const currentSelectedHospital =
-  profileData?.hospitalDetail?.find(
-    (hospital) =>
-      String(hospital.clinicId) ===
-      String(selectedHospital?.clinicId)
-  ) || selectedHospital;
+
+  // ==========================================
+  // GET UPDATED SELECTED HOSPITAL
+  // ==========================================
+
+  const currentSelectedHospital =
+    profileData?.hospitalDetail?.find(
+      (hospital) =>
+        String(hospital.clinicId) ===
+        String(selectedHospital?.clinicId)
+    ) || selectedHospital;
+
   return (
     <Box
       sx={{
@@ -219,30 +217,54 @@ const currentSelectedHospital =
           />
         </Box>
       </Box>
-   <WorkingHoursModal
-  open={workingHoursOpen}
-  onClose={() => {
-    setWorkingHoursOpen(false);
-    setSelectedHospital(null);
-  }}
-  workingHours={getWorkingHours(selectedHospital)}
-  onWorkingHoursChange={(day, field, value) => {
-    if (!selectedHospital?.clinicId) {
-      console.error("Clinic ID missing");
-      return;
-    }
 
-    onClinicWorkingHoursChange?.(
-      selectedHospital.clinicId,
-      day,
-      field,
-      value
-    );
-  }}
-  onSaved={() => {
-    onWorkingHoursSaved?.();
-  }}
-/>
+      {/* ==========================================
+          WORKING HOURS MODAL
+          ========================================== */}
+
+      <WorkingHoursModal
+        open={workingHoursOpen}
+        onClose={() => {
+          setWorkingHoursOpen(false);
+          setSelectedHospital(null);
+        }}
+        workingHours={getWorkingHours(
+          currentSelectedHospital
+        )}
+
+        /*
+         * IMPORTANT:
+         * Edit Profile clicked => editable
+         * Edit Profile not clicked => read only
+         */
+        readOnly={!isEditing}
+
+        onWorkingHoursChange={(
+          day,
+          field,
+          value
+        ) => {
+          if (
+            !currentSelectedHospital?.clinicId
+          ) {
+            console.error(
+              "Clinic ID missing"
+            );
+            return;
+          }
+
+          onClinicWorkingHoursChange?.(
+            currentSelectedHospital.clinicId,
+            day,
+            field,
+            value
+          );
+        }}
+
+        onSaved={() => {
+          onWorkingHoursSaved?.();
+        }}
+      />
     </Box>
   );
 };

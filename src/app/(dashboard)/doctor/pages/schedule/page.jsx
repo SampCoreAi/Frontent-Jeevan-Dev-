@@ -255,11 +255,12 @@ useEffect(() => {
 </Typography>
 
 <SavedSchedules
-  schedules={schedules}
-  hospitals={hospitals}
+  schedules={Array.isArray(schedules) ? schedules : []}
+  hospitals={Array.isArray(hospitals) ? hospitals : []}
   onEdit={handleEdit}
   onDelete={handleDelete}
 />
+
 
       <Snackbar
         open={snackbar.open}

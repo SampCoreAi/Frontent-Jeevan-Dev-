@@ -1,6 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import {
   Alert,
   Box,
@@ -10,7 +15,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   IconButton,
   Switch,
   Typography,
@@ -18,9 +22,9 @@ import {
 
 import CloseIcon from "@mui/icons-material/Close";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
-import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DoneAllOutlinedIcon from "@mui/icons-material/DoneAllOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 
 import {
   LocalizationProvider,
@@ -85,13 +89,17 @@ const createEmptyHours = () =>
     return acc;
   }, {});
 
-const normalizeWorkingHours = (workingHours) => {
+const normalizeWorkingHours = (
+  workingHours
+) => {
   const result = createEmptyHours();
 
   DAYS.forEach(({ key }) => {
     result[key] = {
-      start: workingHours?.[key]?.start || "",
-      end: workingHours?.[key]?.end || "",
+      start:
+        workingHours?.[key]?.start || "",
+      end:
+        workingHours?.[key]?.end || "",
     };
   });
 
@@ -103,27 +111,46 @@ const parseTime = (timeStr) => {
 
   const parsed = dayjs(
     timeStr,
-    ["HH:mm", "HH:mm:ss", "h:mm A", "hh:mm A"],
+    [
+      "HH:mm",
+      "HH:mm:ss",
+      "h:mm A",
+      "hh:mm A",
+    ],
     true
   );
 
-  return parsed.isValid() ? parsed : null;
+  return parsed.isValid()
+    ? parsed
+    : null;
 };
 
 const formatTime = (value) => {
-  if (!value || !dayjs(value).isValid()) {
+  if (
+    !value ||
+    !dayjs(value).isValid()
+  ) {
     return "";
   }
 
-  return dayjs(value).format("HH:mm");
+  return dayjs(value).format(
+    "HH:mm"
+  );
 };
 
-const formatDisplayTime = (time) => {
+const formatDisplayTime = (
+  time
+) => {
   if (!time) return "";
 
   const parsed = dayjs(
     time,
-    ["HH:mm", "HH:mm:ss", "h:mm A", "hh:mm A"],
+    [
+      "HH:mm",
+      "HH:mm:ss",
+      "h:mm A",
+      "hh:mm A",
+    ],
     true
   );
 
@@ -131,7 +158,9 @@ const formatDisplayTime = (time) => {
     return time;
   }
 
-  return parsed.format("hh:mm A");
+  return parsed.format(
+    "hh:mm A"
+  );
 };
 
 const WorkingHoursModal = ({
@@ -140,65 +169,102 @@ const WorkingHoursModal = ({
   workingHours,
   onWorkingHoursChange,
   onSaved,
+  readOnly = false,
 }) => {
   const [draftHours, setDraftHours] =
     useState(createEmptyHours());
 
-  const [selectedDays, setSelectedDays] = useState([
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-  ]);
+  const [selectedDays, setSelectedDays] =
+    useState([
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+    ]);
 
-  const [quickStart, setQuickStart] = useState(
-    parseTime(DEFAULT_START)
-  );
+  const [quickStart, setQuickStart] =
+    useState(
+      parseTime(DEFAULT_START)
+    );
 
-  const [quickEnd, setQuickEnd] = useState(
-    parseTime(DEFAULT_END)
-  );
+  const [quickEnd, setQuickEnd] =
+    useState(
+      parseTime(DEFAULT_END)
+    );
 
-  const [editingDay, setEditingDay] = useState(null);
+  const [editingDay, setEditingDay] =
+    useState(null);
 
-  const [error, setError] = useState("");
+  const [error, setError] =
+    useState("");
+
+  // ==========================================
+  // LOAD DATA
+  // ==========================================
 
   useEffect(() => {
     if (!open) return;
 
     setDraftHours(
-      normalizeWorkingHours(workingHours)
+      normalizeWorkingHours(
+        workingHours
+      )
     );
 
     setEditingDay(null);
     setError("");
   }, [open, workingHours]);
 
+  // ==========================================
+  // CHANGES
+  // ==========================================
+
   const hasChanges = useMemo(() => {
     const original =
-      normalizeWorkingHours(workingHours);
+      normalizeWorkingHours(
+        workingHours
+      );
 
     return (
       JSON.stringify(original) !==
       JSON.stringify(draftHours)
     );
-  }, [workingHours, draftHours]);
+  }, [
+    workingHours,
+    draftHours,
+  ]);
+
+  // ==========================================
+  // DAY STATUS
+  // ==========================================
 
   const isDayOpen = (dayKey) => {
-    const day = draftHours?.[dayKey];
+    const day =
+      draftHours?.[dayKey];
 
     return Boolean(
       day?.start &&
-      day?.end
+        day?.end
     );
   };
+
+  // ==========================================
+  // TIME CHANGE
+  // ==========================================
 
   const handleTimeChange = (
     dayKey,
     field,
     value
   ) => {
+    if (readOnly) {
+      setError(
+        "Please click Edit Profile first."
+      );
+      return;
+    }
+
     setError("");
 
     setDraftHours((prev) => ({
@@ -206,15 +272,27 @@ const WorkingHoursModal = ({
 
       [dayKey]: {
         ...prev[dayKey],
-        [field]: formatTime(value),
+        [field]:
+          formatTime(value),
       },
     }));
   };
+
+  // ==========================================
+  // TOGGLE DAY
+  // ==========================================
 
   const handleToggleDay = (
     dayKey,
     checked
   ) => {
+    if (readOnly) {
+      setError(
+        "Please click Edit Profile first."
+      );
+      return;
+    }
+
     setError("");
 
     setDraftHours((prev) => {
@@ -235,29 +313,57 @@ const WorkingHoursModal = ({
         [dayKey]: {
           start:
             prev?.[dayKey]?.start ||
-            formatTime(quickStart) ||
+            formatTime(
+              quickStart
+            ) ||
             DEFAULT_START,
 
           end:
             prev?.[dayKey]?.end ||
-            formatTime(quickEnd) ||
+            formatTime(
+              quickEnd
+            ) ||
             DEFAULT_END,
         },
       };
     });
   };
 
-  const handleDaySelection = (dayKey) => {
+  // ==========================================
+  // SELECT DAYS
+  // ==========================================
+
+  const handleDaySelection = (
+    dayKey
+  ) => {
+    if (readOnly) {
+      setError(
+        "Please click Edit Profile first."
+      );
+      return;
+    }
+
     setSelectedDays((prev) =>
       prev.includes(dayKey)
         ? prev.filter(
-            (item) => item !== dayKey
+            (item) =>
+              item !== dayKey
           )
-        : [...prev, dayKey]
+        : [
+            ...prev,
+            dayKey,
+          ]
     );
   };
 
   const selectWeekdays = () => {
+    if (readOnly) {
+      setError(
+        "Please click Edit Profile first."
+      );
+      return;
+    }
+
     setSelectedDays([
       "monday",
       "tuesday",
@@ -268,6 +374,13 @@ const WorkingHoursModal = ({
   };
 
   const selectWeekend = () => {
+    if (readOnly) {
+      setError(
+        "Please click Edit Profile first."
+      );
+      return;
+    }
+
     setSelectedDays([
       "saturday",
       "sunday",
@@ -275,27 +388,57 @@ const WorkingHoursModal = ({
   };
 
   const selectAllDays = () => {
+    if (readOnly) {
+      setError(
+        "Please click Edit Profile first."
+      );
+      return;
+    }
+
     setSelectedDays(
-      DAYS.map((day) => day.key)
+      DAYS.map(
+        (day) => day.key
+      )
     );
   };
 
   const clearSelectedDays = () => {
+    if (readOnly) {
+      setError(
+        "Please click Edit Profile first."
+      );
+      return;
+    }
+
     setSelectedDays([]);
   };
 
+  // ==========================================
+  // APPLY HOURS
+  // ==========================================
+
   const applyToSelectedDays = () => {
+    if (readOnly) {
+      setError(
+        "Please click Edit Profile first."
+      );
+      return;
+    }
+
     const start =
-      formatTime(quickStart);
+      formatTime(
+        quickStart
+      );
 
     const end =
-      formatTime(quickEnd);
+      formatTime(
+        quickEnd
+      );
 
     if (!selectedDays.length) {
       setError(
         "Please select at least one day."
       );
-
       return;
     }
 
@@ -303,28 +446,32 @@ const WorkingHoursModal = ({
       setError(
         "Please select both opening and closing time."
       );
-
       return;
     }
 
-    const startTime = dayjs(
-      start,
-      "HH:mm"
-    );
+    const startTime =
+      dayjs(
+        start,
+        "HH:mm"
+      );
 
-    const endTime = dayjs(
-      end,
-      "HH:mm"
-    );
+    const endTime =
+      dayjs(
+        end,
+        "HH:mm"
+      );
 
     if (
-      endTime.isSame(startTime) ||
-      endTime.isBefore(startTime)
+      endTime.isSame(
+        startTime
+      ) ||
+      endTime.isBefore(
+        startTime
+      )
     ) {
       setError(
         "Closing time must be later than opening time."
       );
-
       return;
     }
 
@@ -348,74 +495,53 @@ const WorkingHoursModal = ({
     setError("");
   };
 
-  const closeAllSelectedDays = () => {
-    if (!selectedDays.length) {
-      setError(
-        "Please select at least one day."
-      );
+  // ==========================================
+  // CLOSE SELECTED DAYS
+  // ==========================================
 
-      return;
-    }
+  const closeAllSelectedDays =
+    () => {
+      if (readOnly) {
+        setError(
+          "Please click Edit Profile first."
+        );
+        return;
+      }
 
-    setDraftHours((prev) => {
-      const updated = {
-        ...prev,
-      };
+      if (!selectedDays.length) {
+        setError(
+          "Please select at least one day."
+        );
+        return;
+      }
 
-      selectedDays.forEach(
-        (dayKey) => {
-          updated[dayKey] = {
-            start: "",
-            end: "",
-          };
-        }
-      );
+      setDraftHours((prev) => {
+        const updated = {
+          ...prev,
+        };
 
-      return updated;
-    });
+        selectedDays.forEach(
+          (dayKey) => {
+            updated[dayKey] = {
+              start: "",
+              end: "",
+            };
+          }
+        );
 
-    setError("");
-  };
+        return updated;
+      });
 
-  const copyMondayToWeekdays = () => {
-    const monday =
-      draftHours?.monday;
+      setError("");
+    };
 
-    if (
-      !monday?.start ||
-      !monday?.end
-    ) {
-      setError(
-        "Please set Monday working hours first."
-      );
+  // ==========================================
+  // VALIDATION
+  // ==========================================
 
-      return;
-    }
-
-    setDraftHours((prev) => ({
-      ...prev,
-
-      tuesday: {
-        ...monday,
-      },
-
-      wednesday: {
-        ...monday,
-      },
-
-      thursday: {
-        ...monday,
-      },
-
-      friday: {
-        ...monday,
-      },
-    }));
-
-    setError("");
-  };
-
-  const validateSingleDay = (dayKey) => {
+  const validateSingleDay = (
+    dayKey
+  ) => {
     const day =
       draftHours?.[dayKey];
 
@@ -426,15 +552,17 @@ const WorkingHoursModal = ({
       return "Please select both opening and closing time.";
     }
 
-    const start = dayjs(
-      day.start,
-      "HH:mm"
-    );
+    const start =
+      dayjs(
+        day.start,
+        "HH:mm"
+      );
 
-    const end = dayjs(
-      day.end,
-      "HH:mm"
-    );
+    const end =
+      dayjs(
+        day.end,
+        "HH:mm"
+      );
 
     if (
       end.isSame(start) ||
@@ -468,15 +596,17 @@ const WorkingHoursModal = ({
         return `${label}: Please select both opening and closing time.`;
       }
 
-      const start = dayjs(
-        day.start,
-        "HH:mm"
-      );
+      const start =
+        dayjs(
+          day.start,
+          "HH:mm"
+        );
 
-      const end = dayjs(
-        day.end,
-        "HH:mm"
-      );
+      const end =
+        dayjs(
+          day.end,
+          "HH:mm"
+        );
 
       if (
         end.isSame(start) ||
@@ -489,14 +619,36 @@ const WorkingHoursModal = ({
     return "";
   };
 
+  // ==========================================
+  // EDIT INDIVIDUAL DAY
+  // ==========================================
+
+  const handleEditDay = (
+    dayKey
+  ) => {
+    if (readOnly) {
+      setError(
+        "Please click Edit Profile first."
+      );
+      return;
+    }
+
+    setError("");
+    setEditingDay(dayKey);
+  };
+
   const handleDoneEditing = () => {
     if (!editingDay) return;
 
     const validationError =
-      validateSingleDay(editingDay);
+      validateSingleDay(
+        editingDay
+      );
 
     if (validationError) {
-      setError(validationError);
+      setError(
+        validationError
+      );
       return;
     }
 
@@ -504,7 +656,18 @@ const WorkingHoursModal = ({
     setEditingDay(null);
   };
 
+  // ==========================================
+  // SAVE
+  // ==========================================
+
   const handleSave = () => {
+    if (readOnly) {
+      setError(
+        "Please click Edit Profile first."
+      );
+      return;
+    }
+
     const validationError =
       validateHours();
 
@@ -512,17 +675,10 @@ const WorkingHoursModal = ({
       setError(
         validationError
       );
-
       return;
     }
 
     DAYS.forEach(({ key }) => {
-      const oldDay =
-        workingHours?.[key] || {
-          start: "",
-          end: "",
-        };
-
       const newDay =
         draftHours?.[key] || {
           start: "",
@@ -534,6 +690,7 @@ const WorkingHoursModal = ({
         "start",
         newDay.start
       );
+
       onWorkingHoursChange(
         key,
         "end",
@@ -543,9 +700,14 @@ const WorkingHoursModal = ({
 
     setError("");
     setEditingDay(null);
-onSaved?.();
+
+    onSaved?.();
     onClose();
   };
+
+  // ==========================================
+  // CANCEL
+  // ==========================================
 
   const handleCancel = () => {
     setDraftHours(
@@ -568,8 +730,14 @@ onSaved?.();
 
   return (
     <LocalizationProvider
-      dateAdapter={AdapterDayjs}
+      dateAdapter={
+        AdapterDayjs
+      }
     >
+      {/* ========================================
+          MAIN WORKING HOURS MODAL
+          ======================================== */}
+
       <Dialog
         open={open}
         onClose={handleCancel}
@@ -582,23 +750,41 @@ onSaved?.();
               sm: "calc(100vw - 40px)",
               md: "min(700px, calc(100vw - 80px))",
             },
-            maxWidth: "700px",
+
+            maxWidth:
+              "700px",
+
             maxHeight: {
               xs: "calc(100vh - 20px)",
               sm: "calc(100vh - 40px)",
             },
+
             m: {
               xs: "10px",
               sm: "20px",
             },
-            borderRadius: "12px",
-            border: "1px solid",
-            borderColor: "divider",
-            boxShadow: "0 20px 60px rgba(15, 23, 42, 0.14)",
-            overflow: "hidden",
+
+            borderRadius:
+              "12px",
+
+            border:
+              "1px solid",
+
+            borderColor:
+              "divider",
+
+            boxShadow:
+              "0 20px 60px rgba(15, 23, 42, 0.14)",
+
+            overflow:
+              "hidden",
           },
         }}
       >
+        {/* ========================================
+            TITLE
+            ======================================== */}
+
         <DialogTitle
           sx={{
             px: "16px",
@@ -614,49 +800,74 @@ onSaved?.();
           <Box
             sx={{
               display: "flex",
-
-              alignItems:
-                "center",
-
+              alignItems: "center",
               justifyContent:
                 "space-between",
-
               gap: 2,
             }}
           >
             <Box>
-              <Typography
+              <Box
                 sx={{
-                  fontSize:
-                    "14px",
-
-                  fontWeight:
-                    700,
-
-                  color:
-                    "text.primary",
-
-                  lineHeight:
-                    1.2,
+                  display:
+                    "flex",
+                  alignItems:
+                    "center",
+                  gap: "7px",
                 }}
               >
-                Working Hours
-              </Typography>
+                <Typography
+                  sx={{
+                    fontSize:
+                      "14px",
+                    fontWeight:
+                      700,
+                    color:
+                      "text.primary",
+                    lineHeight:
+                      1.2,
+                  }}
+                >
+                  Working Hours
+                </Typography>
+
+                {readOnly && (
+                  <Chip
+                    icon={
+                      <LockOutlinedIcon
+                        sx={{
+                          fontSize:
+                            "13px !important",
+                        }}
+                      />
+                    }
+                    label="Read Only"
+                    size="small"
+                    sx={{
+                      height: 22,
+                      fontSize:
+                        "9px",
+                      fontWeight:
+                        600,
+                      bgcolor:
+                        "action.hover",
+                    }}
+                  />
+                )}
+              </Box>
 
               <Typography
                 sx={{
                   mt: "2px",
-
                   fontSize:
                     "10.5px",
-
                   color:
                     "text.secondary",
                 }}
               >
-                Set your weekly
-                availability and apply
-                hours to multiple days.
+                {readOnly
+                  ? "View your weekly availability. Click Edit Profile to make changes."
+                  : "Set your weekly availability and apply hours to multiple days."}
               </Typography>
             </Box>
 
@@ -668,10 +879,8 @@ onSaved?.();
               sx={{
                 width: 29,
                 height: 29,
-
                 border:
                   "1px solid",
-
                 borderColor:
                   "divider",
               }}
@@ -685,26 +894,38 @@ onSaved?.();
           </Box>
         </DialogTitle>
 
+        {/* ========================================
+            CONTENT
+            ======================================== */}
+
         <DialogContent
           sx={{
             p: {
               xs: "10px !important",
               sm: "12px 16px !important",
             },
-            overflowY: "auto",
-            overflowX: "hidden",
+
+            overflowY:
+              "auto",
+
+            overflowX:
+              "hidden",
+
             minWidth: 0,
           }}
         >
           {error && (
             <Alert
-              severity="error"
+              severity={
+                readOnly
+                  ? "info"
+                  : "error"
+              }
               onClose={() =>
                 setError("")
               }
               sx={{
                 mb: "9px",
-
                 py: 0,
 
                 "& .MuiAlert-message":
@@ -726,7 +947,6 @@ onSaved?.();
               gridTemplateColumns:
                 {
                   xs: "1fr",
-
                   md: "275px minmax(0, 1fr)",
                 },
 
@@ -736,7 +956,9 @@ onSaved?.();
                 "start",
             }}
           >
-            {/* QUICK SETUP */}
+            {/* ======================================
+                QUICK SETUP
+                ====================================== */}
 
             <Box
               sx={{
@@ -753,6 +975,11 @@ onSaved?.();
 
                 bgcolor:
                   "background.default",
+
+                opacity:
+                  readOnly
+                    ? 0.65
+                    : 1,
               }}
             >
               <Box
@@ -770,9 +997,7 @@ onSaved?.();
               >
                 <AccessTimeOutlinedIcon
                   sx={{
-                    fontSize:
-                      17,
-
+                    fontSize: 17,
                     color:
                       "primary.main",
                   }}
@@ -783,10 +1008,8 @@ onSaved?.();
                     sx={{
                       fontSize:
                         "11.5px",
-
                       fontWeight:
                         700,
-
                       lineHeight:
                         1.2,
                     }}
@@ -797,10 +1020,8 @@ onSaved?.();
                   <Typography
                     sx={{
                       mt: "2px",
-
                       fontSize:
                         "9.5px",
-
                       color:
                         "text.secondary",
                     }}
@@ -811,14 +1032,14 @@ onSaved?.();
                 </Box>
               </Box>
 
+              {/* QUICK START */}
+
               <Box
                 sx={{
                   display:
                     "flex",
-
                   flexDirection:
                     "column",
-
                   gap: "7px",
                 }}
               >
@@ -830,19 +1051,20 @@ onSaved?.();
                   onChange={
                     setQuickStart
                   }
+                  disabled={
+                    readOnly
+                  }
                   slotProps={{
                     textField: {
-                      size: "small",
-
+                      size:
+                        "small",
                       fullWidth:
                         true,
-
                       sx: {
                         "& .MuiInputBase-root":
                           {
                             height:
                               36,
-
                             fontSize:
                               "11px",
                           },
@@ -855,7 +1077,8 @@ onSaved?.();
 
                         "& input":
                           {
-                            px: "8px",
+                            px:
+                              "8px",
                           },
 
                         "& .MuiSvgIcon-root":
@@ -868,6 +1091,8 @@ onSaved?.();
                   }}
                 />
 
+                {/* QUICK END */}
+
                 <TimePicker
                   label="Closing time"
                   value={
@@ -876,19 +1101,20 @@ onSaved?.();
                   onChange={
                     setQuickEnd
                   }
+                  disabled={
+                    readOnly
+                  }
                   slotProps={{
                     textField: {
-                      size: "small",
-
+                      size:
+                        "small",
                       fullWidth:
                         true,
-
                       sx: {
                         "& .MuiInputBase-root":
                           {
                             height:
                               36,
-
                             fontSize:
                               "11px",
                           },
@@ -901,7 +1127,8 @@ onSaved?.();
 
                         "& input":
                           {
-                            px: "8px",
+                            px:
+                              "8px",
                           },
 
                         "& .MuiSvgIcon-root":
@@ -918,18 +1145,13 @@ onSaved?.();
               <Typography
                 sx={{
                   mt: "10px",
-
                   mb: "6px",
-
                   fontSize:
                     "9.5px",
-
                   fontWeight:
                     700,
-
                   letterSpacing:
                     "0.5px",
-
                   color:
                     "text.secondary",
                 }}
@@ -937,14 +1159,14 @@ onSaved?.();
                 APPLY TO
               </Typography>
 
+              {/* DAY CHIPS */}
+
               <Box
                 sx={{
                   display:
                     "flex",
-
                   flexWrap:
                     "wrap",
-
                   gap: "5px",
                 }}
               >
@@ -963,7 +1185,12 @@ onSaved?.();
                         label={
                           day.short
                         }
-                        clickable
+                        clickable={
+                          !readOnly
+                        }
+                        disabled={
+                          readOnly
+                        }
                         onClick={() =>
                           handleDaySelection(
                             day.key
@@ -1004,32 +1231,31 @@ onSaved?.();
                 )}
               </Box>
 
+              {/* PRESET BUTTONS */}
+
               <Box
                 sx={{
                   display:
                     "flex",
-
                   flexWrap:
                     "wrap",
-
                   gap: "1px",
-
                   mt: "5px",
                 }}
               >
                 <Button
                   size="small"
+                  disabled={
+                    readOnly
+                  }
                   onClick={
                     selectWeekdays
                   }
                   sx={{
                     minWidth: 0,
-
                     px: "5px",
-
                     fontSize:
                       "9.5px",
-
                     textTransform:
                       "none",
                   }}
@@ -1039,17 +1265,17 @@ onSaved?.();
 
                 <Button
                   size="small"
+                  disabled={
+                    readOnly
+                  }
                   onClick={
                     selectWeekend
                   }
                   sx={{
                     minWidth: 0,
-
                     px: "5px",
-
                     fontSize:
                       "9.5px",
-
                     textTransform:
                       "none",
                   }}
@@ -1059,17 +1285,17 @@ onSaved?.();
 
                 <Button
                   size="small"
+                  disabled={
+                    readOnly
+                  }
                   onClick={
                     selectAllDays
                   }
                   sx={{
                     minWidth: 0,
-
                     px: "5px",
-
                     fontSize:
                       "9.5px",
-
                     textTransform:
                       "none",
                   }}
@@ -1079,20 +1305,19 @@ onSaved?.();
 
                 <Button
                   size="small"
+                  disabled={
+                    readOnly
+                  }
                   onClick={
                     clearSelectedDays
                   }
                   sx={{
                     minWidth: 0,
-
                     px: "5px",
-
                     fontSize:
                       "9.5px",
-
                     color:
                       "text.secondary",
-
                     textTransform:
                       "none",
                   }}
@@ -1101,10 +1326,15 @@ onSaved?.();
                 </Button>
               </Box>
 
+              {/* APPLY */}
+
               <Button
                 fullWidth
                 variant="contained"
                 size="small"
+                disabled={
+                  readOnly
+                }
                 startIcon={
                   <DoneAllOutlinedIcon
                     sx={{
@@ -1118,18 +1348,13 @@ onSaved?.();
                 }
                 sx={{
                   mt: "6px",
-
                   height: 31,
-
                   fontSize:
                     "10.5px",
-
                   fontWeight:
                     600,
-
                   textTransform:
                     "none",
-
                   boxShadow:
                     "none",
                 }}
@@ -1137,46 +1362,48 @@ onSaved?.();
                 Apply hours
               </Button>
 
+              {/* CLOSE */}
+
               <Button
                 fullWidth
                 variant="outlined"
                 size="small"
+                disabled={
+                  readOnly
+                }
                 onClick={
                   closeAllSelectedDays
                 }
                 sx={{
                   mt: "5px",
-
                   height: 30,
-
                   fontSize:
                     "10px",
-
                   textTransform:
                     "none",
                 }}
               >
                 Mark selected closed
               </Button>
-
-            
             </Box>
 
-            {/* WEEKLY SCHEDULE */}
+            {/* ======================================
+                WEEKLY SCHEDULE
+                ====================================== */}
 
             <Box
               sx={{
                 minWidth: 0,
               }}
             >
-             
-
               <Box
                 sx={{
                   display:
                     "grid",
 
-gridTemplateColumns: "1fr",
+                  gridTemplateColumns:
+                    "1fr",
+
                   gap: "6px",
                 }}
               >
@@ -1186,8 +1413,7 @@ gridTemplateColumns: "1fr",
                       draftHours?.[
                         day.key
                       ] || {
-                        start:
-                          "",
+                        start: "",
                         end: "",
                       };
 
@@ -1210,10 +1436,11 @@ gridTemplateColumns: "1fr",
                             sm: "flex",
                           },
 
-                          gridTemplateColumns: {
-                            xs: "minmax(0, 1fr) auto",
-                            sm: "none",
-                          },
+                          gridTemplateColumns:
+                            {
+                              xs: "minmax(0, 1fr) auto",
+                              sm: "none",
+                            },
 
                           alignItems:
                             "center",
@@ -1235,18 +1462,9 @@ gridTemplateColumns: "1fr",
 
                           bgcolor:
                             "background.default",
-
-                          transition:
-                            "0.15s ease",
-
-                          "&:hover":
-                            {
-                              borderColor:
-                                "action.selected",
-                            },
                         }}
                       >
-                        {/* DAY NAME */}
+                        {/* DAY */}
 
                         <Box
                           sx={{
@@ -1254,10 +1472,12 @@ gridTemplateColumns: "1fr",
                               xs: 0,
                               sm: "75px",
                             },
-                            gridColumn: {
-                              xs: "1 / -1",
-                              sm: "auto",
-                            },
+
+                            gridColumn:
+                              {
+                                xs: "1 / -1",
+                                sm: "auto",
+                              },
                           }}
                         >
                           <Typography
@@ -1310,9 +1530,7 @@ gridTemplateColumns: "1fr",
                         <Box
                           sx={{
                             flex: 1,
-
-                            minWidth:
-                              0,
+                            minWidth: 0,
 
                             width: {
                               xs: "100%",
@@ -1330,15 +1548,11 @@ gridTemplateColumns: "1fr",
                             <Box
                               component="button"
                               type="button"
-                              onClick={() => {
-                                setError(
-                                  ""
-                                );
-
-                                setEditingDay(
+                              onClick={() =>
+                                handleEditDay(
                                   day.key
-                                );
-                              }}
+                                )
+                              }
                               sx={{
                                 display:
                                   "flex",
@@ -1360,18 +1574,24 @@ gridTemplateColumns: "1fr",
                                   "transparent",
 
                                 cursor:
-                                  "pointer",
+                                  readOnly
+                                    ? "default"
+                                    : "pointer",
 
                                 fontFamily:
                                   "inherit",
 
                                 color:
-                                  "text.secondary",
+                                  readOnly
+                                    ? "text.secondary"
+                                    : "text.secondary",
 
                                 "&:hover":
                                   {
                                     color:
-                                      "primary.main",
+                                      readOnly
+                                        ? "text.secondary"
+                                        : "primary.main",
                                   },
                               }}
                             >
@@ -1400,15 +1620,17 @@ gridTemplateColumns: "1fr",
                                 )}
                               </Typography>
 
-                              <EditOutlinedIcon
-                                sx={{
-                                  fontSize:
-                                    12,
+                              {!readOnly && (
+                                <EditOutlinedIcon
+                                  sx={{
+                                    fontSize:
+                                      12,
 
-                                  flexShrink:
-                                    0,
-                                }}
-                              />
+                                    flexShrink:
+                                      0,
+                                  }}
+                                />
+                              )}
                             </Box>
                           ) : (
                             <Typography
@@ -1432,12 +1654,14 @@ gridTemplateColumns: "1fr",
                           checked={
                             dayOpen
                           }
+                          disabled={
+                            readOnly
+                          }
                           onChange={(
                             event
                           ) =>
                             handleToggleDay(
                               day.key,
-
                               event
                                 .target
                                 .checked
@@ -1466,7 +1690,6 @@ gridTemplateColumns: "1fr",
                               {
                                 width:
                                   13,
-
                                 height:
                                   13,
                               },
@@ -1487,14 +1710,14 @@ gridTemplateColumns: "1fr",
           </Box>
         </DialogContent>
 
-        {/* MAIN FOOTER */}
+        {/* ========================================
+            FOOTER
+            ======================================== */}
 
         <DialogActions
           sx={{
             px: "16px",
-
             py: "8px",
-
             minHeight: 48,
 
             borderTop:
@@ -1507,8 +1730,6 @@ gridTemplateColumns: "1fr",
               "space-between",
           }}
         >
-         
-
           <Box
             sx={{
               display:
@@ -1549,12 +1770,13 @@ gridTemplateColumns: "1fr",
                   "none",
               }}
             >
-              Cancel
+              Close
             </Button>
 
             <Button
               variant="contained"
               disabled={
+                readOnly ||
                 !hasChanges
               }
               onClick={
@@ -1592,10 +1814,15 @@ gridTemplateColumns: "1fr",
         </DialogActions>
       </Dialog>
 
-      {/* INDIVIDUAL DAY TIME EDIT */}
+      {/* ========================================
+          INDIVIDUAL DAY EDIT MODAL
+          ======================================== */}
 
       <Dialog
-        open={Boolean(editingDay)}
+        open={
+          Boolean(editingDay) &&
+          !readOnly
+        }
         onClose={() => {
           setEditingDay(null);
           setError("");
@@ -1609,7 +1836,8 @@ gridTemplateColumns: "1fr",
               sm: "min(380px, calc(100vw - 32px))",
             },
 
-            maxHeight: "calc(100vh - 24px)",
+            maxHeight:
+              "calc(100vh - 24px)",
 
             borderRadius:
               "10px",
@@ -1628,7 +1856,6 @@ gridTemplateColumns: "1fr",
         <DialogTitle
           sx={{
             px: "14px",
-
             py: "10px",
 
             borderBottom:
@@ -1655,7 +1882,6 @@ gridTemplateColumns: "1fr",
                 sx={{
                   fontSize:
                     "12.5px",
-
                   fontWeight:
                     700,
                 }}
@@ -1666,10 +1892,8 @@ gridTemplateColumns: "1fr",
               <Typography
                 sx={{
                   mt: "1px",
-
                   fontSize:
                     "9.5px",
-
                   color:
                     "text.secondary",
                 }}
@@ -1691,7 +1915,6 @@ gridTemplateColumns: "1fr",
               }}
               sx={{
                 width: 27,
-
                 height: 27,
 
                 border:
@@ -1721,10 +1944,11 @@ gridTemplateColumns: "1fr",
                 display:
                   "grid",
 
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "1fr auto 1fr",
-                },
+                gridTemplateColumns:
+                  {
+                    xs: "1fr",
+                    sm: "1fr auto 1fr",
+                  },
 
                 alignItems:
                   "center",
@@ -1744,16 +1968,14 @@ gridTemplateColumns: "1fr",
                 ) =>
                   handleTimeChange(
                     editingDay,
-
                     "start",
-
                     value
                   )
                 }
                 slotProps={{
                   textField: {
-                    size: "small",
-
+                    size:
+                      "small",
                     fullWidth:
                       true,
 
@@ -1762,7 +1984,6 @@ gridTemplateColumns: "1fr",
                         {
                           height:
                             38,
-
                           fontSize:
                             "11px",
                         },
@@ -1775,7 +1996,8 @@ gridTemplateColumns: "1fr",
 
                       "& input":
                         {
-                          px: "7px",
+                          px:
+                            "7px",
                         },
 
                       "& .MuiSvgIcon-root":
@@ -1817,16 +2039,14 @@ gridTemplateColumns: "1fr",
                 ) =>
                   handleTimeChange(
                     editingDay,
-
                     "end",
-
                     value
                   )
                 }
                 slotProps={{
                   textField: {
-                    size: "small",
-
+                    size:
+                      "small",
                     fullWidth:
                       true,
 
@@ -1835,7 +2055,6 @@ gridTemplateColumns: "1fr",
                         {
                           height:
                             38,
-
                           fontSize:
                             "11px",
                         },
@@ -1848,7 +2067,8 @@ gridTemplateColumns: "1fr",
 
                       "& input":
                         {
-                          px: "7px",
+                          px:
+                            "7px",
                         },
 
                       "& .MuiSvgIcon-root":
@@ -1867,7 +2087,6 @@ gridTemplateColumns: "1fr",
         <DialogActions
           sx={{
             px: "14px",
-
             py: "9px",
 
             borderTop:
@@ -1884,7 +2103,6 @@ gridTemplateColumns: "1fr",
             }
             sx={{
               height: 30,
-
               px: "18px",
 
               fontSize:

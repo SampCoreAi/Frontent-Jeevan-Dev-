@@ -88,7 +88,11 @@ export default function ScheduleForm({
   // ============================================================
 
 const getClinicId = (hospital) =>
-  hospital?.clinicId ?? null;
+  hospital?.clinicId ??
+  hospital?.clinic_id ??
+  hospital?.location_id ??
+  hospital?.id ??
+  null;
 
 
   const getHospitalAddress = (hospital) => {

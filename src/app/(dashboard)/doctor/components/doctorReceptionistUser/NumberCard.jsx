@@ -20,7 +20,8 @@ import DateRangeOutlinedIcon from "@mui/icons-material/DateRangeOutlined";
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 
-const DashboardCard = () => {
+const DashboardCard = ({ refreshKey }) => {
+
   const [stats, setStats] = useState({
     totalAssistants: 0,
     yearAssistants: 0,
@@ -86,9 +87,10 @@ const DashboardCard = () => {
     }
   };
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+useEffect(() => {
+  fetchStats();
+}, [refreshKey]);
+
 
   const cards = [
     {
