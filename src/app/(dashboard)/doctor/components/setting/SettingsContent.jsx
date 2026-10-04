@@ -21,7 +21,6 @@ import {
   Typography,
 } from "@mui/material";
 
-
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import axios from "axios";
@@ -62,7 +61,6 @@ const menuItems = [
     label: "Theme",
     icon: <PaletteOutlinedIcon />,
   },
-
 ];
 
 const cardSx = {
@@ -137,10 +135,10 @@ const SettingsContent = () => {
   const [openChangePassword, setOpenChangePassword] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [oldPassword, setOldPassword] = useState("");
-    const { mode, setColorMode } = useColorMode();
-const [showOldPassword, setShowOldPassword] = useState(false);
-const [showNewPassword, setShowNewPassword] = useState(false);
-const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { mode, setColorMode } = useColorMode();
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
@@ -293,111 +291,111 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
           </Typography>
         </Box>
       </Box>
-<DialogContent sx={{ p: 2.5 }}>
-  <Box
-    sx={{
-      display: "flex",
-      flexDirection: "column",
-      gap: 1.7,
-    }}
-  >
-    {/* OLD PASSWORD */}
-    <TextField
-      fullWidth
-      label="Old Password"
-      type={showOldPassword ? "text" : "password"}
-      value={oldPassword}
-      onChange={(e) => setOldPassword(e.target.value)}
-      size="small"
-      sx={fieldSx}
-      slotProps={{
-        input: {
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton
-                onClick={() => setShowOldPassword((prev) => !prev)}
-                edge="end"
-                size="small"
-              >
-                {showOldPassword ? (
-                  <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} />
-                ) : (
-                  <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
-                )}
-              </IconButton>
-            </InputAdornment>
-          ),
-        },
-      }}
-    />
+      <DialogContent sx={{ p: 2.5 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 1.7,
+          }}
+        >
+          {/* OLD PASSWORD */}
+          <TextField
+            fullWidth
+            label="Old Password"
+            type={showOldPassword ? "text" : "password"}
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+            size="small"
+            sx={fieldSx}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowOldPassword((prev) => !prev)}
+                      edge="end"
+                      size="small"
+                    >
+                      {showOldPassword ? (
+                        <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} />
+                      ) : (
+                        <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
+                      )}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
 
-    {/* NEW PASSWORD */}
-    <TextField
-      fullWidth
-      label="New Password"
-      type={showNewPassword ? "text" : "password"}
-      value={newPassword}
-      onChange={(e) => setNewPassword(e.target.value)}
-      size="small"
-      sx={fieldSx}
-      slotProps={{
-        input: {
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton
-                onClick={() => setShowNewPassword((prev) => !prev)}
-                edge="end"
-                size="small"
-              >
-                {showNewPassword ? (
-                  <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} />
-                ) : (
-                  <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
-                )}
-              </IconButton>
-            </InputAdornment>
-          ),
-        },
-      }}
-    />
+          {/* NEW PASSWORD */}
+          <TextField
+            fullWidth
+            label="New Password"
+            type={showNewPassword ? "text" : "password"}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            size="small"
+            sx={fieldSx}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowNewPassword((prev) => !prev)}
+                      edge="end"
+                      size="small"
+                    >
+                      {showNewPassword ? (
+                        <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} />
+                      ) : (
+                        <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
+                      )}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
 
-    {/* CONFIRM PASSWORD */}
-    <TextField
-      fullWidth
-      label="Confirm Password"
-      type={showConfirmPassword ? "text" : "password"}
-      value={confirmPassword}
-      onChange={(e) => setConfirmPassword(e.target.value)}
-      size="small"
-      error={confirmPassword !== "" && newPassword !== confirmPassword}
-      helperText={
-        confirmPassword !== "" && newPassword !== confirmPassword
-          ? "Passwords do not match"
-          : ""
-      }
-      sx={fieldSx}
-      slotProps={{
-        input: {
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton
-                onClick={() => setShowConfirmPassword((prev) => !prev)}
-                edge="end"
-                size="small"
-              >
-                {showConfirmPassword ? (
-                  <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} />
-                ) : (
-                  <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
-                )}
-              </IconButton>
-            </InputAdornment>
-          ),
-        },
-      }}
-    />
-  </Box>
-</DialogContent>
+          {/* CONFIRM PASSWORD */}
+          <TextField
+            fullWidth
+            label="Confirm Password"
+            type={showConfirmPassword ? "text" : "password"}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            size="small"
+            error={confirmPassword !== "" && newPassword !== confirmPassword}
+            helperText={
+              confirmPassword !== "" && newPassword !== confirmPassword
+                ? "Passwords do not match"
+                : ""
+            }
+            sx={fieldSx}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      edge="end"
+                      size="small"
+                    >
+                      {showConfirmPassword ? (
+                        <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} />
+                      ) : (
+                        <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
+                      )}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        </Box>
+      </DialogContent>
 
       <DialogActions
         sx={{
@@ -708,24 +706,19 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
             </Dialog>
           </Grid>
         );
-     case "privacy":
-  return (
-    <UserPrivacySettings
-      onViewPrivacyPolicy={() => {
-      }}
-    />
-  );
-    case "help":
-  return (
-    <UserHelpSupport
-      onReportIssue={() => {
-        // Report Issue page/dialog open karo
-      }}
-      onPrivacyHelp={() => {
-        // Privacy help page/dialog open karo
-      }}
-    />
-  );
+      case "privacy":
+        return <UserPrivacySettings onViewPrivacyPolicy={() => {}} />;
+      case "help":
+        return (
+          <UserHelpSupport
+            onReportIssue={() => {
+              // Report Issue page/dialog open karo
+            }}
+            onPrivacyHelp={() => {
+              // Privacy help page/dialog open karo
+            }}
+          />
+        );
       case "device":
         return (
           <Card sx={cardSx}>
@@ -861,20 +854,20 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
                     }}
                   >
                     <Button
-  variant={mode === "light" ? "contained" : "outlined"}
-  onClick={() => setColorMode("light")}
-  sx={actionButtonSx}
->
-  Light
-</Button>
+                      variant={mode === "light" ? "contained" : "outlined"}
+                      onClick={() => setColorMode("light")}
+                      sx={actionButtonSx}
+                    >
+                      Light
+                    </Button>
 
-<Button
-  variant={mode === "dark" ? "contained" : "outlined"}
-  onClick={() => setColorMode("dark")}
-  sx={actionButtonSx}
->
-  Dark
-</Button>
+                    <Button
+                      variant={mode === "dark" ? "contained" : "outlined"}
+                      onClick={() => setColorMode("dark")}
+                      sx={actionButtonSx}
+                    >
+                      Dark
+                    </Button>
                   </Box>
                 </Box>
               </Box>
@@ -882,7 +875,6 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
           </Card>
         );
 
-    
       default:
         return null;
     }
@@ -894,7 +886,6 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
         open={openLogoutDialog}
         onClose={() => setOpenLogoutDialog(false)}
         aria-labelledby="logout-dialog-title"
-   
         fullWidth
         PaperProps={{
           sx: {
@@ -1003,7 +994,7 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
               borderBottom: "1px solid",
               borderColor: "divider",
               overflowX: "auto",
-              pt:2,
+              pt: 2,
               overflowY: "hidden",
               scrollbarWidth: "none",
               "&::-webkit-scrollbar": {

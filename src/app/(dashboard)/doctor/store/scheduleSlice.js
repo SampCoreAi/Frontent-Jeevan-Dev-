@@ -63,55 +63,83 @@ export const createSchedule = createAsyncThunk(
     try {
       // Validate required fields
       if (!scheduleData.location || !scheduleData.slotDuration) {
-        throw new Error('Please fill all required fields: Location, Start Time, End Time, and Slot Duration');
+        throw new Error(
+          'Please fill all required fields: Location, Start Time, End Time, and Slot Duration'
+        );
       }
 
       const payload = {
-  location_id: null,
- hospital_name: scheduleData.location,
+        clinic_id: scheduleData.clinicId,
+        hospital_name: scheduleData.location,
 
-  
-  slot_duration: Number(scheduleData.slotDuration),
-  break_minutes: Number(scheduleData.breakDuration) || 0,
+        slot_duration: Number(scheduleData.slotDuration),
+        break_minutes: Number(scheduleData.breakDuration) || 0,
 
+        active_days: scheduleData.activeDays
+          .filter(Boolean)
+          .map(
+            (day) =>
+              day.charAt(0).toUpperCase() +
+              day.slice(1).toLowerCase()
+          ),
 
-  active_days: scheduleData.activeDays
-    .filter(Boolean)
-    .map((day) => day.charAt(0).toUpperCase() + day.slice(1).toLowerCase()),
+        start_date: scheduleData.startDate,
+        end_date: scheduleData.endDate,
+        note: scheduleData.note || null,
+      };
 
-  start_date: scheduleData.startDate,
-  end_date: scheduleData.endDate,
-  note: scheduleData.note || null,
-};
+      console.log(
+        'Sending schedule creation payload:',
+        payload
+      );
 
-      console.log('Sending schedule creation payload:', payload);
+      const response =
+        await scheduleService.createSchedule(payload);
 
-      const response = await scheduleService.createSchedule(payload);
-      console.log('Schedule creation response:', response);
-      console.log('Schedule ID:', response.data?.scheduleId);
-      console.log('Total slots created:', response.data?.totalSlots);
-      
+      console.log(
+        'Schedule creation response:',
+        response
+      );
+
+      console.log(
+        'Schedule ID:',
+        response.data?.scheduleId
+      );
+
+      console.log(
+        'Total slots created:',
+        response.data?.totalSlots
+      );
+
       return {
         ...scheduleData,
-        id: response.data?.scheduleId || response.data?.id,
+        id:
+          response.data?.scheduleId ||
+          response.data?.id,
       };
-   } catch (error) {
-  console.log("CREATE SCHEDULE ERROR:", error);
+    } catch (error) {
+      console.log(
+        'CREATE SCHEDULE ERROR:',
+        error
+      );
 
-  const apiError = error?.response?.data;
+      const apiError = error?.response?.data;
 
-  if (apiError?.errors?.length > 0) {
-    return rejectWithValue(apiError.errors[0]);
-  }
+      if (apiError?.errors?.length > 0) {
+        return rejectWithValue(
+          apiError.errors[0]
+        );
+      }
 
-  return rejectWithValue(
-    apiError?.message ||
-    error?.message ||
-    "Failed to create schedule"
-  );
-}
+      return rejectWithValue(
+        apiError?.message ||
+          error?.message ||
+          'Failed to create schedule'
+      );
+    }
   }
 );
+
 export const updateSlotStatus = createAsyncThunk(
   "schedule/updateSlotStatus",
   async (

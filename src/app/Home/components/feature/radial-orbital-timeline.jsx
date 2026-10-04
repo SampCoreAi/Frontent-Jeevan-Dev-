@@ -358,32 +358,36 @@ const RadialOrbitalTimeline = ({ timelineData }) => {
         className="absolute inset-0 z-0"
         style={{
           backgroundColor: "#FFFFFF",
-          backgroundImage: `
-      linear-gradient(
-        90deg,
-        rgba(7, 135, 106, 0.13) 0%,
-        rgba(7, 135, 106, 0.04) 25%,
-        rgba(255, 255, 255, 0.96) 45%,
-        rgba(255, 255, 255, 0.96) 55%,
-        rgba(7, 135, 106, 0.04) 75%,
-        rgba(7, 135, 106, 0.13) 100%
-      ),
-      linear-gradient(
-        135deg,
-        rgba(7, 135, 106, 0.09) 0%,
-        rgba(52, 211, 153, 0.035) 45%,
-        rgba(255, 255, 255, 0.08) 100%
-      ),
-      linear-gradient(
-        rgba(7, 135, 106, 0.10) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        90deg,
-        rgba(7, 135, 106, 0.10) 1px,
-        transparent 1px
-      )
-    `,
+         backgroundImage: `
+  linear-gradient(
+    90deg,
+    rgba(7, 135, 106, 0.13) 0%,
+    rgba(7, 135, 106, 0.04) 25%,
+    rgba(255, 255, 255, 0.35) 45%,
+    rgba(255, 255, 255, 0.35) 55%,
+    rgba(7, 135, 106, 0.04) 75%,
+    rgba(7, 135, 106, 0.13) 100%
+  ),
+
+  linear-gradient(
+    135deg,
+    rgba(7, 135, 106, 0.09) 0%,
+    rgba(52, 211, 153, 0.035) 45%,
+    rgba(255, 255, 255, 0.08) 100%
+  ),
+
+  linear-gradient(
+    rgba(7, 135, 106, 0.10) 1px,
+    transparent 1px
+  ),
+
+  linear-gradient(
+    90deg,
+    rgba(7, 135, 106, 0.10) 1px,
+    transparent 1px
+  )
+`,
+
           backgroundSize: `
       100% 100%,
       40px 40px,

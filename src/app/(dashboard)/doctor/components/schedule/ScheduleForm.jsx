@@ -43,8 +43,7 @@ const dayMap = {
 };
 
 const EMPTY_FORM = {
-  location: "",
-  hospitalId: null,
+   clinicId: null,
   startTime: "",
   endTime: "",
   slotDuration: "",
@@ -88,11 +87,9 @@ export default function ScheduleForm({
   // HELPERS
   // ============================================================
 
-  const getHospitalId = (hospital) =>
-    hospital?.hospitalId ??
-    hospital?.id ??
-    hospital?._id ??
-    null;
+const getClinicId = (hospital) =>
+  hospital?.clinicId ?? null;
+
 
   const getHospitalAddress = (hospital) => {
     if (!hospital) return null;
@@ -173,13 +170,14 @@ export default function ScheduleForm({
     const daysFromApi =
       getHospitalAvailableDays(firstHospital);
 
-    setFormData({
-      ...formData,
-      location: firstHospital.hospitalName,
-      hospitalId: getHospitalId(firstHospital),
-      address: getHospitalAddress(firstHospital),
-      activeDays: daysFromApi,
-    });
+   setFormData({
+  ...formData,
+  location: firstHospital.hospitalName,
+  clinicId: getClinicId(firstHospital),
+  address: getHospitalAddress(firstHospital),
+  activeDays: daysFromApi,
+});
+
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hospitals]);
@@ -238,12 +236,13 @@ export default function ScheduleForm({
       return;
     }
 
-    setFormData({
-      ...formData,
-      hospitalId: getHospitalId(hospital),
-      address: getHospitalAddress(hospital),
-      activeDays: daysFromApi,
-    });
+  setFormData({
+  ...formData,
+  clinicId: getClinicId(hospital),
+  address: getHospitalAddress(hospital),
+  activeDays: daysFromApi,
+});
+
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData?.location, hospitals]);
@@ -301,37 +300,34 @@ export default function ScheduleForm({
         item?.hospitalName === selectedHospitalName
     );
 
-    if (!hospital) {
-      setFormData({
-        ...formData,
-        location: "",
-        hospitalId: null,
-        address: null,
-        activeDays: [],
-      });
+   if (!hospital) {
+  setFormData({
+    ...formData,
+    location: "",
+    clinicId: null,
+    address: null,
+    activeDays: [],
+  });
 
-      return;
-    }
+  return;
+}
+
 
     const daysFromApi =
       getHospitalAvailableDays(hospital);
 
     setFormData({
-      ...formData,
+  ...formData,
 
-      location: selectedHospitalName,
+  location: selectedHospitalName,
 
-      hospitalId: getHospitalId(hospital),
+  clinicId: getClinicId(hospital),
 
-      address: getHospitalAddress(hospital),
+  address: getHospitalAddress(hospital),
 
-      /*
-       * IMPORTANT:
-       * Hospital change hote hi API ke saare
-       * available days selected honge.
-       */
-      activeDays: daysFromApi,
-    });
+  activeDays: daysFromApi,
+});
+
 
     clearError("location");
     clearError("activeDays");
