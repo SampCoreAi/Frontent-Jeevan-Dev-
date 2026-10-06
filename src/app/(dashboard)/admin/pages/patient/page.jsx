@@ -1309,16 +1309,22 @@ export default function PatientsPage() {
               {/* ADDRESS */}
 
               <SectionTitle title="Address" />
-
-              <DetailItem
-                icon={
-                  <LocationOnOutlinedIcon />
-                }
-                label="Patient Address"
-                value={
-                  selectedPatient.address
-                }
-              />
+<DetailItem
+  icon={<LocationOnOutlinedIcon />}
+  label="Patient Address"
+  value={
+    selectedPatient.address
+      ? [
+          selectedPatient.address.street,
+          selectedPatient.address.city,
+          selectedPatient.address.state,
+          selectedPatient.address.pincode,
+        ]
+          .filter(Boolean)
+          .join(", ")
+      : "-"
+  }
+/>
 
               {/* ACCOUNT */}
 

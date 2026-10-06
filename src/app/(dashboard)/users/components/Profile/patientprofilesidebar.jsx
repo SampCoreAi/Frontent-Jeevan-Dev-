@@ -19,6 +19,7 @@ import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
 
 import axios from "axios";
+import api from "@/utils/axiosInstance";
 
 import {
   API_BASE_URL,
@@ -38,6 +39,11 @@ const PatientProfileSidebar = ({
   const [previewImage, setPreviewImage] = React.useState(null);
   const [uploadError, setUploadError] = React.useState("");
   const [errors, setErrors] = React.useState({});
+  const [usernameAvailable, setUsernameAvailable] = React.useState(null);
+  const [checkingUsername, setCheckingUsername] = React.useState(false);
+  const [usernameMessage, setUsernameMessage] = React.useState("");
+  const [usernameTouched, setUsernameTouched] = React.useState(false);
+  const savedUsernameRef = React.useRef("");
 
   const open = Boolean(anchorEl);
 
@@ -50,6 +56,81 @@ const PatientProfileSidebar = ({
       return {};
     }
   }, []);
+
+  React.useEffect(() => {
+    if (editable) return;
+
+    savedUsernameRef.current = String(userProfile?.username || "")
+      .replace(/^@/, "")
+      .trim();
+    setUsernameTouched(false);
+    setUsernameAvailable(null);
+    setCheckingUsername(false);
+    setUsernameMessage("");
+  }, [editable, userProfile?.username]);
+
+  React.useEffect(() => {
+    if (!editable || !usernameTouched) return;
+
+    const username = String(formData?.username || "")
+      .replace(/^@/, "")
+      .trim();
+    const savedUsername = savedUsernameRef.current;
+
+    if (
+      !username ||
+      (savedUsername &&
+        username.toLowerCase() === savedUsername.toLowerCase()) ||
+      username.length < 3 ||
+      username.length > 30 ||
+      !/^[A-Za-z0-9_]+$/.test(username)
+    ) {
+      setUsernameAvailable(null);
+      setCheckingUsername(false);
+      setUsernameMessage("");
+      return;
+    }
+
+    let active = true;
+    const timer = setTimeout(async () => {
+      try {
+        setCheckingUsername(true);
+        setUsernameAvailable(null);
+        setUsernameMessage("Checking availability...");
+
+        const response = await api.get(
+          "/api/doctors/check-username",
+          { params: { username } }
+        );
+
+        if (!active) return;
+
+        const available = Boolean(response?.data?.available);
+        setUsernameAvailable(available);
+        setUsernameMessage(
+          available
+            ? "Username is available"
+            : "Username is already taken"
+        );
+      } catch (error) {
+        if (!active) return;
+
+        console.error("Username check error:", error);
+        setUsernameAvailable(null);
+        setUsernameMessage(
+          error?.response?.data?.message ||
+            "Unable to check username"
+        );
+      } finally {
+        if (active) setCheckingUsername(false);
+      }
+    }, 500);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [editable, formData?.username, usernameTouched]);
 
   const validateField = (field, value) => {
     const stringValue = String(value ?? "").trim();
@@ -155,6 +236,9 @@ const PatientProfileSidebar = ({
       nextValue = value
         .replace(/[^A-Za-z0-9_]/g, "")
         .slice(0, 30);
+      setUsernameTouched(true);
+      setUsernameAvailable(null);
+      setUsernameMessage("");
     }
 
     if (field === "age") {
@@ -729,6 +813,21 @@ const PatientProfileSidebar = ({
         </Box>
 
         <ErrorText field="username" />
+        {editable && usernameMessage && (
+          <Typography
+            sx={{
+              mt: -1,
+              fontSize: "11px",
+              color: checkingUsername
+                ? theme.palette.text.secondary
+                : usernameAvailable
+                  ? theme.palette.success.main
+                  : theme.palette.error.main,
+            }}
+          >
+            {usernameMessage}
+          </Typography>
+        )}
       </Stack>
 
       <Divider

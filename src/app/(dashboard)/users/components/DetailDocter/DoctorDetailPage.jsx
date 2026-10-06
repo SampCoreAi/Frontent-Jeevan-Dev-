@@ -8,8 +8,8 @@ import {
   CircularProgress,
   Typography,
 } from "@mui/material";
-
 import DoctorProfileDetail from "../DetailDocter/DoctorProfileDetail";
+import DoctorProfileContent from "../DetailDocter/DoctorProfileContent";
 import FeedbackSection from "../DetailDocter/FeedbackSection";
 
 import {
@@ -124,6 +124,10 @@ export default function DoctorDetailPage({ doctorId }) {
         data={doctorData}
         doctorId={doctorId}
       />
+<DoctorProfileContent
+  data={doctorData}
+  doctorId={doctorId}
+/>
 
       <FeedbackSection doctorId={doctorId} />
     </Box>

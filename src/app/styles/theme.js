@@ -93,45 +93,117 @@ const getTheme = (mode) => {
     },
 
 typography: {
-  fontFamily: "var(--font-inter), Arial, Helvetica, sans-serif",
-  button: {
-    textTransform: "none",
-    fontFamily: "var(--font-inter), Arial, Helvetica, sans-serif",
+  // MUI ka base font-size
+  fontSize: 1,
+
+  fontFamily:
+    "var(--font-inter), Arial, Helvetica, sans-serif",
+
+  // =========================
+  // HEADINGS
+  // =========================
+
+  h1: {
+    fontSize: "28px",
+    lineHeight: 1.25,
+    fontWeight: 700,
   },
 
-      h1: {
-        fontWeight: 700,
-      },
+  h2: {
+    fontSize: "24px",
+    lineHeight: 1.3,
+    fontWeight: 700,
+  },
 
-      h2: {
-        fontWeight: 700,
-      },
+  h3: {
+    fontSize: "22px",
+    lineHeight: 1.3,
+    fontWeight: 700,
+  },
 
-      h3: {
-        fontWeight: 700,
-      },
+  h4: {
+    fontSize: "20px",
+    lineHeight: 1.35,
+    fontWeight: 700,
+  },
 
-      h4: {
-        fontWeight: 700,
-      },
+  h5: {
+    fontSize: "18px",
+    lineHeight: 1.4,
+    fontWeight: 700,
+  },
 
-      h5: {
-        fontWeight: 700,
-      },
+  h6: {
+    fontSize: "16px",
+    lineHeight: 1.4,
+    fontWeight: 700,
+  },
 
-      h6: {
-        fontWeight: 700,
-      },
+  // =========================
+  // SUBTITLES
+  // =========================
 
-      body1: {
-        color: isDark ? "#F1F5F9" : "#172033",
-      },
+  subtitle1: {
+    fontSize: "14px",
+    lineHeight: 1.5,
+    fontWeight: 600,
+  },
 
-      body2: {
-        color: isDark ? "#A7B0BA" : "#596575",
-      },
+  subtitle2: {
+    fontSize: "13px",
+    lineHeight: 1.5,
+    fontWeight: 600,
+  },
 
-    },
+  // =========================
+  // NORMAL TEXT
+  // =========================
+
+  body1: {
+    fontSize: "13px",
+    lineHeight: 1.5,
+    fontWeight: 400,
+    color: isDark ? "#F1F5F9" : "#172033",
+  },
+
+  body2: {
+    fontSize: "12px",
+    lineHeight: 1.5,
+    fontWeight: 400,
+    color: isDark ? "#A7B0BA" : "#596575",
+  },
+
+  // =========================
+  // BUTTON
+  // =========================
+
+  button: {
+    fontSize: "13px",
+    lineHeight: 1.4,
+    fontWeight: 600,
+    textTransform: "none",
+    fontFamily:
+      "var(--font-inter), Arial, Helvetica, sans-serif",
+  },
+
+  // =========================
+  // SMALL TEXT
+  // =========================
+
+  caption: {
+    fontSize: "11px",
+    lineHeight: 1.4,
+    fontWeight: 400,
+  },
+
+  overline: {
+    fontSize: "11px",
+    lineHeight: 1.4,
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+},
 
     components: {
       MuiCssBaseline: {
@@ -495,7 +567,7 @@ typography: {
       MuiMenuItem: {
         styleOverrides: {
           root: {
-            fontSize: "12.5px",
+            fontSize: "13px",
 
             color: isDark
               ? "#E8EDF2"
@@ -751,7 +823,7 @@ typography: {
               ? "#2A333D"
               : "#E5ECE9",
 
-            fontSize: "12.5px",
+            fontSize: "13px",
           },
 
           head: {

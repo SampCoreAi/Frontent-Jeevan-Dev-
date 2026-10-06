@@ -36,23 +36,120 @@ export default function AppointmentPage() {
   const doctorIdFromUrl = searchParams.get("id");
   const [schedule, setSchedule] = useState(null);
 
+  const getHospitalLabel = (schedule) => {
+    const raw = schedule?.hospitalName || schedule?.hospital_name;
+
+    if (!raw) return "Hospital";
+    if (typeof raw === "object") {
+      return raw.hospitalName || raw.hospital_name || "Hospital";
+    }
+
+    if (typeof raw === "string" && raw.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(raw);
+        return parsed?.hospitalName || parsed?.hospital_name || raw;
+      } catch {
+        return raw;
+      }
+    }
+
+    return raw;
+  };
+
+  const getScheduleClinicId = (schedule, hospitals = []) => {
+    const hospitalData =
+      schedule?.hospitalName || schedule?.hospital_name;
+    let parsedHospitalData = hospitalData;
+
+    if (typeof hospitalData === "string") {
+      try {
+        parsedHospitalData = JSON.parse(hospitalData);
+      } catch {
+        parsedHospitalData = null;
+      }
+    }
+
+    const directClinicId =
+      schedule?.clinicId ??
+      schedule?.clinic_id ??
+      schedule?.location_id ??
+      schedule?.hospitalInfo?.clinicId ??
+      schedule?.hospitalInfo?.clinic_id ??
+      schedule?.hospitalInfo?.location_id ??
+      schedule?.hospital_info?.clinicId ??
+      schedule?.hospital_info?.clinic_id ??
+      schedule?.hospital_info?.location_id ??
+      parsedHospitalData?.clinicId ??
+      parsedHospitalData?.clinic_id ??
+      parsedHospitalData?.location_id ??
+      parsedHospitalData?.id;
+
+    if (directClinicId) return directClinicId;
+
+    const scheduleHospital = String(getHospitalLabel(schedule))
+      .trim()
+      .toLowerCase();
+    const matchingHospital = hospitals.find((hospital) => {
+      const hospitalName = String(
+        hospital?.hospitalName || hospital?.hospital_name || ""
+      )
+        .trim()
+        .toLowerCase();
+
+      return hospitalName && hospitalName === scheduleHospital;
+    });
+
+    if (matchingHospital) {
+      return (
+        matchingHospital.clinicId ??
+        matchingHospital.clinic_id ??
+        matchingHospital.location_id ??
+        matchingHospital.id ??
+        null
+      );
+    }
+
+    if (hospitals.length === 1) {
+      return (
+        hospitals[0]?.clinicId ??
+        hospitals[0]?.clinic_id ??
+        hospitals[0]?.location_id ??
+        hospitals[0]?.id ??
+        null
+      );
+    }
+
+    return null;
+  };
 
   const fetchSlots = async () => {
     if (!selectedDate || !schedule) return;
 
     try {
-      const hospitalName = getHospitalLabel(schedule);
+      const clinicId = getScheduleClinicId(schedule);
 
-      const response = await api.get("/api/appointments/doctor-slots", {
-        params: {
-          doctorId: doctorIdFromUrl,
-          hospitalName,
-          date: selectedDate.format("YYYY-MM-DD"),
-        },
-      });
+      if (!clinicId) {
+        console.error(
+          "Appointment slot fetch error: selected schedule has no clinic ID."
+        );
+        setFilteredSlots([]);
+        return;
+      }
+
+      const params = {
+        doctorId: doctorIdFromUrl,
+        clinicId,
+        date: selectedDate.format("YYYY-MM-DD"),
+      };
+
+      const response = await api.get(
+        "/api/appointments/doctor-slots",
+        { params }
+      );
+      const availableSlots = response.data?.data?.slots || [];
 
       setFilteredSlots(
-        response.data.slots.map((slot) => ({
+        availableSlots.map((slot) => ({
           slotId: slot.slotId,
           start: slot.startTime,
           tokenNumber: slot.tokenNumber,
@@ -62,30 +159,14 @@ export default function AppointmentPage() {
         }))
       );
     } catch (err) {
-      console.log(err);
+      console.error("Appointment slot fetch error:", err);
+      setFilteredSlots([]);
     }
   };
   useEffect(() => {
     fetchSlots();
   }, [selectedDate, schedule]);
   const toDate = (d) => dayjs(d).format("YYYY-MM-DD");
-  const getHospitalLabel = (schedule) => {
-    try {
-      const raw = schedule?.hospitalName || schedule?.hospital_name;
-
-      if (!raw) return "Hospital";
-
-      if (typeof raw === "string" && raw.startsWith("{")) {
-        const parsed = JSON.parse(raw);
-        return parsed?.hospitalName || "Hospital";
-      }
-
-      return raw;
-    } catch (e) {
-      console.log("Hospital parse error:", e);
-      return "Hospital";
-    }
-  };
 
   // Loading States
   const [initialLoading, setInitialLoading] = useState(true);
@@ -251,11 +332,36 @@ export default function AppointmentPage() {
     };
     const fetchAppointmentSlots = async () => {
       try {
+        let doctorHospitals = [];
+
+        try {
+          const doctorResponse = await api.get(
+            `/api/doctors/getDoctorPublicProfileById/${doctorId}`
+          );
+          doctorHospitals =
+            doctorResponse.data?.data?.hospital_detail || [];
+        } catch (error) {
+          console.error(
+            "Doctor clinic details fetch error:",
+            error
+          );
+        }
+
         const response = await api.get(
           `/api/schedules/getSchedulePublicByDoctorId/${doctorId}`
         );
 
-        const scheduleData = response.data.data;
+        const scheduleData = Array.isArray(response.data?.data)
+          ? response.data.data.map((item) => ({
+              ...item,
+              clinicId:
+                getScheduleClinicId(item, doctorHospitals) ??
+                item.clinicId ??
+                item.clinic_id ??
+                item.location_id ??
+                null,
+            }))
+          : [];
 
         if (scheduleData && scheduleData.length > 0) {
           setAllSchedules(scheduleData);

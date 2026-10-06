@@ -252,7 +252,7 @@ export default function SearchActions({
             "&:hover": {
               bgcolor: isEmergencySelected ? "#B71C1C" : "#FFEBEE",
               borderColor: "#D32F2F",
-              color: "#B71C1C",
+           color: isEmergencySelected ? "#FFFFFF" : "#D32F2F",
 
               transform: "translateY(-1px)",
 

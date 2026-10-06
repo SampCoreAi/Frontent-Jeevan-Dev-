@@ -1,54 +1,239 @@
 "use client";
 
-import { Box, Button, Card, CardContent, Chip, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Typography,
+} from "@mui/material";
+
 import PersonIcon from "@mui/icons-material/Person";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
+import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
+import LocalPharmacyOutlinedIcon from "@mui/icons-material/LocalPharmacyOutlined";
+
+// ======================================================
+// SAMPLE DATA
+// ======================================================
 
 const doctors = [
-  { name: "Dr. Sarah Jenkins", id: "@DOC-8892", department: "Cardiology", city: "New York", date: "Mar 15, 2024" },
-  { name: "Dr. Mike Ross", id: "@DOC-8893", department: "Neurology", city: "Chicago", date: "Mar 10, 2024" },
-  { name: "Dr. Emily Chen", id: "@DOC-8894", department: "Pediatrics", city: "Los Angeles", date: "Mar 05, 2024" },
-  { name: "Dr. James Hall", id: "@DOC-8895", department: "Orthopedics", city: "Houston", date: "Feb 28, 2024" },
+  {
+    name: "Dr. Sarah Jenkins",
+    id: "@DOC-8892",
+    department: "Cardiology",
+    city: "New York",
+    date: "Mar 15, 2024",
+  },
+  {
+    name: "Dr. Mike Ross",
+    id: "@DOC-8893",
+    department: "Neurology",
+    city: "Chicago",
+    date: "Mar 10, 2024",
+  },
+  {
+    name: "Dr. Emily Chen",
+    id: "@DOC-8894",
+    department: "Pediatrics",
+    city: "Los Angeles",
+    date: "Mar 05, 2024",
+  },
+  {
+    name: "Dr. James Hall",
+    id: "@DOC-8895",
+    department: "Orthopedics",
+    city: "Houston",
+    date: "Feb 28, 2024",
+  },
 ];
 
 const patients = [
-  { name: "John Smith", id: "@PAT-1001", age: "45 yrs", gender: "Male", city: "New York", date: "Mar 18, 2024" },
-  { name: "Emma Wilson", id: "@PAT-1002", age: "32 yrs", gender: "Female", city: "Chicago", date: "Mar 16, 2024" },
-  { name: "Robert Brown", id: "@PAT-1003", age: "58 yrs", gender: "Male", city: "Los Angeles", date: "Mar 12, 2024" },
-  { name: "Sophia Garcia", id: "@PAT-1004", age: "28 yrs", gender: "Female", city: "Miami", date: "Mar 08, 2024" },
+  {
+    name: "John Smith",
+    id: "@PAT-1001",
+    age: "45 yrs",
+    gender: "Male",
+    city: "New York",
+    date: "Mar 18, 2024",
+  },
+  {
+    name: "Emma Wilson",
+    id: "@PAT-1002",
+    age: "32 yrs",
+    gender: "Female",
+    city: "Chicago",
+    date: "Mar 16, 2024",
+  },
+  {
+    name: "Robert Brown",
+    id: "@PAT-1003",
+    age: "58 yrs",
+    gender: "Male",
+    city: "Los Angeles",
+    date: "Mar 12, 2024",
+  },
+  {
+    name: "Sophia Garcia",
+    id: "@PAT-1004",
+    age: "28 yrs",
+    gender: "Female",
+    city: "Miami",
+    date: "Mar 08, 2024",
+  },
 ];
 
+const labs = [
+  {
+    name: "HealthCare Diagnostics",
+    id: "@LAB-2001",
+    category: "Pathology",
+    city: "Mumbai",
+    date: "Mar 18, 2024",
+  },
+  {
+    name: "LifeLine Labs",
+    id: "@LAB-2002",
+    category: "Diagnostic",
+    city: "Bhopal",
+    date: "Mar 15, 2024",
+  },
+  {
+    name: "Prime Diagnostics",
+    id: "@LAB-2003",
+    category: "Radiology",
+    city: "Indore",
+    date: "Mar 11, 2024",
+  },
+  {
+    name: "Care Path Labs",
+    id: "@LAB-2004",
+    category: "Pathology",
+    city: "Delhi",
+    date: "Mar 08, 2024",
+  },
+];
+
+const medicalStores = [
+  {
+    name: "Apollo Pharmacy",
+    id: "@MED-3001",
+    category: "Pharmacy",
+    city: "Mumbai",
+    date: "Mar 19, 2024",
+  },
+  {
+    name: "HealthPlus Medical",
+    id: "@MED-3002",
+    category: "Medical Store",
+    city: "Bhopal",
+    date: "Mar 16, 2024",
+  },
+  {
+    name: "Care Pharmacy",
+    id: "@MED-3003",
+    category: "Pharmacy",
+    city: "Indore",
+    date: "Mar 12, 2024",
+  },
+  {
+    name: "LifeCare Medicines",
+    id: "@MED-3004",
+    category: "Medical Store",
+    city: "Pune",
+    date: "Mar 09, 2024",
+  },
+];
+
+// ======================================================
+// CHIP COLORS
+// ======================================================
+
 const deptColors = {
-  Cardiology:  { bg: "#E1F5EE", color: "#085041" },
-  Neurology:   { bg: "#E6F1FB", color: "#0C447C" },
-  Pediatrics:  { bg: "#FBEAF0", color: "#72243E" },
-  Orthopedics: { bg: "#FAEEDA", color: "#633806" },
+  Cardiology: {
+    bg: "#E1F5EE",
+    color: "#085041",
+  },
+
+  Neurology: {
+    bg: "#E6F1FB",
+    color: "#0C447C",
+  },
+
+  Pediatrics: {
+    bg: "#FBEAF0",
+    color: "#72243E",
+  },
+
+  Orthopedics: {
+    bg: "#FAEEDA",
+    color: "#633806",
+  },
+
+  Pathology: {
+    bg: "#EDF7F2",
+    color: "#07876A",
+  },
+
+  Diagnostic: {
+    bg: "#E6F1FB",
+    color: "#0C447C",
+  },
+
+  Radiology: {
+    bg: "#F3E8FF",
+    color: "#6B21A8",
+  },
+
+  Pharmacy: {
+    bg: "#EDF7F2",
+    color: "#07876A",
+  },
+
+  "Medical Store": {
+    bg: "#FFF7E6",
+    color: "#8A5800",
+  },
 };
+
+// ======================================================
+// AVATAR
+// ======================================================
 
 function Avatar({ name, type }) {
   const initials = name
     .split(" ")
-    .filter((w) => w[0] === w[0]?.toUpperCase())
+    .filter((word) => word)
     .slice(0, 2)
-    .map((w) => w[0])
+    .map((word) => word[0]?.toUpperCase())
     .join("");
-
-  const bg = type === "doctor" ? "#E1F5EE" : "#E6F1FB";
-  const color = type === "doctor" ? "#085041" : "#0C447C";
 
   return (
     <Box
       sx={{
-        width: 36,
-        height: 36,
+        width: 34,
+        height: 34,
+
         borderRadius: "50%",
-        background: bg,
-        color: color,
+
+        bgcolor:
+          type === "patient"
+            ? "#E6F1FB"
+            : "secondary.light",
+
+        color:
+          type === "patient"
+            ? "#185FA5"
+            : "primary.main",
+
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: "12px",
-        fontWeight: 600,
+
+        fontSize: "11px",
+        fontWeight: 700,
+
         flexShrink: 0,
       }}
     >
@@ -57,148 +242,359 @@ function Avatar({ name, type }) {
   );
 }
 
-const colStyle = {
-  fontSize: "11px",
-  fontWeight: 600,
-  color: "#6B7280",
-  letterSpacing: "0.05em",
-  textTransform: "uppercase",
-};
+// ======================================================
+// TABLE CARD
+// ======================================================
 
-const cellStyle = {
-  fontSize: "13px",
-  color: "#374151",
-  fontWeight: 500,
-};
+function TableCard({
+  title,
+  icon,
+  data,
+  type,
+}) {
+  const getColumns = () => {
+    if (type === "doctor") {
+      return [
+        "Doctor",
+        "Department",
+        "City",
+        "Date",
+      ];
+    }
 
-function TableCard({ title, icon, data, type, btnColor = "#0F766E", btnHover = "#085041" }) {
+    if (type === "patient") {
+      return [
+        "Patient",
+        "Details",
+        "City",
+        "Date",
+      ];
+    }
+
+    if (type === "lab") {
+      return [
+        "Laboratory",
+        "Type",
+        "City",
+        "Date",
+      ];
+    }
+
+    return [
+      "Medical Store",
+      "Type",
+      "City",
+      "Date",
+    ];
+  };
+
   return (
     <Card
       sx={{
-        borderRadius: "14px",
-        border: "1px solid #E5E7EB",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+        borderRadius: 2,
+
+        border: "1px solid",
+        borderColor: "divider",
+
+        boxShadow:
+          "0 2px 8px rgba(15,23,42,0.04)",
+
         height: "100%",
+
+        bgcolor: "background.paper",
       }}
     >
-      <CardContent sx={{ p: 0 }}>
-        {/* Header */}
+      <CardContent
+        sx={{
+          p: "0 !important",
+        }}
+      >
+        {/* =====================
+            HEADER
+        ===================== */}
+
         <Box
           sx={{
+            height: 52,
+
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            px: 3,
-            py: 2,
-            borderBottom: "1px solid #F3F4F6",
+
+            px: 2,
+
+            borderBottom: "1px solid",
+            borderColor: "divider",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            {icon}
-            <Typography sx={{ fontSize: "15px", fontWeight: 700, color: "#111827" }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            <Box
+              sx={{
+                width: 30,
+                height: 30,
+
+                borderRadius: 1.5,
+
+                bgcolor: "secondary.light",
+                color: "primary.main",
+
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {icon}
+            </Box>
+
+            <Typography
+              variant="subtitle2"
+              sx={{
+                color: "text.primary",
+              }}
+            >
               {title}
             </Typography>
           </Box>
 
           <Button
             size="small"
+            variant="text"
             sx={{
-              background: btnColor,
-              color: "#fff",
-              borderRadius: "8px",
-              px: 2,
-              py: 0.6,
+              minWidth: "auto",
+              px: 1.2,
+
+              color: "primary.main",
+
               fontSize: "12px",
-              fontWeight: 600,
-              textTransform: "none",
-              boxShadow: "none",
-              "&:hover": { background: btnHover, boxShadow: "none" },
             }}
           >
             View All
           </Button>
         </Box>
 
-        {/* Table */}
-        <Box sx={{ overflowX: "auto" }}>
-          <Box sx={{ minWidth: 580 }}>
-            {/* Column Headers */}
+        {/* =====================
+            TABLE
+        ===================== */}
+
+        <Box
+          sx={{
+            overflowX: "auto",
+          }}
+        >
+          <Box
+            sx={{
+              minWidth: 550,
+            }}
+          >
+            {/* TABLE HEADER */}
+
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: "2.2fr 1.6fr 1.2fr 1.2fr",
-                px: 3,
-                py: 1.2,
-                background: "#F9FAFB",
-                borderBottom: "1px solid #E5E7EB",
+
+                gridTemplateColumns:
+                  "2.1fr 1.5fr 1.1fr 1.2fr",
+
+                px: 2,
+                py: 1,
+
+                bgcolor: "secondary.light",
+
+                borderBottom: "1px solid",
+                borderColor: "divider",
               }}
             >
-              {(type === "doctor"
-                ? ["Doctor", "Department", "City", "Date"]
-                : ["Patient", "Details", "City", "Date"]
-              ).map((col) => (
-                <Typography key={col} sx={colStyle}>{col}</Typography>
+              {getColumns().map((column) => (
+                <Typography
+                  key={column}
+                  variant="caption"
+                  sx={{
+                    fontWeight: 600,
+
+                    color: "text.secondary",
+
+                    textTransform: "uppercase",
+
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  {column}
+                </Typography>
               ))}
             </Box>
 
-            {/* Rows */}
-            {data.map((item, i) => (
+            {/* =====================
+                ROWS
+            ===================== */}
+
+            {data.map((item, index) => (
               <Box
-                key={i}
+                key={item.id}
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: "2.2fr 1.6fr 1.2fr 1.2fr",
-                  px: 3,
-                  py: 1.8,
-                  borderBottom: i !== data.length - 1 ? "1px solid #F3F4F6" : "none",
+
+                  gridTemplateColumns:
+                    "2.1fr 1.5fr 1.1fr 1.2fr",
+
+                  px: 2,
+                  py: 1.15,
+
+                  minHeight: 55,
+
                   alignItems: "center",
-                  "&:hover": { background: "#FAFAFA" },
-                  transition: "background 0.15s",
+
+                  borderBottom:
+                    index !== data.length - 1
+                      ? "1px solid"
+                      : "none",
+
+                  borderColor: "divider",
+
+                  transition:
+                    "background-color 0.15s ease",
+
+                  "&:hover": {
+                    bgcolor: "background.default",
+                  },
                 }}
               >
-                {/* Name + ID */}
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <Avatar name={item.name} type={type} />
-                  <Box>
-                    <Typography sx={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>
+                {/* NAME */}
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  <Avatar
+                    name={item.name}
+                    type={type}
+                  />
+
+                  <Box
+                    sx={{
+                      minWidth: 0,
+                    }}
+                  >
+                    <Typography
+                      variant="body1"
+                      noWrap
+                      sx={{
+                        fontWeight: 600,
+                        color: "text.primary",
+                      }}
+                    >
                       {item.name}
                     </Typography>
-                    <Typography sx={{ fontSize: "11px", color: "#9CA3AF" }}>{item.id}</Typography>
+
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.disabled",
+                      }}
+                    >
+                      {item.id}
+                    </Typography>
                   </Box>
                 </Box>
 
-                {/* Dept / Details */}
-                {type === "doctor" ? (
-                  <Chip
-                    label={item.department}
-                    size="small"
+                {/* =====================
+                    TYPE / DETAILS
+                ===================== */}
+
+                {type === "patient" ? (
+                  <Box
                     sx={{
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      height: 22,
-                      background: deptColors[item.department]?.bg ?? "#F3F4F6",
-                      color: deptColors[item.department]?.color ?? "#374151",
-                      border: "none",
-                      width: "fit-content",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.8,
                     }}
-                  />
-                ) : (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-                    <Typography sx={{ fontSize: "12px", color: "#6B7280" }}>{item.age}</Typography>
+                  >
                     <Typography
+                      variant="body2"
+                    >
+                      {item.age}
+                    </Typography>
+
+                    <Typography
+                      variant="caption"
                       sx={{
-                        fontSize: "11px",
                         fontWeight: 600,
-                        color: item.gender === "Male" ? "#185FA5" : "#993556",
+
+                        color:
+                          item.gender === "Male"
+                            ? "info.main"
+                            : "#993556",
                       }}
                     >
                       {item.gender}
                     </Typography>
                   </Box>
+                ) : (
+                  <Chip
+                    label={
+                      type === "doctor"
+                        ? item.department
+                        : item.category
+                    }
+                    size="small"
+                    sx={{
+                      width: "fit-content",
+
+                      height: 21,
+
+                      fontSize: "11px",
+
+                      fontWeight: 600,
+
+                      bgcolor:
+                        deptColors[
+                          type === "doctor"
+                            ? item.department
+                            : item.category
+                        ]?.bg ?? "secondary.light",
+
+                      color:
+                        deptColors[
+                          type === "doctor"
+                            ? item.department
+                            : item.category
+                        ]?.color ??
+                        "primary.main",
+                    }}
+                  />
                 )}
 
-                <Typography sx={{ ...cellStyle, color: "#6B7280", fontSize: "12px" }}>{item.city}</Typography>
-                <Typography sx={{ ...cellStyle, color: "#6B7280", fontSize: "12px" }}>{item.date}</Typography>
+                {/* CITY */}
+
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "text.secondary",
+                  }}
+                >
+                  {item.city}
+                </Typography>
+
+                {/* DATE */}
+
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "text.secondary",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {item.date}
+                </Typography>
               </Box>
             ))}
           </Box>
@@ -208,31 +604,83 @@ function TableCard({ title, icon, data, type, btnColor = "#0F766E", btnHover = "
   );
 }
 
+// ======================================================
+// MAIN
+// ======================================================
+
 export default function RecentRegistrations() {
   return (
     <Box
       sx={{
         display: "grid",
-        gridTemplateColumns: { xs: "1fr", xl: "1fr 1fr" },
-        gap: 3,
+
+        // Desktop = 2 x 2
+        gridTemplateColumns: {
+          xs: "1fr",
+          lg: "repeat(2, minmax(0, 1fr))",
+        },
+
+        gap: 2,
       }}
     >
+      {/* DOCTOR */}
+
       <TableCard
         title="Recent Doctor Registrations"
-        icon={<LocalHospitalIcon sx={{ fontSize: 18, color: "#0F766E" }} />}
+        icon={
+          <LocalHospitalIcon
+            sx={{
+              fontSize: 17,
+            }}
+          />
+        }
         data={doctors}
         type="doctor"
-        btnColor="#0F766E"
-        btnHover="#085041"
       />
+
+      {/* PATIENT */}
 
       <TableCard
         title="Recent Patient Registrations"
-        icon={<PersonIcon sx={{ fontSize: 18, color: "#185FA5" }} />}
+        icon={
+          <PersonIcon
+            sx={{
+              fontSize: 17,
+            }}
+          />
+        }
         data={patients}
         type="patient"
-        btnColor="#185FA5"
-        btnHover="#0C447C"
+      />
+
+      {/* LAB */}
+
+      <TableCard
+        title="Recent Lab Registrations"
+        icon={
+          <ScienceOutlinedIcon
+            sx={{
+              fontSize: 17,
+            }}
+          />
+        }
+        data={labs}
+        type="lab"
+      />
+
+      {/* MEDICAL STORE */}
+
+      <TableCard
+        title="Recent Medical Store Registrations"
+        icon={
+          <LocalPharmacyOutlinedIcon
+            sx={{
+              fontSize: 17,
+            }}
+          />
+        }
+        data={medicalStores}
+        type="medical"
       />
     </Box>
   );

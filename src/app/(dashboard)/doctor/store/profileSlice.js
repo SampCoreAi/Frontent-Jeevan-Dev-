@@ -228,8 +228,12 @@ registration_number: apiData.registration_number || "",
 
   selfie:
     apiData.selfie || "",
-
-  qr_url: apiData.qr_url || null,
+  qrCode: getAssetUrl(
+    apiData.qr_url ||
+    apiData.qrUrl ||
+    apiData.qr_key ||
+    apiData.qr
+  ),
 
   logoUrl: getAssetUrl(
     apiData.logoUrl || apiData.logo_url || apiData.logo_key || apiData.logo

@@ -34,6 +34,9 @@ const DocumentDialog = ({
   getFileUrl,
   onAssignDoctor,
   assigning = false,
+
+  onRejectDoctor,
+  rejecting = false,
 }) => {
   const theme = useTheme();
 
@@ -46,7 +49,11 @@ const DocumentDialog = ({
       onAssignDoctor?.(selectedDoctor);
     }
   };
-
+const handleRejectDoctor = () => {
+  if (!rejecting && selectedDoctor) {
+    onRejectDoctor?.(selectedDoctor);
+  }
+};
   // =========================================
   // DISPLAY VALUE
   // =========================================
@@ -437,52 +444,7 @@ const DocumentDialog = ({
       },
     }}
   >
-    {/* BIG PROFILE IMAGE */}
-    <Box
-      sx={{
-        width: {
-          xs: 140,
-          sm: 160,
-        },
-        height: {
-          xs: 140,
-          sm: 160,
-        },
-        flexShrink: 0,
-        borderRadius: 2,
-        overflow: "hidden",
-        border: "1px solid",
-        borderColor: "divider",
-        bgcolor: "action.hover",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      {profileImage ? (
-        <Box
-          component="img"
-          src={profileImage}
-          alt={selectedDoctor?.full_name || "Doctor"}
-          sx={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
-          }}
-        />
-      ) : (
-        <AccountCircleOutlinedIcon
-          sx={{
-            fontSize: {
-              xs: 85,
-              sm: 100,
-            },
-            color: "text.disabled",
-          }}
-        />
-      )}
-    </Box>
+  
 
     {/* DETAILS */}
     <Box
@@ -813,7 +775,31 @@ const DocumentDialog = ({
         >
           Close
         </Button>
-
+<Button
+  variant="outlined"
+  color="error"
+  disabled={assigning || rejecting}
+  onClick={handleRejectDoctor}
+  startIcon={
+    rejecting ? (
+      <CircularProgress size={15} color="inherit" />
+    ) : (
+      <CloseRoundedIcon sx={{ fontSize: 17 }} />
+    )
+  }
+  sx={{
+    minWidth: 140,
+    height: 36,
+    px: 2,
+    borderRadius: 1.5,
+    textTransform: "none",
+    fontSize: "12px",
+    fontWeight: 600,
+    boxShadow: "none",
+  }}
+>
+  {rejecting ? "Rejecting..." : "Reject Document"}
+</Button>
         <Button
           variant="contained"
           disabled={assigning}
