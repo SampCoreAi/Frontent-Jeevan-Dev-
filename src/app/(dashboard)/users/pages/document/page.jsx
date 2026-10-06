@@ -406,9 +406,67 @@ const createFolder = () => {
     setSelectedFolder("root");
   };
 
+  const ALLOWED_FILES = {
+  "application/pdf": [".pdf"],
+  "application/msword": [".doc"],
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
+    ".docx",
+  ],
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/png": [".png"],
+  "application/vnd.ms-powerpoint": [".ppt"],
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": [
+    ".pptx",
+  ],
+};
+
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+
+const validateFile = (file) => {
+  // File size
+  if (file.size > MAX_FILE_SIZE) {
+    return `${file.name} is larger than 20 MB.`;
+  }
+
+  // Extension
+  const extension = `.${file.name.split(".").pop()?.toLowerCase()}`;
+
+  const allowedExtensions = Object.values(ALLOWED_FILES).flat();
+
+  if (!allowedExtensions.includes(extension)) {
+    return `${file.name}: File type not allowed.`;
+  }
+
+  // MIME type
+  if (!ALLOWED_FILES[file.type]) {
+    return `${file.name}: Invalid file type.`;
+  }
+
+  // MIME + extension must match
+  if (!ALLOWED_FILES[file.type].includes(extension)) {
+    return `${file.name}: File extension does not match file type.`;
+  }
+
+  return null;
+};
+
 const processFiles = async (files) => {
   if (!files || files.length === 0) return;
 
+  // ==============================
+  // FRONTEND FILE VALIDATION
+  // ==============================
+
+  for (const file of files) {
+    const validationError = validateFile(file);
+
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+  }
+
+  // Existing code yahan se
   const token = localStorage.getItem("token");
 
   if (!token) {
@@ -645,7 +703,7 @@ const processFiles = async (files) => {
       sx={{
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
-     mt: { xs: 7, md: 8 },
+     mt: { xs: 7, md: 8.5 },
        
         height: "91vh",
         width: "100%",

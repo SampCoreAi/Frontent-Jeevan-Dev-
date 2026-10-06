@@ -401,8 +401,9 @@ const searchDoctors = async (
     setEmergencyMode(false);
     setResultMode("search");
 
-    const cleanQuery =
-      query.trim();
+   const cleanQuery = query?.trim() || "";
+
+if (cleanQuery && cleanQuery.length < 3) return;
 
     setSearchQuery(cleanQuery);
 
