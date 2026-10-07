@@ -219,44 +219,24 @@ export default function PrescriptionFooter({
                 disabled={!editable}
                 onChange={setFollowUpDate}
                 format="DD-MM-YYYY"
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    size: "small",
-                    sx: {
-                      ...inputStyle,
-                      ...dateInputStyle,
-                      "& .MuiOutlinedInput-root": {
-                        height: 40,
-                        fontSize: "13px",
-                        bgcolor: theme.palette.background.paper,
-                        borderRadius: 1,
-                        "& fieldset": {
-                          borderColor: "#D6D6D6",
-                        },
-                        "&:hover fieldset": {
-                          borderColor: "#B1B1B1",
-                        },
-                        "&.Mui-focused fieldset": {
-                          borderColor: theme.palette.primary.main,
-                          borderWidth: "1px",
-                        },
-                      },
-                    },
-                  },
-                  popper: {
-                    sx: datePickerPopupStyle,
-                  },
-                  desktopPaper: {
-                    sx: datePickerPopupStyle,
-                  },
-                  mobilePaper: {
-                    sx: datePickerPopupStyle,
-                  },
-                  layout: {
-                    sx: datePickerPopupStyle,
-                  },
-                }}
+               slotProps={{
+  openPickerButton: {
+    sx: {
+      color: theme.palette.primary.main,
+      visibility: "visible",
+      "&.Mui-disabled": {
+        color: theme.palette.text.secondary,
+      },
+    },
+  },
+  openPickerIcon: {
+    sx: { fontSize: 22 },
+  },
+  textField: {
+    // Tumhara existing code
+  },
+  // Baaki existing slots
+}}
               />
             </LocalizationProvider>
           ) : (

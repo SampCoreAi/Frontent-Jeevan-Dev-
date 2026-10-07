@@ -151,76 +151,149 @@ setBookingLength(
     }
   };
   const handleDeleteSlot = async (slotId, reason) => {
-    try {
-      const result = await dispatch(
-        deleteSchedule({
-          scheduleId: selectedSchedule.id,
-          type: "slot",
-          slotId,
-          reason,
-        }),
-      ).unwrap();
+  try {
+    const result = await dispatch(
+      deleteSchedule({
+        scheduleId: selectedSchedule.id,
+        type: "slot",
+        slotId,
+        reason,
+      })
+    ).unwrap();
 
-      showSnackbar(result.message || "Slot deleted successfully.");
+    setViewSlots((prev) =>
+      prev.map((slot) =>
+        slot.slotId === slotId
+          ? {
+              ...slot,
+              status: "DELETED",
+            }
+          : slot
+      )
+    );
 
-await fetchSlots(
-  selectedSchedule.clinicId,
-  selectedDate
-);
-    } catch (error) {
-      showSnackbar(error?.message || "Failed to delete slot.", "error");
-    }
-  };
+    showSnackbar(
+      result.message || "Slot deleted successfully."
+    );
+  } catch (error) {
+    showSnackbar(
+      error?.message || "Failed to delete slot.",
+      "error"
+    );
+  }
+};
+const handleDateDeleteClick = async (date) => {
+  try {
+    const token = localStorage.getItem("token");
 
-  const handleDeleteDate = async (date, reason) => {
-    try {
-      const result = await dispatch(
-        deleteSchedule({
-          scheduleId: selectedSchedule.id,
-          type: "date",
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/appointments/doctor-slots`,
+      {
+        params: {
+          clinicId: selectedSchedule.clinicId,
           date,
-          reason,
-        }),
-      ).unwrap();
-
-      showSnackbar(result.message || "Schedule date deleted.");
-
-      setSelectedDate(date);
-
-      await fetchSlots(selectedSchedule.clinicId, date);
-    } catch (error) {
-      showSnackbar(error?.message || "Failed to delete date.", "error");
-    }
-  };
-
-  const handleActivateSlot = async (slotId) => {
-    try {
-      const token = localStorage.getItem("token");
-
-      const response = await axios.patch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/schedules/Activate/${selectedSchedule.id}`,
-        {
-          slotId,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      }
+    );
 
-      showSnackbar(response.data?.message || "Slot activated successfully.");
+    const slots = response.data?.data?.slots || [];
 
-      await fetchSlots(selectedSchedule.clinicId, selectedDate);
-    } catch (error) {
-      console.log("Activate Slot Error:", error);
+    const hasBooking = slots.some(
+      (slot) =>
+        String(slot.status || "").toUpperCase() === "INACTIVE"
+    );
 
-      showSnackbar(
-        error.response?.data?.message || "Failed to activate slot.",
-        "error",
-      );
+    if (!hasBooking) {
+      await handleDeleteDate(date, "");
+      return;
     }
-  };
+
+    setDeleteDialog({
+      open: true,
+      type: "date",
+      value: date,
+    });
+
+    setDeleteReason("");
+  } catch (error) {
+    console.log("Check Date Booking Error:", error);
+
+    showSnackbar(
+      error.response?.data?.message ||
+        "Failed to check date booking.",
+      "error"
+    );
+  }
+};
+const handleDeleteDate = async (date, reason) => {
+  try {
+    const result = await dispatch(
+      deleteSchedule({
+        scheduleId: selectedSchedule.id,
+        type: "date",
+        date,
+        reason,
+      })
+    ).unwrap();
+
+    // Date list ko string hi rehne do
+    // Sirf current slots ko DELETED karo
+    setViewSlots((prev) =>
+      prev.map((slot) => ({
+        ...slot,
+        status: "DELETED",
+      }))
+    );
+
+    showSnackbar(
+      result.message || "Date deleted successfully."
+    );
+  } catch (error) {
+    showSnackbar(
+      error?.message || "Failed to delete date.",
+      "error"
+    );
+  }
+};
+
+const handleActivateSlot = async (slotId) => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await axios.patch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/schedules/Activate/${selectedSchedule.id}`,
+      {
+        slotId,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    showSnackbar(
+      response.data?.message ||
+        "Slot activated successfully."
+    );
+
+    await fetchSlots(
+      selectedSchedule.clinicId,
+      selectedDate
+    );
+  } catch (error) {
+    console.log("Activate Slot Error:", error);
+
+    showSnackbar(
+      error.response?.data?.message ||
+        "Failed to activate slot.",
+      "error"
+    );
+  }
+};
 
   const handleDeleteSubmit = async () => {
     if (!deleteReason.trim()) {
@@ -262,35 +335,38 @@ await fetchSlots(
     return dates;
   };
 
-  useEffect(() => {
-    if (open && schedule) {
-      setSelectedSchedule(schedule);
+useEffect(() => {
+  if (open && schedule) {
+    setSelectedSchedule(schedule);
+    setSelectedHospital(hospitalName);
 
-      setSelectedHospital(hospitalName);
+    const dates = generateDates(
+      schedule.startDate,
+      schedule.endDate
+    );
 
-      const dates = generateDates(schedule.startDate, schedule.endDate);
+    setDateList(dates);
 
-      setDateList(dates);
-
-      if (dates.length === 0) {
-        setSelectedDate(null);
-
-        setViewSlots([]);
-
-        return;
-      }
-
-      const defaultDate = dates[0];
-
-      setSelectedDate(defaultDate);
-
-     fetchSlots(
-  schedule.clinicId,
-  defaultDate
-);
+    if (dates.length === 0) {
+      setSelectedDate(null);
+      setViewSlots([]);
+      return;
     }
-  }, [open, schedule, hospitalName]);
 
+    const today = dayjs().format("YYYY-MM-DD");
+
+    const defaultDate = dates.includes(today)
+      ? today
+      : dates[0];
+
+    setSelectedDate(defaultDate);
+
+    fetchSlots(
+      schedule.clinicId,
+      defaultDate
+    );
+  }
+}, [open, schedule, hospitalName]);
   return (
     <>
       <Dialog
@@ -523,33 +599,11 @@ await fetchSlots(
                         ) : (
                           <IconButton
                             size="small"
-                            onClick={async (e) => {
-                              e.stopPropagation();
+                           onClick={async (e) => {
+  e.stopPropagation();
 
-                              const allSlotsActive =
-                                viewSlots.length > 0 &&
-                                viewSlots.every(
-                                  (slot) =>
-                                    String(slot.status || "").toUpperCase() ===
-                                    "ACTIVE",
-                                );
-
-                              if (
-                                Number(bookingLength) === 0 &&
-                                allSlotsActive
-                              ) {
-                                await handleDeleteDate(date, "");
-                                return;
-                              }
-
-                              setDeleteDialog({
-                                open: true,
-                                type: "date",
-                                value: date,
-                              });
-
-                              setDeleteReason("");
-                            }}
+  await handleDateDeleteClick(date);
+}}
                             sx={{
                               position: "absolute",
                               top: 5,
@@ -641,8 +695,9 @@ await fetchSlots(
               {viewSlots.map((slot) => {
                 const status = String(slot.status || "").toUpperCase();
 
-                const isActive = status === "ACTIVE";
-                const isDeleted = status === "DELETED";
+             const isActive = status === "ACTIVE";
+const isInactive = status === "INACTIVE";
+const isDeleted = status === "DELETED";
 
                 const statusColor = isActive
                   ? theme.palette.primary.main
@@ -742,49 +797,49 @@ await fetchSlots(
                         )}
                       </Typography>
 
-                      {/* ACTIVE SLOT -> DELETE */}
+                    {(isActive || isInactive) && hoverSlot === slot.slotId && (
+  <IconButton
+    size="small"
+    onClick={async (e) => {
+      e.stopPropagation();
 
-                      {isActive && hoverSlot === slot.slotId && (
-                        <IconButton
-                          size="small"
-                          onClick={async (e) => {
-                            e.stopPropagation();
+      // ACTIVE = no booking
+      // Direct delete, no reason popup
+      if (isActive) {
+        await handleDeleteSlot(slot.slotId, "");
+        return;
+      }
 
-                            if (
-                              Number(bookingLength) === 0 &&
-                              String(slot.status).toUpperCase() === "ACTIVE"
-                            ) {
-                              await handleDeleteSlot(slot.slotId, "");
+      // INACTIVE = booking exists
+      // Reason popup required
+      if (isInactive) {
+        setDeleteDialog({
+          open: true,
+          type: "slot",
+          value: slot.slotId,
+        });
 
-                              return;
-                            }
+        setDeleteReason("");
+      }
+    }}
+    sx={{
+      position: "absolute",
+      top: 7,
+      right: 7,
 
-                            setDeleteDialog({
-                              open: true,
-                              type: "slot",
-                              value: slot.slotId,
-                            });
+      width: 25,
+      height: 25,
 
-                            setDeleteReason("");
-                          }}
-                          sx={{
-                            position: "absolute",
-                            top: 7,
-                            right: 7,
+      color: theme.palette.error.main,
 
-                            width: 25,
-                            height: 25,
-
-                            color: theme.palette.error.main,
-
-                            "&:hover": {
-                              backgroundColor: `${theme.palette.error.main}0D`,
-                            },
-                          }}
-                        >
-                          <DeleteIcon sx={{ fontSize: 15 }} />
-                        </IconButton>
-                      )}
+      "&:hover": {
+        backgroundColor: `${theme.palette.error.main}0D`,
+      },
+    }}
+  >
+    <DeleteIcon sx={{ fontSize: 15 }} />
+  </IconButton>
+)}
 
                       {/* DELETED SLOT -> RESTORE */}
 

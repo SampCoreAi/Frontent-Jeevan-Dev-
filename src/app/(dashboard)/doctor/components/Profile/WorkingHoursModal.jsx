@@ -1,11 +1,9 @@
 "use client";
-
 import React, {
   useEffect,
   useMemo,
   useState,
 } from "react";
-
 import {
   Alert,
   Box,
@@ -19,25 +17,19 @@ import {
   Switch,
   Typography,
 } from "@mui/material";
-
 import CloseIcon from "@mui/icons-material/Close";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import DoneAllOutlinedIcon from "@mui/icons-material/DoneAllOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-
 import {
   LocalizationProvider,
   TimePicker,
 } from "@mui/x-date-pickers";
-
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-
 dayjs.extend(customParseFormat);
-
 const DAYS = [
   {
     key: "monday",
@@ -75,25 +67,20 @@ const DAYS = [
     short: "Sun",
   },
 ];
-
 const DEFAULT_START = "09:00";
 const DEFAULT_END = "18:00";
-
 const createEmptyHours = () =>
   DAYS.reduce((acc, day) => {
     acc[day.key] = {
       start: "",
       end: "",
     };
-
     return acc;
   }, {});
-
 const normalizeWorkingHours = (
   workingHours
 ) => {
   const result = createEmptyHours();
-
   DAYS.forEach(({ key }) => {
     result[key] = {
       start:
@@ -102,13 +89,10 @@ const normalizeWorkingHours = (
         workingHours?.[key]?.end || "",
     };
   });
-
   return result;
 };
-
 const parseTime = (timeStr) => {
   if (!timeStr) return null;
-
   const parsed = dayjs(
     timeStr,
     [
@@ -119,12 +103,10 @@ const parseTime = (timeStr) => {
     ],
     true
   );
-
   return parsed.isValid()
     ? parsed
     : null;
 };
-
 const formatTime = (value) => {
   if (
     !value ||
@@ -132,17 +114,14 @@ const formatTime = (value) => {
   ) {
     return "";
   }
-
   return dayjs(value).format(
     "HH:mm"
   );
 };
-
 const formatDisplayTime = (
   time
 ) => {
   if (!time) return "";
-
   const parsed = dayjs(
     time,
     [
@@ -153,16 +132,13 @@ const formatDisplayTime = (
     ],
     true
   );
-
   if (!parsed.isValid()) {
     return time;
   }
-
   return parsed.format(
     "hh:mm A"
   );
 };
-
 const WorkingHoursModal = ({
   open,
   onClose,
@@ -173,7 +149,6 @@ const WorkingHoursModal = ({
 }) => {
   const [draftHours, setDraftHours] =
     useState(createEmptyHours());
-
   const [selectedDays, setSelectedDays] =
     useState([
       "monday",
@@ -182,50 +157,54 @@ const WorkingHoursModal = ({
       "thursday",
       "friday",
     ]);
-
-  const [quickStart, setQuickStart] =
-    useState(
-      parseTime(DEFAULT_START)
-    );
-
-  const [quickEnd, setQuickEnd] =
-    useState(
-      parseTime(DEFAULT_END)
-    );
-
+  const [quickStart, setQuickStart] = useState(null);
+  const [quickEnd, setQuickEnd] = useState(null);
   const [editingDay, setEditingDay] =
     useState(null);
-
   const [error, setError] =
     useState("");
-
-  // ==========================================
-  // LOAD DATA
-  // ==========================================
-
   useEffect(() => {
     if (!open) return;
-
     setDraftHours(
       normalizeWorkingHours(
         workingHours
       )
     );
-
     setEditingDay(null);
     setError("");
   }, [open, workingHours]);
+  useEffect(() => {
+    if (!open) return;
+    const firstDay = DAYS.find(({ key }) => selectedDays.includes(key));
+    const hours = draftHours[firstDay?.key];
+    setQuickStart(parseTime(hours?.start));
+    setQuickEnd(parseTime(hours?.end));
+  }, [open, selectedDays, draftHours]);
 
-  // ==========================================
-  // CHANGES
-  // ==========================================
-
+  const handleQuickChange = (field, value) => {
+    if (readOnly) return;
+    if (field === "start") setQuickStart(value);
+    else setQuickEnd(value);
+    if (!selectedDays.length) {
+      setError("Please select at least one day.");
+      return;
+    }
+    if (value && !value.isValid()) return;
+    const time = formatTime(value);
+    setError("");
+    setDraftHours((prev) => {
+      const updated = { ...prev };
+      selectedDays.forEach((day) => {
+        updated[day] = { ...prev[day], [field]: time };
+      });
+      return updated;
+    });
+  };
   const hasChanges = useMemo(() => {
     const original =
       normalizeWorkingHours(
         workingHours
       );
-
     return (
       JSON.stringify(original) !==
       JSON.stringify(draftHours)
@@ -234,25 +213,14 @@ const WorkingHoursModal = ({
     workingHours,
     draftHours,
   ]);
-
-  // ==========================================
-  // DAY STATUS
-  // ==========================================
-
   const isDayOpen = (dayKey) => {
     const day =
       draftHours?.[dayKey];
-
     return Boolean(
       day?.start &&
         day?.end
     );
   };
-
-  // ==========================================
-  // TIME CHANGE
-  // ==========================================
-
   const handleTimeChange = (
     dayKey,
     field,
@@ -264,12 +232,9 @@ const WorkingHoursModal = ({
       );
       return;
     }
-
     setError("");
-
     setDraftHours((prev) => ({
       ...prev,
-
       [dayKey]: {
         ...prev[dayKey],
         [field]:
@@ -277,11 +242,6 @@ const WorkingHoursModal = ({
       },
     }));
   };
-
-  // ==========================================
-  // TOGGLE DAY
-  // ==========================================
-
   const handleToggleDay = (
     dayKey,
     checked
@@ -292,24 +252,19 @@ const WorkingHoursModal = ({
       );
       return;
     }
-
     setError("");
-
     setDraftHours((prev) => {
       if (!checked) {
         return {
           ...prev,
-
           [dayKey]: {
             start: "",
             end: "",
           },
         };
       }
-
       return {
         ...prev,
-
         [dayKey]: {
           start:
             prev?.[dayKey]?.start ||
@@ -317,7 +272,6 @@ const WorkingHoursModal = ({
               quickStart
             ) ||
             DEFAULT_START,
-
           end:
             prev?.[dayKey]?.end ||
             formatTime(
@@ -328,11 +282,6 @@ const WorkingHoursModal = ({
       };
     });
   };
-
-  // ==========================================
-  // SELECT DAYS
-  // ==========================================
-
   const handleDaySelection = (
     dayKey
   ) => {
@@ -342,7 +291,6 @@ const WorkingHoursModal = ({
       );
       return;
     }
-
     setSelectedDays((prev) =>
       prev.includes(dayKey)
         ? prev.filter(
@@ -355,7 +303,6 @@ const WorkingHoursModal = ({
           ]
     );
   };
-
   const selectWeekdays = () => {
     if (readOnly) {
       setError(
@@ -363,7 +310,6 @@ const WorkingHoursModal = ({
       );
       return;
     }
-
     setSelectedDays([
       "monday",
       "tuesday",
@@ -372,7 +318,6 @@ const WorkingHoursModal = ({
       "friday",
     ]);
   };
-
   const selectWeekend = () => {
     if (readOnly) {
       setError(
@@ -380,13 +325,11 @@ const WorkingHoursModal = ({
       );
       return;
     }
-
     setSelectedDays([
       "saturday",
       "sunday",
     ]);
   };
-
   const selectAllDays = () => {
     if (readOnly) {
       setError(
@@ -394,14 +337,12 @@ const WorkingHoursModal = ({
       );
       return;
     }
-
     setSelectedDays(
       DAYS.map(
         (day) => day.key
       )
     );
   };
-
   const clearSelectedDays = () => {
     if (readOnly) {
       setError(
@@ -409,14 +350,8 @@ const WorkingHoursModal = ({
       );
       return;
     }
-
     setSelectedDays([]);
   };
-
-  // ==========================================
-  // APPLY HOURS
-  // ==========================================
-
   const applyToSelectedDays = () => {
     if (readOnly) {
       setError(
@@ -424,43 +359,36 @@ const WorkingHoursModal = ({
       );
       return;
     }
-
     const start =
       formatTime(
         quickStart
       );
-
     const end =
       formatTime(
         quickEnd
       );
-
     if (!selectedDays.length) {
       setError(
         "Please select at least one day."
       );
       return;
     }
-
     if (!start || !end) {
       setError(
         "Please select both opening and closing time."
       );
       return;
     }
-
     const startTime =
       dayjs(
         start,
         "HH:mm"
       );
-
     const endTime =
       dayjs(
         end,
         "HH:mm"
       );
-
     if (
       endTime.isSame(
         startTime
@@ -474,12 +402,10 @@ const WorkingHoursModal = ({
       );
       return;
     }
-
     setDraftHours((prev) => {
       const updated = {
         ...prev,
       };
-
       selectedDays.forEach(
         (dayKey) => {
           updated[dayKey] = {
@@ -488,17 +414,10 @@ const WorkingHoursModal = ({
           };
         }
       );
-
       return updated;
     });
-
     setError("");
   };
-
-  // ==========================================
-  // CLOSE SELECTED DAYS
-  // ==========================================
-
   const closeAllSelectedDays =
     () => {
       if (readOnly) {
@@ -507,19 +426,16 @@ const WorkingHoursModal = ({
         );
         return;
       }
-
       if (!selectedDays.length) {
         setError(
           "Please select at least one day."
         );
         return;
       }
-
       setDraftHours((prev) => {
         const updated = {
           ...prev,
         };
-
         selectedDays.forEach(
           (dayKey) => {
             updated[dayKey] = {
@@ -528,52 +444,39 @@ const WorkingHoursModal = ({
             };
           }
         );
-
         return updated;
       });
-
       setError("");
     };
-
-  // ==========================================
-  // VALIDATION
-  // ==========================================
-
   const validateSingleDay = (
     dayKey
   ) => {
     const day =
       draftHours?.[dayKey];
-
     if (
       !day?.start ||
       !day?.end
     ) {
       return "Please select both opening and closing time.";
     }
-
     const start =
       dayjs(
         day.start,
         "HH:mm"
       );
-
     const end =
       dayjs(
         day.end,
         "HH:mm"
       );
-
     if (
       end.isSame(start) ||
       end.isBefore(start)
     ) {
       return "Closing time must be later than opening time.";
     }
-
     return "";
   };
-
   const validateHours = () => {
     for (const {
       key,
@@ -581,33 +484,28 @@ const WorkingHoursModal = ({
     } of DAYS) {
       const day =
         draftHours?.[key];
-
       if (
         !day?.start &&
         !day?.end
       ) {
         continue;
       }
-
       if (
         !day?.start ||
         !day?.end
       ) {
         return `${label}: Please select both opening and closing time.`;
       }
-
       const start =
         dayjs(
           day.start,
           "HH:mm"
         );
-
       const end =
         dayjs(
           day.end,
           "HH:mm"
         );
-
       if (
         end.isSame(start) ||
         end.isBefore(start)
@@ -615,14 +513,8 @@ const WorkingHoursModal = ({
         return `${label}: Closing time must be later than opening time.`;
       }
     }
-
     return "";
   };
-
-  // ==========================================
-  // EDIT INDIVIDUAL DAY
-  // ==========================================
-
   const handleEditDay = (
     dayKey
   ) => {
@@ -632,34 +524,24 @@ const WorkingHoursModal = ({
       );
       return;
     }
-
     setError("");
     setEditingDay(dayKey);
   };
-
   const handleDoneEditing = () => {
     if (!editingDay) return;
-
     const validationError =
       validateSingleDay(
         editingDay
       );
-
     if (validationError) {
       setError(
         validationError
       );
       return;
     }
-
     setError("");
     setEditingDay(null);
   };
-
-  // ==========================================
-  // SAVE
-  // ==========================================
-
   const handleSave = () => {
     if (readOnly) {
       setError(
@@ -667,67 +549,51 @@ const WorkingHoursModal = ({
       );
       return;
     }
-
     const validationError =
       validateHours();
-
     if (validationError) {
       setError(
         validationError
       );
       return;
     }
-
     DAYS.forEach(({ key }) => {
       const newDay =
         draftHours?.[key] || {
           start: "",
           end: "",
         };
-
       onWorkingHoursChange(
         key,
         "start",
         newDay.start
       );
-
       onWorkingHoursChange(
         key,
         "end",
         newDay.end
       );
     });
-
     setError("");
     setEditingDay(null);
-
     onSaved?.();
     onClose();
   };
-
-  // ==========================================
-  // CANCEL
-  // ==========================================
-
   const handleCancel = () => {
     setDraftHours(
       normalizeWorkingHours(
         workingHours
       )
     );
-
     setError("");
     setEditingDay(null);
-
     onClose();
   };
-
   const currentEditingDay =
     DAYS.find(
       (day) =>
         day.key === editingDay
     );
-
   return (
     <LocalizationProvider
       dateAdapter={
@@ -737,7 +603,6 @@ const WorkingHoursModal = ({
       {/* ========================================
           MAIN WORKING HOURS MODAL
           ======================================== */}
-
       <Dialog
         open={open}
         onClose={handleCancel}
@@ -750,32 +615,24 @@ const WorkingHoursModal = ({
               sm: "calc(100vw - 40px)",
               md: "min(700px, calc(100vw - 80px))",
             },
-
             maxWidth:
               "700px",
-
             maxHeight: {
               xs: "calc(100vh - 20px)",
               sm: "calc(100vh - 40px)",
             },
-
             m: {
               xs: "10px",
               sm: "20px",
             },
-
             borderRadius:
               "12px",
-
             border:
               "1px solid",
-
             borderColor:
               "divider",
-
             boxShadow:
               "0 20px 60px rgba(15, 23, 42, 0.14)",
-
             overflow:
               "hidden",
           },
@@ -784,15 +641,12 @@ const WorkingHoursModal = ({
         {/* ========================================
             TITLE
             ======================================== */}
-
         <DialogTitle
           sx={{
             px: "16px",
             py: "10px",
-
             borderBottom:
               "1px solid",
-
             borderColor:
               "divider",
           }}
@@ -830,7 +684,6 @@ const WorkingHoursModal = ({
                 >
                   Working Hours
                 </Typography>
-
                 {readOnly && (
                   <Chip
                     icon={
@@ -855,7 +708,6 @@ const WorkingHoursModal = ({
                   />
                 )}
               </Box>
-
               <Typography
                 sx={{
                   mt: "2px",
@@ -870,7 +722,6 @@ const WorkingHoursModal = ({
                   : "Set your weekly availability and apply hours to multiple days."}
               </Typography>
             </Box>
-
             <IconButton
               size="small"
               onClick={
@@ -893,24 +744,19 @@ const WorkingHoursModal = ({
             </IconButton>
           </Box>
         </DialogTitle>
-
         {/* ========================================
             CONTENT
             ======================================== */}
-
         <DialogContent
           sx={{
             p: {
               xs: "10px !important",
               sm: "12px 16px !important",
             },
-
             overflowY:
               "auto",
-
             overflowX:
               "hidden",
-
             minWidth: 0,
           }}
         >
@@ -927,7 +773,6 @@ const WorkingHoursModal = ({
               sx={{
                 mb: "9px",
                 py: 0,
-
                 "& .MuiAlert-message":
                   {
                     fontSize:
@@ -938,20 +783,16 @@ const WorkingHoursModal = ({
               {error}
             </Alert>
           )}
-
           <Box
             sx={{
               display:
                 "grid",
-
               gridTemplateColumns:
                 {
                   xs: "1fr",
                   md: "275px minmax(0, 1fr)",
                 },
-
               gap: "12px",
-
               alignItems:
                 "start",
             }}
@@ -959,23 +800,17 @@ const WorkingHoursModal = ({
             {/* ======================================
                 QUICK SETUP
                 ====================================== */}
-
             <Box
               sx={{
                 border:
                   "1px solid",
-
                 borderColor:
                   "divider",
-
                 borderRadius:
                   "8px",
-
                 p: "11px",
-
                 bgcolor:
                   "background.default",
-
                 opacity:
                   readOnly
                     ? 0.65
@@ -986,12 +821,9 @@ const WorkingHoursModal = ({
                 sx={{
                   display:
                     "flex",
-
                   alignItems:
                     "center",
-
                   gap: "7px",
-
                   mb: "10px",
                 }}
               >
@@ -1002,7 +834,6 @@ const WorkingHoursModal = ({
                       "primary.main",
                   }}
                 />
-
                 <Box>
                   <Typography
                     sx={{
@@ -1016,7 +847,6 @@ const WorkingHoursModal = ({
                   >
                     Quick setup
                   </Typography>
-
                   <Typography
                     sx={{
                       mt: "2px",
@@ -1031,9 +861,7 @@ const WorkingHoursModal = ({
                   </Typography>
                 </Box>
               </Box>
-
               {/* QUICK START */}
-
               <Box
                 sx={{
                   display:
@@ -1048,9 +876,7 @@ const WorkingHoursModal = ({
                   value={
                     quickStart
                   }
-                  onChange={
-                    setQuickStart
-                  }
+                  onChange={(value) => handleQuickChange("start", value)}
                   disabled={
                     readOnly
                   }
@@ -1068,19 +894,16 @@ const WorkingHoursModal = ({
                             fontSize:
                               "11px",
                           },
-
                         "& .MuiInputLabel-root":
                           {
                             fontSize:
                               "10.5px",
                           },
-
                         "& input":
                           {
                             px:
                               "8px",
                           },
-
                         "& .MuiSvgIcon-root":
                           {
                             fontSize:
@@ -1090,17 +913,13 @@ const WorkingHoursModal = ({
                     },
                   }}
                 />
-
                 {/* QUICK END */}
-
                 <TimePicker
                   label="Closing time"
                   value={
                     quickEnd
                   }
-                  onChange={
-                    setQuickEnd
-                  }
+                  onChange={(value) => handleQuickChange("end", value)}
                   disabled={
                     readOnly
                   }
@@ -1118,19 +937,16 @@ const WorkingHoursModal = ({
                             fontSize:
                               "11px",
                           },
-
                         "& .MuiInputLabel-root":
                           {
                             fontSize:
                               "10.5px",
                           },
-
                         "& input":
                           {
                             px:
                               "8px",
                           },
-
                         "& .MuiSvgIcon-root":
                           {
                             fontSize:
@@ -1141,7 +957,6 @@ const WorkingHoursModal = ({
                   }}
                 />
               </Box>
-
               <Typography
                 sx={{
                   mt: "10px",
@@ -1158,9 +973,7 @@ const WorkingHoursModal = ({
               >
                 APPLY TO
               </Typography>
-
               {/* DAY CHIPS */}
-
               <Box
                 sx={{
                   display:
@@ -1176,7 +989,6 @@ const WorkingHoursModal = ({
                       selectedDays.includes(
                         day.key
                       );
-
                     return (
                       <Chip
                         key={
@@ -1204,20 +1016,15 @@ const WorkingHoursModal = ({
                         sx={{
                           height:
                             24,
-
                           fontSize:
                             "10px",
-
                           fontWeight:
                             600,
-
                           ...(selected && {
                             bgcolor:
                               "primary.main",
-
                             color:
                               "primary.contrastText",
-
                             "&:hover":
                               {
                                 bgcolor:
@@ -1230,9 +1037,7 @@ const WorkingHoursModal = ({
                   }
                 )}
               </Box>
-
               {/* PRESET BUTTONS */}
-
               <Box
                 sx={{
                   display:
@@ -1262,7 +1067,6 @@ const WorkingHoursModal = ({
                 >
                   Weekdays
                 </Button>
-
                 <Button
                   size="small"
                   disabled={
@@ -1282,7 +1086,6 @@ const WorkingHoursModal = ({
                 >
                   Weekend
                 </Button>
-
                 <Button
                   size="small"
                   disabled={
@@ -1302,7 +1105,6 @@ const WorkingHoursModal = ({
                 >
                   All
                 </Button>
-
                 <Button
                   size="small"
                   disabled={
@@ -1325,9 +1127,7 @@ const WorkingHoursModal = ({
                   Clear
                 </Button>
               </Box>
-
               {/* APPLY */}
-
               <Button
                 fullWidth
                 variant="contained"
@@ -1361,9 +1161,7 @@ const WorkingHoursModal = ({
               >
                 Apply hours
               </Button>
-
               {/* CLOSE */}
-
               <Button
                 fullWidth
                 variant="outlined"
@@ -1386,11 +1184,9 @@ const WorkingHoursModal = ({
                 Mark selected closed
               </Button>
             </Box>
-
             {/* ======================================
                 WEEKLY SCHEDULE
                 ====================================== */}
-
             <Box
               sx={{
                 minWidth: 0,
@@ -1400,10 +1196,8 @@ const WorkingHoursModal = ({
                 sx={{
                   display:
                     "grid",
-
                   gridTemplateColumns:
                     "1fr",
-
                   gap: "6px",
                 }}
               >
@@ -1416,12 +1210,10 @@ const WorkingHoursModal = ({
                         start: "",
                         end: "",
                       };
-
                     const dayOpen =
                       isDayOpen(
                         day.key
                       );
-
                     return (
                       <Box
                         key={
@@ -1430,49 +1222,37 @@ const WorkingHoursModal = ({
                         sx={{
                           minHeight:
                             "46px",
-
                           display: {
                             xs: "grid",
                             sm: "flex",
                           },
-
                           gridTemplateColumns:
                             {
                               xs: "minmax(0, 1fr) auto",
                               sm: "none",
                             },
-
                           alignItems:
                             "center",
-
                           gap: "8px",
-
                           px: "10px",
-
                           py: "6px",
-
                           border:
                             "1px solid",
-
                           borderColor:
                             "divider",
-
                           borderRadius:
                             "7px",
-
                           bgcolor:
                             "background.default",
                         }}
                       >
                         {/* DAY */}
-
                         <Box
                           sx={{
                             minWidth: {
                               xs: 0,
                               sm: "75px",
                             },
-
                             gridColumn:
                               {
                                 xs: "1 / -1",
@@ -1484,13 +1264,10 @@ const WorkingHoursModal = ({
                             sx={{
                               fontSize:
                                 "10.5px",
-
                               fontWeight:
                                 700,
-
                               lineHeight:
                                 1.15,
-
                               color:
                                 "text.primary",
                             }}
@@ -1499,20 +1276,15 @@ const WorkingHoursModal = ({
                               day.label
                             }
                           </Typography>
-
                           <Typography
                             sx={{
                               mt: "2px",
-
                               fontSize:
                                 "9px",
-
                               fontWeight:
                                 600,
-
                               lineHeight:
                                 1,
-
                               color:
                                 dayOpen
                                   ? "primary.main"
@@ -1524,22 +1296,17 @@ const WorkingHoursModal = ({
                               : "Closed"}
                           </Typography>
                         </Box>
-
                         {/* TIME */}
-
                         <Box
                           sx={{
                             flex: 1,
                             minWidth: 0,
-
                             width: {
                               xs: "100%",
                               sm: "auto",
                             },
-
                             display:
                               "flex",
-
                             justifyContent:
                               "flex-end",
                           }}
@@ -1556,36 +1323,26 @@ const WorkingHoursModal = ({
                               sx={{
                                 display:
                                   "flex",
-
                                 alignItems:
                                   "center",
-
                                 gap: "4px",
-
                                 minWidth:
                                   0,
-
                                 p: 0,
-
                                 border:
                                   0,
-
                                 bgcolor:
                                   "transparent",
-
                                 cursor:
                                   readOnly
                                     ? "default"
                                     : "pointer",
-
                                 fontFamily:
                                   "inherit",
-
                                 color:
                                   readOnly
                                     ? "text.secondary"
                                     : "text.secondary",
-
                                 "&:hover":
                                   {
                                     color:
@@ -1600,13 +1357,10 @@ const WorkingHoursModal = ({
                                 sx={{
                                   fontSize:
                                     "10px",
-
                                   fontWeight:
                                     500,
-
                                   whiteSpace:
                                     "nowrap",
-
                                   color:
                                     "inherit",
                                 }}
@@ -1619,13 +1373,11 @@ const WorkingHoursModal = ({
                                   dayData.end
                                 )}
                               </Typography>
-
                               {!readOnly && (
                                 <EditOutlinedIcon
                                   sx={{
                                     fontSize:
                                       12,
-
                                     flexShrink:
                                       0,
                                   }}
@@ -1637,7 +1389,6 @@ const WorkingHoursModal = ({
                               sx={{
                                 fontSize:
                                   "9.5px",
-
                                 color:
                                   "text.disabled",
                               }}
@@ -1646,9 +1397,7 @@ const WorkingHoursModal = ({
                             </Typography>
                           )}
                         </Box>
-
                         {/* SWITCH */}
-
                         <Switch
                           size="small"
                           checked={
@@ -1672,20 +1421,16 @@ const WorkingHoursModal = ({
                               xs: 0,
                               sm: "2px",
                             },
-
                             mr: {
                               xs: "-6px",
                               sm: "-6px",
                             },
-
                             flexShrink:
                               0,
-
                             "& .MuiSwitch-switchBase":
                               {
                                 p: "6px",
                               },
-
                             "& .MuiSwitch-thumb":
                               {
                                 width:
@@ -1693,7 +1438,6 @@ const WorkingHoursModal = ({
                                 height:
                                   13,
                               },
-
                             "& .MuiSwitch-track":
                               {
                                 borderRadius:
@@ -1709,23 +1453,18 @@ const WorkingHoursModal = ({
             </Box>
           </Box>
         </DialogContent>
-
         {/* ========================================
             FOOTER
             ======================================== */}
-
         <DialogActions
           sx={{
             px: "16px",
             py: "8px",
             minHeight: 48,
-
             borderTop:
               "1px solid",
-
             borderColor:
               "divider",
-
             justifyContent:
               "space-between",
           }}
@@ -1734,11 +1473,8 @@ const WorkingHoursModal = ({
             sx={{
               display:
                 "flex",
-
               gap: "7px",
-
               ml: "auto",
-
               width: {
                 xs: "100%",
                 sm: "auto",
@@ -1752,27 +1488,22 @@ const WorkingHoursModal = ({
               }
               sx={{
                 height: 31,
-
                 minWidth: {
                   xs: 0,
                   sm: 82,
                 },
-
                 flex: {
                   xs: 1,
                   sm: "none",
                 },
-
                 fontSize:
                   "10.5px",
-
                 textTransform:
                   "none",
               }}
             >
               Close
             </Button>
-
             <Button
               variant="contained"
               disabled={
@@ -1784,26 +1515,20 @@ const WorkingHoursModal = ({
               }
               sx={{
                 height: 31,
-
                 minWidth: {
                   xs: 0,
                   sm: 108,
                 },
-
                 flex: {
                   xs: 1,
                   sm: "none",
                 },
-
                 fontSize:
                   "10.5px",
-
                 fontWeight:
                   600,
-
                 textTransform:
                   "none",
-
                 boxShadow:
                   "none",
               }}
@@ -1813,11 +1538,9 @@ const WorkingHoursModal = ({
           </Box>
         </DialogActions>
       </Dialog>
-
       {/* ========================================
           INDIVIDUAL DAY EDIT MODAL
           ======================================== */}
-
       <Dialog
         open={
           Boolean(editingDay) &&
@@ -1835,19 +1558,14 @@ const WorkingHoursModal = ({
               xs: "calc(100vw - 24px)",
               sm: "min(380px, calc(100vw - 32px))",
             },
-
             maxHeight:
               "calc(100vh - 24px)",
-
             borderRadius:
               "10px",
-
             border:
               "1px solid",
-
             borderColor:
               "divider",
-
             boxShadow:
               "0 16px 45px rgba(15, 23, 42, 0.18)",
           },
@@ -1857,10 +1575,8 @@ const WorkingHoursModal = ({
           sx={{
             px: "14px",
             py: "10px",
-
             borderBottom:
               "1px solid",
-
             borderColor:
               "divider",
           }}
@@ -1869,10 +1585,8 @@ const WorkingHoursModal = ({
             sx={{
               display:
                 "flex",
-
               alignItems:
                 "center",
-
               justifyContent:
                 "space-between",
             }}
@@ -1888,7 +1602,6 @@ const WorkingHoursModal = ({
               >
                 Edit working hours
               </Typography>
-
               <Typography
                 sx={{
                   mt: "1px",
@@ -1903,23 +1616,19 @@ const WorkingHoursModal = ({
                 }
               </Typography>
             </Box>
-
             <IconButton
               size="small"
               onClick={() => {
                 setEditingDay(
                   null
                 );
-
                 setError("");
               }}
               sx={{
                 width: 27,
                 height: 27,
-
                 border:
                   "1px solid",
-
                 borderColor:
                   "divider",
               }}
@@ -1932,7 +1641,6 @@ const WorkingHoursModal = ({
             </IconButton>
           </Box>
         </DialogTitle>
-
         <DialogContent
           sx={{
             p: "14px !important",
@@ -1943,16 +1651,13 @@ const WorkingHoursModal = ({
               sx={{
                 display:
                   "grid",
-
                 gridTemplateColumns:
                   {
                     xs: "1fr",
                     sm: "1fr auto 1fr",
                   },
-
                 alignItems:
                   "center",
-
                 gap: "6px",
               }}
             >
@@ -1978,7 +1683,6 @@ const WorkingHoursModal = ({
                       "small",
                     fullWidth:
                       true,
-
                     sx: {
                       "& .MuiInputBase-root":
                         {
@@ -1987,19 +1691,16 @@ const WorkingHoursModal = ({
                           fontSize:
                             "11px",
                         },
-
                       "& .MuiInputLabel-root":
                         {
                           fontSize:
                             "10.5px",
                         },
-
                       "& input":
                         {
                           px:
                             "7px",
                         },
-
                       "& .MuiSvgIcon-root":
                         {
                           fontSize:
@@ -2009,15 +1710,12 @@ const WorkingHoursModal = ({
                   },
                 }}
               />
-
               <Typography
                 sx={{
                   fontSize:
                     "9.5px",
-
                   color:
                     "text.secondary",
-
                   display: {
                     xs: "none",
                     sm: "block",
@@ -2026,7 +1724,6 @@ const WorkingHoursModal = ({
               >
                 to
               </Typography>
-
               <TimePicker
                 label="To"
                 value={parseTime(
@@ -2049,7 +1746,6 @@ const WorkingHoursModal = ({
                       "small",
                     fullWidth:
                       true,
-
                     sx: {
                       "& .MuiInputBase-root":
                         {
@@ -2058,19 +1754,16 @@ const WorkingHoursModal = ({
                           fontSize:
                             "11px",
                         },
-
                       "& .MuiInputLabel-root":
                         {
                           fontSize:
                             "10.5px",
                         },
-
                       "& input":
                         {
                           px:
                             "7px",
                         },
-
                       "& .MuiSvgIcon-root":
                         {
                           fontSize:
@@ -2083,15 +1776,12 @@ const WorkingHoursModal = ({
             </Box>
           )}
         </DialogContent>
-
         <DialogActions
           sx={{
             px: "14px",
             py: "9px",
-
             borderTop:
               "1px solid",
-
             borderColor:
               "divider",
           }}
@@ -2104,16 +1794,12 @@ const WorkingHoursModal = ({
             sx={{
               height: 30,
               px: "18px",
-
               fontSize:
                 "10.5px",
-
               fontWeight:
                 600,
-
               textTransform:
                 "none",
-
               boxShadow:
                 "none",
             }}
@@ -2125,5 +1811,4 @@ const WorkingHoursModal = ({
     </LocalizationProvider>
   );
 };
-
 export default WorkingHoursModal;

@@ -143,11 +143,18 @@ export default function Prescription({
       setRows(formatted);
     }
   }, [apiData]);
+const imageUrl = (url) =>
+  !url ? null : /^https?:\/\//i.test(url)
+    ? url
+    : `${process.env.NEXT_PUBLIC_S3_BUCKET_URL.replace(/\/$/, "")}/${url.replace(/^\//, "")}`;
 
-  const doctor = apiData?.doctor;
-const prescriptionDoctor = apiData?.prescription
-  ? doctor
-  : { ...doctor, doctor_signature: null };
+const doctor = {
+  ...apiData?.doctor,
+  qr_url: imageUrl(apiData?.doctor?.qr_url),
+  logo: imageUrl(apiData?.doctor?.logo),
+  doctor_signature: imageUrl(apiData?.doctor?.doctor_signature),
+};
+const prescriptionDoctor = doctor;
   const patientApi = apiData?.patient;
   const appointment = apiData?.appointment;
 const appointmentDate =

@@ -456,7 +456,8 @@ const ProfileSidebar = ({
 
   const infoRowSx = {
     width: "100%",
-
+minWidth: 0,
+boxSizing: "border-box",
     display: "flex",
 
     alignItems: {
@@ -541,7 +542,7 @@ fontSize: "12.5px",
 
   const fieldSx = {
     flex: 1,
-
+minWidth: 0,
     width: "100%",
 
     "& .MuiInputBase-root": {
@@ -1450,11 +1451,14 @@ fontSize: "12.5px",
             alignItems: "center",
           }}
         >
-          <Typography
-            sx={labelSx}
-          >
-            Rating
-          </Typography>
+        <Typography
+  sx={{
+    ...labelSx,
+    width: { xs: "auto", sm: "95px" },
+  }}
+>
+  Rating
+</Typography>
 
           <Box
             sx={{

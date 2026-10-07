@@ -317,22 +317,29 @@ export const createSchedule = createAsyncThunk(
       // RETURN LOCAL SCHEDULE
       // ------------------------------------------------------
 
-      return {
-        ...scheduleData,
+    return {
+  ...scheduleData,
 
-        id:
-          response?.data?.scheduleId ??
-          response?.data?.schedule_id ??
-          response?.data?.id,
+  id:
+    response?.data?.scheduleId ??
+    response?.data?.schedule_id ??
+    response?.data?.id,
 
-        scheduleId:
-          response?.data?.scheduleId ??
-          response?.data?.schedule_id ??
-          response?.data?.id,
+  scheduleId:
+    response?.data?.scheduleId ??
+    response?.data?.schedule_id ??
+    response?.data?.id,
 
-        clinicId:
-          scheduleData.clinicId,
-      };
+  clinicId:
+    scheduleData.clinicId,
+
+  booking_length:
+    response?.data?.booking_length ??
+    response?.data?.bookingLength ??
+    0,
+
+  type: "schedule",
+};
     } catch (error) {
       console.log(
         "CREATE SCHEDULE ERROR:",

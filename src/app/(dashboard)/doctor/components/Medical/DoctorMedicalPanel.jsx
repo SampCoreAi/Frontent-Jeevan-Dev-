@@ -20,7 +20,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import api from "../../../../../utils/axiosInstance";
-import MedicalRequestInvoiceDialog from "../../../users/components/MedicalRequestInvoiceDialog";
+import MedicalRequestInvoiceDialog from "../../../users/components/Medical/MedicalRequestInvoiceDialog";
 import { DataTable, SectionTitle } from "../../../lab/components/LabUi";
 
 const getRows = (response) =>

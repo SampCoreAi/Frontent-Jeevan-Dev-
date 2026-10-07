@@ -652,7 +652,7 @@ export default function PrescriptionUI(props) {
         sx={{
           width: "100%",
           minWidth: 0,
-          display: isDownloading ? "none" : "flex",
+          display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",

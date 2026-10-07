@@ -933,35 +933,17 @@ const PatientProfileSidebar = ({
 
         <Stack spacing={0.8}>
           <Box>
-            <Box sx={editableRow("age")}>
-              <Typography sx={labelStyle}>
-                Age
-              </Typography>
+       <Box sx={editableRow("dateOfBirth")}>
+  <Typography sx={labelStyle}>Date of Birth</Typography>
 
-              <input
-                type="number"
-                value={formData?.age ?? ""}
-                placeholder="Age"
-                disabled={!editable}
-                min={1}
-                max={120}
-                inputMode="numeric"
-                onKeyDown={
-                  preventInvalidNumberKeys
-                }
-                onChange={(e) =>
-                  updateField(
-                    "age",
-                    e.target.value
-                  )
-                }
-                onBlur={() =>
-                  handleBlur("age")
-                }
-                style={inputStyle}
-              />
-            </Box>
-
+  <input
+    type="date"
+    value={formData?.dateOfBirth || ""}
+    disabled={!editable}
+    onChange={(e) => updateField("dateOfBirth", e.target.value)}
+    style={inputStyle}
+  />
+</Box>
             <ErrorText field="age" />
           </Box>
 

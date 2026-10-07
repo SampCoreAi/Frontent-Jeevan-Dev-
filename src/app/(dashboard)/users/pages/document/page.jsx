@@ -36,6 +36,7 @@ export default function DocumentPage() {
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
   const [uploading, setUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
@@ -541,6 +542,29 @@ const processFiles = async (files) => {
     );
   }
 };
+  const [highlightedFileId, setHighlightedFileId] = useState(null);
+
+const openFileFolder = (file) => {
+  setSelectedFolder(file.folderId);
+  setSearchQuery("");
+  setHighlightedFileId(file.id);
+
+  // Matching folder tak sidebar ka path expand karo
+  const findPath = (nodes, path = []) => {
+    for (const node of nodes) {
+      const next = [...path, node.id];
+      if (node.id === file.folderId) return next;
+      const found = findPath(node.children || [], next);
+      if (found) return found;
+    }
+  };
+
+  const path = findPath(folders) || [];
+  setExpandedFolders((prev) => ({
+    ...prev,
+    ...Object.fromEntries(path.map((id) => [id, true])),
+  }));
+};
 
   const uploadFiles = (e) => {
     processFiles(Array.from(e.target.files));
@@ -695,9 +719,18 @@ const processFiles = async (files) => {
       (file) => file.folderId === selectedFolder
     );
   };
-  const currentFiles = getFilesForCurrentFolder();
-  const currentFolderName = getFolderNameById(selectedFolder);
+  
+ const query = searchQuery.trim().toLowerCase();
 
+const currentFiles = query
+  ? allFiles.filter((file) =>
+      (file.name || "").toLowerCase().includes(query)
+    )
+  : getFilesForCurrentFolder();
+
+const currentFolderName = query
+  ? `Search results (${currentFiles.length})`
+  : getFolderNameById(selectedFolder);
   return (
     <Box
       sx={{
@@ -812,10 +845,9 @@ const processFiles = async (files) => {
               overflow: "hidden",
             }}
           >
-            <Header
+           <Header
   isMobile={isMobile}
   isTablet={isTablet}
-  drawerOpen={drawerOpen}
   setDrawerOpen={setDrawerOpen}
   currentFolderName={currentFolderName}
   setOpenUpload={setOpenUpload}
@@ -823,6 +855,8 @@ const processFiles = async (files) => {
   setUploadProgress={setUploadProgress}
   viewMode={viewMode}
   setViewMode={setViewMode}
+  searchQuery={searchQuery}
+  setSearchQuery={setSearchQuery}
 />
 
             <FileView
@@ -831,6 +865,9 @@ const processFiles = async (files) => {
               isMobile={isMobile}
               isTablet={isTablet}
               isDesktop={isDesktop}
+              searchQuery={searchQuery}
+onOpenFolder={openFileFolder}
+highlightedFileId={highlightedFileId}
               GridFileItem={({ file }) => (
                 <FileGridItem
                   file={file}

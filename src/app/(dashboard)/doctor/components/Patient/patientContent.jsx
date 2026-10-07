@@ -17,6 +17,8 @@ import { scheduleService } from "../../services/api";
 
 const PatientContent = () => {
   const theme = useTheme();
+  const [date, setDate] = useState("");
+const [preferenceKey, setPreferenceKey] = useState("");
   const [hospitals, setHospitals] = useState([]);
   const [selectedHospital, setSelectedHospital] = useState("");
   const [dashboardData, setDashboardData] = useState(null);
@@ -63,26 +65,68 @@ const PatientContent = () => {
     },
   };
 
-  useEffect(() => {
-    const fetchHospitals = async () => {
-      try {
-        const data = await scheduleService.getHospitals();
-        const hospitalData = Array.isArray(data?.data) ? data.data : [];
+useEffect(() => {
+  const load = async () => {
+    let saved = {};
+    let key = "";
 
-        setHospitals(hospitalData);
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      
+key = "appointmentPreferences";
+saved = JSON.parse(localStorage.getItem(key) || "{}") || {};
+    } catch {
+      // Invalid saved preferences: use defaults.
+    }
 
-        if (hospitalData.length) {
-          setSelectedHospital(hospitalData[0]?.hospitalName || "");
-        }
-      } catch (error) {
-        console.error("Error fetching hospitals:", error);
-        setHospitals([]);
-        setSelectedHospital("");
-      }
-    };
+    setTableMode(saved.mode === "offline" ? "offline" : "online");
 
-    fetchHospitals();
-  }, []);
+    const today = new Date();
+    const localDate = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0"),
+    ].join("-");
+
+    setDate(typeof saved.date === "string" ? saved.date : localDate);
+
+    try {
+      const data = await scheduleService.getHospitals();
+      const list = Array.isArray(data?.data) ? data.data : [];
+
+      setHospitals(list);
+      setSelectedHospital(
+        list.some((h) => h.hospitalName === saved.hospital)
+          ? saved.hospital
+          : list[0]?.hospitalName || ""
+      );
+      setPreferenceKey(key);
+    } catch (error) {
+      console.error("Error fetching hospitals:", error);
+      setHospitals([]);
+      setSelectedHospital("");
+    }
+  };
+
+  load();
+}, []);
+
+useEffect(() => {
+  if (!preferenceKey) return;
+
+  try {
+    localStorage.setItem(
+      preferenceKey,
+      JSON.stringify({
+        hospital: selectedHospital,
+        mode: tableMode,
+        date,
+      })
+    );
+  } catch (error) {
+    console.error("Preferences save failed:", error);
+  }
+}, [preferenceKey, selectedHospital, tableMode, date]);
 
   useEffect(() => {
     const fetchDashboardCards = async () => {
@@ -322,10 +366,14 @@ const PatientContent = () => {
         </Grid>
 
         <Box sx={{ mt: 1.5 }}>
-          <OnOffCard
-            selectedHospital={selectedHospital}
-            selectedMode={tableMode}
-          />
+         {preferenceKey && (
+  <OnOffCard
+    selectedHospital={selectedHospital}
+    selectedMode={tableMode}
+    date={date}
+    onDateChange={setDate}
+  />
+)}
         </Box>
       </Box>
     </Box>

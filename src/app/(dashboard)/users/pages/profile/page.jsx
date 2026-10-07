@@ -27,7 +27,7 @@ export default function PatientProfilePage() {
 
   const [formData, setFormData] = useState({
     name: "",
-    age: "",
+    dateOfBirth: "",
     username: "",
     gender: "",
     email: "",
@@ -129,10 +129,9 @@ export default function PatientProfilePage() {
       payload.username = formData.username.trim();
     }
 
-    if (dirtyFields.age) {
-      payload.age = Number(formData.age);
-    }
-
+if (dirtyFields.dateOfBirth) {
+  payload.date_of_birth = formData.dateOfBirth;
+}
     if (dirtyFields.gender) {
       payload.gender = formData.gender
         ? formData.gender.trim().toUpperCase()
@@ -290,7 +289,7 @@ export default function PatientProfilePage() {
       setFormData({
         name: userProfile.full_name || "",
         username: userProfile.username || "",
-        age: userProfile.age ?? "",
+        dateOfBirth: userProfile.date_of_birth || "",
 
         gender: userProfile.gender
           ? userProfile.gender.toUpperCase()
