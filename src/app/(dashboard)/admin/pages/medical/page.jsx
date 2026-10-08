@@ -226,7 +226,9 @@ export default function MedicalPage() {
         phoneNumber: form.phoneNumber.trim(),
         storeName: form.storeName.trim(),
         registrationNumber: form.registrationNumber.trim(),
-        address: form.address.trim(),
+    address: form.address.trim()
+  ? JSON.stringify(form.address.trim())
+  : null,
       };
 
       if (!payload.phoneNumber) delete payload.phoneNumber;
@@ -678,20 +680,28 @@ export default function MedicalPage() {
                         <Typography sx={{ color: theme.palette.text.primary }}>
                           {store?.phone_number || "-"}
                         </Typography>
-                        {store?.address && (
-                          <Typography
-                            sx={{
-                              color: theme.palette.text.secondary,
-                              mt: 0.2,
-                              maxWidth: 200,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {store.address}
-                          </Typography>
-                        )}
+                       {store?.address && (
+  <Typography
+    sx={{
+      color: theme.palette.text.secondary,
+      mt: 0.2,
+      maxWidth: 250,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {[
+      store.address.areaLocality,
+      store.address.city,
+      store.address.district,
+      store.address.state,
+      store.address.pinCode,
+    ]
+      .filter(Boolean)
+      .join(", ") || "-"}
+  </Typography>
+)}
                       </TableCell>
 
                       <TableCell>

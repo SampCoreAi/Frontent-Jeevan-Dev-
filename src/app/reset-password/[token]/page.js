@@ -39,7 +39,7 @@
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const [loading, setLoading] = useState(false);
-
+const [linkError, setLinkError] = useState("");
     const [errors, setErrors] = useState({
       password: "",
       confirmPassword: "",
@@ -249,7 +249,14 @@
           );
           return;
         }
+const message = error.response?.data?.message || "";
 
+if (/token/i.test(message) && /used|invalid|expired/i.test(message)) {
+  setLinkError(message);
+  setPassword("");
+  setConfirmPassword("");
+  return;
+}
         const status = error.response?.status;
 
         if (status === 400) {
@@ -345,7 +352,28 @@
         fontSize: "11px",
       },
     };
+if (linkError) {
+  return (
+    <Box sx={{ maxWidth: 440, mx: "auto", mt: 10, p: 3, textAlign: "center" }}>
+      <Typography variant="h5">Reset link unavailable</Typography>
 
+      <Alert severity="warning" sx={{ my: 3 }}>
+        {linkError}
+      </Alert>
+
+      <Button
+        variant="contained"
+        onClick={() => router.replace("/Home/pages/Login")}
+      >
+        Go to Login
+      </Button>
+
+      <Typography sx={{ mt: 2, fontSize: 13 }}>
+        Naya link lene ke liye Login page par Forgot Password click karein.
+      </Typography>
+    </Box>
+  );
+}
     return (
       <>
         <Box
