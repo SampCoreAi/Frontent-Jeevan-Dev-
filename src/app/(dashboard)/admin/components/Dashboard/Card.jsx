@@ -50,7 +50,7 @@ const DashboardCard = ({
     {
       icon: SupportAgentIcon,
       title: "Doctor Assistants",
-      value: dashboardData?.doctorAssistants ?? 0,
+      value: dashboardData?.assistants ?? 0,
     },
     {
       icon: ScienceOutlinedIcon,

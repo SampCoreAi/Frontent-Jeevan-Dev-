@@ -40,7 +40,7 @@ const S3_BUCKET_URL =
     useState([]);
 const [rejecting, setRejecting] = useState(false);
 
-const handleRejectDoctor = async (doctor) => {
+const handleRejectDoctor = async (doctor, reason) => {
   if (!doctor || rejecting) return;
 
   try {
@@ -55,7 +55,9 @@ const handleRejectDoctor = async (doctor) => {
 
     const response = await axios.patch(
       `${API_BASE_URL}/api/doctor-registration/${doctor.id}/reject`,
-      {}, // PATCH body empty
+      {
+        reason,
+      },
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -75,7 +77,8 @@ const handleRejectDoctor = async (doctor) => {
     setSelectedDoctor(null);
 
     showMessage(
-      result?.message || "Doctor registration rejected successfully.",
+      result?.message ||
+        "Doctor registration rejected successfully.",
       "success"
     );
 

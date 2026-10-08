@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
 import {
   Box,
@@ -13,6 +13,7 @@ import {
   DialogTitle,
   IconButton,
   Stack,
+  TextField,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -43,7 +44,8 @@ const DocumentDialog = ({
   // =========================================
   // ASSIGN DOCTOR
   // =========================================
-
+const [rejectPopupOpen, setRejectPopupOpen] = useState(false);
+const [rejectionReason, setRejectionReason] = useState("");
   const handleAssignDoctor = () => {
     if (!assigning && selectedDoctor) {
       onAssignDoctor?.(selectedDoctor);
@@ -51,8 +53,18 @@ const DocumentDialog = ({
   };
 const handleRejectDoctor = () => {
   if (!rejecting && selectedDoctor) {
-    onRejectDoctor?.(selectedDoctor);
+    setRejectionReason("");
+    setRejectPopupOpen(true);
   }
+};
+
+const handleConfirmReject = () => {
+  const reason = rejectionReason.trim();
+
+  if (!reason) return;
+
+  onRejectDoctor?.(selectedDoctor, reason);
+  setRejectPopupOpen(false);
 };
   // =========================================
   // DISPLAY VALUE
@@ -843,6 +855,98 @@ const handleRejectDoctor = () => {
             : "Assign Doctor"}
         </Button>
       </DialogActions>
+      <Dialog
+  open={rejectPopupOpen}
+  onClose={() => {
+    if (!rejecting) {
+      setRejectPopupOpen(false);
+    }
+  }}
+  fullWidth
+  maxWidth="sm"
+>
+  <DialogTitle
+    sx={{
+      fontSize: "16px",
+      fontWeight: 700,
+      borderBottom: "1px solid",
+      borderColor: "divider",
+    }}
+  >
+    Reject Doctor Registration
+  </DialogTitle>
+
+  <DialogContent sx={{ pt: 2.5 }}>
+    <Typography
+      sx={{
+        mb: 1,
+        fontSize: "12px",
+        color: "text.secondary",
+      }}
+    >
+      Please provide a reason for rejecting this registration.
+    </Typography>
+
+    <TextField
+      fullWidth
+      multiline
+      minRows={4}
+      maxRows={6}
+      placeholder="Enter rejection reason..."
+      value={rejectionReason}
+      onChange={(e) => setRejectionReason(e.target.value)}
+      disabled={rejecting}
+      autoFocus
+      sx={{
+        "& .MuiInputBase-input": {
+          fontSize: "12px",
+        },
+      }}
+    />
+  </DialogContent>
+
+  <DialogActions
+    sx={{
+      px: 2.5,
+      py: 1.5,
+      borderTop: "1px solid",
+      borderColor: "divider",
+    }}
+  >
+    <Button
+      onClick={() => setRejectPopupOpen(false)}
+      disabled={rejecting}
+      sx={{
+        textTransform: "none",
+        fontSize: "12px",
+      }}
+    >
+      Cancel
+    </Button>
+
+    <Button
+      variant="contained"
+      color="error"
+      onClick={handleConfirmReject}
+      disabled={!rejectionReason.trim() || rejecting}
+      startIcon={
+        rejecting ? (
+          <CircularProgress size={15} color="inherit" />
+        ) : null
+      }
+      sx={{
+        minWidth: 110,
+        height: 36,
+        borderRadius: 1.5,
+        textTransform: "none",
+        fontSize: "12px",
+        fontWeight: 600,
+      }}
+    >
+      {rejecting ? "Rejecting..." : "Reject"}
+    </Button>
+  </DialogActions>
+</Dialog>
     </Dialog>
   );
 };

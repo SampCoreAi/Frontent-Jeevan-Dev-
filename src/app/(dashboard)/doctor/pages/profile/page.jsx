@@ -135,7 +135,7 @@ userMessage =
 
   } else {
     userMessage =
-      "Profile update nahi ho saka. Please timing check karke dobara try karein.";
+      "Profile update failed. Please check the working hours and try again.";
   }
 
   showSnackbar(userMessage, "error");

@@ -6,9 +6,8 @@ import {
   CircularProgress,
   TextField,
   Typography,
-  useTheme,
 } from "@mui/material";
-import QrCode2RoundedIcon from "@mui/icons-material/QrCode2Rounded";
+import QrCodeIcon from "@mui/icons-material/QrCode";
 
 const Card = ({
   numberOfQR,
@@ -16,8 +15,6 @@ const Card = ({
   handleGenerateQR,
   generating,
 }) => {
-  const theme = useTheme();
-
   const handleChange = (e) => {
     const value = e.target.value;
 
@@ -32,9 +29,7 @@ const Card = ({
   };
 
   const isDisabled =
-    generating ||
-    !numberOfQR ||
-    Number(numberOfQR) <= 0;
+    generating || !numberOfQR || Number(numberOfQR) <= 0;
 
   return (
     <Box
@@ -45,7 +40,6 @@ const Card = ({
         borderColor: "divider",
         borderRadius: 2,
         bgcolor: "background.paper",
-
         display: "flex",
         alignItems: { xs: "stretch", md: "center" },
         justifyContent: "space-between",
@@ -53,29 +47,28 @@ const Card = ({
         gap: 2,
       }}
     >
-      {/* LEFT - Title */}
+      {/* LEFT */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
           gap: 1.2,
-          minWidth: 0,
         }}
       >
         <Box
           sx={{
-            width: 38,
-            height: 38,
+            width: 40,
+            height: 40,
             flexShrink: 0,
             borderRadius: 1.5,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            bgcolor: `${theme.palette.primary.main}12`,
-            color: "primary.main",
+            bgcolor: "primary.main",
+            color: "#fff",
           }}
         >
-          <QrCode2RoundedIcon fontSize="small" />
+          <QrCodeIcon sx={{ fontSize: 24 }} />
         </Box>
 
         <Box>
@@ -84,7 +77,6 @@ const Card = ({
               fontSize: { xs: "15px", sm: "17px" },
               fontWeight: 700,
               color: "text.primary",
-              lineHeight: 1.3,
             }}
           >
             Generate QR Codes
@@ -102,23 +94,14 @@ const Card = ({
         </Box>
       </Box>
 
-      {/* RIGHT - Input + Button */}
+      {/* RIGHT */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
           gap: 1.2,
-          flexShrink: 0,
-
-          flexDirection: {
-            xs: "column",
-            sm: "row",
-          },
-
-          width: {
-            xs: "100%",
-            md: "auto",
-          },
+          flexDirection: { xs: "column", sm: "row" },
+          width: { xs: "100%", md: "auto" },
         }}
       >
         <TextField
@@ -143,11 +126,7 @@ const Card = ({
             }
           }}
           sx={{
-            width: {
-              xs: "100%",
-              sm: 180,
-            },
-
+            width: { xs: "100%", sm: 180 },
             "& .MuiOutlinedInput-root": {
               borderRadius: 1.5,
             },
@@ -162,21 +141,16 @@ const Card = ({
             generating ? (
               <CircularProgress size={16} color="inherit" />
             ) : (
-              <QrCode2RoundedIcon sx={{ fontSize: 19 }} />
+              <QrCodeIcon sx={{ fontSize: 19 }} />
             )
           }
           sx={{
             height: 40,
-            minWidth: {
-              xs: "100%",
-              sm: 145,
-            },
+            minWidth: { xs: "100%", sm: 145 },
             borderRadius: 1.5,
             textTransform: "none",
             fontWeight: 600,
             boxShadow: "none",
-            whiteSpace: "nowrap",
-
             "&:hover": {
               boxShadow: "none",
             },
