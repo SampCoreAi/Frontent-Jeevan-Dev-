@@ -106,6 +106,7 @@ export default function PrescriptionPdfView({
         >
           {logoUrl && (
             <img
+              crossOrigin="anonymous"
               src={logoUrl}
               alt="Doctor logo"
               onError={(event) => {
@@ -502,9 +503,10 @@ export default function PrescriptionPdfView({
           >
             {qrImage ? (
               <img
+              
+              crossOrigin="anonymous"
                 src={qrImage}
                 alt="Doctor QR"
-                crossOrigin="anonymous"
                 style={{
                   display: "block",
                   width: "100%",
@@ -574,6 +576,7 @@ export default function PrescriptionPdfView({
         >
           {signatureUrl && (
             <img
+            crossOrigin="anonymous"
               src={signatureUrl}
               alt="Doctor signature"
               onError={(event) => {

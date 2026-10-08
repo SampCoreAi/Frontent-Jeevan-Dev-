@@ -125,7 +125,7 @@ export default function LabConnections({
   };
 
   return (
-    <Box sx={{ width: "100%" , height:"100vh" }}>
+    <Box sx={{ width: "100%" , height:"100vh" , bgcolor:"white" }}>
       <SectionTitle
         title="Doctor Connections"
         description="Review and manage doctors requesting access to your laboratory."

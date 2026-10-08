@@ -6,7 +6,11 @@ import { API_BASE_URL } from "../../../../../config/api";
 
 import {
   Dialog,
-  Typography, Box, Paper, Drawer, IconButton,
+  Typography,
+  Box,
+  Paper,
+  Drawer,
+  IconButton,
   DialogTitle,
   DialogContent,
   DialogContentText,
@@ -77,9 +81,7 @@ export default function DocumentPage() {
   }, [isMobile, drawerOpen]);
 
   const fetchFiles = async () => {
-
     const token = localStorage.getItem("token");
-
 
     if (!token) {
       return;
@@ -102,7 +104,7 @@ export default function DocumentPage() {
         };
 
         const foldersMap = {
-          "root": rootFolder
+          root: rootFolder,
         };
 
         // Helper to find or create a folder in the tree
@@ -117,18 +119,21 @@ export default function DocumentPage() {
             const currentParent = foldersMap[currentParentId];
             if (!currentParent) break;
 
-            let foundFolder = currentParent.children.find(child => child.type === 'folder' && child.name.toLowerCase() === part.toLowerCase());
+            let foundFolder = currentParent.children.find(
+              (child) =>
+                child.type === "folder" &&
+                child.name.toLowerCase() === part.toLowerCase(),
+            );
 
             if (!foundFolder) {
-            const newFolderId = `${currentParentId}/${part}`;
+              const newFolderId = `${currentParentId}/${part}`;
               foundFolder = {
                 id: newFolderId,
                 name: part,
                 type: "folder",
-                children: []
+                children: [],
               };
               currentParent.children.push(foundFolder);
-
             }
 
             currentParentId = foundFolder.id;
@@ -152,10 +157,7 @@ export default function DocumentPage() {
           const targetFolderId = findOrCreatePath(parts, "root");
           const fileKey = file.fileUrl?.split("?")[0];
 
-          const extension = fileKey
-            ?.split(".")
-            .pop()
-            ?.toLowerCase();
+          const extension = fileKey?.split(".").pop()?.toLowerCase();
 
           const S3_BUCKET_URL = process.env.NEXT_PUBLIC_S3_BUCKET_URL;
 
@@ -182,8 +184,6 @@ export default function DocumentPage() {
             date: file.createdAt || "-",
           };
 
-
-
           if (foldersMap[targetFolderId]) {
             foldersMap[targetFolderId].children.push({
               id: fileObj.id,
@@ -196,7 +196,6 @@ export default function DocumentPage() {
 
           return fileObj;
         });
-
 
         setFolders([rootFolder]);
         setAllFiles(mappedFiles);
@@ -229,20 +228,20 @@ export default function DocumentPage() {
       [folderId]: !prev[folderId],
     }));
   };
-const createFolder = () => {
-  const parentId = selectedFolder || "root";
+  const createFolder = () => {
+    const parentId = selectedFolder || "root";
 
-  // Parent folder automatically open karo
-  setExpandedFolders((prev) => ({
-    ...prev,
-    [parentId]: true,
-  }));
+    // Parent folder automatically open karo
+    setExpandedFolders((prev) => ({
+      ...prev,
+      [parentId]: true,
+    }));
 
-  // Create folder input show karo
-  setParentForNewFolder(parentId);
-  setNewFolderName("");
-  setCreatingFolder(true);
-};
+    // Create folder input show karo
+    setParentForNewFolder(parentId);
+    setNewFolderName("");
+    setCreatingFolder(true);
+  };
 
   const saveNewFolder = () => {
     if (!newFolderName.trim()) {
@@ -316,13 +315,13 @@ const createFolder = () => {
     const findPath = (nodes, currentPath) => {
       for (const node of nodes) {
         if (node.id === folderId) {
-
           return currentPath ? `${currentPath}/${node.name}` : node.name;
         }
 
         if (node.children) {
-
-          const newPath = currentPath ? `${currentPath}/${node.name}` : node.name;
+          const newPath = currentPath
+            ? `${currentPath}/${node.name}`
+            : node.name;
           const found = findPath(node.children, newPath);
           if (found) return found;
         }
@@ -346,7 +345,7 @@ const createFolder = () => {
 
     if (
       !window.confirm(
-        `Are you sure you want to delete this folder and all its contents?`
+        `Are you sure you want to delete this folder and all its contents?`,
       )
     ) {
       return;
@@ -378,7 +377,7 @@ const createFolder = () => {
 
     const fileIdsToDelete = getAllFileIdsInFolder(selectedFolder);
     setAllFiles((prev) =>
-      prev.filter((file) => !fileIdsToDelete.includes(file.id))
+      prev.filter((file) => !fileIdsToDelete.includes(file.id)),
     );
 
     setFolders((prev) => {
@@ -408,163 +407,161 @@ const createFolder = () => {
   };
 
   const ALLOWED_FILES = {
-  "application/pdf": [".pdf"],
-  "application/msword": [".doc"],
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
-    ".docx",
-  ],
-  "image/jpeg": [".jpg", ".jpeg"],
-  "image/png": [".png"],
-  "application/vnd.ms-powerpoint": [".ppt"],
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation": [
-    ".pptx",
-  ],
-};
-
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
-
-const validateFile = (file) => {
-  // File size
-  if (file.size > MAX_FILE_SIZE) {
-    return `${file.name} is larger than 20 MB.`;
-  }
-
-  // Extension
-  const extension = `.${file.name.split(".").pop()?.toLowerCase()}`;
-
-  const allowedExtensions = Object.values(ALLOWED_FILES).flat();
-
-  if (!allowedExtensions.includes(extension)) {
-    return `${file.name}: File type not allowed.`;
-  }
-
-  // MIME type
-  if (!ALLOWED_FILES[file.type]) {
-    return `${file.name}: Invalid file type.`;
-  }
-
-  // MIME + extension must match
-  if (!ALLOWED_FILES[file.type].includes(extension)) {
-    return `${file.name}: File extension does not match file type.`;
-  }
-
-  return null;
-};
-
-const processFiles = async (files) => {
-  if (!files || files.length === 0) return;
-
-  // ==============================
-  // FRONTEND FILE VALIDATION
-  // ==============================
-
-  for (const file of files) {
-    const validationError = validateFile(file);
-
-    if (validationError) {
-      alert(validationError);
-      return;
-    }
-  }
-
-  // Existing code yahan se
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    alert("Authentication token missing. Please log in.");
-    return;
-  }
-
-  // Jis folder me abhi user hai
-  const uploadFolderId = selectedFolder;
-
-  try {
-    setUploading(true);
-    setUploadProgress(0);
-    setUploadSuccess("");
-
-    const folderNameParam = getFolderPath(uploadFolderId);
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-
-      const formData = new FormData();
-      formData.append("file", file);
-
-      await axios.post(
-        `${API_BASE_URL}/licenseFile/upload?folder=${folderNameParam}`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-
-          onUploadProgress: (progressEvent) => {
-            if (!progressEvent.total) return;
-
-            const fileProgress =
-              progressEvent.loaded / progressEvent.total;
-
-            const overallProgress = Math.round(
-              ((i + fileProgress) / files.length) * 100
-            );
-
-            setUploadProgress(overallProgress);
-          },
-        }
-      );
-    }
-
-    setUploadProgress(100);
-
-    // Fresh data
-    await fetchFiles();
-
-    // SAME FOLDER SELECT RAHEGA
-    setSelectedFolder(uploadFolderId);
-
-    setUploading(false);
-
-    setUploadSuccess(
-      files.length === 1
-        ? "File uploaded successfully!"
-        : `${files.length} files uploaded successfully!`
-    );
-  } catch (error) {
-    console.error("Upload error:", error);
-
-    setUploading(false);
-    setUploadProgress(0);
-
-    alert(
-      error.response?.data?.message ||
-        "File upload failed. Please try again."
-    );
-  }
-};
-  const [highlightedFileId, setHighlightedFileId] = useState(null);
-
-const openFileFolder = (file) => {
-  setSelectedFolder(file.folderId);
-  setSearchQuery("");
-  setHighlightedFileId(file.id);
-
-  // Matching folder tak sidebar ka path expand karo
-  const findPath = (nodes, path = []) => {
-    for (const node of nodes) {
-      const next = [...path, node.id];
-      if (node.id === file.folderId) return next;
-      const found = findPath(node.children || [], next);
-      if (found) return found;
-    }
+    "application/pdf": [".pdf"],
+    "application/msword": [".doc"],
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
+      ".docx",
+    ],
+    "image/jpeg": [".jpg", ".jpeg"],
+    "image/png": [".png"],
+    "application/vnd.ms-powerpoint": [".ppt"],
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+      [".pptx"],
   };
 
-  const path = findPath(folders) || [];
-  setExpandedFolders((prev) => ({
-    ...prev,
-    ...Object.fromEntries(path.map((id) => [id, true])),
-  }));
-};
+  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+
+  const validateFile = (file) => {
+    // File size
+    if (file.size > MAX_FILE_SIZE) {
+      return `${file.name} is larger than 20 MB.`;
+    }
+
+    // Extension
+    const extension = `.${file.name.split(".").pop()?.toLowerCase()}`;
+
+    const allowedExtensions = Object.values(ALLOWED_FILES).flat();
+
+    if (!allowedExtensions.includes(extension)) {
+      return `${file.name}: File type not allowed.`;
+    }
+
+    // MIME type
+    if (!ALLOWED_FILES[file.type]) {
+      return `${file.name}: Invalid file type.`;
+    }
+
+    // MIME + extension must match
+    if (!ALLOWED_FILES[file.type].includes(extension)) {
+      return `${file.name}: File extension does not match file type.`;
+    }
+
+    return null;
+  };
+
+  const processFiles = async (files) => {
+    if (!files || files.length === 0) return;
+
+    // ==============================
+    // FRONTEND FILE VALIDATION
+    // ==============================
+
+    for (const file of files) {
+      const validationError = validateFile(file);
+
+      if (validationError) {
+        alert(validationError);
+        return;
+      }
+    }
+
+    // Existing code yahan se
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("Authentication token missing. Please log in.");
+      return;
+    }
+
+    // Jis folder me abhi user hai
+    const uploadFolderId = selectedFolder;
+
+    try {
+      setUploading(true);
+      setUploadProgress(0);
+      setUploadSuccess("");
+
+      const folderNameParam = getFolderPath(uploadFolderId);
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        await axios.post(
+          `${API_BASE_URL}/licenseFile/upload?folder=${folderNameParam}`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+
+            onUploadProgress: (progressEvent) => {
+              if (!progressEvent.total) return;
+
+              const fileProgress = progressEvent.loaded / progressEvent.total;
+
+              const overallProgress = Math.round(
+                ((i + fileProgress) / files.length) * 100,
+              );
+
+              setUploadProgress(overallProgress);
+            },
+          },
+        );
+      }
+
+      setUploadProgress(100);
+
+      // Fresh data
+      await fetchFiles();
+
+      // SAME FOLDER SELECT RAHEGA
+      setSelectedFolder(uploadFolderId);
+
+      setUploading(false);
+
+      setUploadSuccess(
+        files.length === 1
+          ? "File uploaded successfully!"
+          : `${files.length} files uploaded successfully!`,
+      );
+    } catch (error) {
+      console.error("Upload error:", error);
+
+      setUploading(false);
+      setUploadProgress(0);
+
+      alert(
+        error.response?.data?.message ||
+          "File upload failed. Please try again.",
+      );
+    }
+  };
+  const [highlightedFileId, setHighlightedFileId] = useState(null);
+
+  const openFileFolder = (file) => {
+    setSelectedFolder(file.folderId);
+    setSearchQuery("");
+    setHighlightedFileId(file.id);
+
+    // Matching folder tak sidebar ka path expand karo
+    const findPath = (nodes, path = []) => {
+      for (const node of nodes) {
+        const next = [...path, node.id];
+        if (node.id === file.folderId) return next;
+        const found = findPath(node.children || [], next);
+        if (found) return found;
+      }
+    };
+
+    const path = findPath(folders) || [];
+    setExpandedFolders((prev) => ({
+      ...prev,
+      ...Object.fromEntries(path.map((id) => [id, true])),
+    }));
+  };
 
   const uploadFiles = (e) => {
     processFiles(Array.from(e.target.files));
@@ -608,31 +605,24 @@ const openFileFolder = (file) => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (response.data?.success) {
-        setAllFiles((prev) =>
-          prev.filter((file) => file.id !== fileToDelete)
-        );
+        setAllFiles((prev) => prev.filter((file) => file.id !== fileToDelete));
 
         setFolders((prev) => {
           const removeFromTree = (nodes) =>
             nodes
               .map((node) => {
-                if (
-                  node.type === "file" &&
-                  node.id === fileToDelete
-                ) {
+                if (node.type === "file" && node.id === fileToDelete) {
                   return null;
                 }
 
                 if (node.children) {
                   return {
                     ...node,
-                    children: removeFromTree(
-                      node.children
-                    ).filter(Boolean),
+                    children: removeFromTree(node.children).filter(Boolean),
                   };
                 }
 
@@ -653,15 +643,9 @@ const openFileFolder = (file) => {
         setFileToDelete(null);
       }
     } catch (error) {
-      console.error(
-        "Delete error:",
-        error?.response?.data || error
-      );
+      console.error("Delete error:", error?.response?.data || error);
 
-      alert(
-        error?.response?.data?.message ||
-        "Failed to delete file."
-      );
+      alert(error?.response?.data?.message || "Failed to delete file.");
     } finally {
       setDeleting(false);
     }
@@ -675,7 +659,6 @@ const openFileFolder = (file) => {
       setOpenPdfViewer(true);
     } else if (["jpg", "jpeg", "png", "webp"].includes(fileType)) {
       setOpenImageViewer(true);
-
     } else {
       alert("Not supported yet");
     }
@@ -710,37 +693,32 @@ const openFileFolder = (file) => {
       }, 100);
     } catch (error) {
       console.error("Download error:", error);
-
     }
   };
 
   const getFilesForCurrentFolder = () => {
-    return allFiles.filter(
-      (file) => file.folderId === selectedFolder
-    );
+    return allFiles.filter((file) => file.folderId === selectedFolder);
   };
-  
- const query = searchQuery.trim().toLowerCase();
 
-const currentFiles = query
-  ? allFiles.filter((file) =>
-      (file.name || "").toLowerCase().includes(query)
-    )
-  : getFilesForCurrentFolder();
+  const query = searchQuery.trim().toLowerCase();
 
-const currentFolderName = query
-  ? `Search results (${currentFiles.length})`
-  : getFolderNameById(selectedFolder);
+  const currentFiles = query
+    ? allFiles.filter((file) => (file.name || "").toLowerCase().includes(query))
+    : getFilesForCurrentFolder();
+
+  const currentFolderName = query
+    ? `Search results (${currentFiles.length})`
+    : getFolderNameById(selectedFolder);
   return (
     <Box
       sx={{
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
-     mt: { xs: 7, md: 8.5 },
-       
+        mt: { xs: 7, md: 8.5 },
+
         height: "91vh",
         width: "100%",
-        
+
         boxShadow: "0 4px 12px #0f7468",
       }}
     >
@@ -749,15 +727,16 @@ const currentFolderName = query
           width: "100%",
           height: "100%",
           overflow: "hidden",
-          bgcolor: "#ccff01",
         }}
-      >
+        >
         <Paper
           elevation={0}
           sx={{
             width: "100%",
             height: "100%",
             display: "flex",
+            px:2,
+            py:0.5,
             borderRadius: 0,
 
             overflow: "hidden",
@@ -845,19 +824,19 @@ const currentFolderName = query
               overflow: "hidden",
             }}
           >
-           <Header
-  isMobile={isMobile}
-  isTablet={isTablet}
-  setDrawerOpen={setDrawerOpen}
-  currentFolderName={currentFolderName}
-  setOpenUpload={setOpenUpload}
-  setUploadSuccess={setUploadSuccess}
-  setUploadProgress={setUploadProgress}
-  viewMode={viewMode}
-  setViewMode={setViewMode}
-  searchQuery={searchQuery}
-  setSearchQuery={setSearchQuery}
-/>
+            <Header
+              isMobile={isMobile}
+              isTablet={isTablet}
+              setDrawerOpen={setDrawerOpen}
+              currentFolderName={currentFolderName}
+              setOpenUpload={setOpenUpload}
+              setUploadSuccess={setUploadSuccess}
+              setUploadProgress={setUploadProgress}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+            />
 
             <FileView
               viewMode={viewMode}
@@ -866,8 +845,8 @@ const currentFolderName = query
               isTablet={isTablet}
               isDesktop={isDesktop}
               searchQuery={searchQuery}
-onOpenFolder={openFileFolder}
-highlightedFileId={highlightedFileId}
+              onOpenFolder={openFileFolder}
+              highlightedFileId={highlightedFileId}
               GridFileItem={({ file }) => (
                 <FileGridItem
                   file={file}
@@ -907,18 +886,18 @@ highlightedFileId={highlightedFileId}
         </Paper>
 
         <UploadDialog
-           openUpload={openUpload}
-  setOpenUpload={setOpenUpload}
-  uploadFiles={uploadFiles}
-  handleDrop={handleDrop}
-  handleDragOver={handleDragOver}
-  handleDragLeave={handleDragLeave}
-  isDragging={isDragging}
-  uploading={uploading}
-  uploadProgress={uploadProgress}
-  uploadSuccess={uploadSuccess}
-  currentFolderName={currentFolderName}
-  isMobile={isMobile}
+          openUpload={openUpload}
+          setOpenUpload={setOpenUpload}
+          uploadFiles={uploadFiles}
+          handleDrop={handleDrop}
+          handleDragOver={handleDragOver}
+          handleDragLeave={handleDragLeave}
+          isDragging={isDragging}
+          uploading={uploading}
+          uploadProgress={uploadProgress}
+          uploadSuccess={uploadSuccess}
+          currentFolderName={currentFolderName}
+          isMobile={isMobile}
         />
 
         <PdfViewerModal
@@ -974,8 +953,8 @@ highlightedFileId={highlightedFileId}
                 color: "#6b7280",
               }}
             >
-              Are you sure you want to delete this file? This action
-              cannot be undone.
+              Are you sure you want to delete this file? This action cannot be
+              undone.
             </DialogContentText>
           </DialogContent>
 

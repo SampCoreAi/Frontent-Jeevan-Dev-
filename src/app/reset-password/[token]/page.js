@@ -369,7 +369,7 @@ if (linkError) {
       </Button>
 
       <Typography sx={{ mt: 2, fontSize: 13 }}>
-        Naya link lene ke liye Login page par Forgot Password click karein.
+     Go to Login and Request New Link buttons
       </Typography>
     </Box>
   );

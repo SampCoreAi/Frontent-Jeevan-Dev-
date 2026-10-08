@@ -78,7 +78,9 @@ export default function MedicalRequests({ requests = [], loading = false, filter
               <TableCell>
                 <Tooltip title="View request details">
                   <IconButton size="small" color="primary" onClick={() => setSelectedRequest(request)} aria-label={`View medical request for ${patientName}`}>
-                    <VisibilityOutlinedIcon fontSize="small" />
+                    <VisibilityOutlinedIcon
+  sx={{ fontSize: 20, color: "#07876A", opacity: 1 }}
+/>
                   </IconButton>
                 </Tooltip>
               </TableCell>

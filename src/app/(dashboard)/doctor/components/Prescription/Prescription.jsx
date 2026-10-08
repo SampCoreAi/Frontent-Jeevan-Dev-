@@ -455,7 +455,7 @@ const downloadPdf = async () => {
         html2canvas: {
           scale: 2,
           useCORS: true,
-          allowTaint: true,
+          allowTaint: false,
           backgroundColor: "#ffffff",
 
           scrollX: 0,
