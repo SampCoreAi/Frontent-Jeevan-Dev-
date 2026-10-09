@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Drawer from "@mui/material/Drawer";
-
+import ErrorState from "../../../(dashboard)/component/ErrorPage/ErrorState";
 import SearchBar from "../../../(dashboard)/users/components/Doctor/SearchBar";
 import FiltersSidebar from "../../../Home/components/Search/FiltersSidebar";
 import api from "../../../../utils/axiosInstance";
@@ -710,24 +710,27 @@ const handlePageChange = (newPage) => {
         </>
       );
     }
-    if (error) {
-      return (
-        <EmptyState
-          title="Something Went Wrong"
-          description={error}
-          primaryText="Try Again"
-          onPrimary={() => {
-            if (resultMode === "nearby") {
-              searchDoctorsByCity(1);
-            } else {
-              loadAllDoctors(1);
-            }
-          }}
-          styles={styles}
-          titleColor="#c62828"
-        />
-      );
-    }
+   if (error) {
+  return (
+    <ErrorState
+      loading={loading}
+      onRetry={() => {
+        switch (resultMode) {
+          case "nearby":
+            return searchDoctorsByCity(page);
+          case "search":
+            return searchDoctors(searchQuery, page);
+          case "emergency":
+            return searchEmergencyDoctors(page);
+          case "filter":
+            return applyFilters(page);
+          default:
+            return loadAllDoctors(page);
+        }
+      }}
+    />
+  );
+}
     if (locationStatus === "blocked" && resultMode === "nearby") {
       return (
         <EmptyState

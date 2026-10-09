@@ -445,26 +445,6 @@ export default function LabInformationForm({
         </Grid>
 
         <Grid size={{ xs: 6, md: 3 }}>
-          <Label>Age</Label>
-
-          <TextField
-            fullWidth
-            type="number"
-            placeholder="Age"
-            value={data.ownerAge || ""}
-            onChange={(e) =>
-              setField(
-                "ownerAge",
-                e.target.value
-              )
-            }
-            error={!!errors.ownerAge}
-            helperText={errors.ownerAge}
-            sx={fieldSx}
-          />
-        </Grid>
-
-        <Grid size={{ xs: 6, md: 3 }}>
           <Label>Gender</Label>
 
           <TextField
