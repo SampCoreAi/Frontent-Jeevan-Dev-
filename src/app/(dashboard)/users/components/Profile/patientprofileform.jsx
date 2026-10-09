@@ -84,6 +84,9 @@ const PatientProfileForm = ({
   const [familyHistory, setFamilyHistory] =
     React.useState(formData?.familyMedicalHistory || []);
 
+    React.useEffect(() => {
+  setFamilyHistory(formData?.familyMedicalHistory || []);
+}, [formData?.familyMedicalHistory]);
   const inputStyle = {
     width: "100%",
     minWidth: 0,

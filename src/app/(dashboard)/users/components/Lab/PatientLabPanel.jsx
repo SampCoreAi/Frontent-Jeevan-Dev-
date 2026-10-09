@@ -312,15 +312,19 @@ export default function PatientLabPanel() {
 
   return (
     <Box
-      sx={{
-        mt: { xs: 7, md: 8 },
-        width: "100%",
-        minWidth: 0,
-        px: { xs: 1.5, sm: 2, md: 4 },
-        bgcolor: "#fff",
-        display: "grid",
-        gap: { xs: 2, md: 2.5 },
-      }}
+     sx={{
+  mt: { xs: 7, md: 8 },
+  width: "100%",
+  minWidth: 0,
+  minHeight: "90vh",
+  px: { xs: 1.5, sm: 2, md: 4 },
+  pt: { xs: 1.5, sm: 2, md: 4 },
+  bgcolor: "#fff",
+  display: "grid",
+  gridAutoRows: "max-content",
+  alignContent: "start",
+  gap: { xs: 2, md: 2.5 },
+}}
     >
       <PatientLabFilters
         search={filters.search}

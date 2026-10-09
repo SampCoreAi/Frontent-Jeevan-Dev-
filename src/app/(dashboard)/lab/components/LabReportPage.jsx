@@ -1,5 +1,4 @@
 "use client";
-
 import { AddOutlined, DeleteOutline } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
@@ -16,7 +15,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-
 export const DEFAULT_RESULT_COLUMNS = [
   { id: "parameter", label: "Parameter", key: "parameter" },
   { id: "result", label: "Result", key: "result" },
@@ -28,7 +26,6 @@ export const DEFAULT_RESULT_COLUMNS = [
   { id: "unit", label: "Units", key: "unit" },
   { id: "method", label: "Method", key: "method" },
 ];
-
 export const createReportField = () => ({
   id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
   section: "",
@@ -71,7 +68,6 @@ export const createReportPage = (pageNumber) => ({
   columns: DEFAULT_RESULT_COLUMNS.map((column) => ({ ...column })),
   fields: [createReportField()],
 });
-
 export const paginateReportPage = (page, maxBodyUnits = 20) => {
   const instructionUnits =
     page.instructions?.length > 350
@@ -80,7 +76,6 @@ export const paginateReportPage = (page, maxBodyUnits = 20) => {
   const pageCapacity = Math.max(6, maxBodyUnits - instructionUnits);
   const segments = [];
   let current = { fields: [], textBlocks: [], tableBlocks: [], units: 0 };
-
   const flush = () => {
     if (
       !current.fields.length &&
@@ -97,7 +92,6 @@ export const paginateReportPage = (page, maxBodyUnits = 20) => {
     });
     current = { fields: [], textBlocks: [], tableBlocks: [], units: 0 };
   };
-
   const groups = [];
   (page.fields || []).forEach((field) => {
     const section = field.section || "";
@@ -108,7 +102,6 @@ export const paginateReportPage = (page, maxBodyUnits = 20) => {
     }
     group.fields.push(field);
   });
-
   groups.forEach((group) => {
     let offset = 0;
     while (offset < group.fields.length) {
@@ -123,7 +116,6 @@ export const paginateReportPage = (page, maxBodyUnits = 20) => {
       if (offset < group.fields.length) flush();
     }
   });
-
   (page.textBlocks || []).forEach((block) => {
     const content = String(block.content || "");
     const chunks = [];
@@ -145,7 +137,6 @@ export const paginateReportPage = (page, maxBodyUnits = 20) => {
       if (cost > pageCapacity) flush();
     });
   });
-
   (page.tableBlocks || []).forEach((table) => {
     const rows = table.rows || [];
     let rowOffset = 0;
@@ -171,7 +162,6 @@ export const paginateReportPage = (page, maxBodyUnits = 20) => {
       if (rowOffset < rows.length) flush();
     } while (rowOffset < rows.length);
   });
-
   if (
     current.fields.length ||
     current.textBlocks.length ||
@@ -181,7 +171,6 @@ export const paginateReportPage = (page, maxBodyUnits = 20) => {
     flush();
   return segments;
 };
-
 const getColumnsGrid = (columns, editing) => {
   const widths = {
     parameter: "minmax(0, 2.3fr)",
@@ -195,12 +184,10 @@ const getColumnsGrid = (columns, editing) => {
     ...(editing ? ["30px"] : []),
   ].join(" ");
 };
-
 const getFieldCell = (field, column) =>
   column.key === "custom"
     ? field.cells?.[column.id] || ""
     : field[column.key] || "";
-
 const isOutsideReferenceInterval = (result, referenceInterval) => {
   const match = String(referenceInterval || "").match(
     /^\s*(-?\d+(?:\.\d+)?)\s*(?:-|–|to)\s*(-?\d+(?:\.\d+)?)\s*$/i,
@@ -209,7 +196,6 @@ const isOutsideReferenceInterval = (result, referenceInterval) => {
   if (!match || !Number.isFinite(numericResult)) return false;
   return numericResult < Number(match[1]) || numericResult > Number(match[2]);
 };
-
 function InlineInput({
   value,
   onChange,
@@ -227,6 +213,14 @@ function InlineInput({
       multiline={multiline}
       aria-label={ariaLabel}
       sx={{
+        "& .MuiInputBase-root": {
+          fontFamily: "inherit",
+          fontSize: "inherit",
+          lineHeight: "inherit",
+          color: "inherit",
+          textAlign: "inherit",
+          p: 0,
+        },
         "& .MuiInputBase-input": {
           fontFamily: "inherit",
           fontSize: "inherit",
@@ -239,7 +233,6 @@ function InlineInput({
     />
   );
 }
-
 function PatientField({ label, value }) {
   return (
     <Typography className="lab-template-patient-line">
@@ -248,7 +241,6 @@ function PatientField({ label, value }) {
     </Typography>
   );
 }
-
 export function LabReportEditActions({
   onAddRow,
   onRemoveRow,
@@ -263,9 +255,30 @@ export function LabReportEditActions({
     <Stack
       data-html2canvas-ignore="true"
       direction="row"
-      spacing={1}
+      useFlexGap
+      gap={0.75}
       flexWrap="wrap"
-      sx={{ alignSelf: "flex-start", mt: 1, mb: 1 }}
+      sx={{
+        alignSelf: "flex-start",
+        mt: 1,
+        mb: 1,
+        p: 0.75,
+        bgcolor: "#F8FAF9",
+        border: "1px solid #DDE9E5",
+        borderRadius: "8px",
+        "& .MuiButton-root": {
+          minHeight: 30,
+          px: 1,
+          color: "#475569",
+          fontSize: 11,
+          fontWeight: 600,
+          borderRadius: "6px",
+          textTransform: "none",
+          "&:hover": { bgcolor: "#EAF4EF", color: "#07876A" },
+          "&.Mui-disabled": { color: "#A0ADA6" },
+        },
+        "& .MuiButton-startIcon > *": { fontSize: 16 },
+      }}
     >
       <Button
         startIcon={<AddOutlined />}
@@ -320,26 +333,52 @@ export function LabReportEditActions({
     </Stack>
   );
 }
-
 export function CreateTableDialog({ open, onClose, onInsert }) {
   const [rows, setRows] = useState(2);
   const [columns, setColumns] = useState(2);
-
   useEffect(() => {
     if (open) {
       setRows(2);
       setColumns(2);
     }
   }, [open]);
-
   const insertTable = () =>
     onInsert(
       Math.min(30, Math.max(1, Number(rows) || 1)),
       Math.min(15, Math.max(1, Number(columns) || 1)),
     );
-
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      sx={{
+        "& .MuiDialog-paper": {
+          borderRadius: "14px",
+          border: "1px solid #DDE9E5",
+        },
+        "& .MuiDialogTitle-root": {
+          fontSize: 17,
+          fontWeight: 700,
+          color: "#172033",
+        },
+        "& .MuiDialogActions-root": { px: 3, pb: 2, gap: 0.5 },
+        "& .MuiButton-root": {
+          borderRadius: "7px",
+          fontSize: 12,
+          boxShadow: "none",
+        },
+        "& .MuiButton-contained:hover": {
+          bgcolor: "#066D56",
+          boxShadow: "none",
+        },
+        "& .MuiOutlinedInput-root": { borderRadius: "8px", fontSize: 13 },
+        "& .MuiOutlinedInput-root.Mui-focused fieldset": {
+          borderColor: "#07876A",
+        },
+      }}
+    >
       <DialogTitle>Create table</DialogTitle>
       <DialogContent>
         <Typography sx={{ mb: 1.5, color: "#475467", fontSize: 13 }}>
@@ -389,7 +428,30 @@ export function CreateTableDialog({ open, onClose, onInsert }) {
     </Dialog>
   );
 }
-
+const formatAddress = (address) => {
+  if (!address) return "";
+  let value = address;
+  if (typeof value === "string") {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }
+  if (!value || typeof value !== "object") return String(value ?? "");
+  return [
+    value.building,
+    value.street,
+    value.locality,
+    value.landmark,
+    value.city,
+    value.district,
+    value.state,
+    value.pinCode,
+  ]
+    .filter(Boolean)
+    .join(", ");
+};
 export default function LabReportPage({
   page,
   commonLayout = {},
@@ -455,96 +517,103 @@ export default function LabReportPage({
       }),
       label: typeof label === "string" ? label : label.label,
     }));
-
   return (
     <Paper
       className={`lab-template-page${isTemplateEditing ? " lab-template-editing-page" : ""}${lastPage ? " lab-template-last-page" : ""}`}
       elevation={2}
     >
       <Box className="lab-template-top-rule" />
-      <Box className="lab-template-brand">
-        {isCommonEditing ? (
-          <InlineInput
-            ariaLabel="Common lab mark"
-            value={commonLayout.brandMark}
-            onChange={(value) => onCommonChange("brandMark", value)}
-            sx={{
-              width: 44,
-              height: 44,
-              textAlign: "center",
-              fontWeight: 800,
-              color: "#12658a",
-            }}
-          />
-        ) : showLabLogo ? (
-          brandLogo && !logoFailed ? (
-            <Box
-              component="img"
-              className="lab-template-mark-image"
-              src={brandLogo}
-              alt={`${commonLayout.labName || "Lab"} logo`}
-              onError={() => setLogoFailed(true)}
+
+      <Box className="lab-template-header-row">
+        <Box className="lab-template-brand">
+          {isCommonEditing ? (
+            <InlineInput
+              ariaLabel="Common lab mark"
+              value={commonLayout.brandMark}
+              onChange={(value) => onCommonChange("brandMark", value)}
+              sx={{
+                width: 44,
+                height: 44,
+                textAlign: "center",
+                fontWeight: 800,
+                color: "#07876A",
+              }}
             />
+          ) : showLabLogo ? (
+            brandLogo && !logoFailed ? (
+              <Box
+                component="img"
+                className="lab-template-mark-image"
+                src={brandLogo}
+                alt={`${commonLayout.labName || "Lab"} logo`}
+                onError={() => setLogoFailed(true)}
+              />
+            ) : (
+              <Box className="lab-template-mark">
+                <ScienceOutlinedIcon sx={{ fontSize: 25 }} />
+              </Box>
+            )
           ) : (
             <Box className="lab-template-mark">
-              <ScienceOutlinedIcon sx={{ fontSize: 25 }} />
+              {commonLayout.brandMark || "LAB"}
             </Box>
-          )
-        ) : (
-          <Box className="lab-template-mark">
-            {commonLayout.brandMark || "LAB"}
+          )}
+          <Box sx={{ minWidth: 0 }}>
+            {isCommonEditing ? (
+              <InlineInput
+                ariaLabel="Common lab name"
+                value={commonLayout.labName}
+                onChange={(value) => onCommonChange("labName", value)}
+                sx={{
+                  fontSize: 23,
+                  fontWeight: 700,
+                  color: "#07876A",
+                  textAlign: "right",
+                }}
+              />
+            ) : (
+              <Typography className="lab-template-brand-name">
+                {commonLayout.labName || "YOUR LAB NAME"}
+              </Typography>
+            )}
+            {isCommonEditing ? (
+              <InlineInput
+                ariaLabel="Common lab tagline"
+                value={commonLayout.tagline}
+                onChange={(value) => onCommonChange("tagline", value)}
+                sx={{
+                  fontSize: 9,
+                  fontWeight: 700,
+                  color: "#264958",
+                  textAlign: "right",
+                }}
+              />
+            ) : (
+              <Typography className="lab-template-brand-caption">
+                {commonLayout.tagline || "ACCURATE & AFFORDABLE ALWAYS"}
+              </Typography>
+            )}
           </Box>
-        )}
-        <Box sx={{ minWidth: 0 }}>
-          {isCommonEditing ? (
-            <InlineInput
-              ariaLabel="Common lab name"
-              value={commonLayout.labName}
-              onChange={(value) => onCommonChange("labName", value)}
-              sx={{
-                fontSize: 23,
-                fontWeight: 700,
-                color: "#12658a",
-                textAlign: "right",
-              }}
-            />
-          ) : (
-            <Typography className="lab-template-brand-name">
-              {commonLayout.labName || "YOUR LAB NAME"}
-            </Typography>
-          )}
-          {isCommonEditing ? (
-            <InlineInput
-              ariaLabel="Common lab tagline"
-              value={commonLayout.tagline}
-              onChange={(value) => onCommonChange("tagline", value)}
-              sx={{
-                fontSize: 9,
-                fontWeight: 700,
-                color: "#264958",
-                textAlign: "right",
-              }}
-            />
-          ) : (
-            <Typography className="lab-template-brand-caption">
-              {commonLayout.tagline || "ACCURATE & AFFORDABLE ALWAYS"}
-            </Typography>
-          )}
         </Box>
+        {commonLayout.registrationNumber ||
+        commonLayout.phoneNumber ||
+        commonLayout.address ? (
+          <Box className="lab-template-contact">
+            {commonLayout.registrationNumber ? (
+              <span>Reg. No.: {commonLayout.registrationNumber}</span>
+            ) : null}
+            {commonLayout.phoneNumber ? (
+              <span>Phone: {commonLayout.phoneNumber}</span>
+            ) : null}
+            {commonLayout.address ? (
+              <span className="lab-template-address">
+                {formatAddress(commonLayout.address)}
+              </span>
+            ) : null}
+          </Box>
+        ) : null}
       </Box>
-      {commonLayout.registrationNumber ||
-      commonLayout.phoneNumber ||
-      commonLayout.address ? (
-        <Box className="lab-template-contact">
-          {commonLayout.registrationNumber ? (
-            <span>Reg. No.: {commonLayout.registrationNumber}</span>
-          ) : null}
-          {commonLayout.phoneNumber ? (
-            <span>Phone: {commonLayout.phoneNumber}</span>
-          ) : null}
-          {commonLayout.address ? <span>{commonLayout.address}</span> : null}
-        </Box>
-      ) : null}
+
       <Box className="lab-template-title">
         {isCommonEditing ? (
           <InlineInput
@@ -603,7 +672,6 @@ export default function LabReportPage({
           {page.instructions}
         </Typography>
       ) : null}
-
       {page.fields?.length ? (
         <>
           <Box
@@ -618,6 +686,7 @@ export default function LabReportPage({
                   <InlineInput
                     ariaLabel={`Column ${index + 1} label`}
                     value={column.label}
+                    multiline
                     onChange={(value) => onColumnLabelChange(column.id, value)}
                     sx={{
                       fontWeight: 700,
@@ -709,6 +778,7 @@ export default function LabReportPage({
                           <InlineInput
                             ariaLabel={`${column.label} value`}
                             value={value}
+                            multiline={!isResult}
                             onChange={(nextValue) =>
                               onFieldChange(field.id, valueKey, nextValue)
                             }
@@ -728,7 +798,6 @@ export default function LabReportPage({
           })}
         </>
       ) : null}
-
       {page.tableBlocks?.map((table) => (
         <Box key={table.id} className="lab-template-custom-table-wrap">
           {isTemplateEditing && table.continuationIndex === 0 ? (
@@ -839,7 +908,6 @@ export default function LabReportPage({
           ) : null}
         </Box>
       ))}
-
       {page.textBlocks?.map((block) => (
         <Box key={block.id} className="lab-template-text-block">
           {isTemplateEditing ? (
@@ -882,7 +950,6 @@ export default function LabReportPage({
           )}
         </Box>
       ))}
-
       {pdfMode ? null : actions}
       <Box className="lab-template-footer">
         <Box className="lab-template-authenticated">
@@ -909,974 +976,609 @@ export default function LabReportPage({
             />
           ) : null}
         </Box>
-     <Box
-  className="lab-template-approval"
-  sx={{
-    "& .MuiTypography-root": {
-      fontSize: "11.5px",
-      lineHeight: 1.45,
-      color: "#475569",
-    },
-
-    "& b": {
-      fontSize: "11.5px",
-      fontWeight: 700,
-      color: "#172033",
-    },
-  }}
->
-  <Typography>
-    <b>Approved On:</b> {approvedOnLabel}
-  </Typography>
-
-  <Box
-    className="lab-template-signature"
-    sx={{
-      fontSize: "10px",
-      fontWeight: 500,
-    }}
-  >
-    Authorized Signatory
-  </Box>
-
-  {isCommonEditing ? (
-    <InlineInput
-      ariaLabel="Common approver name"
-      value={commonLayout.approvedBy}
-      onChange={(value) =>
-        onCommonChange("approvedBy", value)
-      }
-      sx={{
-        fontSize: "11.5px",
-        fontWeight: 600,
-      }}
-    />
-  ) : (
-    <Typography>
-      <b>Approved By:</b>{" "}
-      {commonLayout.approvedBy || "Lab Pathologist"}
-    </Typography>
-  )}
-
-  {isCommonEditing ? (
-    <InlineInput
-      ariaLabel="Common approver qualification"
-      value={commonLayout.qualification}
-      onChange={(value) =>
-        onCommonChange("qualification", value)
-      }
-      sx={{
-        fontSize: "11px",
-      }}
-    />
-  ) : (
-    <Typography
-      sx={{
-        fontSize: "11px !important",
-        color: "#64748B !important",
-      }}
-    >
-      {commonLayout.qualification ||
-        "Qualification / Registration No."}
-    </Typography>
-  )}
-</Box>
+        <Box className="lab-template-approval">
+          <Typography>
+            <b>Approved On:</b> {approvedOnLabel}
+          </Typography>
+          <Box className="lab-template-signature">Authorized Signatory</Box>
+          {isCommonEditing ? (
+            <InlineInput
+              ariaLabel="Common approver name"
+              value={commonLayout.approvedBy}
+              onChange={(value) => onCommonChange("approvedBy", value)}
+              sx={{ fontSize: 10 }}
+            />
+          ) : (
+            <Typography>
+              <b>Approved By:</b> {commonLayout.approvedBy || "Lab Pathologist"}
+            </Typography>
+          )}
+          {isCommonEditing ? (
+            <InlineInput
+              ariaLabel="Common approver qualification"
+              value={commonLayout.qualification}
+              onChange={(value) => onCommonChange("qualification", value)}
+              sx={{ fontSize: 10 }}
+            />
+          ) : (
+            <Typography>
+              {commonLayout.qualification || "Qualification / Registration No."}
+            </Typography>
+          )}
+        </Box>
         <Typography className="lab-template-page-number">
           Page {pageNumber} of {pageCount}
         </Typography>
       </Box>
-   <style jsx global>{`
-  /* =========================================================
-     REPORT PAGE
-  ========================================================= */
-
-  .lab-template-page {
-    position: relative;
-
-    display: flex;
-    flex-direction: column;
-
-    width: 210mm;
-    height: 297mm;
-
-    max-width: none;
-    min-width: 0;
-    min-height: 297mm;
-
-    flex-shrink: 0;
-
-    margin: 0 auto;
-
-    padding: 22px 42px 150px;
-
-    overflow: hidden;
-
-    color: #172033;
-    background: #ffffff;
-
-    font-family: Arial, Helvetica, sans-serif;
-
-    box-sizing: border-box;
-
-    break-after: auto;
-    page-break-after: auto;
-
-    border: 1px solid #e4ebe8;
-
-    box-shadow:
-      0 2px 6px rgba(15, 23, 42, 0.03),
-      0 12px 32px rgba(15, 23, 42, 0.06);
-  }
-
-  .lab-report-page-wrap:not(:first-child) {
-    break-before: page;
-    page-break-before: always;
-  }
-
-  .lab-report-page-wrap {
-    margin-bottom: 18px;
-  }
-
-  .lab-report-page-wrap:last-child {
-    margin-bottom: 0;
-  }
-
-  /* =========================================================
-     TOP ACCENT
-  ========================================================= */
-
-  .lab-template-top-rule {
-    flex: 0 0 5px;
-
-    height: 5px;
-
-    margin: -22px -42px 20px;
-
-    background: linear-gradient(
-      90deg,
-      #07876a 0%,
-      #07876a 28%,
-      #54bda4 28%,
-      #54bda4 100%
-    );
-  }
-
-  /* =========================================================
-     LAB BRAND
-  ========================================================= */
-
-  .lab-template-brand {
-    display: flex;
-
-    justify-content: flex-end;
-    align-items: center;
-
-    gap: 12px;
-
-    min-height: 66px;
-
-    color: #07876a;
-  }
-
-  .lab-template-mark {
-    display: grid;
-    place-items: center;
-
-    width: 46px;
-    height: 46px;
-
-    flex-shrink: 0;
-
-    border: 1.5px solid #07876a;
-
-    border-radius: 50%;
-
-    background: #f1faf6;
-
-    color: #07876a;
-
-    font-family: Arial, sans-serif;
-
-    font-size: 13px;
-    font-weight: 800;
-  }
-
-  .lab-template-mark-image {
-    width: 46px;
-    height: 46px;
-
-    flex-shrink: 0;
-
-    object-fit: contain;
-
-    border-radius: 50%;
-  }
-
-  .lab-template-brand-name {
-    color: #07876a;
-
-    font:
-      700 22px/1.05 Arial,
-      sans-serif;
-
-    letter-spacing: -0.35px;
-
-    white-space: nowrap;
-  }
-
-  .lab-template-brand-caption {
-    margin-top: 4px;
-
-    color: #64748b;
-
-    font:
-      700 8.5px/1.3 Arial,
-      sans-serif;
-
-    letter-spacing: 0.08em;
-
-    text-align: right;
-    text-transform: uppercase;
-  }
-
-  /* =========================================================
-     CONTACT INFO
-  ========================================================= */
-
-  .lab-template-contact {
-    display: flex;
-
-    justify-content: flex-end;
-    align-items: center;
-
-    flex-wrap: wrap;
-
-    gap: 4px 12px;
-
-    margin-top: 5px;
-
-    color: #64748b;
-
-    font:
-      9.5px/1.4 Arial,
-      sans-serif;
-
-    text-align: right;
-  }
-
-  .lab-template-contact span {
-    position: relative;
-  }
-
-  .lab-template-contact span:not(:last-child)::after {
-    content: "•";
-
-    margin-left: 12px;
-
-    color: #b4c0bb;
-  }
-
-  /* =========================================================
-     REPORT TITLE
-  ========================================================= */
-
-  .lab-template-title {
-    margin-top: 18px;
-
-    padding: 9px 12px;
-
-    border-top: 1px solid #cad8d2;
-    border-bottom: 1px solid #cad8d2;
-
-    background: #f8fbfa;
-
-    color: #172033;
-
-    text-align: center;
-
-    font-size: 17px;
-    font-weight: 750;
-
-    letter-spacing: 0.08em;
-
-    text-transform: uppercase;
-  }
-
-  /* =========================================================
-     PATIENT DETAILS
-  ========================================================= */
-
-  .lab-template-patient-grid {
-    display: grid;
-
-    grid-template-columns:
-      minmax(0, 1fr)
-      minmax(0, 1fr);
-
-    column-gap: 42px;
-    row-gap: 9px;
-
-    padding: 17px 4px 19px;
-
-    border-bottom: 1px solid #edf1ef;
-  }
-
-  .lab-template-patient-line {
-    display: grid;
-
-    grid-template-columns:
-      95px
-      8px
-      minmax(0, 1fr);
-
-    align-items: baseline;
-
-    gap: 5px;
-
-    color: #334155;
-
-    font:
-      11.5px/1.4 Arial,
-      sans-serif;
-  }
-
-  .lab-template-patient-line:before {
-    content: ":";
-
-    grid-column: 2;
-    grid-row: 1;
-
-    color: #94a3b8;
-  }
-
-  .lab-template-patient-line span {
-    grid-column: 1;
-
-    color: #64748b;
-
-    font-size: 10.5px;
-    font-weight: 600;
-  }
-
-  .lab-template-patient-line b {
-    grid-column: 3;
-
-    color: #172033;
-
-    font-weight: 650;
-  }
-
-  /* =========================================================
-     SECTION / PANEL TITLE
-  ========================================================= */
-
-  .lab-template-panel-title {
-    display: grid;
-    place-items: center;
-
-    min-height: 33px;
-
-    margin: 15px 0 10px;
-
-    padding: 5px 12px;
-
-    border: 1px solid #cfe4dc;
-
-    border-radius: 6px;
-
-    background: #edf7f2;
-
-    color: #076d56;
-
-    font-size: 12px;
-    font-weight: 750;
-
-    letter-spacing: 0.035em;
-
-    text-align: center;
-
-    text-transform: uppercase;
-  }
-
-  /* =========================================================
-     SAMPLE TYPE
-  ========================================================= */
-
-  .lab-template-sample-type {
-    margin: 0 2px 9px;
-
-    color: #475569;
-
-    font-size: 11px;
-    line-height: 1.45;
-  }
-
-  .lab-template-sample-type b {
-    color: #172033;
-  }
-
-  /* =========================================================
-     METHOD / INSTRUCTIONS
-  ========================================================= */
-
-  .lab-template-method-note {
-    margin: 0 2px 15px;
-
-    padding: 8px 10px;
-
-    border-left: 3px solid #b7ddd1;
-
-    border-radius: 0 5px 5px 0;
-
-    background: #f8fbfa;
-
-    color: #475569;
-
-    font:
-      600 10.5px/1.5 Arial,
-      sans-serif;
-  }
-
-  /* =========================================================
-     RESULT TABLE
-  ========================================================= */
-
-  .lab-template-columns,
-  .lab-template-result-row {
-    display: grid;
-
-    column-gap: 10px;
-
-    align-items: center;
-  }
-
-  /* HEADER */
-
-  .lab-template-columns {
-    margin: 0;
-
-    padding: 0 5px;
-
-    border-top: 1px solid #dce6e2;
-    border-bottom: 1px solid #dce6e2;
-
-    background: #f5f8f7;
-  }
-
-  .lab-template-columns > * {
-    display: flex;
-
-    align-items: center;
-
-    min-width: 0;
-    min-height: 32px;
-
-    padding: 5px 7px;
-
-    color: #334155;
-
-    font-size: 10px;
-    font-weight: 750;
-
-    letter-spacing: 0.025em;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .lab-template-columns .MuiTextField-root {
-    min-width: 0;
-
-    flex: 1;
-  }
-
-  .lab-template-columns .MuiIconButton-root {
-    flex-shrink: 0;
-  }
-
-  /* RESULT ROW */
-
-  .lab-template-result-row {
-    min-height: 31px;
-
-    padding: 0 12px;
-
-    border-bottom: 1px solid #eef2f0;
-
-    color: #334155;
-
-    font-size: 10.8px;
-    line-height: 1.35;
-
-    transition:
-      background 0.15s ease,
-      border-color 0.15s ease;
-  }
-
-  .lab-template-result-row:nth-of-type(even) {
-    background: #fcfdfd;
-  }
-
-  .lab-template-result-row:hover {
-    background: #f8fbfa;
-  }
-
-  .lab-template-result-row > * {
-    min-width: 0;
-
-    overflow-wrap: anywhere;
-  }
-
-  .lab-template-result-cell {
-    display: grid;
-
-    gap: 2px;
-  }
-
-  .lab-template-result-cell b {
-    font-weight: 700;
-  }
-
-  .lab-template-result-controls {
-    min-width: 30px;
-
-    text-align: right;
-  }
-
-  /* =========================================================
-     EDITING ROW
-  ========================================================= */
-
-  .lab-template-editing-row {
-    position: relative;
-
-    min-height: 38px;
-
-    background: #fbfdfc;
-  }
-
-  .lab-template-editing-row .MuiInput-underline:before {
-    border-bottom-color: #c6d3ce;
-  }
-
-  .lab-template-editing-row .MuiInput-underline:hover:before {
-    border-bottom-color: #91afa4;
-  }
-
-  .lab-template-editing-row
-    .MuiInput-underline:after {
-    border-bottom-color: #07876a;
-  }
-
-  /* =========================================================
-     SUBSECTION
-  ========================================================= */
-
-  .lab-template-subsection {
-    margin: 13px 0 5px;
-
-    padding: 5px 8px;
-
-    border-left: 3px solid #07876a;
-
-    background: #f7faf9;
-
-    color: #172033;
-
-    font-size: 10.5px;
-    font-weight: 750;
-
-    letter-spacing: 0.02em;
-  }
-
-  /* =========================================================
-     CUSTOM TABLE
-  ========================================================= */
-
-  .lab-template-custom-table-wrap {
-    margin: 16px 0;
-
-    overflow-x: auto;
-
-    border: 1px solid #e1e8e5;
-
-    border-radius: 6px;
-  }
-
-  .lab-template-custom-table {
-    display: grid;
-
-    gap: 0;
-
-    min-width: 520px;
-
-    font-size: 10.8px;
-  }
-
-  .lab-template-custom-table-row {
-    display: grid;
-
-    column-gap: 10px;
-
-    align-items: center;
-
-    min-height: 31px;
-
-    padding: 0 10px;
-
-    border-bottom: 1px solid #edf1ef;
-
-    line-height: 1.35;
-  }
-
-  .lab-template-custom-table-row:last-child {
-    border-bottom: 0;
-  }
-
-  .lab-template-custom-table-header {
-    margin-bottom: 0;
-
-    background: #f4f8f6;
-
-    border-bottom: 1px solid #dce6e2;
-  }
-
-  .lab-template-custom-table-header
-    .lab-template-custom-table-cell {
-    min-height: 31px;
-
-    display: flex;
-    align-items: center;
-
-    padding: 5px 6px;
-
-    color: #334155;
-
-    font-size: 10px;
-    font-weight: 750;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .lab-template-custom-table-cell {
-    min-width: 0;
-
-    overflow-wrap: anywhere;
-  }
-
-  .lab-template-custom-table-cell
-    .MuiInputBase-root {
-    font: inherit;
-  }
-
-  /* =========================================================
-     TABLE EDIT BUTTONS
-  ========================================================= */
-
-  .lab-template-custom-table-wrap
-    .MuiButton-root {
-    min-height: 29px;
-
-    border-radius: 6px;
-
-    font-size: 9.5px;
-    font-weight: 650;
-
-    text-transform: none;
-  }
-
-  /* =========================================================
-     TEXT BLOCK
-  ========================================================= */
-
-  .lab-template-text-block {
-    position: relative;
-
-    margin: 15px 0;
-
-    padding: 10px 11px;
-
-    border: 1px solid #e2e9e6;
-
-    border-radius: 6px;
-
-    background: #fbfcfc;
-
-    color: #475569;
-
-    font-size: 10.5px;
-    line-height: 1.55;
-  }
-
-  .lab-template-text-block > b {
-    display: block;
-
-    margin-bottom: 4px;
-
-    color: #172033;
-
-    font-size: 10.5px;
-    font-weight: 750;
-  }
-
-  .lab-template-text-block > div {
-    min-height: 22px;
-
-    white-space: pre-wrap;
-  }
-
-  /* =========================================================
-     FOOTER
-  ========================================================= */
-
-  .lab-template-footer {
-    position: absolute;
-
-    left: 42px;
-    right: 42px;
-    bottom: 20px;
-
-    display: grid;
-
-    grid-template-columns:
-      minmax(0, 1fr)
-      minmax(0, 1.1fr);
-
-    gap: 10px 24px;
-
-    align-items: end;
-
-    padding-top: 12px;
-
-    border-top: 1px solid #cad8d2;
-
-    color: #475569;
-
-    font-family: Arial, Helvetica, sans-serif;
-  }
-
-  /* =========================================================
-     AUTHENTICATION
-  ========================================================= */
-
-  .lab-template-authenticated {
-    display: grid;
-
-    justify-items: start;
-
-    gap: 7px;
-  }
-
-  .lab-template-auth-note {
-    max-width: 240px;
-
-    color: #64748b;
-
-    font-size: 8.5px;
-    line-height: 1.4;
-
-    text-align: left;
-  }
-
-  .lab-template-authenticated img {
-    width: 78px;
-    height: 78px;
-
-    padding: 3px;
-
-    border: 1px solid #e2e8e5;
-
-    border-radius: 5px;
-
-    background: #ffffff;
-  }
-
-  /* =========================================================
-     APPROVAL
-  ========================================================= */
-
-  .lab-template-approval {
-    display: grid;
-
-    justify-items: end;
-
-    gap: 4px;
-
-    color: #475569;
-
-    font-size: 9px;
-
-    text-align: right;
-  }
-
-  .lab-template-approval b {
-    color: #172033;
-
-    font-weight: 700;
-  }
-
-  .lab-template-signature {
-    display: flex;
-
-    align-items: flex-end;
-    justify-content: flex-end;
-
-    width: 165px;
-    height: 29px;
-
-    margin-top: 4px;
-
-    border-bottom: 1px solid #b9c6c1;
-
-    color: #94a3b8;
-
-    font-size: 8px;
-    font-style: italic;
-
-    text-align: right;
-  }
-
-  /* =========================================================
-     PAGE NUMBER
-  ========================================================= */
-
-  .lab-template-page-number {
-    grid-column: 2;
-
-    margin-top: 9px;
-
-    color: #94a3b8;
-
-    font-size: 8.5px;
-    font-weight: 600;
-
-    text-align: right;
-  }
-
-  /* =========================================================
-     MUI INPUTS WHILE EDITING
-  ========================================================= */
-
-  .lab-template-editing-page
-    .MuiInputBase-root {
-    font-family: inherit;
-  }
-
-  .lab-template-editing-page
-    .MuiInputBase-input {
-    font-size: inherit;
-  }
-
-  .lab-template-editing-page
-    .MuiInput-underline:after {
-    border-bottom-color: #07876a;
-  }
-
-  .lab-template-editing-page
-    .MuiIconButton-root {
-    color: #64748b;
-  }
-
-  .lab-template-editing-page
-    .MuiIconButton-root:hover {
-    color: #b42318;
-
-    background: #fff4f3;
-  }
-
-  /* =========================================================
-     MOBILE PREVIEW
-  ========================================================= */
-
-  @media (max-width: 700px) {
-    .lab-template-page {
-      padding-right: 24px;
-      padding-left: 24px;
-    }
-
-    .lab-template-top-rule {
-      margin-right: -24px;
-      margin-left: -24px;
-    }
-
-    .lab-template-footer {
-      right: 24px;
-      left: 24px;
-    }
-
-    .lab-template-patient-grid {
-      column-gap: 16px;
-    }
-
-    .lab-template-patient-line {
-      grid-template-columns:
-        78px
-        7px
-        minmax(0, 1fr);
-
-      font-size: 10px;
-    }
-
-    .lab-template-patient-line span {
-      font-size: 9.5px;
-    }
-  }
-
-  /* =========================================================
-     PRINT
-     Same existing print behaviour
-  ========================================================= */
-
-  @media print {
-    body * {
-      visibility: hidden !important;
-    }
-
-    .lab-template-page,
-    .lab-template-page * {
-      visibility: visible !important;
-    }
-
-    .lab-template-page {
-      position: relative !important;
-
-      top: auto !important;
-      left: auto !important;
-
-      width: 210mm;
-      height: 297mm;
-
-      min-height: 297mm;
-      max-width: none;
-      min-width: 0;
-
-      margin: 0;
-
-      overflow: hidden;
-
-      box-shadow: none;
-
-      border: none;
-
-      break-after: auto;
-      page-break-after: auto;
-    }
-
-    .lab-report-page-wrap:not(:first-child) {
-      break-before: page;
-      page-break-before: always;
-    }
-
-    .lab-report-page-wrap {
-      margin-bottom: 0;
-    }
-  }
-`}</style>
+      <style jsx global>{`
+        .lab-template-page {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          width: 210mm;
+          height: 297mm;
+          max-width: none;
+          min-width: 0;
+          min-height: 297mm;
+          flex-shrink: 0;
+          margin: 0 auto;
+          padding: 20px 42px 150px;
+          overflow: hidden;
+          color: #171717;
+          background: #fff;
+          font-family: Georgia, "Times New Roman", serif;
+          box-sizing: border-box;
+          break-after: auto;
+          page-break-after: auto;
+        }
+        .lab-report-page-wrap:not(:first-child) {
+          break-before: page;
+          page-break-before: always;
+        }
+        .lab-report-page-wrap {
+          margin-bottom: 16px;
+        }
+        .lab-report-page-wrap:last-child {
+          margin-bottom: 0;
+        }
+        .lab-template-top-rule {
+          flex: 0 0 7px;
+          height: 7px;
+          margin: -20px -42px 20px;
+          background: linear-gradient(90deg, #087c70 0 18%, #20a898 18% 100%);
+        }
+        .lab-template-brand {
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          gap: 10px;
+          min-height: 74px;
+          color: #07876a;
+        }
+        .lab-template-mark {
+          display: grid;
+          place-items: center;
+          width: 44px;
+          height: 44px;
+          border: 1px solid #cde2d9;
+          border-radius: 8px;
+          font-family: Arial, sans-serif;
+          font-size: 14px;
+          font-weight: 800;
+        }
+        .lab-template-mark-image {
+          width: 44px;
+          height: 44px;
+          object-fit: contain;
+          border-radius: 8px;
+        }
+        .lab-template-brand-name {
+          color: #07876a;
+          font:
+            700 23px/1 Arial,
+            sans-serif;
+          white-space: nowrap;
+        }
+        .lab-template-brand-caption {
+          margin-top: 4px;
+          color: #64748b;
+          font:
+            700 9px/1.2 Arial,
+            sans-serif;
+          text-align: right;
+        }
+        .lab-template-contact {
+          display: flex;
+          justify-content: flex-end;
+          flex-wrap: wrap;
+          gap: 4px 14px;
+          margin-top: 4px;
+          color: #64748b;
+          font:
+            10px/1.35 Arial,
+            sans-serif;
+          text-align: right;
+        }
+        .lab-template-title {
+          margin-top: 20px;
+          padding: 8px 0;
+          border-top: 2px solid #07876a;
+          border-bottom: 1px solid #d8e6df;
+          text-align: center;
+          font-size: 20px;
+          font-weight: 700;
+        }
+        .lab-template-patient-grid {
+          display: grid;
+          grid-template-columns: 1.3fr 1fr;
+          column-gap: 30px;
+          row-gap: 9px;
+          padding: 16px 0 22px;
+        }
+        .lab-template-patient-line {
+          display: grid;
+          grid-template-columns: 105px 12px minmax(0, 1fr);
+          gap: 5px;
+          color: #202020;
+          font:
+            14px/1.35 Georgia,
+            "Times New Roman",
+            serif;
+        }
+        .lab-template-patient-line:before {
+          content: ":";
+          grid-column: 2;
+          grid-row: 1;
+        }
+        .lab-template-patient-line span {
+          grid-column: 1;
+        }
+        .lab-template-patient-line b {
+          grid-column: 3;
+          font-weight: 600;
+        }
+        .lab-template-panel-title {
+          display: grid;
+          place-items: center;
+          min-height: 35px;
+          margin: 0 -10px 7px;
+          border-radius: 7px;
+          background: #edf5f1;
+          color: #243e33;
+          font-size: 15px;
+          font-weight: 700;
+          text-align: center;
+        }
+        .lab-template-columns,
+        .lab-template-result-row {
+          display: grid;
+          column-gap: 12px;
+          align-items: center;
+        }
+        .lab-template-columns {
+          margin: 0 0 5px;
+        }
+        .lab-template-columns > * {
+          display: flex;
+          align-items: center;
+          min-width: 0;
+          min-height: 29px;
+          padding: 4px 9px;
+          border-radius: 5px;
+          background: #edf5f1;
+          color: #243e33;
+          font-size: 11px;
+          font-weight: 700;
+          white-space: nowrap;
+          overflow: hidden;
+        }
+        .lab-template-columns .MuiTextField-root {
+          min-width: 0;
+          flex: 1;
+        }
+        .lab-template-columns .MuiIconButton-root {
+          flex-shrink: 0;
+        }
+        .lab-template-result-row {
+          min-height: 27px;
+          padding: 0 9px;
+          font-size: 12.7px;
+          line-height: 1.25;
+        }
+        .lab-template-result-row > * {
+          min-width: 0;
+          overflow-wrap: anywhere;
+        }
+        .lab-template-result-cell {
+          display: grid;
+          gap: 2px;
+        }
+        .lab-template-result-controls {
+          min-width: 30px;
+          text-align: right;
+        }
+        .lab-template-editing-row {
+          position: relative;
+          min-height: 36px;
+        }
+        .lab-template-editing-row .MuiInput-underline:before {
+          border-bottom-color: #cbdcd3;
+        }
+        .lab-template-text-block {
+          margin: 14px 9px;
+          padding: 8px 0;
+          border-top: 1px solid #d8e6df;
+          font-size: 12px;
+          line-height: 1.45;
+        }
+        .lab-template-text-block > div {
+          min-height: 22px;
+          white-space: pre-wrap;
+        }
+        .lab-template-custom-table-wrap {
+          margin: 16px 9px;
+          overflow-x: auto;
+        }
+        .lab-template-custom-table {
+          display: grid;
+          gap: 0;
+          font-size: 12px;
+          min-width: 520px;
+        }
+        .lab-template-custom-table-row {
+          display: grid;
+          column-gap: 12px;
+          align-items: center;
+          min-height: 27px;
+          padding: 0 9px;
+          line-height: 1.25;
+        }
+        .lab-template-custom-table-header {
+          margin-bottom: 5px;
+        }
+        .lab-template-custom-table-header .lab-template-custom-table-cell {
+          min-height: 29px;
+          padding: 4px 9px;
+          border-radius: 5px;
+          background: #edf5f1;
+          color: #243e33;
+          font-weight: 700;
+          white-space: nowrap;
+          overflow: hidden;
+        }
+        .lab-template-custom-table-cell {
+          min-width: 0;
+          overflow-wrap: anywhere;
+        }
+        .lab-template-custom-table-cell .MuiInputBase-root {
+          font: inherit;
+        }
+        .lab-template-sample-type {
+          margin: 0 0 9px;
+          font-size: 13px;
+        }
+        .lab-template-method-note {
+          margin: 0 0 18px;
+          font:
+            700 13px/1.55 Georgia,
+            "Times New Roman",
+            serif;
+        }
+        .lab-template-subsection {
+          margin: 10px 9px 4px;
+          font-size: 12px;
+          font-weight: 700;
+        }
+        .lab-template-footer {
+          position: absolute;
+          left: 42px;
+          right: 42px;
+          bottom: 20px;
+          display: grid;
+          grid-template-columns: 1fr 1.25fr;
+          gap: 8px 18px;
+          align-items: end;
+          padding-top: 9px;
+          border-top: 2px solid #07876a;
+          font-family: Georgia, "Times New Roman", serif;
+        }
+        .lab-template-authenticated {
+          display: grid;
+          justify-items: center;
+          gap: 6px;
+        }
+        .lab-template-auth-note {
+          font-size: 10px;
+          text-align: center;
+        }
+        .lab-template-approval {
+          display: grid;
+          gap: 5px;
+          font-size: 10px;
+        }
+        .lab-template-signature {
+          height: 24px;
+          color: #737373;
+          font-style: italic;
+          text-align: right;
+        }
+        .lab-template-page-number {
+          grid-column: 2;
+          margin-top: 15px;
+          font-size: 10px;
+          text-align: right;
+        }
+        .lab-template-custom-table-title {
+          margin-bottom: 8px;
+          color: #243e33;
+          font-size: 13px;
+          font-weight: 700;
+        }
+        .lab-template-page .MuiButton-root {
+          border-radius: 6px;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: none;
+        }
+        .lab-template-page .MuiIconButton-root {
+          border-radius: 6px;
+          color: #64748b;
+        }
+        .lab-template-page .MuiIconButton-root:hover {
+          background: #fff1f0;
+          color: #b42318;
+        }
+        .lab-template-page .MuiInput-underline:after {
+          border-bottom-color: #07876a;
+        }
+        .lab-template-page {
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 13px;
+          line-height: 1.45;
+          border: 1px solid #e1e8e4;
+          border-radius: 8px;
+        }
+        .lab-template-page .lab-template-brand {
+          justify-content: flex-end;
+          gap: 12px;
+        }
+        .lab-template-page .lab-template-brand-name,
+        .lab-template-page .lab-template-brand-caption {
+          text-align: right;
+        }
+        .lab-template-page .lab-template-contact {
+          justify-content: flex-end;
+          text-align: right;
+        }
+        .lab-template-page .lab-template-address {
+          flex-basis: 100%;
+          overflow-wrap: anywhere;
+        }
+        .lab-template-page .lab-template-title {
+          margin-top: 6px;
+          font-size: 18px;
+          letter-spacing: 1px;
+          color: #172033;
+        }
+        .lab-template-page .lab-template-patient-grid {
+          column-gap: 20px;
+          row-gap: 8px;
+          padding: 14px 0 18px;
+        }
+        .lab-template-page .lab-template-patient-line {
+          font:
+            12px/1.45 Arial,
+            sans-serif;
+          grid-template-columns: 88px 8px minmax(0, 1fr);
+          align-items: start;
+          margin: 0;
+        }
+        .lab-template-patient-line span {
+          color: #64748b;
+        }
+        .lab-template-patient-line b {
+          overflow-wrap: anywhere;
+          color: #172033;
+        }
+        .lab-template-page .lab-template-panel-title {
+          margin: 0 0 10px;
+          min-height: 35px;
+          font-size: 13px;
+          line-height: 1.4;
+          letter-spacing: 0.3px;
+        }
+        .lab-template-columns,
+        .lab-template-result-row {
+          column-gap: 10px;
+          align-items: start;
+        }
+        .lab-template-columns {
+          margin-bottom: 4px;
+        }
+        .lab-template-columns > * {
+          box-sizing: border-box;
+          width: 100%;
+          padding: 7px 6px;
+          min-height: 34px;
+          height: 100%;
+          white-space: normal;
+          overflow: visible;
+          overflow-wrap: anywhere;
+          font-size: 11px;
+          line-height: 1.35;
+        }
+        .lab-template-result-row {
+          padding: 6px 0;
+          font-size: 12px;
+          line-height: 1.4;
+          border-bottom: 1px solid #edf1ee;
+        }
+        .lab-template-result-row > * {
+          padding: 0 6px;
+          box-sizing: border-box;
+        }
+        .lab-template-editing-row {
+          min-height: 36px;
+        }
+        .lab-template-result-row .MuiInputBase-root {
+          font-family: inherit;
+          font-size: inherit;
+          line-height: inherit;
+          padding: 0;
+        }
+        .lab-template-page .lab-template-sample-type {
+          font-size: 12px;
+          line-height: 1.4;
+          color: #475569;
+        }
+        .lab-template-page .lab-template-method-note {
+          font:
+            12px/1.45 Arial,
+            sans-serif;
+          color: #64748b;
+          margin-bottom: 12px;
+        }
+        .lab-template-page .lab-template-subsection {
+          font-size: 12px;
+          line-height: 1.4;
+          margin: 10px 6px 5px;
+          color: #07876a;
+        }
+        .lab-template-custom-table-row {
+          column-gap: 10px;
+          padding: 0;
+        }
+        .lab-template-custom-table-header .lab-template-custom-table-cell {
+          white-space: normal;
+          overflow: visible;
+          line-height: 1.4;
+          padding: 6px;
+        }
+        .lab-template-custom-table-cell {
+          padding: 4px 6px;
+        }
+        .lab-template-footer {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          align-items: start;
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 10px;
+          line-height: 1.4;
+        }
+        .lab-template-authenticated {
+          justify-items: start;
+          align-content: start;
+        }
+        .lab-template-page .lab-template-auth-note {
+          font-size: 10px;
+          line-height: 1.4;
+          text-align: left;
+          margin: 0;
+        }
+        .lab-template-approval {
+          gap: 6px;
+        }
+        .lab-template-page .lab-template-approval .MuiTypography-root {
+          font-family: inherit;
+          font-size: 10px;
+          line-height: 1.4;
+          margin: 0;
+        }
+        .lab-template-signature {
+          height: 24px;
+          font-size: 10px;
+        }
+        .lab-template-page .lab-template-page-number {
+          grid-column: 1 / -1;
+          margin-top: 6px;
+          padding-top: 6px;
+          border-top: 1px solid #edf1ee;
+          font-size: 10px;
+          line-height: 1.4;
+          color: #64748b;
+        }
+        @media (max-width: 700px) {
+          .lab-template-page {
+            padding-right: 24px;
+            padding-left: 24px;
+          }
+          .lab-template-top-rule {
+            margin-right: -24px;
+            margin-left: -24px;
+          }
+          .lab-template-footer {
+            right: 24px;
+            left: 24px;
+          }
+          .lab-template-patient-grid {
+            column-gap: 14px;
+          }
+          .lab-template-patient-line {
+            grid-template-columns: 82px 8px minmax(0, 1fr);
+            font-size: 11px;
+          }
+        }
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          .lab-template-page,
+          .lab-template-page * {
+            visibility: visible !important;
+          }
+          .lab-template-page {
+            position: relative !important;
+            top: auto !important;
+            left: auto !important;
+            width: 210mm;
+            height: 297mm;
+            min-height: 297mm;
+            max-width: none;
+            min-width: 0;
+            margin: 0;
+            overflow: hidden;
+            box-shadow: none;
+            break-after: auto;
+            page-break-after: auto;
+          }
+          .lab-report-page-wrap:not(:first-child) {
+            break-before: page;
+            page-break-before: always;
+          }
+          .lab-report-page-wrap {
+            margin-bottom: 0;
+          }
+        }
+        .lab-template-page .lab-template-header-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 24px;
+        }
+
+        .lab-template-page .lab-template-brand {
+          flex: 0 1 45%;
+          min-width: 0;
+          justify-content: flex-start;
+        }
+
+        .lab-template-page .lab-template-brand-name,
+        .lab-template-page .lab-template-brand-caption {
+          text-align: left;
+        }
+
+        .lab-template-page .lab-template-contact {
+          flex: 1;
+          min-width: 0;
+          margin-top: 0;
+          justify-content: flex-end;
+          text-align: right;
+        }
+
+        .lab-template-page .lab-template-address {
+          flex-basis: 100%;
+          overflow-wrap: anywhere;
+        }
+      `}</style>
     </Paper>
   );
 }

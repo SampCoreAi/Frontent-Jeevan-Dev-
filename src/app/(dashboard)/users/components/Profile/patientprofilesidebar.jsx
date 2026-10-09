@@ -155,24 +155,7 @@ const PatientProfileSidebar = ({
 
         return "";
 
-      case "age":
-        if (!stringValue) {
-          return "";
-        }
-
-        if (!/^\d+$/.test(stringValue)) {
-          return "Enter a valid age";
-        }
-
-        if (
-          Number(stringValue) < 1 ||
-          Number(stringValue) > 120
-        ) {
-          return "Age must be between 1 and 120";
-        }
-
-        return "";
-
+   
       case "language":
         if (!stringValue) {
           return "";
@@ -944,7 +927,7 @@ const PatientProfileSidebar = ({
     style={inputStyle}
   />
 </Box>
-            <ErrorText field="age" />
+         <ErrorText field="dateOfBirth" />
           </Box>
 
           <Box sx={infoRow}>

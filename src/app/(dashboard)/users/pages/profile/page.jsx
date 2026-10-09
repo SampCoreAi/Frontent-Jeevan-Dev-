@@ -31,6 +31,7 @@ export default function PatientProfilePage() {
     username: "",
     gender: "",
     email: "",
+    familyMedicalHistory: [],
     phone: "",
     bio: "",
     bloodGroup: "",
@@ -131,6 +132,16 @@ export default function PatientProfilePage() {
 
 if (dirtyFields.dateOfBirth) {
   payload.date_of_birth = formData.dateOfBirth;
+}
+
+if (dirtyFields.familyMedicalHistory) {
+  const history = formData.familyMedicalHistory || [];
+
+
+  payload.family_medical_history = {
+    Medical_Condition: history[0].medical_condition,
+    Family_Member: history[0].family_member,
+  };
 }
     if (dirtyFields.gender) {
       payload.gender = formData.gender
@@ -290,7 +301,16 @@ if (dirtyFields.dateOfBirth) {
         name: userProfile.full_name || "",
         username: userProfile.username || "",
         dateOfBirth: userProfile.date_of_birth || "",
-
+familyMedicalHistory: (
+  Array.isArray(userProfile.family_medical_history)
+    ? userProfile.family_medical_history
+    : userProfile.family_medical_history
+      ? [userProfile.family_medical_history]
+      : []
+).map((item) => ({
+  medical_condition: item.Medical_Condition ?? item.medical_condition ?? "",
+  family_member: item.Family_Member ?? item.family_member ?? "",
+})),
         gender: userProfile.gender
           ? userProfile.gender.toUpperCase()
           : "",
