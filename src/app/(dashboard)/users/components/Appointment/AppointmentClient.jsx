@@ -2,13 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import api from "../../../../../utils/axiosInstance";
-import {
-  Grid,
-  Typography,
-  Paper,
-  Snackbar,
-  Alert,
-} from "@mui/material";
+import { Grid, Typography, Paper, Snackbar, Alert } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
@@ -17,7 +11,6 @@ import HeaderSection from "../../../../Home/components/Appointment/HeaderSection
 import { useSearchParams } from "next/navigation";
 import LeftSide from "../../components/Appointment/LeftSide";
 import AppointmentForm from "../../components/Appointment/AppointmentForm";
-
 
 dayjs.extend(isBetween);
 
@@ -57,8 +50,7 @@ export default function AppointmentPage() {
   };
 
   const getScheduleClinicId = (schedule, hospitals = []) => {
-    const hospitalData =
-      schedule?.hospitalName || schedule?.hospital_name;
+    const hospitalData = schedule?.hospitalName || schedule?.hospital_name;
     let parsedHospitalData = hospitalData;
 
     if (typeof hospitalData === "string") {
@@ -91,7 +83,7 @@ export default function AppointmentPage() {
       .toLowerCase();
     const matchingHospital = hospitals.find((hospital) => {
       const hospitalName = String(
-        hospital?.hospitalName || hospital?.hospital_name || ""
+        hospital?.hospitalName || hospital?.hospital_name || "",
       )
         .trim()
         .toLowerCase();
@@ -130,7 +122,7 @@ export default function AppointmentPage() {
 
       if (!clinicId) {
         console.error(
-          "Appointment slot fetch error: selected schedule has no clinic ID."
+          "Appointment slot fetch error: selected schedule has no clinic ID.",
         );
         setFilteredSlots([]);
         return;
@@ -142,10 +134,9 @@ export default function AppointmentPage() {
         date: selectedDate.format("YYYY-MM-DD"),
       };
 
-      const response = await api.get(
-        "/api/appointments/doctor-slots",
-        { params }
-      );
+      const response = await api.get("/api/appointments/doctor-slots", {
+        params,
+      });
       const availableSlots = response.data?.data?.slots || [];
 
       setFilteredSlots(
@@ -156,7 +147,7 @@ export default function AppointmentPage() {
           end: slot.endTime,
           status: slot.status,
           date: selectedDate.format("YYYY-MM-DD"),
-        }))
+        })),
       );
     } catch (err) {
       console.error("Appointment slot fetch error:", err);
@@ -254,9 +245,7 @@ export default function AppointmentPage() {
     const selectedHospital = getHospitalLabel(schedule);
 
     const matchedSchedule = allSchedules.find((sch) => {
-
-      if (getHospitalLabel(sch) !== selectedHospital)
-        return false;
+      if (getHospitalLabel(sch) !== selectedHospital) return false;
 
       const start = toDate(sch.availability.startDate);
       const end = toDate(sch.availability.endDate);
@@ -265,11 +254,7 @@ export default function AppointmentPage() {
 
       const dayName = dayjs(selectedDate).format("ddd");
 
-      return (
-        current >= start &&
-        current <= end &&
-        activeDays.includes(dayName)
-      );
+      return current >= start && current <= end && activeDays.includes(dayName);
     });
 
     if (matchedSchedule) {
@@ -296,11 +281,11 @@ export default function AppointmentPage() {
             addressStr = profile.address;
           }
 
-
-
           // Parse city from address string
           try {
-            const cityInArrayMatch = addressStr.match(/"city"\s*:\s*"([^"]+)"/i);
+            const cityInArrayMatch = addressStr.match(
+              /"city"\s*:\s*"([^"]+)"/i,
+            );
             if (cityInArrayMatch) {
               const city = cityInArrayMatch[1].toLowerCase().trim();
               setUserCity(city);
@@ -336,19 +321,15 @@ export default function AppointmentPage() {
 
         try {
           const doctorResponse = await api.get(
-            `/api/doctors/getDoctorPublicProfileById/${doctorId}`
+            `/api/doctors/getDoctorPublicProfileById/${doctorId}`,
           );
-          doctorHospitals =
-            doctorResponse.data?.data?.hospital_detail || [];
+          doctorHospitals = doctorResponse.data?.data?.hospital_detail || [];
         } catch (error) {
-          console.error(
-            "Doctor clinic details fetch error:",
-            error
-          );
+          console.error("Doctor clinic details fetch error:", error);
         }
 
         const response = await api.get(
-          `/api/schedules/getSchedulePublicByDoctorId/${doctorId}`
+          `/api/schedules/getSchedulePublicByDoctorId/${doctorId}`,
         );
 
         const scheduleData = Array.isArray(response.data?.data)
@@ -370,7 +351,7 @@ export default function AppointmentPage() {
           setSlots(scheduleData[0].slots || []);
 
           // Pre-fill hospital_name
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
             hospital_name: getHospitalLabel(scheduleData[0]),
           }));
@@ -379,7 +360,6 @@ export default function AppointmentPage() {
         console.error("Slot fetch error:", error);
       }
     };
-
 
     const init = async () => {
       setInitialLoading(true);
@@ -390,12 +370,8 @@ export default function AppointmentPage() {
     init();
   }, [getAuthConfig]);
 
-
-
-
   // Handle Booking For Change
   useEffect(() => {
-
     if (bookingFor === "self" && userProfile) {
       setFormData((prev) => {
         const updated = {
@@ -489,12 +465,10 @@ export default function AppointmentPage() {
       }),
     };
 
-
-
     try {
       const response = await api.post(
         `/api/appointments/create/${doctorId}`,
-        payload
+        payload,
       );
 
       setSnackbar({
@@ -534,7 +508,7 @@ export default function AppointmentPage() {
     const selectedHospital = getHospitalLabel(schedule);
 
     const hospitalSchedules = allSchedules.filter(
-      s => getHospitalLabel(s) === selectedHospital
+      (s) => getHospitalLabel(s) === selectedHospital,
     );
 
     return !hospitalSchedules.some((sch) => {
@@ -544,16 +518,9 @@ export default function AppointmentPage() {
       const dayName = dayjs(date).format("ddd");
       const activeDays = sch.availability?.activeDays || [];
 
-      return (
-        current >= start &&
-        current <= end &&
-        activeDays.includes(dayName)
-      );
+      return current >= start && current <= end && activeDays.includes(dayName);
     });
   };
-
-
-
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -685,22 +652,22 @@ export default function AppointmentPage() {
           open={snackbar.open}
           autoHideDuration={6000}
           onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
           <Alert
             onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
             severity={snackbar.severity}
             sx={{
-      color: "#fff",
+              color: "#fff",
 
-      "& .MuiAlert-icon": {
-        color: "#fff",
-      },
+              "& .MuiAlert-icon": {
+                color: "#fff",
+              },
 
-      "& .MuiAlert-action": {
-        color: "#fff",
-      },
-    }}
+              "& .MuiAlert-action": {
+                color: "#fff",
+              },
+            }}
             variant="filled"
           >
             {snackbar.message}

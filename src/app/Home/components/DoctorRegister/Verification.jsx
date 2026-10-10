@@ -1726,35 +1726,42 @@ setOtpSent(false);
                     ml: -1,
                   }}
                 >
-                  <Checkbox
-                    size="small"
-                    checked={
-                      agree
-                    }
-                    disabled={
-                      submitting ||
-                      completed
-                    }
-                    onChange={(
-                      event
-                    ) => {
-                      setAgree(
-                        event
-                          .target
-                          .checked
-                      );
-                    }}
-                    sx={{
-                      color:
-                        COLORS.primary,
-
-                      "&.Mui-checked":
-                        {
-                          color:
-                            COLORS.primary,
-                        },
-                    }}
-                  />
+                <Checkbox
+  size="small"
+  checked={agree}
+  disabled={submitting || completed}
+  onChange={(e) => setAgree(e.target.checked)}
+  inputProps={{ "aria-label": "Agree to declaration" }}
+  icon={
+    <Box sx={{
+      width: 18,
+      height: 18,
+      border: `2px solid ${COLORS.primary}`,
+      borderRadius: "3px",
+    }} />
+  }
+  checkedIcon={
+    <Box sx={{
+      width: 18,
+      height: 18,
+      bgcolor: COLORS.primary,
+      border: `2px solid ${COLORS.primary}`,
+      borderRadius: "3px",
+      color: "#fff",
+      display: "grid",
+      placeItems: "center",
+      fontSize: 14,
+      lineHeight: 1,
+    }}>
+      ✓
+    </Box>
+  }
+  sx={{
+    p: 0.75,
+    flexShrink: 0,
+    "&.Mui-disabled": { opacity: 0.5 },
+  }}
+/>
 
                   <Typography
                     sx={{

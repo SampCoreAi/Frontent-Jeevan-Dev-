@@ -44,38 +44,34 @@ const DocumentDialog = ({
   // =========================================
   // ASSIGN DOCTOR
   // =========================================
-const [rejectPopupOpen, setRejectPopupOpen] = useState(false);
-const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectPopupOpen, setRejectPopupOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
   const handleAssignDoctor = () => {
     if (!assigning && selectedDoctor) {
       onAssignDoctor?.(selectedDoctor);
     }
   };
-const handleRejectDoctor = () => {
-  if (!rejecting && selectedDoctor) {
-    setRejectionReason("");
-    setRejectPopupOpen(true);
-  }
-};
+  const handleRejectDoctor = () => {
+    if (!rejecting && selectedDoctor) {
+      setRejectionReason("");
+      setRejectPopupOpen(true);
+    }
+  };
 
-const handleConfirmReject = () => {
-  const reason = rejectionReason.trim();
+  const handleConfirmReject = () => {
+    const reason = rejectionReason.trim();
 
-  if (!reason) return;
+    if (!reason) return;
 
-  onRejectDoctor?.(selectedDoctor, reason);
-  setRejectPopupOpen(false);
-};
+    onRejectDoctor?.(selectedDoctor, reason);
+    setRejectPopupOpen(false);
+  };
   // =========================================
   // DISPLAY VALUE
   // =========================================
 
   const displayValue = (value) => {
-    if (
-      value === null ||
-      value === undefined ||
-      value === ""
-    ) {
+    if (value === null || value === undefined || value === "") {
       return "-";
     }
 
@@ -157,16 +153,32 @@ const handleConfirmReject = () => {
   // HOSPITAL
   // =========================================
 
-  const hospital = Array.isArray(
-    selectedDoctor?.hospital_detail
-  )
+  const hospital = Array.isArray(selectedDoctor?.hospital_detail)
     ? selectedDoctor.hospital_detail[0]
     : selectedDoctor?.hospital_detail || null;
 
-  const statusStyle = getStatusStyle(
-    selectedDoctor?.onboarding_status
-  );
+  const statusStyle = getStatusStyle(selectedDoctor?.onboarding_status);
 
+  const calculateAge = (dob) => {
+    if (!dob) return "—";
+
+    const birth = new Date(`${dob.slice(0, 10)}T00:00:00`);
+    const today = new Date();
+
+    if (isNaN(birth.getTime()) || birth > today) return "—";
+
+    let age = today.getFullYear() - birth.getFullYear();
+
+    if (
+      today.getMonth() < birth.getMonth() ||
+      (today.getMonth() === birth.getMonth() &&
+        today.getDate() < birth.getDate())
+    ) {
+      age--;
+    }
+
+    return `${age} years`;
+  };
   // =========================================
   // PROFILE IMAGE
   // Change profile_image if API field differs
@@ -212,11 +224,7 @@ const handleConfirmReject = () => {
   // INFO ITEM
   // =========================================
 
-  const InfoItem = ({
-    label,
-    value,
-    fullWidth = false,
-  }) => (
+  const InfoItem = ({ label, value, fullWidth = false }) => (
     <Box
       sx={{
         minWidth: 0,
@@ -291,8 +299,7 @@ const handleConfirmReject = () => {
 
           bgcolor: "background.paper",
 
-          boxShadow:
-            "0 18px 50px rgba(15,23,42,0.12)",
+          boxShadow: "0 18px 50px rgba(15,23,42,0.12)",
 
           overflow: "hidden",
         },
@@ -370,8 +377,7 @@ const handleConfirmReject = () => {
                 color: "text.secondary",
               }}
             >
-              {selectedDoctor?.full_name ||
-                "Doctor details"}
+              {selectedDoctor?.full_name || "Doctor details"}
             </Typography>
           </Box>
         </Box>
@@ -405,9 +411,8 @@ const handleConfirmReject = () => {
           p: {
             xs: 2,
             sm: 2.5,
-
           },
-          mt:2,
+          mt: 2,
 
           bgcolor: "white",
         }}
@@ -436,76 +441,65 @@ const handleConfirmReject = () => {
     PERSONAL INFORMATION
 ================================== */}
 
-<Box sx={cardStyle}>
-  <SectionTitle
-    icon={PersonOutlineRoundedIcon}
-    title="Personal Information"
-  />
+            <Box sx={cardStyle}>
+              <SectionTitle
+                icon={PersonOutlineRoundedIcon}
+                title="Personal Information"
+              />
 
-  <Box
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      gap: {
-        xs: 2,
-        sm: 3,
-      },
-      flexDirection: {
-        xs: "column",
-        sm: "row",
-      },
-    }}
-  >
-  
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: {
+                    xs: 2,
+                    sm: 3,
+                  },
+                  flexDirection: {
+                    xs: "column",
+                    sm: "row",
+                  },
+                }}
+              >
+                {/* DETAILS */}
+                <Box
+                  sx={{
+                    flex: 1,
+                    width: "100%",
+                    minWidth: 0,
 
-    {/* DETAILS */}
-    <Box
-      sx={{
-        flex: 1,
-        width: "100%",
-        minWidth: 0,
+                    display: "grid",
+                    gridTemplateColumns: {
+                      xs: "repeat(2, minmax(0, 1fr))",
+                      sm: "repeat(2, minmax(0, 1fr))",
+                    },
+                    gap: {
+                      xs: 2,
+                      sm: 2.5,
+                    },
+                  }}
+                >
+                  <InfoItem
+                    label="Gender"
+                    value={formatText(selectedDoctor.gender)}
+                  />
 
-        display: "grid",
-        gridTemplateColumns: {
-          xs: "repeat(2, minmax(0, 1fr))",
-          sm: "repeat(2, minmax(0, 1fr))",
-        },
-        gap: {
-          xs: 2,
-          sm: 2.5,
-        },
-      }}
-    >
-      <InfoItem
-        label="Gender"
-        value={formatText(selectedDoctor.gender)}
-      />
+                  <InfoItem
+                    label="Age"
+                    value={calculateAge(selectedDoctor.dob)}
+                  />
+                  <InfoItem label="Name" value={selectedDoctor.full_name} />
 
-      <InfoItem
-        label="Age"
-        value={selectedDoctor.age}
-      />
-      <InfoItem
-        label="Name"
-        value={selectedDoctor.full_name}
-      />
+                  <InfoItem label="Email" value={selectedDoctor.email} />
 
-      <InfoItem
-        label="Email"
-        value={selectedDoctor.email}
-      />
-
-      <InfoItem
-        label="Register Id"
-        value={selectedDoctor.id}
-      />
-      <InfoItem
-        label="Mobile Number"
-        value={selectedDoctor.mobile}
-      />
-    </Box>
-  </Box>
-</Box>
+                  <InfoItem label="Register Id" value={selectedDoctor.id} />
+                  <InfoItem
+                    label="Mobile Number"
+                    value={selectedDoctor.mobile}
+                  />
+                </Box>
+              </Box>
+            </Box>
 
             {/* =================================
                 MEDICAL INFORMATION
@@ -534,9 +528,7 @@ const handleConfirmReject = () => {
               >
                 <InfoItem
                   label="Medical Registration Number"
-                  value={
-                    selectedDoctor.medical_registration_number
-                  }
+                  value={selectedDoctor.medical_registration_number}
                 />
 
                 <InfoItem
@@ -556,9 +548,7 @@ const handleConfirmReject = () => {
 
                 <InfoItem
                   label="Registration Expiry"
-                  value={formatDate(
-                    selectedDoctor.registration_expiry_date
-                  )}
+                  value={formatDate(selectedDoctor.registration_expiry_date)}
                 />
 
                 {/* STATUS */}
@@ -581,9 +571,7 @@ const handleConfirmReject = () => {
                   </Typography>
 
                   <Chip
-                    label={formatText(
-                      selectedDoctor.onboarding_status
-                    )}
+                    label={formatText(selectedDoctor.onboarding_status)}
                     size="small"
                     sx={{
                       height: 24,
@@ -605,9 +593,7 @@ const handleConfirmReject = () => {
 
                 <InfoItem
                   label="Submitted / Created Date"
-                  value={formatDate(
-                    selectedDoctor.created_at
-                  )}
+                  value={formatDate(selectedDoctor.created_at)}
                 />
               </Box>
             </Box>
@@ -653,40 +639,22 @@ const handleConfirmReject = () => {
                     value={hospital.flatPlotNo}
                   />
 
-                  <InfoItem
-                    label="Street Name"
-                    value={hospital.streetName}
-                  />
+                  <InfoItem label="Street Name" value={hospital.streetName} />
 
                   <InfoItem
                     label="Area / Locality"
                     value={hospital.areaLocality}
                   />
 
-                  <InfoItem
-                    label="Landmark"
-                    value={hospital.landmark}
-                  />
+                  <InfoItem label="Landmark" value={hospital.landmark} />
 
-                  <InfoItem
-                    label="City"
-                    value={hospital.city}
-                  />
+                  <InfoItem label="City" value={hospital.city} />
 
-                  <InfoItem
-                    label="District"
-                    value={hospital.district}
-                  />
+                  <InfoItem label="District" value={hospital.district} />
 
-                  <InfoItem
-                    label="State"
-                    value={hospital.state}
-                  />
+                  <InfoItem label="State" value={hospital.state} />
 
-                  <InfoItem
-                    label="PIN Code"
-                    value={hospital.pinCode}
-                  />
+                  <InfoItem label="PIN Code" value={hospital.pinCode} />
                 </Box>
               ) : (
                 <Typography
@@ -705,33 +673,24 @@ const handleConfirmReject = () => {
             ================================== */}
 
             <Box sx={cardStyle}>
-              <SectionTitle
-                icon={DescriptionOutlinedIcon}
-                title="Documents"
-              />
+              <SectionTitle icon={DescriptionOutlinedIcon} title="Documents" />
 
               <Stack spacing={1}>
                 <DocumentButton
                   title="Medical Registration Certificate"
-                  path={
-                    selectedDoctor.medical_registration_certificate
-                  }
+                  path={selectedDoctor.medical_registration_certificate}
                   getFileUrl={getFileUrl}
                 />
 
                 <DocumentButton
                   title="Medical Degree Certificate"
-                  path={
-                    selectedDoctor.medical_degree_certificate
-                  }
+                  path={selectedDoctor.medical_degree_certificate}
                   getFileUrl={getFileUrl}
                 />
 
                 <DocumentButton
                   title="Government ID Proof"
-                  path={
-                    selectedDoctor.government_id_proof
-                  }
+                  path={selectedDoctor.government_id_proof}
                   getFileUrl={getFileUrl}
                 />
 
@@ -787,41 +746,43 @@ const handleConfirmReject = () => {
         >
           Close
         </Button>
-<Button
-  variant="outlined"
-  color="error"
-  disabled={assigning || rejecting}
-  onClick={handleRejectDoctor}
-  startIcon={
-    rejecting ? (
-      <CircularProgress size={15} color="inherit" />
-    ) : (
-      <CloseRoundedIcon sx={{ fontSize: 17 }} />
-    )
-  }
-  sx={{
-    minWidth: 140,
-    height: 36,
-    px: 2,
-    borderRadius: 1.5,
-    textTransform: "none",
-    fontSize: "12px",
-    fontWeight: 600,
-    boxShadow: "none",
-  }}
->
-  {rejecting ? "Rejecting..." : "Reject Document"}
-</Button>
+        <Button
+          variant="outlined"
+          color="error"
+          disabled={assigning || rejecting}
+          onClick={handleRejectDoctor}
+          startIcon={
+            rejecting ? (
+              <CircularProgress size={15} color="inherit" />
+            ) : (
+              <CloseRoundedIcon sx={{ fontSize: 17 }} />
+            )
+          }
+          sx={{
+            minWidth: 140,
+            height: 36,
+            px: 2,
+            borderRadius: 1.5,
+            textTransform: "none",
+            fontSize: "12px",
+            fontWeight: 600,
+            boxShadow: "none",
+          }}
+        >
+          {rejecting ? "Rejecting..." : "Reject Document"}
+        </Button>
         <Button
           variant="contained"
-          disabled={assigning}
           onClick={handleAssignDoctor}
+          disabled={
+            assigning ||
+            rejecting ||
+            !selectedDoctor ||
+            selectedDoctor?.onboarding_status === "VERIFIED"
+          }
           startIcon={
             assigning ? (
-              <CircularProgress
-                size={15}
-                color="inherit"
-              />
+              <CircularProgress size={15} color="inherit" />
             ) : (
               <PersonAddAltOutlinedIcon
                 sx={{
@@ -850,103 +811,99 @@ const handleConfirmReject = () => {
             },
           }}
         >
-          {assigning
-            ? "Assigning..."
-            : "Assign Doctor"}
+          {assigning ? "Assigning..." : "Assign Doctor"}
         </Button>
       </DialogActions>
       <Dialog
-  open={rejectPopupOpen}
-  onClose={() => {
-    if (!rejecting) {
-      setRejectPopupOpen(false);
-    }
-  }}
-  fullWidth
-  maxWidth="sm"
->
-  <DialogTitle
-    sx={{
-      fontSize: "16px",
-      fontWeight: 700,
-      borderBottom: "1px solid",
-      borderColor: "divider",
-    }}
-  >
-    Reject Doctor Registration
-  </DialogTitle>
+        open={rejectPopupOpen}
+        onClose={() => {
+          if (!rejecting) {
+            setRejectPopupOpen(false);
+          }
+        }}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle
+          sx={{
+            fontSize: "16px",
+            fontWeight: 700,
+            borderBottom: "1px solid",
+            borderColor: "divider",
+          }}
+        >
+          Reject Doctor Registration
+        </DialogTitle>
 
-  <DialogContent sx={{ pt: 2.5 }}>
-    <Typography
-      sx={{
-        mb: 1,
-        fontSize: "12px",
-        color: "text.secondary",
-      }}
-    >
-      Please provide a reason for rejecting this registration.
-    </Typography>
+        <DialogContent sx={{ pt: 2.5 }}>
+          <Typography
+            sx={{
+              mb: 1,
+              fontSize: "12px",
+              color: "text.secondary",
+            }}
+          >
+            Please provide a reason for rejecting this registration.
+          </Typography>
 
-    <TextField
-      fullWidth
-      multiline
-      minRows={4}
-      maxRows={6}
-      placeholder="Enter rejection reason..."
-      value={rejectionReason}
-      onChange={(e) => setRejectionReason(e.target.value)}
-      disabled={rejecting}
-      autoFocus
-      sx={{
-        "& .MuiInputBase-input": {
-          fontSize: "12px",
-        },
-      }}
-    />
-  </DialogContent>
+          <TextField
+            fullWidth
+            multiline
+            minRows={4}
+            maxRows={6}
+            placeholder="Enter rejection reason..."
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            disabled={rejecting}
+            autoFocus
+            sx={{
+              "& .MuiInputBase-input": {
+                fontSize: "12px",
+              },
+            }}
+          />
+        </DialogContent>
 
-  <DialogActions
-    sx={{
-      px: 2.5,
-      py: 1.5,
-      borderTop: "1px solid",
-      borderColor: "divider",
-    }}
-  >
-    <Button
-      onClick={() => setRejectPopupOpen(false)}
-      disabled={rejecting}
-      sx={{
-        textTransform: "none",
-        fontSize: "12px",
-      }}
-    >
-      Cancel
-    </Button>
+        <DialogActions
+          sx={{
+            px: 2.5,
+            py: 1.5,
+            borderTop: "1px solid",
+            borderColor: "divider",
+          }}
+        >
+          <Button
+            onClick={() => setRejectPopupOpen(false)}
+            disabled={rejecting}
+            sx={{
+              textTransform: "none",
+              fontSize: "12px",
+            }}
+          >
+            Cancel
+          </Button>
 
-    <Button
-      variant="contained"
-      color="error"
-      onClick={handleConfirmReject}
-      disabled={!rejectionReason.trim() || rejecting}
-      startIcon={
-        rejecting ? (
-          <CircularProgress size={15} color="inherit" />
-        ) : null
-      }
-      sx={{
-        minWidth: 110,
-        height: 36,
-        borderRadius: 1.5,
-        textTransform: "none",
-        fontSize: "12px",
-        fontWeight: 600,
-      }}
-    >
-      {rejecting ? "Rejecting..." : "Reject"}
-    </Button>
-  </DialogActions>
-</Dialog>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmReject}
+            disabled={!rejectionReason.trim() || rejecting}
+            startIcon={
+              rejecting ? <CircularProgress size={15} color="inherit" /> : null
+            }
+            sx={{
+              minWidth: 110,
+              height: 36,
+              borderRadius: 1.5,
+              textTransform: "none",
+              fontSize: "12px",
+              fontWeight: 600,
+            }}
+          >
+            {rejecting ? "Rejecting..." : "Reject"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 };

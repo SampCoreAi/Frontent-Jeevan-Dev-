@@ -133,27 +133,32 @@ export default function PersonalInfoForm({
     return "";
   };
 
-  const validateAge = (value) => {
-    if (value === "" || value === null || value === undefined) {
-      return "Age is required";
-    }
+ const validateDob = (value) => {
+  if (!value) {
+    return "Date of birth is required";
+  }
 
-    const age = Number(value);
+  const dob = new Date(`${value}T00:00:00`);
+  const today = new Date();
 
-    if (!Number.isInteger(age)) {
-      return "Age must be a whole number";
-    }
+  if (Number.isNaN(dob.getTime()) || dob > today) {
+    return "Please enter a valid date of birth";
+  }
 
-    if (age < 18) {
-      return "Age must be at least 18";
-    }
+  let age = today.getFullYear() - dob.getFullYear();
 
-    if (age > 100) {
-      return "Age cannot be greater than 100";
-    }
+  const hasHadBirthday =
+    today.getMonth() > dob.getMonth() ||
+    (today.getMonth() === dob.getMonth() &&
+      today.getDate() >= dob.getDate());
 
-    return "";
-  };
+  if (!hasHadBirthday) age--;
+
+  if (age < 18) return "You must be at least 18 years old";
+  if (age > 100) return "Age cannot be greater than 100";
+
+  return "";
+};
 
 const validateEmail = (value) => {
   const email = value?.trim().toLowerCase() || "";
@@ -219,9 +224,9 @@ const validateEmail = (value) => {
         error = validateGender(value);
         break;
 
-      case "age":
-        error = validateAge(value);
-        break;
+     case "dob":
+  error = validateDob(value);
+  break;
 
       case "email":
         error = validateEmail(value);
@@ -267,47 +272,42 @@ const validateEmail = (value) => {
   const handleBlur = (field) => () => {
     validateField(field, data[field]);
   };
-
-  // ==========================================
-  // VALIDATE COMPLETE FORM
-  // ==========================================
-
-  const validateForm = () => {
-    const newErrors = {
-      fullName: validateFullName(data.fullName),
-      gender: validateGender(data.gender),
-      age: validateAge(data.age),
-      email: validateEmail(data.email),
-      mobile: validateMobile(data.mobile),
-    };
-
-    Object.keys(newErrors).forEach((key) => {
-      if (!newErrors[key]) {
-        delete newErrors[key];
-      }
-    });
-
-    setValidationErrors(newErrors);
-
-    return Object.keys(newErrors).length === 0;
+const validateForm = () => {
+  const newErrors = {
+    fullName: validateFullName(data.fullName),
+    gender: validateGender(data.gender),
+    dob: validateDob(data.dob),
+    email: validateEmail(data.email),
+    mobile: validateMobile(data.mobile),
   };
 
-  // ==========================================
-  // NEXT
-  // ==========================================
-
-  const handleNext = () => {
-    const isValid = validateForm();
-
-    if (!isValid) {
-      return;
+  Object.keys(newErrors).forEach((key) => {
+    if (!newErrors[key]) {
+      delete newErrors[key];
     }
+  });
 
-    onNext();
-  };
+  setValidationErrors(newErrors);
+
+  return Object.keys(newErrors).length === 0;
+};
+const handleNext = () => {
+  if (!validateForm()) {
+    setTimeout(() => {
+      document
+        .getElementById("personal-info-form")
+        ?.querySelector('[aria-invalid="true"]')
+        ?.focus();
+    }, 0);
+    return;
+  }
+
+  onNext();
+};
 
   return (
     <Paper
+     id="personal-info-form"
       elevation={0}
       sx={{
         width: "100%",
@@ -612,76 +612,58 @@ const validateEmail = (value) => {
           </FormControl>
         </Grid>
 
-        {/* =========================
-            AGE
-        ========================== */}
+     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+  <Typography
+    sx={{
+      fontWeight: 600,
+      color: COLORS.textPrimary,
+      mb: 0.6,
+      fontSize: "12px",
+      lineHeight: 1.4,
+    }}
+  >
+    Date of Birth{" "}
+    <Box component="span" sx={{ color: COLORS.error }}>
+      *
+    </Box>
+  </Typography>
 
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <Typography
+  <TextField
+    fullWidth
+    type="date"
+    value={data.dob || ""}
+    onChange={(e) => {
+      const value = e.target.value;
+
+      onChange({ dob: value });
+
+      if (validationErrors.dob || errors.dob) {
+        validateField("dob", value);
+      }
+    }}
+    onBlur={handleBlur("dob")}
+    error={Boolean(allErrors.dob)}
+    helperText={allErrors.dob || "Enter your date of birth"}
+    sx={inputSx}
+    inputProps={{
+      max: new Date().toISOString().split("T")[0],
+    }}
+    InputProps={{
+      startAdornment: (
+        <InputAdornment position="start">
+          <CalendarTodayOutlinedIcon
             sx={{
-              fontWeight: 600,
-              color: COLORS.textPrimary,
-              mb: 0.6,
-              fontSize: "12px",
-              lineHeight: 1.4,
-            }}
-          >
-            Age{" "}
-            <Box component="span" sx={{ color: COLORS.error }}>
-              *
-            </Box>
-          </Typography>
-
-          <TextField
-            fullWidth
-            type="number"
-            placeholder="Enter your age"
-            value={data.age || ""}
-            onChange={(e) => {
-              const value = e.target.value;
-
-              if (
-                value === "" ||
-                (/^\d+$/.test(value) &&
-                  value.length <= 3)
-              ) {
-                onChange({
-                  age: value,
-                });
-
-                if (
-                  validationErrors.age ||
-                  errors.age
-                ) {
-                  validateField("age", value);
-                }
-              }
-            }}
-            onBlur={handleBlur("age")}
-            error={Boolean(allErrors.age)}
-            helperText={allErrors.age || " "}
-            sx={inputSx}
-            inputProps={{
-              min: 18,
-              max: 100,
-              inputMode: "numeric",
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <CalendarTodayOutlinedIcon
-                    sx={{
-                      fontSize: 17,
-                      color: allErrors.age
-                        ? COLORS.error
-                        : COLORS.textSecondary,
-                    }}
-                  />
-                </InputAdornment>
-              ),
+              fontSize: 17,
+              color: allErrors.dob
+                ? COLORS.error
+                : COLORS.textSecondary,
             }}
           />
-        </Grid>
+        </InputAdornment>
+      ),
+    }}
+  />
+</Grid>
 
         {/* =========================
             EMAIL

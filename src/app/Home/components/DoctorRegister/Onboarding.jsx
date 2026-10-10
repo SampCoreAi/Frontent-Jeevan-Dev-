@@ -30,7 +30,7 @@ const INITIAL_DOCTOR_DATA = {
   // STEP 1
   fullName: "",
   gender: "",
-  age: "",
+  dob: "",
   email: "",
   mobile: "",
 
@@ -120,21 +120,7 @@ export default function DoctorOnboardingPage() {
   ======================================================= */
 
   const mapDoctorApiData = (doctor) => {
-    /*
-      API hospital_detail is ARRAY:
-
-      hospital_detail: [
-        {
-          hospitalName: "...",
-          ...
-        }
-      ]
-
-      Our form expects ONE object:
-      doctorData.hospitalDetail
-    */
-
-    const hospital =
+       const hospital =
       Array.isArray(doctor?.hospital_detail) &&
       doctor.hospital_detail.length > 0
         ? doctor.hospital_detail[0]
@@ -144,10 +130,6 @@ export default function DoctorOnboardingPage() {
           : {};
 
     return {
-      // =========================
-      // STEP 1
-      // =========================
-
       fullName:
         doctor?.full_name || "",
 
@@ -156,8 +138,7 @@ export default function DoctorOnboardingPage() {
           ? String(doctor.gender).toLowerCase()
           : "",
 
-      age:
-        doctor?.age ?? "",
+  dob: doctor?.dob?.split("T")[0] || "",
 
       email:
         doctor?.email || "",
@@ -387,13 +368,18 @@ export default function DoctorOnboardingPage() {
 
         const mobile =
           doctorData.mobile?.trim();
+const dob = new Date(`${doctorData.dob}T00:00:00`);
+const today = new Date();
 
-        const age =
-          Number(doctorData.age);
+let age = today.getFullYear() - dob.getFullYear();
 
-        /* =========================
-           FULL NAME
-        ========================= */
+if (
+  today.getMonth() < dob.getMonth() ||
+  (today.getMonth() === dob.getMonth() &&
+    today.getDate() < dob.getDate())
+) {
+  age--;
+}
 
         if (!fullName) {
           errors.fullName =
@@ -426,33 +412,15 @@ export default function DoctorOnboardingPage() {
             "Please select your gender.";
         }
 
-        /* =========================
-           AGE
-        ========================= */
-
-        if (!doctorData.age) {
-          errors.age =
-            "Age is required.";
-        } else if (
-          !Number.isInteger(age)
-        ) {
-          errors.age =
-            "Please enter a valid age.";
-        } else if (
-          age < 18
-        ) {
-          errors.age =
-            "Doctor age must be at least 18 years.";
-        } else if (
-          age > 100
-        ) {
-          errors.age =
-            "Please enter a valid age.";
-        }
-
-        /* =========================
-           GMAIL
-        ========================= */
+      if (
+  !doctorData.dob ||
+  Number.isNaN(dob.getTime()) ||
+  dob > today
+) {
+  errors.dob = "Please enter a valid date of birth.";
+} else if (age < 18 || age > 100) {
+  errors.dob = "Doctor age must be between 18 and 100 years.";
+}
 
         if (!email) {
           errors.email =
@@ -510,7 +478,7 @@ export default function DoctorOnboardingPage() {
           gender:
             doctorData.gender.toUpperCase(),
 
-          age,
+         dob: doctorData.dob,
 
           email,
 
@@ -557,8 +525,7 @@ export default function DoctorOnboardingPage() {
 
             gender:
               doctorData.gender,
-
-            age,
+dob: doctorData.dob,
           })
         );
 

@@ -295,19 +295,35 @@ export default function Landing() {
             >
               <GlassCard
                 sx={{
-                  width: 50,
-                  height: 50,
+                  position: "relative",
+                  zIndex: 20,
+                  width: 64,
+                  height: 64,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   cursor: "pointer",
-                  borderRadius: "14px",
+                  borderRadius: "18px",
+                  border: "2px solid rgba(8, 135, 106, 0.42)",
+                  background: "#ffffff",
+                  boxShadow: "0 8px 20px rgba(8, 135, 106, 0.22)",
+                  opacity: 1,
+                  transition: "all 0.25s ease",
+
+                  "& svg": {
+                    width: 24,
+                    height: 24,
+                    color: "#0a7a65",
+                    opacity: 1,
+                    transition: "all 0.25s ease",
+                  },
 
                   "&:hover": {
-                    transform: "scale(1.08) rotate(90deg)",
+                    transform: "scale(1.06)",
+                    boxShadow: "0 12px 26px rgba(8, 135, 106, 0.28)",
 
                     "& svg": {
-                      color: "#07876A",
+                      color: "#065f52",
                     },
                   },
                 }}
@@ -316,7 +332,7 @@ export default function Landing() {
                   sx={{
                     width: 24,
                     height: 24,
-                    color: "#07876A",
+                    color: "#0a7a65",
                   }}
                 />
               </GlassCard>
