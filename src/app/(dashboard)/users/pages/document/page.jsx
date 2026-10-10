@@ -41,6 +41,7 @@ export default function DocumentPage() {
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
   const [uploading, setUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [folderNameError, setFolderNameError] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
@@ -808,6 +809,8 @@ export default function DocumentPage() {
                 setNewFolderName={setNewFolderName}
                 saveNewFolder={saveNewFolder}
                 setCreatingFolder={setCreatingFolder}
+                folderNameError={folderNameError}
+setFolderNameError={setFolderNameError}
                 setParentForNewFolder={setParentForNewFolder}
                 createFolder={createFolder}
                 removeFolder={removeFolder}

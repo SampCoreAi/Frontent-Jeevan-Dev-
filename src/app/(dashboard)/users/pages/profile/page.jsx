@@ -27,7 +27,7 @@ export default function PatientProfilePage() {
 
   const [formData, setFormData] = useState({
     name: "",
-    dateOfBirth: "",
+   dob: "",
     username: "",
     gender: "",
     email: "",
@@ -130,18 +130,18 @@ export default function PatientProfilePage() {
       payload.username = formData.username.trim();
     }
 
-if (dirtyFields.dateOfBirth) {
-  payload.date_of_birth = formData.dateOfBirth;
+if (dirtyFields.dob) {
+  payload.dob = formData.dob || null;
 }
 
 if (dirtyFields.familyMedicalHistory) {
   const history = formData.familyMedicalHistory || [];
 
 
-  payload.family_medical_history = {
-    Medical_Condition: history[0].medical_condition,
-    Family_Member: history[0].family_member,
-  };
+ payload.family_medical_history = {
+  Medical_Condition: history[0]?.medical_condition || "",
+  Family_Member: history[0]?.family_member || "",
+};
 }
     if (dirtyFields.gender) {
       payload.gender = formData.gender
@@ -300,7 +300,7 @@ if (dirtyFields.familyMedicalHistory) {
       setFormData({
         name: userProfile.full_name || "",
         username: userProfile.username || "",
-        dateOfBirth: userProfile.date_of_birth || "",
+     dob: userProfile?.dob?.slice(0, 10) || "",
 familyMedicalHistory: (
   Array.isArray(userProfile.family_medical_history)
     ? userProfile.family_medical_history

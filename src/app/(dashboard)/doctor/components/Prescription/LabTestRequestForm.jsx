@@ -503,12 +503,28 @@ export default function LabTestRequestForm({
                             );
                           }}
                         >
-                          {labs.map((lab) => (
-                            <MenuItem key={lab.id} value={String(lab.id)}>
-                              {lab.name}
-                              {lab.code ? ` (${lab.code})` : ""}
-                            </MenuItem>
-                          ))}
+                          {labs.length ? (
+  labs.map((lab) => (
+    <MenuItem key={lab.id} value={String(lab.id)}>
+      {lab.name}
+      {lab.code ? ` (${lab.code})` : ""}
+    </MenuItem>
+  ))
+) : (
+<MenuItem
+  disabled
+  sx={{
+    fontSize: 13,
+    whiteSpace: "normal",
+    "&.Mui-disabled": {
+      opacity: 1,
+      color: "#475569",
+    },
+  }}
+>
+  No approved lab connection found. Please connect with a lab first.
+</MenuItem>
+)}
                         </Select>
                       </FormControl>
                     </Box>

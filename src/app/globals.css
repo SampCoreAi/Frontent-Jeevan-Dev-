@@ -1,4 +1,4 @@
-
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 /* ========================================
@@ -23,7 +23,16 @@ body {
 
 body {
   padding: 0 !important;
-  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  font-family: "Roboto", Arial, Helvetica, sans-serif;
+}
+
+body,
+button,
+input,
+textarea,
+select,
+[class*="Mui"]:not(.MuiIcon-root) {
+  font-family: "Roboto", Arial, Helvetica, sans-serif !important;
 }
 
 button,

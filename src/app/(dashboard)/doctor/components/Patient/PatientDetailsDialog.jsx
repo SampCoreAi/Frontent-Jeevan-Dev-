@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogContent,
   IconButton,
+  Zoom,
   useTheme,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
@@ -14,6 +15,7 @@ export default function PatientDetailsDialog({
   open,
   patient,
   onClose,
+  origin,
 }) {
   const theme = useTheme();
 
@@ -23,20 +25,35 @@ export default function PatientDetailsDialog({
       onClose={onClose}
       fullWidth
       maxWidth="sm"
-      PaperProps={{
-        sx: {
-          m: { xs: 1, sm: 2 },
-          maxHeight: "90vh",
-          borderRadius: 2,
-          overflow: "hidden",
-          position: "relative",
+      slots={{ transition: Zoom }}
+      transitionDuration={{ enter: 600, exit: 600 }}
+      slotProps={{
+        transition: {
+          easing: {
+            enter: "cubic-bezier(0.4, 0, 0.2, 1)",
+            exit: "cubic-bezier(0.4, 0, 0.2, 1)",
+          },
+          style: {
+            transformOrigin: origin
+              ? `calc(50% + ${origin.x}px - 50vw) calc(50% + ${origin.y}px - 50vh)`
+              : "center",
+          },
+        },
+        paper: {
+          sx: {
+            m: { xs: 1, sm: 2 },
+            maxHeight: "90vh",
+            borderRadius: 2,
+            overflow: "hidden",
+            position: "relative",
+          },
         },
       }}
     >
       <IconButton
         onClick={onClose}
         size="small"
-        aria-label="Close"
+        aria-label="Close patient details"
         sx={{
           position: "absolute",
           top: 8,
@@ -53,11 +70,7 @@ export default function PatientDetailsDialog({
         <CloseIcon sx={{ fontSize: 18 }} />
       </IconButton>
 
-      <DialogContent
-        sx={{
-          p: { xs: 1.5, sm: 2 },
-        }}
-      >
+      <DialogContent sx={{ p: { xs: 1.5, sm: 2 } }}>
         <PatientDetailsCard patient={patient} />
       </DialogContent>
     </Dialog>

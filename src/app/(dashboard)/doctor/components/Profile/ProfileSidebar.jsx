@@ -62,20 +62,6 @@ const ProfileSidebar = ({
 
   const fileInputRef = useRef(null);
 
-  /*
-   * Ye DB/API se already saved username ko remember karega.
-   *
-   * Example:
-   * savedUsername = "aditya"
-   *
-   * Edit click -> API call nahi
-   * age change -> API call nahi
-   * qualification change -> API call nahi
-   *
-   * username "aditya1" -> API call
-   *
-   * wapas "aditya" -> API call nahi
-   */
   const savedUsernameRef = useRef("");
 
   // ============================================================
@@ -1314,49 +1300,26 @@ minWidth: 0,
             AGE
         ==================================================== */}
 
-        <Box sx={infoRowSx}>
-          <Typography
-            sx={labelSx}
-          >
-            Age
-          </Typography>
+     <Box sx={infoRowSx}>
+  <Typography sx={labelSx}>Date of Birth</Typography>
 
-          {isEditing ? (
-            <TextField
-              fullWidth
-              value={
-                profileData?.age ||
-                ""
-              }
-              placeholder="Enter age"
-              type="number"
-              size="small"
-              onChange={(event) =>
-                onFieldChange?.(
-                  "age",
-                  event.target.value
-                )
-              }
-              inputProps={{
-                min: 0,
-                max: 120,
-              }}
-              sx={fieldSx}
-            />
-          ) : (
-            <Typography
-              sx={valueSx}
-            >
-              {profileData?.age ||
-                "Not provided"}
-            </Typography>
-          )}
-        </Box>
-
-        {/* ====================================================
-            GENDER
-        ==================================================== */}
-
+  {isEditing ? (
+    <TextField
+      fullWidth
+      type="date"
+      size="small"
+      value={profileData?.dob || ""}
+      onChange={(e) => onFieldChange?.("dob", e.target.value)}
+      sx={fieldSx}
+    />
+  ) : (
+    <Typography sx={valueSx}>
+      {profileData?.dob
+        ? profileData.dob.split("-").reverse().join("/")
+        : "Not provided"}
+    </Typography>
+  )}
+</Box>
         <Box sx={infoRowSx}>
           <Typography
             sx={labelSx}

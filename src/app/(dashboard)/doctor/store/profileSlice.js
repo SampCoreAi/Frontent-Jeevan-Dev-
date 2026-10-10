@@ -209,9 +209,7 @@ registration_number: apiData.registration_number || "",
 
   registration_expiry_date:
     apiData.registration_expiry_date || "",
-
-  // Other read-only fields
-  age: apiData.age || "",
+dob: apiData.dob?.split("T")[0] || "",
   gender: apiData.gender || "",
   onboarding_status:
     apiData.onboarding_status || "",
@@ -275,7 +273,7 @@ const buildInitialState = () => {
       medicalLicense: '',
       email: u.email || '',
       qrCode: '',
-      age: "",
+   dob: "",
       gender: "",
       phone: u.mobile || u.phone_number || '',
       consultationFee: '',

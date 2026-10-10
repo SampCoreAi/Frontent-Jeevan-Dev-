@@ -43,17 +43,14 @@ const Page = () => {
   const profileLoaded = useSelector(selectProfileLoaded);
   const saving = useSelector(selectProfileSaving);
   const error = useSelector(selectProfileError);
-  const successMessage = useSelector(
-    selectProfileSuccessMessage
-  );
+  const successMessage = useSelector(selectProfileSuccessMessage);
   const isEditing = useSelector(selectIsEditing);
   const logoUploading = useSelector(selectLogoUploading);
   const signatureUploading = useSelector(selectSignatureUploading);
   const profileImageUploading = useSelector(selectProfileImageUploading);
 
   // Track only fields changed by the user
-  const [changedFields, setChangedFields] =
-    React.useState({});
+  const [changedFields, setChangedFields] = React.useState({});
 
   // Snackbar
   const [snackbar, setSnackbar] = React.useState({
@@ -62,10 +59,7 @@ const Page = () => {
     severity: "success",
   });
 
-  const showSnackbar = (
-    message,
-    severity = "success"
-  ) => {
+  const showSnackbar = (message, severity = "success") => {
     setSnackbar({
       open: true,
       message,
@@ -88,71 +82,54 @@ const Page = () => {
     }
   }, [successMessage, dispatch]);
 
-React.useEffect(() => {
-  if (!error) return;
+  React.useEffect(() => {
+    if (!error) return;
 
-  let userMessage = error;
+    let userMessage = error;
 
-  const message =
-    typeof error === "string"
-      ? error
-      : error?.message || "";
+    const message = typeof error === "string" ? error : error?.message || "";
 
-  const match = message.match(
-    /Clinic\s+([^\s]+)\s+on\s+(\w+)\s+must start at or after Clinic\s+([^\s]+)\s+ends/i
-  );
-
-  if (match) {
-    const [, firstClinicId, day, secondClinicId] = match;
-
-    const hospitals =
-      profileData?.hospitalDetail || [];
-
-    const firstHospital = hospitals.find(
-      (hospital) =>
-        String(hospital.clinicId) ===
-        String(firstClinicId)
+    const match = message.match(
+      /Clinic\s+([^\s]+)\s+on\s+(\w+)\s+must start at or after Clinic\s+([^\s]+)\s+ends/i,
     );
 
-    const secondHospital = hospitals.find(
-      (hospital) =>
-        String(hospital.clinicId) ===
-        String(secondClinicId)
-    );
+    if (match) {
+      const [, firstClinicId, day, secondClinicId] = match;
 
-    const firstHospitalName =
-      firstHospital?.hospitalName ||
-      "one clinic";
+      const hospitals = profileData?.hospitalDetail || [];
 
-    const secondHospitalName =
-      secondHospital?.hospitalName ||
-      "another clinic";
+      const firstHospital = hospitals.find(
+        (hospital) => String(hospital.clinicId) === String(firstClinicId),
+      );
 
-userMessage =
-  `${day} has a timing conflict. ` +
-  `${firstHospitalName}'s working hours must start after ` +
-  `${secondHospitalName}'s working hours end.`;
+      const secondHospital = hospitals.find(
+        (hospital) => String(hospital.clinicId) === String(secondClinicId),
+      );
 
-  } else {
-    userMessage =
-      "Profile update failed. Please check the working hours and try again.";
-  }
+      const firstHospitalName = firstHospital?.hospitalName || "one clinic";
 
-  showSnackbar(userMessage, "error");
-  dispatch(clearError());
-}, [error, profileData, dispatch]);
+      const secondHospitalName =
+        secondHospital?.hospitalName || "another clinic";
+
+      userMessage =
+        `${day} has a timing conflict. ` +
+        `${firstHospitalName}'s working hours must start after ` +
+        `${secondHospitalName}'s working hours end.`;
+    } else {
+      userMessage =
+        "Profile update failed. Please check the working hours and try again.";
+    }
+
+    showSnackbar(userMessage, "error");
+    dispatch(clearError());
+  }, [error, profileData, dispatch]);
 
   // Fetch doctor profile
   React.useEffect(() => {
-    const user = JSON.parse(
-      localStorage.getItem("user") || "{}"
-    );
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
 
     if (!user?.id) {
-      showSnackbar(
-        "Session expired. Please login again.",
-        "error"
-      );
+      showSnackbar("Session expired. Please login again.", "error");
       return;
     }
 
@@ -166,7 +143,7 @@ userMessage =
       handleFieldChange({
         field,
         value,
-      })
+      }),
     );
 
     setChangedFields((prev) => ({
@@ -177,46 +154,37 @@ userMessage =
 
   // ================= WORKING HOURS =================
 
-  const handleClinicWorkingHoursChangeLocal = (
-    clinicId,
-    day,
-    field,
-    value
-  ) => {
+  const handleClinicWorkingHoursChangeLocal = (clinicId, day, field, value) => {
     dispatch(
       handleClinicWorkingHoursChange({
         clinicId,
         day,
         field,
         value,
-      })
+      }),
     );
 
-setChangedFields((prev) => ({
-  ...prev,
-  hospitalDetail: true,
-}));
+    setChangedFields((prev) => ({
+      ...prev,
+      hospitalDetail: true,
+    }));
   };
 
   const handleWorkingHoursSaved = () => {
-  setChangedFields((prev) => ({
-    ...prev,
-    hospitalDetail: true,
-  }));
-};
+    setChangedFields((prev) => ({
+      ...prev,
+      hospitalDetail: true,
+    }));
+  };
   // ================= HOSPITAL =================
 
-  const handleHospitalChangeLocal = (
-    index,
-    field,
-    value
-  ) => {
+  const handleHospitalChangeLocal = (index, field, value) => {
     dispatch(
       handleHospitalChange({
         index,
         field,
         value,
-      })
+      }),
     );
 
     setChangedFields((prev) => ({
@@ -250,43 +218,34 @@ setChangedFields((prev) => ({
 
     // Name
     if (changedFields.name) {
-      payload.full_name =
-        profileData.name?.trim() || "";
+      payload.full_name = profileData.name?.trim() || "";
     }
-// Username
-if (changedFields.username) {
-  payload.username =
-    profileData.username
-      ?.replace(/^@/, "")
-      .trim() || "";
-}
+    // Username
+    if (changedFields.username) {
+      payload.username = profileData.username?.replace(/^@/, "").trim() || "";
+    }
 
-// Registration Number
-if (changedFields.registration_number) {
-  payload.registration_number =
-    profileData.registration_number?.trim() || "";
-}
+    // Registration Number
+    if (changedFields.registration_number) {
+      payload.registration_number =
+        profileData.registration_number?.trim() || "";
+    }
     // Language
     if (changedFields.language) {
-      payload.language = Array.isArray(
-        profileData.language
-      )
+      payload.language = Array.isArray(profileData.language)
         ? profileData.language
         : [];
     }
 
     // Bio
     if (changedFields.bio) {
-      payload.bio =
-        profileData.bio?.trim() || "";
+      payload.bio = profileData.bio?.trim() || "";
     }
 
     // Experience
     if (changedFields.experience) {
       payload.experience =
-        profileData.experience === ""
-          ? null
-          : Number(profileData.experience);
+        profileData.experience === "" ? null : Number(profileData.experience);
     }
 
     // Consultation Fee
@@ -294,102 +253,75 @@ if (changedFields.registration_number) {
       payload.consultationFee =
         profileData.consultation_fee === ""
           ? null
-          : Number(
-              profileData.consultation_fee
-            );
+          : Number(profileData.consultation_fee);
     }
 
-  if (changedFields.accept_emergency_patients) {
-  payload.acceptEmergencyPatients =
-    Boolean(profileData.accept_emergency_patients);
+    if (changedFields.accept_emergency_patients) {
+      payload.acceptEmergencyPatients = Boolean(
+        profileData.accept_emergency_patients,
+      );
+    }
+
+if (changedFields.dob) {
+  payload.dob = profileData.dob;
 }
-   
+    if (changedFields.hospitalDetail) {
+      const hospitalDetail = (profileData.hospitalDetail || [])
+        .filter((hospital) => hospital.hospitalName?.trim())
+        .map((hospital) => ({
+          ...(hospital.clinicId
+            ? {
+                clinicId: String(hospital.clinicId),
+              }
+            : {}),
 
-    // Hospital Details
-  // ================= HOSPITAL DETAILS =================
+          hospitalName: hospital.hospitalName?.trim() || "",
 
-if (changedFields.hospitalDetail) {
-  const hospitalDetail = (
-    profileData.hospitalDetail || []
-  )
-    .filter((hospital) =>
-      hospital.hospitalName?.trim()
-    )
-    .map((hospital) => ({
-      ...(hospital.clinicId
-        ? {
-            clinicId: String(
-              hospital.clinicId
-            ),
+          flatPlotNo: hospital.flatNo?.trim() || "",
+
+          buildingSociety: hospital.building?.trim() || "",
+
+          streetName: hospital.street?.trim() || "",
+
+          areaLocality: hospital.area?.trim() || "",
+
+          landmark: hospital.landmark?.trim() || "",
+
+          city: hospital.city?.trim() || "",
+
+          district: hospital.district?.trim() || "",
+
+          state: hospital.state?.trim() || "",
+
+          pinCode: hospital.pinCode?.trim() || "",
+        }));
+
+      payload.hospitalDetail = hospitalDetail;
+
+      // ================= AVAILABILITY =================
+
+      payload.availability = (profileData.hospitalDetail || []).flatMap(
+        (hospital) => {
+          if (!hospital.clinicId) {
+            return [];
           }
-        : {}),
 
-      hospitalName:
-        hospital.hospitalName?.trim() || "",
+          return (hospital.availability || [])
+            .filter((item) => item.startTime && item.endTime)
+            .map((item) => ({
+              day: item.day,
 
-      flatPlotNo:
-        hospital.flatNo?.trim() || "",
+              startTime: item.startTime || "",
 
-      buildingSociety:
-        hospital.building?.trim() || "",
+              endTime: item.endTime || "",
 
-      streetName:
-        hospital.street?.trim() || "",
+              clinicId: String(hospital.clinicId),
 
-      areaLocality:
-        hospital.area?.trim() || "",
-
-      landmark:
-        hospital.landmark?.trim() || "",
-
-      city:
-        hospital.city?.trim() || "",
-
-      district:
-        hospital.district?.trim() || "",
-
-      state:
-        hospital.state?.trim() || "",
-
-      pinCode:
-        hospital.pinCode?.trim() || "",
-    }));
-
-  payload.hospitalDetail = hospitalDetail;
-
-  // ================= AVAILABILITY =================
-
-  payload.availability = (
-    profileData.hospitalDetail || []
-  ).flatMap((hospital) => {
-    if (!hospital.clinicId) {
-      return [];
+              isAvailable: item.isAvailable !== false,
+            }));
+        },
+      );
     }
-
-    return (hospital.availability || [])
-      .filter(
-        (item) =>
-          item.startTime &&
-          item.endTime
-      )
-      .map((item) => ({
-        day: item.day,
-
-        startTime:
-          item.startTime || "",
-
-        endTime:
-          item.endTime || "",
-
-        clinicId: String(
-          hospital.clinicId
-        ),
-
-        isAvailable:
-          item.isAvailable !== false,
-      }));
-  });
-}
     if (profileData.logoKey) {
       payload.logo = profileData.logoKey;
     }
@@ -398,31 +330,18 @@ if (changedFields.hospitalDetail) {
       payload.doctor_signature = profileData.signatureKey;
     }
 
-
-
     // Nothing changed
     if (Object.keys(payload).length === 0) {
-      showSnackbar(
-        "No changes to save.",
-        "info"
-      );
+      showSnackbar("No changes to save.", "info");
       return;
     }
 
-    const result = await dispatch(
-      updateDoctorProfile(payload)
-    );
+    const result = await dispatch(updateDoctorProfile(payload));
 
-    if (
-      updateDoctorProfile.fulfilled.match(
-        result
-      )
-    ) {
+    if (updateDoctorProfile.fulfilled.match(result)) {
       setChangedFields({});
 
-      await dispatch(
-        fetchDoctorProfile()
-      );
+      await dispatch(fetchDoctorProfile());
     }
   };
 
@@ -448,9 +367,7 @@ if (changedFields.hospitalDetail) {
     dispatch(setProfileData({ avatarUrl: localPreviewUrl }));
 
     try {
-      const uploadedUrl = await dispatch(
-        uploadProfileImage(file)
-      ).unwrap();
+      const uploadedUrl = await dispatch(uploadProfileImage(file)).unwrap();
 
       dispatch(setProfileData({ avatarUrl: localPreviewUrl }));
 
@@ -493,62 +410,31 @@ if (changedFields.hospitalDetail) {
   };
 
   return (
-   <ProfileContent
-  loading={loading && !profileLoaded}
-  saving={saving}
-  profileData={profileData}
-  isEditing={isEditing}
-  snackbar={snackbar}
-
-  onFieldChange={handleChange}
-
-  onClinicWorkingHoursChange={
-    handleClinicWorkingHoursChangeLocal
-  }
-
-  onWorkingHoursSaved={
-    handleWorkingHoursSaved
-  }
-
-  onUpdateClick={handleUpdateClick}
-  onSaveClick={saveDoctorProfile}
-  onCloseSnackbar={handleCloseSnackbar}
-
-  onHospitalChange={
-    handleHospitalChangeLocal
-  }
-
-  onAddHospital={
-    handleAddHospitalLocal
-  }
-
-  onRemoveHospital={
-    handleRemoveHospitalLocal
-  }
-
-  onLicenseUpload={handleLicenseUpload}
-  onImageUpload={handleImageUpload}
-
-  onLogoUpload={(file) =>
-    handleBrandingUpload(
-      file,
-      uploadDoctorLogo
-    )
-  }
-
-  onSignatureUpload={(file) =>
-    handleBrandingUpload(
-      file,
-      uploadDoctorSignature
-    )
-  }
-
-  logoUploading={logoUploading}
-  signatureUploading={signatureUploading}
-  profileImageUploading={
-    profileImageUploading
-  }
-/>
+    <ProfileContent
+      loading={loading && !profileLoaded}
+      saving={saving}
+      profileData={profileData}
+      isEditing={isEditing}
+      snackbar={snackbar}
+      onFieldChange={handleChange}
+      onClinicWorkingHoursChange={handleClinicWorkingHoursChangeLocal}
+      onWorkingHoursSaved={handleWorkingHoursSaved}
+      onUpdateClick={handleUpdateClick}
+      onSaveClick={saveDoctorProfile}
+      onCloseSnackbar={handleCloseSnackbar}
+      onHospitalChange={handleHospitalChangeLocal}
+      onAddHospital={handleAddHospitalLocal}
+      onRemoveHospital={handleRemoveHospitalLocal}
+      onLicenseUpload={handleLicenseUpload}
+      onImageUpload={handleImageUpload}
+      onLogoUpload={(file) => handleBrandingUpload(file, uploadDoctorLogo)}
+      onSignatureUpload={(file) =>
+        handleBrandingUpload(file, uploadDoctorSignature)
+      }
+      logoUploading={logoUploading}
+      signatureUploading={signatureUploading}
+      profileImageUploading={profileImageUploading}
+    />
   );
 };
 

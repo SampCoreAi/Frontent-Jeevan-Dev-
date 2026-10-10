@@ -862,26 +862,6 @@ const getClinicId = (hospital) =>
 
         <Divider sx={{ mb: 2 }} />
 
-        {/* ERROR */}
-
-        {submitError && (
-          <Alert
-            severity="error"
-            sx={{
-              mb: 1.5,
-              py: 0.2,
-              borderRadius: "7px",
-              fontSize: "11.5px",
-
-              "& .MuiAlert-message": {
-                py: 0.5,
-              },
-            }}
-          >
-            {submitError}
-          </Alert>
-        )}
-
         {/* FORM */}
 
         <Grid container spacing={1.5}>

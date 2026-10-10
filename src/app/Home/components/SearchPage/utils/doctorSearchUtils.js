@@ -37,7 +37,7 @@ export const mapDoctors = (doctors = []) => {
       fullName: item.fullName || "Doctor",
       username: item.username || "",
       gender: item.gender || "N/A",
-      age: item.age ?? "N/A",
+      dob: item.dob ||  "N/A",
 
       // Professional info
       qualification: item.qualification || "N/A",

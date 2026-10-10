@@ -1022,7 +1022,9 @@ export default function AppointmentForm({
                           fontSize: "11px",
                         }}
                       >
-                        {hospital}
+                       {hospital}
+{[schedule.landmark, schedule.area].filter(Boolean).length > 0 &&
+  ` - ${[schedule.landmark, schedule.area].filter(Boolean).join(", ")}`}
                       </MenuItem>
                     );
                   }
