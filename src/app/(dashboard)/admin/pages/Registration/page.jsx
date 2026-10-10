@@ -31,14 +31,77 @@ const S3_BUCKET_URL =
     ""
   );
 
-export default function Registration() {
-  // =========================
+  export default function Registration() {
+    // =========================
   // DATA
   // =========================
 
   const [registrations, setRegistrations] =
     useState([]);
+const [rejecting, setRejecting] = useState(false);
 
+const handleRejectDoctor = async (doctor, reason) => {
+  if (!doctor || rejecting) return;
+
+  try {
+    setRejecting(true);
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      showMessage("Authentication token not found.", "error");
+      return;
+    }
+
+    const response = await axios.patch(
+      `${API_BASE_URL}/api/doctor-registration/${doctor.id}/reject`,
+      {
+        reason,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const result = response.data;
+
+    if (!result?.success) {
+      throw new Error(
+        result?.message || "Unable to reject doctor registration."
+      );
+    }
+
+    setDocumentDialog(false);
+    setSelectedDoctor(null);
+
+    showMessage(
+      result?.message ||
+        "Doctor registration rejected successfully.",
+      "success"
+    );
+
+    await Promise.all([
+      fetchRegistrations(),
+      fetchStats(),
+    ]);
+  } catch (error) {
+    console.error(
+      "Reject Doctor API Error:",
+      error?.response?.data || error
+    );
+
+    showMessage(
+      error?.response?.data?.message ||
+        error?.message ||
+        "Failed to reject doctor registration.",
+      "error"
+    );
+  } finally {
+    setRejecting(false);
+  }
+};
   const [stats, setStats] = useState({
     total_registered: 0,
     total_submitted: 0,
@@ -559,14 +622,18 @@ export default function Registration() {
       />
 
       {/* DOCUMENT DIALOG */}
-      <DocumentDialog
-        open={documentDialog}
-        onClose={closeDocuments}
-        selectedDoctor={selectedDoctor}
-        getFileUrl={getFileUrl}
-        onAssignDoctor={handleAssignDoctor}
-        assigning={assigning}
-      />
+     <DocumentDialog
+  open={Boolean(selectedDoctor)}
+  onClose={() => setSelectedDoctor(null)}
+  selectedDoctor={selectedDoctor}
+  getFileUrl={getFileUrl}
+
+  onAssignDoctor={handleAssignDoctor}
+  assigning={assigning}
+
+  onRejectDoctor={handleRejectDoctor}
+  rejecting={rejecting}
+/>
 
       {/* MESSAGE */}
       <Snackbar

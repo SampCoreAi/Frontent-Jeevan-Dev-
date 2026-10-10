@@ -1,31 +1,36 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Grid, Paper, Typography, Box } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import PersonIcon from "@mui/icons-material/Person";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import DateRangeIcon from "@mui/icons-material/DateRange";
-import TodayIcon from "@mui/icons-material/Today";
 
-const DashboardCard = () => {
-  const theme = useTheme();
-  const cardBg = theme.palette.background.third;
-  const text = theme.palette.text.primary;
+import {
+  Box,
+  Grid,
+  Paper,
+  Typography,
+  Skeleton,
+  Alert,
+  Button,
+} from "@mui/material";
+
+import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
+import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
+import DateRangeOutlinedIcon from "@mui/icons-material/DateRangeOutlined";
+import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
+import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+
+const DashboardCard = ({ refreshKey }) => {
 
   const [stats, setStats] = useState({
     totalAssistants: 0,
     yearAssistants: 0,
-    weekAssistants: 0,
     monthAssistants: 0,
+    weekAssistants: 0,
   });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetchStats();
-  }, []);
 
   const fetchStats = async () => {
     setLoading(true);
@@ -33,9 +38,9 @@ const DashboardCard = () => {
 
     try {
       const token = localStorage.getItem("token");
+
       if (!token) {
-        setError("Authentication token not found. Please login again.");
-        setLoading(false);
+        setError("Authentication token not found.");
         return;
       }
 
@@ -45,112 +50,189 @@ const DashboardCard = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          timeout: 10000, 
+          timeout: 10000,
         }
       );
-      if (res.data && res.data.data) {
+
+      if (res.data?.data) {
+        const data = res.data.data;
+
         setStats({
-          totalAssistants: res.data.data.totalAssistants || 0,
-          yearAssistants: res.data.data.yearAssistants || 0,
-          weekAssistants: res.data.data.weekAssistants || 0,
-          monthAssistants: res.data.data.monthAssistants || 0,
+          totalAssistants: data.totalAssistants ?? 0,
+          yearAssistants: data.yearAssistants ?? 0,
+          monthAssistants: data.monthAssistants ?? 0,
+          weekAssistants: data.weekAssistants ?? 0,
         });
       } else {
-        setError("Invalid response format from server.");
+        setError("Invalid response from server.");
       }
-    } catch (error) {
-      console.error("Stats Error:", error);
-      if (error.code === "ECONNABORTED") {
-        setError("Request timed out. Please try again.");
-      } else if (error.response) {
-        if (error.response.status === 401) {
-          setError("Session expired. Please login again.");
-          localStorage.removeItem("token");
-        } else if (error.response.status === 403) {
-          setError("You don't have permission to view this data.");
-        } else {
-          setError(
-            error.response.data?.message || 
-            "Failed to fetch statistics. Please try again."
-          );
-        }
-      } else if (error.request) {
-        setError("Network error. Please check your internet connection.");
+    } catch (err) {
+      console.error("Stats Error:", err);
+
+      if (err.code === "ECONNABORTED") {
+        setError("Request timed out.");
+      } else if (err.response?.status === 401) {
+        setError("Session expired. Please login again.");
+        localStorage.removeItem("token");
+      } else if (err.response?.status === 403) {
+        setError("You don't have permission.");
       } else {
-        setError("An unexpected error occurred. Please try again.");
+        setError(
+          err.response?.data?.message ||
+            "Failed to fetch statistics."
+        );
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const cards = [
-    { icon: <PersonIcon />, title: "Total Assistant", value: stats.totalAssistants },
-    { icon: <CalendarMonthIcon />, title: "Year Assistant", value: stats.yearAssistants },
-    { icon: <DateRangeIcon />, title: "Month Assistant", value: stats.monthAssistants },
-    { icon: <TodayIcon />, title: "Week Assistant", value: stats.weekAssistants },
-  ];
+useEffect(() => {
+  fetchStats();
+}, [refreshKey]);
 
-  if (loading) {
-    return (
-      <Box sx={{ width: "100%", p: 2, textAlign: "center" }}>
-        <Typography>Loading statistics...</Typography>
-      </Box>
-    );
-  }
+
+  const cards = [
+    {
+      title: "Total Assistants",
+      value: stats.totalAssistants,
+      subtitle: "All registered",
+      icon: PeopleAltOutlinedIcon,
+      color: "#07876A",
+      iconBg: "#E7F5EF",
+    },
+    {
+      title: "This Year",
+      value: stats.yearAssistants,
+      subtitle: "Year to date",
+      icon: CalendarTodayOutlinedIcon,
+      color: "#4778C7",
+      iconBg: "#EAF1FF",
+    },
+    {
+      title: "This Month",
+      value: stats.monthAssistants,
+      subtitle: "Current month",
+      icon: DateRangeOutlinedIcon,
+      color: "#C58338",
+      iconBg: "#FFF2E5",
+    },
+    {
+      title: "This Week",
+      value: stats.weekAssistants,
+      subtitle: "Current week",
+      icon: EventAvailableOutlinedIcon,
+      color: "#8660C2",
+      iconBg: "#F1EAFE",
+    },
+  ];
 
   if (error) {
     return (
-      <Box sx={{ width: "100%", p: 2, textAlign: "center" }}>
-        <Typography color="error">{error}</Typography>
-      </Box>
+      <Alert
+        severity="error"
+        sx={{ borderRadius: 2 }}
+        action={
+          <Button
+            color="inherit"
+            size="small"
+            onClick={fetchStats}
+          >
+            Retry
+          </Button>
+        }
+      >
+        {error}
+      </Alert>
     );
   }
 
-  return (
-    <Box sx={{ width: "100%" }}>
-      <Grid container spacing={2}>
-        {cards.map((item, index) => (
-          <Grid key={index} size={{ xs: 12, sm: 6, md: 3 }}>
+  
+return (
+  <Box sx={{ width: "100%" }}>
+    <Grid container spacing={1.5}>
+      {cards.map((item, index) => {
+        const Icon = item.icon;
+
+        return (
+          <Grid
+            key={index}
+            size={{ xs: 12, sm: 6, lg: 3 }}
+          >
             <Paper
-              elevation={2}
-              sx={{
-                p: 2,
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                borderRadius: 2,
-                backgroundColor: cardBg,
-                border: "1px solid #0f7468",
-              }}
-            >
+  elevation={0}
+  sx={{
+    p: 1.5,
+    minHeight: 90,
+    display: "flex",
+    alignItems: "center",
+    gap: 1.5,
+    bgcolor: "background.paper",
+
+    // Light green border
+    border: "1px solid rgba(7, 135, 106, 0.13)",
+    borderRadius: "10px",
+
+    transition: "all 0.2s ease",
+
+    "&:hover": {
+      borderColor: item.color,
+      boxShadow: "0 4px 15px rgba(0,0,0,0.04)",
+    },
+  }}
+>
+              {/* ICON */}
               <Box
                 sx={{
-                  fontSize: { xs: 35, sm: 45, md: 55 },
-                  color: text,
+                  width: 42,
+                  height: 42,
+                  flexShrink: 0,
+                  borderRadius: "10px",
+                  bgcolor: item.iconBg,
+                  color: item.color,
                   display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                {item.icon}
+                <Icon sx={{ fontSize: 22 }} />
               </Box>
 
-              <Box>
-                <Typography fontWeight={700}>{item.title}</Typography>
+              {/* CONTENT */}
+              <Box sx={{ minWidth: 0 }}>
                 <Typography
                   sx={{
-                    fontSize: { xs: 20, sm: 24, md: 28 },
-                    fontWeight: 700,
+                    fontSize: "11.5px",
+                    color: "text.secondary",
+                    fontWeight: 500,
                   }}
                 >
-                  {item.value}
+                  {item.title}
                 </Typography>
+
+                {loading ? (
+                  <Skeleton width={55} height={30} />
+                ) : (
+                  <Typography
+                    sx={{
+                      fontSize: "23px",
+                      fontWeight: 700,
+                      lineHeight: 1.3,
+                      color: "text.primary",
+                    }}
+                  >
+                    {Number(item.value).toLocaleString()}
+                  </Typography>
+                )}
               </Box>
             </Paper>
           </Grid>
-        ))}
-      </Grid>
-    </Box>
-  );
+        );
+      })}
+    </Grid>
+  </Box>
+);
+
 };
 
 export default DashboardCard;

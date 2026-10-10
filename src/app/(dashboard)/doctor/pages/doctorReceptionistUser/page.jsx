@@ -16,6 +16,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import DashboardCard from "../../components/doctorReceptionistUser/NumberCard";
@@ -33,6 +35,9 @@ export default function UsersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [statsRefreshKey, setStatsRefreshKey] = useState(0);
+const [statusFilter, setStatusFilter] = useState("ACTIVE");
+const [statusLoading, setStatusLoading] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [selectedAssistant, setSelectedAssistant] = useState(null);
   const [form, setForm] = useState(initialForm);
@@ -84,20 +89,23 @@ export default function UsersPage() {
       const userArray = Array.isArray(res?.data?.data)
         ? res.data.data
         : [];
-      const formattedUsers = userArray.map((user, index) => ({
-        id: user.id,
-        sr: index + 1,
-        name: user.full_name || "-",
-        email: user.email || "-",
-        mobile: user.phone_number || "-",
-        gender: user.gender || "-",
-        age: user.age || "-",
-        department: user.department || "-",
-        education: user.education || "-",
-        experience: user.experience || "-",
-        bio: user.bio || "-",
-        image: user.image || "",
-      }));
+     const formattedUsers = userArray.map((user, index) => ({
+  id: user.id,
+  sr: index + 1,
+  name: user.full_name || "-",
+  email: user.email || "-",
+  mobile: user.phone_number || "-",
+
+  status: String(user.status || "ACTIVE").toUpperCase(),
+
+  gender: user.gender || "-",
+  age: user.age || "-",
+  department: user.department || "-",
+  education: user.education || "-",
+  experience: user.experience || "-",
+  bio: user.bio || "-",
+  image: user.image || "",
+}));
       setUsers(formattedUsers);
     } catch (err) {
       showSnackbar(
@@ -138,7 +146,49 @@ export default function UsersPage() {
     }
     return "";
   };
+const handleStatusChange = async (user, newStatus) => {
+  try {
+    setStatusLoading(true);
 
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      showSnackbar(
+        "Authentication token not found",
+        "error"
+      );
+      return;
+    }
+
+    await axios.patch(
+      `${apiUrl}/api/auth/updateUserStatus/${user.id}`,
+      {
+        status: newStatus,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    await fetchUsers();
+
+    showSnackbar(
+      newStatus === "INACTIVE"
+        ? "Assistant removed successfully"
+        : "Assistant activated successfully"
+    );
+  } catch (err) {
+    showSnackbar(
+      err?.response?.data?.message ||
+        "Failed to update assistant status",
+      "error"
+    );
+  } finally {
+    setStatusLoading(false);
+  }
+};
   const validateForm = () => {
     const newErrors = {};
     Object.entries(form).forEach(([key, value]) => {
@@ -182,7 +232,10 @@ export default function UsersPage() {
       [name]: validateField(name, value),
     }));
   };
-
+const handleView = (user) => {
+  setSelectedAssistant(user);
+  setViewOpen(true);
+};
   const resetForm = () => {
     setForm(initialForm);
     setErrors({});
@@ -222,7 +275,12 @@ export default function UsersPage() {
         }
       );
       await fetchUsers();
-      showSnackbar("Assistant created successfully");
+     await fetchUsers();
+
+setStatsRefreshKey((prev) => prev + 1);
+
+showSnackbar("Assistant created successfully");
+
       setDialogOpen(false);
       resetForm();
     } catch (err) {
@@ -392,7 +450,8 @@ export default function UsersPage() {
           </Button>
         </Box>
         <Box sx={{ px: { xs: 1.5, sm: 2 }, py: 2 }}>
-          <DashboardCard />
+        <DashboardCard refreshKey={statsRefreshKey} />
+
         </Box>
         <Box
           sx={{
@@ -497,11 +556,15 @@ export default function UsersPage() {
               </Button>
             </Box>
           ) : (
-            <UserDataGrid
-              users={users}
-              columns={columns}
-              loading={usersLoading}
-            />
+       <UserDataGrid
+  users={users}
+  columns={columns}
+  loading={usersLoading}
+  statusFilter={statusFilter}
+  setStatusFilter={setStatusFilter}
+  onStatusChange={handleStatusChange}
+  onView={handleView}
+/>
           )}
         </Box>
       </Box>

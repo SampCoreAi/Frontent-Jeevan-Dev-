@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Grid,
   Paper,
@@ -12,12 +12,12 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import PersonIcon from "@mui/icons-material/Person";
+import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
-import TaskAltIcon from "@mui/icons-material/TaskAlt";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import EventBusyIcon from "@mui/icons-material/EventBusy";
+import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
+import BiotechOutlinedIcon from "@mui/icons-material/BiotechOutlined";
+import LocalPharmacyOutlinedIcon from "@mui/icons-material/LocalPharmacyOutlined";
 
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -33,246 +33,356 @@ const DashboardCard = ({
   dashboardData,
   loading,
 }) => {
-  const cardBg = "#e4eceb";
-  const text = "black";
-
-  const topCards = [
+  // =====================================================
+  // ROLE CARDS
+  // =====================================================
+  const cards = [
     {
-      icon: <PersonIcon sx={{ fontSize: 55 }} />,
+      icon: PersonIcon,
       title: "Patients",
-      value: dashboardData.patients,
+      value: dashboardData?.patients ?? 0,
     },
     {
-      icon: <LocalHospitalIcon sx={{ fontSize: 55 }} />,
+      icon: LocalHospitalIcon,
       title: "Doctors",
-      value: dashboardData.doctors,
+      value: dashboardData?.doctors ?? 0,
     },
     {
-      icon: <SupportAgentIcon sx={{ fontSize: 55 }} />,
-      title: "Assistants",
-      value: dashboardData.assistants,
+      icon: SupportAgentIcon,
+      title: "Doctor Assistants",
+      value: dashboardData?.assistants ?? 0,
     },
     {
-      icon: <TaskAltIcon sx={{ fontSize: 55 }} />,
-      title: "Completed",
-      value: dashboardData.completedAppointments,
+      icon: ScienceOutlinedIcon,
+      title: "Labs",
+      value: dashboardData?.labs ?? 0,
+    },
+    {
+      icon: BiotechOutlinedIcon,
+      title: "Lab Assistants",
+      value: dashboardData?.labAssistants ?? 0,
+    },
+    {
+      icon: LocalPharmacyOutlinedIcon,
+      title: "Medical Stores",
+      value: dashboardData?.medicalStores ?? 0,
     },
   ];
-  const bottomCards = [
-    {
-      icon: <EventAvailableIcon sx={{ fontSize: 60 }} />,
-      title: "Upcoming",
-      value: dashboardData.upcomingAppointments,
-    },
-    {
-      icon: <EventBusyIcon sx={{ fontSize: 60 }} />,
-      title: "Cancel",
-      value: dashboardData.pastAppointments,
-    },
-  ];
-  const renderTopCard = (item, index) => (
-    <Grid key={index} size={{ xs: 12, sm: 6, md: 3 }}>
-      <Paper
-        sx={{
-          p: 2,
-          display: "flex",
-          alignItems: "center",
-          gap: 2,
-          borderRadius: 2,
-          backgroundColor: cardBg,
-          border: "1px solid #0f7468",
-          transition: ".3s",
-          height: "100%",
-          "&:hover": {
-            transform: "translateY(-4px)",
-            boxShadow: "0 6px 12px rgba(0,0,0,.15)",
-          },
+
+  // =====================================================
+  // CARD
+  // =====================================================
+  const renderCard = (item) => {
+    const Icon = item.icon;
+
+    return (
+      <Grid
+        key={item.title}
+        size={{
+          xs: 12,
+          sm: 6,
+          md: 4,
+          lg: 2,
         }}
       >
-        <Box
+        <Paper
           sx={{
-            fontSize: { xs: 40, sm: 50, md: 30 },
-            color: text,
-            display: "flex",
+            height: "100%",
+
+            p: 1.5,
+
+            borderRadius: 2,
+
+            // Theme light mode = #EDF7F2
+            bgcolor: "secondary.light",
+
+            border: "1px solid",
+            borderColor: "divider",
+
+            boxShadow: "none",
+
+            transition:
+              "transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease",
+
+            "&:hover": {
+              transform: "translateY(-2px)",
+
+              borderColor: "primary.main",
+
+              boxShadow: (theme) =>
+                theme.palette.mode === "dark"
+                  ? "0 4px 12px rgba(0,0,0,0.18)"
+                  : "0 4px 12px rgba(15,23,42,0.06)",
+            },
           }}
         >
-          {item.icon}
-        </Box>
-
-        <Box>
-          <Typography
+          <Box
             sx={{
-              fontSize: { xs: 14, sm: 16, md: 18 },
-              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+
+              gap: 1.25,
+
+              // Compact height
+              minHeight: 50,
             }}
           >
-            {item.title}
-          </Typography>
-
-          <Typography
-            sx={{
-              fontSize: { xs: 22, sm: 26, md: 32 },
-              fontWeight: 700,
-            }}
-          >
-            {loading ? <CircularProgress size={22} /> : item.value}
-          </Typography>
-        </Box>
-      </Paper>
-    </Grid>
-  );
-
-  const renderBottomCard = (item, index) => (
-    <Grid key={index} size={{ xs: 12, md: 6 }}>
-      <Paper
-        sx={{
-          p: 3,
-          borderRadius: 2,
-          backgroundColor: cardBg,
-          border: "1px solid #0f7468",
-          transition: ".3s",
-          "&:hover": {
-            transform: "translateY(-4px)",
-            boxShadow: "0 6px 12px rgba(0,0,0,.15)",
-          },
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {/* ICON */}
             <Box
               sx={{
-                fontSize: { xs: 40, sm: 50, md: 60 },
-                color: text,
+                width: 36,
+                height: 36,
+
+                flexShrink: 0,
+
                 display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+
+                borderRadius: 1.5,
+
+                bgcolor: "background.paper",
+
+                border: "1px solid",
+                borderColor: "divider",
+
+                color: "primary.main",
               }}
             >
-              {item.icon}
+              <Icon
+                sx={{
+                  fontSize: 20,
+                }}
+              />
             </Box>
 
-            <Box>
+            {/* CONTENT */}
+            <Box
+              sx={{
+                minWidth: 0,
+              }}
+            >
               <Typography
+                variant="body2"
+                noWrap
                 sx={{
-                  fontSize: { xs: 15, sm: 16, md: 18 },
-                  fontWeight: 700,
+                  color: "text.primary",
+                  mb: 0.1,
                 }}
               >
                 {item.title}
               </Typography>
 
               <Typography
+                component="div"
                 sx={{
-                  fontSize: { xs: 22, sm: 26, md: 32 },
+                  fontSize: "22px",
+                  lineHeight: 1.15,
+
                   fontWeight: 700,
+
+                  color: "text.primary",
                 }}
               >
-                {item.value}
+                {loading ? (
+                  <CircularProgress
+                    size={17}
+                    thickness={4}
+                    color="primary"
+                  />
+                ) : (
+                  item.value
+                )}
               </Typography>
             </Box>
           </Box>
-          <FormControl
-            size="small"
-            sx={{
-              minWidth: 120,
-              "& .MuiOutlinedInput-root": {
-                bgcolor: "#fff",
-                borderRadius: 2,
-                "& fieldset": {
-                  borderColor: "#1f8e6e",
-                },
-                "&:hover fieldset": {
-                  borderColor: "#1f8e6e",
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#1f8e6e",
-                },
-              },
-            }}
-          >
-           
-          </FormControl>
-        </Box>
-      </Paper>
-    </Grid>
-  );
+        </Paper>
+      </Grid>
+    );
+  };
 
   return (
     <Box>
-      {/* Dashboard Header */}
+      {/* =================================================
+          HEADER
+      ================================================= */}
       <Box
         sx={{
           display: "flex",
+
           justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
-          flexWrap: "wrap",
-          gap: 2,
+
+          alignItems: {
+            xs: "flex-start",
+            sm: "center",
+          },
+
+          flexDirection: {
+            xs: "column",
+            sm: "row",
+          },
+
+          gap: 1.5,
+
+          mb: 2,
         }}
       >
-        <Typography variant="h5" fontWeight={700}>
-          Dashboard
-        </Typography>
+        {/* TITLE */}
+        <Box>
+          <Typography
+            variant="h5"
+            sx={{
+              color: "text.primary",
+            }}
+          >
+            Dashboard
+          </Typography>
 
-        <FormControl size="small" sx={{ minWidth: 180 }}>
+          <Typography
+            variant="body2"
+            sx={{
+              mt: 0.25,
+
+              color: "text.secondary",
+            }}
+          >
+            Overview of users and healthcare partners
+          </Typography>
+        </Box>
+
+        {/* FILTER */}
+        <FormControl
+          size="small"
+          sx={{
+            width: {
+              xs: "100%",
+              sm: 160,
+            },
+          }}
+        >
           <Select
             value={filter}
             onChange={(e) => {
-              setFilter(e.target.value);
+              const value = e.target.value;
 
-              if (e.target.value !== "custom") {
+              setFilter(value);
+
+              if (value !== "custom") {
                 setStartDate(null);
                 setEndDate(null);
               }
             }}
           >
-            <MenuItem value="today">Today</MenuItem>
-            <MenuItem value="week">Week</MenuItem>
-            <MenuItem value="month">Month</MenuItem>
-            <MenuItem value="year">Year</MenuItem>
-            <MenuItem value="custom">Custom Date</MenuItem>
+            <MenuItem value="today">
+              Today
+            </MenuItem>
+
+            <MenuItem value="week">
+              This Week
+            </MenuItem>
+
+            <MenuItem value="month">
+              This Month
+            </MenuItem>
+
+            <MenuItem value="year">
+              This Year
+            </MenuItem>
+
+            <MenuItem value="custom">
+              Custom Date
+            </MenuItem>
           </Select>
         </FormControl>
       </Box>
 
-      {/* Custom Date Picker */}
+      {/* =================================================
+          CUSTOM DATE FILTER
+      ================================================= */}
       {filter === "custom" && (
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <Box
+        <LocalizationProvider
+          dateAdapter={AdapterDayjs}
+        >
+          <Paper
+            variant="outlined"
             sx={{
-              display: "flex",
-              gap: 2,
-              mb: 3,
-              flexWrap: "wrap",
+              p: 1.25,
+
+              mb: 1.5,
+
+              borderRadius: 2,
+
+              borderColor: "divider",
+
+              bgcolor: "background.paper",
+
+              boxShadow: "none",
             }}
           >
-            <DatePicker
-              label="From Date"
-              value={startDate}
-              onChange={(value) => setStartDate(value)}
-            />
+            <Box
+              sx={{
+                display: "flex",
 
-            <DatePicker
-              label="To Date"
-              value={endDate}
-              onChange={(value) => setEndDate(value)}
-            />
-          </Box>
+                alignItems: "center",
+
+                gap: 1.25,
+
+                flexWrap: "wrap",
+              }}
+            >
+              <DatePicker
+                label="From Date"
+                value={startDate}
+                onChange={(value) =>
+                  setStartDate(value)
+                }
+                slotProps={{
+                  textField: {
+                    size: "small",
+
+                    sx: {
+                      width: {
+                        xs: "100%",
+                        sm: 170,
+                      },
+                    },
+                  },
+                }}
+              />
+
+              <DatePicker
+                label="To Date"
+                value={endDate}
+                minDate={startDate || undefined}
+                onChange={(value) =>
+                  setEndDate(value)
+                }
+                slotProps={{
+                  textField: {
+                    size: "small",
+
+                    sx: {
+                      width: {
+                        xs: "100%",
+                        sm: 170,
+                      },
+                    },
+                  },
+                }}
+              />
+            </Box>
+          </Paper>
         </LocalizationProvider>
       )}
 
-      {/* Top Cards */}
-      <Grid container spacing={2} mb={2}>
-        {topCards.map(renderTopCard)}
-      </Grid>
-
-      {/* Bottom Cards */}
-      <Grid container spacing={2}>
-        {bottomCards.map(renderBottomCard)}
+      {/* =================================================
+          6 ROLE CARDS
+      ================================================= */}
+      <Grid
+        container
+        spacing={1.5}
+      >
+        {cards.map(renderCard)}
       </Grid>
     </Box>
   );

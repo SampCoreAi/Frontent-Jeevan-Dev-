@@ -254,12 +254,13 @@ useEffect(() => {
   />
 </Typography>
 
-      <SavedSchedules
-        schedules={schedules}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        loading={loading}
-      />
+<SavedSchedules
+  schedules={Array.isArray(schedules) ? schedules : []}
+  hospitals={Array.isArray(hospitals) ? hospitals : []}
+  onEdit={handleEdit}
+  onDelete={handleDelete}
+/>
+
 
       <Snackbar
         open={snackbar.open}

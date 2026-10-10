@@ -19,11 +19,9 @@ import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
 
 import axios from "axios";
+import api from "@/utils/axiosInstance";
 
-import {
-  API_BASE_URL,
-  API_ENDPOINTS,
-} from "../../../../../config/api";
+import { API_BASE_URL, API_ENDPOINTS } from "../../../../../config/api";
 
 const PatientProfileSidebar = ({
   userProfile,
@@ -38,6 +36,11 @@ const PatientProfileSidebar = ({
   const [previewImage, setPreviewImage] = React.useState(null);
   const [uploadError, setUploadError] = React.useState("");
   const [errors, setErrors] = React.useState({});
+  const [usernameAvailable, setUsernameAvailable] = React.useState(null);
+  const [checkingUsername, setCheckingUsername] = React.useState(false);
+  const [usernameMessage, setUsernameMessage] = React.useState("");
+  const [usernameTouched, setUsernameTouched] = React.useState(false);
+  const savedUsernameRef = React.useRef("");
 
   const open = Boolean(anchorEl);
 
@@ -50,6 +53,77 @@ const PatientProfileSidebar = ({
       return {};
     }
   }, []);
+
+  React.useEffect(() => {
+    if (editable) return;
+
+    savedUsernameRef.current = String(userProfile?.username || "")
+      .replace(/^@/, "")
+      .trim();
+    setUsernameTouched(false);
+    setUsernameAvailable(null);
+    setCheckingUsername(false);
+    setUsernameMessage("");
+  }, [editable, userProfile?.username]);
+
+  React.useEffect(() => {
+    if (!editable || !usernameTouched) return;
+
+    const username = String(formData?.username || "")
+      .replace(/^@/, "")
+      .trim();
+    const savedUsername = savedUsernameRef.current;
+
+    if (
+      !username ||
+      (savedUsername &&
+        username.toLowerCase() === savedUsername.toLowerCase()) ||
+      username.length < 3 ||
+      username.length > 30 ||
+      !/^[A-Za-z0-9_]+$/.test(username)
+    ) {
+      setUsernameAvailable(null);
+      setCheckingUsername(false);
+      setUsernameMessage("");
+      return;
+    }
+
+    let active = true;
+    const timer = setTimeout(async () => {
+      try {
+        setCheckingUsername(true);
+        setUsernameAvailable(null);
+        setUsernameMessage("Checking availability...");
+
+        const response = await api.get("/api/doctors/check-username", {
+          params: { username },
+        });
+
+        if (!active) return;
+
+        const available = Boolean(response?.data?.available);
+        setUsernameAvailable(available);
+        setUsernameMessage(
+          available ? "Username is available" : "Username is already taken",
+        );
+      } catch (error) {
+        if (!active) return;
+
+        console.error("Username check error:", error);
+        setUsernameAvailable(null);
+        setUsernameMessage(
+          error?.response?.data?.message || "Unable to check username",
+        );
+      } finally {
+        if (active) setCheckingUsername(false);
+      }
+    }, 500);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [editable, formData?.username, usernameTouched]);
 
   const validateField = (field, value) => {
     const stringValue = String(value ?? "").trim();
@@ -70,24 +144,6 @@ const PatientProfileSidebar = ({
 
         if (!/^[A-Za-z0-9_]+$/.test(stringValue)) {
           return "Only letters, numbers and underscore allowed";
-        }
-
-        return "";
-
-      case "age":
-        if (!stringValue) {
-          return "";
-        }
-
-        if (!/^\d+$/.test(stringValue)) {
-          return "Enter a valid age";
-        }
-
-        if (
-          Number(stringValue) < 1 ||
-          Number(stringValue) > 120
-        ) {
-          return "Age must be between 1 and 120";
         }
 
         return "";
@@ -116,10 +172,7 @@ const PatientProfileSidebar = ({
           return "Enter a valid weight";
         }
 
-        if (
-          Number(stringValue) < 1 ||
-          Number(stringValue) > 500
-        ) {
+        if (Number(stringValue) < 1 || Number(stringValue) > 500) {
           return "Weight must be between 1 and 500 kg";
         }
 
@@ -134,10 +187,7 @@ const PatientProfileSidebar = ({
           return "Enter a valid height";
         }
 
-        if (
-          Number(stringValue) < 30 ||
-          Number(stringValue) > 300
-        ) {
+        if (Number(stringValue) < 30 || Number(stringValue) > 300) {
           return "Height must be between 30 and 300 cm";
         }
 
@@ -152,16 +202,13 @@ const PatientProfileSidebar = ({
     let nextValue = value;
 
     if (field === "username") {
-      nextValue = value
-        .replace(/[^A-Za-z0-9_]/g, "")
-        .slice(0, 30);
+      nextValue = value.replace(/[^A-Za-z0-9_]/g, "").slice(0, 30);
+      setUsernameTouched(true);
+      setUsernameAvailable(null);
+      setUsernameMessage("");
     }
 
-    if (field === "age") {
-      nextValue = value
-        .replace(/\D/g, "")
-        .slice(0, 3);
-    }
+ 
 
     if (field === "language") {
       nextValue = value
@@ -197,9 +244,7 @@ const PatientProfileSidebar = ({
   };
 
   const preventInvalidNumberKeys = (event) => {
-    if (
-      ["e", "E", "+", "-"].includes(event.key)
-    ) {
+    if (["e", "E", "+", "-"].includes(event.key)) {
       event.preventDefault();
     }
   };
@@ -220,16 +265,10 @@ const PatientProfileSidebar = ({
 
     setUploadError("");
 
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ];
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
     if (!allowedTypes.includes(file.type)) {
-      setUploadError(
-        "Only JPG, PNG or WEBP images are allowed."
-      );
+      setUploadError("Only JPG, PNG or WEBP images are allowed.");
       event.target.value = "";
       return;
     }
@@ -237,9 +276,7 @@ const PatientProfileSidebar = ({
     const maxSize = 5 * 1024 * 1024;
 
     if (file.size > maxSize) {
-      setUploadError(
-        "Image size cannot exceed 5 MB."
-      );
+      setUploadError("Image size cannot exceed 5 MB.");
       event.target.value = "";
       return;
     }
@@ -255,9 +292,7 @@ const PatientProfileSidebar = ({
     if (!token) {
       URL.revokeObjectURL(localPreview);
       setPreviewImage(null);
-      setUploadError(
-        "Authentication token not found."
-      );
+      setUploadError("Authentication token not found.");
       event.target.value = "";
       return;
     }
@@ -272,14 +307,11 @@ const PatientProfileSidebar = ({
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!response.data?.success) {
-        throw new Error(
-          response.data?.message ||
-            "Image upload failed"
-        );
+        throw new Error(response.data?.message || "Image upload failed");
       }
     } catch (error) {
       URL.revokeObjectURL(localPreview);
@@ -289,14 +321,12 @@ const PatientProfileSidebar = ({
       setUploadError(
         error?.response?.data?.message ||
           error?.message ||
-          "Unable to upload image."
+          "Unable to upload image.",
       );
 
       console.error(
         "Upload Error:",
-        error?.response?.data ||
-          error?.message ||
-          error
+        error?.response?.data || error?.message || error,
       );
     } finally {
       setUploading(false);
@@ -306,20 +336,14 @@ const PatientProfileSidebar = ({
 
   React.useEffect(() => {
     return () => {
-      if (
-        previewImage &&
-        previewImage.startsWith("blob:")
-      ) {
+      if (previewImage && previewImage.startsWith("blob:")) {
         URL.revokeObjectURL(previewImage);
       }
     };
   }, [previewImage]);
 
   const handleRemovePhoto = () => {
-    if (
-      previewImage &&
-      previewImage.startsWith("blob:")
-    ) {
+    if (previewImage && previewImage.startsWith("blob:")) {
       URL.revokeObjectURL(previewImage);
     }
 
@@ -329,22 +353,14 @@ const PatientProfileSidebar = ({
   };
 
   const displayName =
-    localUser?.name ||
-    formData?.name ||
-    userProfile?.full_name ||
-    "Patient";
+    localUser?.name || formData?.name || userProfile?.full_name || "Patient";
 
   const displayUsername = formData?.username
     ? `@${formData.username}`
-    : `@${displayName
-        .toLowerCase()
-        .replace(/\s+/g, "")}`;
+    : `@${displayName.toLowerCase().replace(/\s+/g, "")}`;
 
   const displayEmail =
-    formData?.email ||
-    userProfile?.email ||
-    localUser?.email ||
-    "";
+    formData?.email || userProfile?.email || localUser?.email || "";
 
   const displayPhone =
     formData?.phone ||
@@ -352,8 +368,7 @@ const PatientProfileSidebar = ({
     localUser?.phone_number ||
     "";
 
-  const S3_URL =
-    process.env.NEXT_PUBLIC_S3_BUCKET_URL || "";
+  const S3_URL = process.env.NEXT_PUBLIC_S3_BUCKET_URL || "";
 
   const displayImage =
     previewImage ||
@@ -363,9 +378,7 @@ const PatientProfileSidebar = ({
         : `${S3_URL}${userProfile.image.url}`
       : null);
 
-  const avatarInitial = displayName
-    ? displayName.charAt(0).toUpperCase()
-    : "P";
+  const avatarInitial = displayName ? displayName.charAt(0).toUpperCase() : "P";
 
   const infoRow = {
     width: "100%",
@@ -376,8 +389,7 @@ const PatientProfileSidebar = ({
     py: 1,
     minHeight: 40,
     borderRadius: 1.5,
-    backgroundColor:
-      theme.palette.background.default,
+    backgroundColor: theme.palette.background.default,
     border: `1px solid ${theme.palette.divider}`,
     boxSizing: "border-box",
   };
@@ -457,8 +469,7 @@ const PatientProfileSidebar = ({
         maxWidth: {
           md: 290,
         },
-        backgroundColor:
-          theme.palette.background.paper,
+        backgroundColor: theme.palette.background.paper,
         px: {
           xs: 2,
           md: 2.5,
@@ -493,10 +504,8 @@ const PatientProfileSidebar = ({
               xs: "34px",
               md: "42px",
             },
-            backgroundColor:
-              theme.palette.primary.main,
-            color:
-              theme.palette.primary.contrastText,
+            backgroundColor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText,
             fontWeight: 700,
             opacity: uploading ? 0.5 : 1,
           }}
@@ -513,8 +522,7 @@ const PatientProfileSidebar = ({
               alignItems: "center",
               justifyContent: "center",
               borderRadius: 2.5,
-              backgroundColor:
-                "rgba(255,255,255,0.45)",
+              backgroundColor: "rgba(255,255,255,0.45)",
               zIndex: 2,
             }}
           >
@@ -547,15 +555,12 @@ const PatientProfileSidebar = ({
               right: 6,
               width: 30,
               height: 30,
-              backgroundColor:
-                theme.palette.background.paper,
+              backgroundColor: theme.palette.background.paper,
               border: `1px solid ${theme.palette.divider}`,
-              boxShadow:
-                "0 2px 8px rgba(0,0,0,0.12)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
 
               "&:hover": {
-                backgroundColor:
-                  theme.palette.background.default,
+                backgroundColor: theme.palette.background.default,
               },
             }}
           >
@@ -578,8 +583,7 @@ const PatientProfileSidebar = ({
             mt: 0.5,
             minWidth: 160,
             borderRadius: 1.5,
-            boxShadow:
-              "0 6px 20px rgba(0,0,0,0.10)",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.10)",
 
             "& .MuiMenuItem-root": {
               fontSize: "12.5px",
@@ -592,11 +596,7 @@ const PatientProfileSidebar = ({
           onClick={() => {
             handleClose();
 
-            document
-              .getElementById(
-                "upload-photo-input"
-              )
-              ?.click();
+            document.getElementById("upload-photo-input")?.click();
           }}
         >
           Upload New Photo
@@ -682,8 +682,7 @@ const PatientProfileSidebar = ({
               <Typography
                 sx={{
                   fontSize: "12px",
-                  color:
-                    theme.palette.text.secondary,
+                  color: theme.palette.text.secondary,
                 }}
               >
                 @
@@ -694,15 +693,8 @@ const PatientProfileSidebar = ({
                 value={formData?.username || ""}
                 maxLength={30}
                 autoComplete="username"
-                onChange={(e) =>
-                  updateField(
-                    "username",
-                    e.target.value
-                  )
-                }
-                onBlur={() =>
-                  handleBlur("username")
-                }
+                onChange={(e) => updateField("username", e.target.value)}
+                onBlur={() => handleBlur("username")}
                 placeholder="username"
                 style={{
                   ...inputStyle,
@@ -716,8 +708,7 @@ const PatientProfileSidebar = ({
               sx={{
                 fontSize: "12px",
                 fontWeight: 500,
-                color:
-                  theme.palette.text.secondary,
+                color: theme.palette.text.secondary,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -729,6 +720,21 @@ const PatientProfileSidebar = ({
         </Box>
 
         <ErrorText field="username" />
+        {editable && usernameMessage && (
+          <Typography
+            sx={{
+              mt: -1,
+              fontSize: "11px",
+              color: checkingUsername
+                ? theme.palette.text.secondary
+                : usernameAvailable
+                  ? theme.palette.success.main
+                  : theme.palette.error.main,
+            }}
+          >
+            {usernameMessage}
+          </Typography>
+        )}
       </Stack>
 
       <Divider
@@ -758,8 +764,7 @@ const PatientProfileSidebar = ({
             <Box sx={infoRow}>
               <EmailOutlinedIcon
                 sx={{
-                  color:
-                    theme.palette.primary.main,
+                  color: theme.palette.primary.main,
                   fontSize: 16,
                   flexShrink: 0,
                 }}
@@ -769,8 +774,7 @@ const PatientProfileSidebar = ({
                 title={displayEmail}
                 sx={{
                   fontSize: "12px",
-                  color:
-                    theme.palette.text.secondary,
+                  color: theme.palette.text.secondary,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -785,8 +789,7 @@ const PatientProfileSidebar = ({
             <Box sx={infoRow}>
               <PhoneOutlinedIcon
                 sx={{
-                  color:
-                    theme.palette.primary.main,
+                  color: theme.palette.primary.main,
                   fontSize: 16,
                   flexShrink: 0,
                 }}
@@ -796,8 +799,7 @@ const PatientProfileSidebar = ({
                 title={displayPhone}
                 sx={{
                   fontSize: "12px",
-                  color:
-                    theme.palette.text.secondary,
+                  color: theme.palette.text.secondary,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -833,98 +835,54 @@ const PatientProfileSidebar = ({
         </Typography>
 
         <Stack spacing={0.8}>
-          <Box>
-            <Box sx={editableRow("age")}>
-              <Typography sx={labelStyle}>
-                Age
-              </Typography>
+         <Box>
+  <Box sx={editableRow("dob")}>
+    <Typography sx={labelStyle}>Date of Birth</Typography>
 
-              <input
-                type="number"
-                value={formData?.age ?? ""}
-                placeholder="Age"
-                disabled={!editable}
-                min={1}
-                max={120}
-                inputMode="numeric"
-                onKeyDown={
-                  preventInvalidNumberKeys
-                }
-                onChange={(e) =>
-                  updateField(
-                    "age",
-                    e.target.value
-                  )
-                }
-                onBlur={() =>
-                  handleBlur("age")
-                }
-                style={inputStyle}
-              />
-            </Box>
+    <input
+      type="date"
+      value={(formData?.dob || "").slice(0, 10)}
+      disabled={!editable}
+      onChange={(e) => updateField("dob", e.target.value)}
+      onBlur={() => handleBlur("dob")}
+      style={inputStyle}
+    />
+  </Box>
 
-            <ErrorText field="age" />
-          </Box>
+  <ErrorText field="dob" />
+</Box>
 
           <Box sx={infoRow}>
-            <Typography sx={labelStyle}>
-              Gender
-            </Typography>
+            <Typography sx={labelStyle}>Gender</Typography>
 
             <select
               value={formData?.gender || ""}
               disabled={!editable}
-              onChange={(e) =>
-                handleChange(
-                  "gender",
-                  e.target.value
-                )
-              }
+              onChange={(e) => handleChange("gender", e.target.value)}
               style={{
                 ...inputStyle,
-                cursor: editable
-                  ? "pointer"
-                  : "default",
+                cursor: editable ? "pointer" : "default",
               }}
             >
-              <option value="">
-                Select
-              </option>
-              <option value="MALE">
-                Male
-              </option>
-              <option value="FEMALE">
-                Female
-              </option>
-              <option value="OTHER">
-                Other
-              </option>
+              <option value="">Select</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+              <option value="OTHER">Other</option>
             </select>
           </Box>
 
           <Box>
             <Box sx={editableRow("language")}>
-              <Typography sx={labelStyle}>
-                Language
-              </Typography>
+              <Typography sx={labelStyle}>Language</Typography>
 
               <input
                 type="text"
-                value={
-                  formData?.language || ""
-                }
+                value={formData?.language || ""}
                 placeholder="Hindi, English"
                 disabled={!editable}
                 maxLength={100}
-                onChange={(e) =>
-                  updateField(
-                    "language",
-                    e.target.value
-                  )
-                }
-                onBlur={() =>
-                  handleBlur("language")
-                }
+                onChange={(e) => updateField("language", e.target.value)}
+                onBlur={() => handleBlur("language")}
                 style={inputStyle}
               />
             </Box>
@@ -934,9 +892,7 @@ const PatientProfileSidebar = ({
 
           <Box>
             <Box sx={editableRow("weight")}>
-              <Typography sx={labelStyle}>
-                Weight
-              </Typography>
+              <Typography sx={labelStyle}>Weight</Typography>
 
               <Box
                 sx={{
@@ -948,44 +904,30 @@ const PatientProfileSidebar = ({
               >
                 <input
                   type="number"
-                  value={
-                    formData?.weight ?? ""
-                  }
+                  value={formData?.weight ?? ""}
                   placeholder="Weight"
                   disabled={!editable}
                   min={1}
                   max={500}
                   step="0.1"
                   inputMode="decimal"
-                  onKeyDown={
-                    preventInvalidNumberKeys
-                  }
-                  onChange={(e) =>
-                    updateField(
-                      "weight",
-                      e.target.value
-                    )
-                  }
-                  onBlur={() =>
-                    handleBlur("weight")
-                  }
+                  onKeyDown={preventInvalidNumberKeys}
+                  onChange={(e) => updateField("weight", e.target.value)}
+                  onBlur={() => handleBlur("weight")}
                   style={inputStyle}
                 />
 
-                {formData?.weight !== "" &&
-                  formData?.weight != null && (
-                    <Typography
-                      sx={{
-                        fontSize: "11px",
-                        color:
-                          theme.palette.text
-                            .secondary,
-                        flexShrink: 0,
-                      }}
-                    >
-                      kg
-                    </Typography>
-                  )}
+                {formData?.weight !== "" && formData?.weight != null && (
+                  <Typography
+                    sx={{
+                      fontSize: "11px",
+                      color: theme.palette.text.secondary,
+                      flexShrink: 0,
+                    }}
+                  >
+                    kg
+                  </Typography>
+                )}
               </Box>
             </Box>
 
@@ -994,9 +936,7 @@ const PatientProfileSidebar = ({
 
           <Box>
             <Box sx={editableRow("height")}>
-              <Typography sx={labelStyle}>
-                Height
-              </Typography>
+              <Typography sx={labelStyle}>Height</Typography>
 
               <Box
                 sx={{
@@ -1008,44 +948,30 @@ const PatientProfileSidebar = ({
               >
                 <input
                   type="number"
-                  value={
-                    formData?.height ?? ""
-                  }
+                  value={formData?.height ?? ""}
                   placeholder="Height"
                   disabled={!editable}
                   min={30}
                   max={300}
                   step="0.1"
                   inputMode="decimal"
-                  onKeyDown={
-                    preventInvalidNumberKeys
-                  }
-                  onChange={(e) =>
-                    updateField(
-                      "height",
-                      e.target.value
-                    )
-                  }
-                  onBlur={() =>
-                    handleBlur("height")
-                  }
+                  onKeyDown={preventInvalidNumberKeys}
+                  onChange={(e) => updateField("height", e.target.value)}
+                  onBlur={() => handleBlur("height")}
                   style={inputStyle}
                 />
 
-                {formData?.height !== "" &&
-                  formData?.height != null && (
-                    <Typography
-                      sx={{
-                        fontSize: "11px",
-                        color:
-                          theme.palette.text
-                            .secondary,
-                        flexShrink: 0,
-                      }}
-                    >
-                      cm
-                    </Typography>
-                  )}
+                {formData?.height !== "" && formData?.height != null && (
+                  <Typography
+                    sx={{
+                      fontSize: "11px",
+                      color: theme.palette.text.secondary,
+                      flexShrink: 0,
+                    }}
+                  >
+                    cm
+                  </Typography>
+                )}
               </Box>
             </Box>
 

@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   Box,
   Button,
-  Chip,
   IconButton,
   InputAdornment,
   Popover,
@@ -380,43 +379,6 @@ const Filter = ({
             : "Date"}
         </Button>
 
-        {selectedDate && (
-          <Chip
-            size="small"
-            label={selectedDate.format(
-              "DD/MM/YYYY"
-            )}
-            onDelete={() =>
-              setSelectedDate(null)
-            }
-            sx={{
-              display: {
-                xs: "none",
-                sm: "flex",
-              },
-
-              height: 28,
-
-              bgcolor: "action.hover",
-
-              color: "primary.main",
-
-              fontSize: "11px",
-
-              fontWeight: 500,
-
-              "& .MuiChip-deleteIcon": {
-                fontSize: 16,
-
-                color: "text.secondary",
-
-                "&:hover": {
-                  color: "error.main",
-                },
-              },
-            }}
-          />
-        )}
 
         <Popover
           open={Boolean(anchorEl)}

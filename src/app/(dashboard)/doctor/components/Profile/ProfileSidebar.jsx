@@ -10,6 +10,7 @@ import React, {
 import {
   Avatar,
   Box,
+  CircularProgress,
   FormControlLabel,
   IconButton,
   InputAdornment,
@@ -47,6 +48,7 @@ const ProfileSidebar = ({
   onRatingChange,
   onOnlineVisibilityChange,
   onAvatarChange,
+  avatarUploading,
 }) => {
   const theme = useTheme();
 
@@ -60,20 +62,6 @@ const ProfileSidebar = ({
 
   const fileInputRef = useRef(null);
 
-  /*
-   * Ye DB/API se already saved username ko remember karega.
-   *
-   * Example:
-   * savedUsername = "aditya"
-   *
-   * Edit click -> API call nahi
-   * age change -> API call nahi
-   * qualification change -> API call nahi
-   *
-   * username "aditya1" -> API call
-   *
-   * wapas "aditya" -> API call nahi
-   */
   const savedUsernameRef = useRef("");
 
   // ============================================================
@@ -105,6 +93,9 @@ const ProfileSidebar = ({
     useState(null);
 
   const [isHydrated, setIsHydrated] =
+    useState(false);
+
+  const [avatarImageFailed, setAvatarImageFailed] =
     useState(false);
 
   const open = Boolean(anchorEl);
@@ -144,6 +135,10 @@ const ProfileSidebar = ({
           .charAt(0)
           .toUpperCase()
       : "D";
+
+  useEffect(() => {
+    setAvatarImageFailed(false);
+  }, [profileData?.avatarUrl]);
 
   // ============================================================
   // SAVED USERNAME
@@ -447,7 +442,8 @@ const ProfileSidebar = ({
 
   const infoRowSx = {
     width: "100%",
-
+minWidth: 0,
+boxSizing: "border-box",
     display: "flex",
 
     alignItems: {
@@ -532,7 +528,7 @@ fontSize: "12.5px",
 
   const fieldSx = {
     flex: 1,
-
+minWidth: 0,
     width: "100%",
 
     "& .MuiInputBase-root": {
@@ -731,13 +727,14 @@ fontSize: "12.5px",
                 )}`,
               }}
             >
-              {profileData?.avatarUrl ? (
+              {profileData?.avatarUrl && !avatarImageFailed ? (
                 <Box
                   component="img"
                   src={
                     profileData.avatarUrl
                   }
                   alt="Profile"
+                  onError={() => setAvatarImageFailed(true)}
                   sx={{
                     width: "100%",
 
@@ -803,6 +800,21 @@ fontSize: "12.5px",
                       avatarInitial
                     }
                   </Avatar>
+                </Box>
+              )}
+              {avatarUploading && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: "rgba(255, 255, 255, 0.62)",
+                    zIndex: 1,
+                  }}
+                >
+                  <CircularProgress size={28} />
                 </Box>
               )}
             </Box>
@@ -1288,49 +1300,26 @@ fontSize: "12.5px",
             AGE
         ==================================================== */}
 
-        <Box sx={infoRowSx}>
-          <Typography
-            sx={labelSx}
-          >
-            Age
-          </Typography>
+     <Box sx={infoRowSx}>
+  <Typography sx={labelSx}>Date of Birth</Typography>
 
-          {isEditing ? (
-            <TextField
-              fullWidth
-              value={
-                profileData?.age ||
-                ""
-              }
-              placeholder="Enter age"
-              type="number"
-              size="small"
-              onChange={(event) =>
-                onFieldChange?.(
-                  "age",
-                  event.target.value
-                )
-              }
-              inputProps={{
-                min: 0,
-                max: 120,
-              }}
-              sx={fieldSx}
-            />
-          ) : (
-            <Typography
-              sx={valueSx}
-            >
-              {profileData?.age ||
-                "Not provided"}
-            </Typography>
-          )}
-        </Box>
-
-        {/* ====================================================
-            GENDER
-        ==================================================== */}
-
+  {isEditing ? (
+    <TextField
+      fullWidth
+      type="date"
+      size="small"
+      value={profileData?.dob || ""}
+      onChange={(e) => onFieldChange?.("dob", e.target.value)}
+      sx={fieldSx}
+    />
+  ) : (
+    <Typography sx={valueSx}>
+      {profileData?.dob
+        ? profileData.dob.split("-").reverse().join("/")
+        : "Not provided"}
+    </Typography>
+  )}
+</Box>
         <Box sx={infoRowSx}>
           <Typography
             sx={labelSx}
@@ -1425,11 +1414,14 @@ fontSize: "12.5px",
             alignItems: "center",
           }}
         >
-          <Typography
-            sx={labelSx}
-          >
-            Rating
-          </Typography>
+        <Typography
+  sx={{
+    ...labelSx,
+    width: { xs: "auto", sm: "95px" },
+  }}
+>
+  Rating
+</Typography>
 
           <Box
             sx={{

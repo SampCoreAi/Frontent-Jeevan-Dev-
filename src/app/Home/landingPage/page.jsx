@@ -1,13 +1,13 @@
 "use client";
+import Lenis from "lenis";
 import React, { useState, useEffect, useCallback } from "react";
 import SearchBar from "../components/landing/SearchBar";
 import HeroContent from "../components/landing/HeroContent";
-import QuickTools from "../components/landing/QuickTools";
+import JeevanShowcase from "../components/MobileUi/JeevanShowcase";
 import {
   Box,
   Container,
   Typography,
-  Fade,
   Zoom,
   Paper,
   Skeleton,
@@ -27,50 +27,55 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@mui/material/styles";
 import { keyframes } from "@mui/material";
-import JeevanDevLogo from '../components/landing/JeevanDevLogo'
-import AppSvg from '../components/landing/AppSvg'
+import JeevanDevLogo from "../components/landing/JeevanDevLogo";
+import AppSvg from "../components/landing/AppSvg";
 import Navbar from "../components/Navbar";
 import PopularSearches from "../components/landing/PopularSearches";
-import { RadialOrbitalTimelineDemo } from '../components/feature/demo'
+import { RadialOrbitalTimelineDemo } from "../components/feature/demo";
 import Footer from "../components/Footer";
 import HowItWorks from "../components/landing/HowItWorks";
-import HealthInfoCard from "../components/landing/HealthInfoCard";
-import Main from "../components/DoctorRegister/EntryDoctor"
-// Animations
-const float = keyframes`
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(5deg); }
-`;
-
-const pulse = keyframes`
-  0%, 100% { opacity: 0.6; transform: scale(1); box-shadow: 0 0 20px rgba(30, 102, 88, 0.2); }
-  50% { opacity: 1; transform: scale(1.05); box-shadow: 0 0 40px rgba(30, 102, 88, 0.4); }
-`;
-
+import Main from "../components/DoctorRegister/EntryDoctor";
+import ElasticLine from "../components/ElasticLine";
+import HealthcareEcosystem from "../components/landing/HealthcareEcosystem";
+import FeedbackCTA from "../components/landing/FeedbackCTA";
 const slideUpFade = keyframes`
-  0% { opacity: 0; transform: translateY(40px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 `;
 
 const rotateContinuous = keyframes`
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 `;
 
-const StyledContainer = styled(Container)(({ theme }) => ({
+const StyledContainer = styled(Container)(() => ({
   position: "relative",
   zIndex: 1,
 }));
 
-const GlassCard = styled(Paper)(({ theme }) => ({
-  background: "rgba(255, 255, 255, 0.9)",
-  backdropFilter: "blur(10px)",
-  border: "1px solid rgba(255, 255, 255, 0.3)",
-  boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.07)",
+const GlassCard = styled(Paper)(() => ({
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(236,253,245,0.96) 45%, rgba(224,242,254,0.80) 100%)",
+  backdropFilter: "blur(14px)",
+  WebkitBackdropFilter: "blur(14px)",
+  border: "1px solid rgba(7,135,106,0.12)",
+  boxShadow: "0 10px 30px rgba(7,135,106,0.08)",
   transition: "all 0.3s ease",
+
   "&:hover": {
-    transform: "translateY(-5px)",
-    boxShadow: "0 12px 40px rgba(31, 38, 135, 0.15)",
+    boxShadow: "0 14px 38px rgba(7,135,106,0.15)",
   },
 }));
 
@@ -81,13 +86,33 @@ export default function Landing() {
   const [city, setCity] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSearch, setActiveSearch] = useState("All");
-  const [hoveredCard, setHoveredCard] = useState(null);
 
   const theme = useTheme();
   const router = useRouter();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+  useEffect(() => {
+    const lenis = new Lenis({
+      lerp: 0.1,
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      touchMultiplier: 1,
+    });
 
+    let rafId;
+
+    const raf = (time) => {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    };
+
+    rafId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+    };
+  }, []);
 
   const popularSearches = [
     "All",
@@ -103,43 +128,60 @@ export default function Landing() {
 
   useEffect(() => {
     setIsVisible(true);
-    const timer = setTimeout(() => setIsLoading(false), 1000);
+
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+
     return () => clearTimeout(timer);
   }, []);
 
   const handleSearch = useCallback(
     (e) => {
       e.preventDefault();
+
       if (!searchQuery.trim()) return;
+
       const queryParams = new URLSearchParams({
         query: searchQuery,
         city: city || "all",
       });
+
       router.push(`/Home/pages/search?${queryParams.toString()}`);
     },
     [searchQuery, city, router],
   );
 
-  const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen((prev) => !prev);
+  };
 
   if (isLoading) {
     return (
       <Box
         sx={{
-          bgcolor: "#f8fafc",
+          bgcolor: "#F8FAFC",
           minHeight: "100vh",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <Box sx={{ position: "relative" }}>
+        <Box
+          sx={{
+            position: "relative",
+          }}
+        >
           <Skeleton
             variant="circular"
             width={60}
             height={60}
-            sx={{ bgcolor: "#1e6658", opacity: 0.2 }}
+            sx={{
+              bgcolor: "#07876A",
+              opacity: 0.2,
+            }}
           />
+
           <Box
             sx={{
               position: "absolute",
@@ -148,7 +190,7 @@ export default function Landing() {
               right: -10,
               bottom: -10,
               borderRadius: "50%",
-              border: "2px solid #1e6658",
+              border: "2px solid #07876A",
               borderTopColor: "transparent",
               animation: `${rotateContinuous} 1s linear infinite`,
             }}
@@ -159,80 +201,89 @@ export default function Landing() {
   }
 
   return (
-    <Box sx={{ bgcolor: "#f8fafc", overflow: "hidden" }}>
+    <Box
+      sx={{
+        bgcolor: "#F8FAFC",
+        overflowX: "clip",
+      }}
+    >
       <Navbar />
 
-     <Box
-  sx={{
-    backgroundColor: "#F8FFFB",
+      <Box
+        sx={{
+          backgroundColor: "#FFFFFF",
 
-    backgroundImage: `
-      linear-gradient(
-        rgba(7, 135, 106, 0.10) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        90deg,
-        rgba(7, 135, 106, 0.10) 1px,
-        transparent 1px
-      ),
-      radial-gradient(
-        circle at 8% 25%,
-        rgba(7, 135, 106, 0.07) 0%,
-        transparent 30%
-      ),
-      radial-gradient(
-        circle at 92% 70%,
-        rgba(7, 135, 106, 0.05) 0%,
-        transparent 30%
-      ),
-      linear-gradient(
-        180deg,
-        #F7FFFB 0%,
-        #FBFEFC 55%,
-        #F5FBF8 100%
-      )
-    `,
+         backgroundImage: `
+  linear-gradient(
+    90deg,
+    rgba(7, 135, 106, 0.13) 0%,
+    rgba(7, 135, 106, 0.05) 25%,
+    rgba(255, 255, 255, 0.35) 45%,
+    rgba(255, 255, 255, 0.35) 55%,
+    rgba(7, 135, 106, 0.05) 75%,
+    rgba(7, 135, 106, 0.13) 100%
+  ),
 
-    backgroundSize: `
+  linear-gradient(
+    135deg,
+    rgba(7, 135, 106, 0.09) 0%,
+    rgba(52, 211, 153, 0.035) 45%,
+    rgba(255, 255, 255, 0.08) 100%
+  ),
+
+  linear-gradient(
+    rgba(7, 135, 106, 0.10) 1px,
+    transparent 1px
+  ),
+
+  linear-gradient(
+    90deg,
+    rgba(7, 135, 106, 0.10) 1px,
+    transparent 1px
+  )
+`,
+
+
+          backgroundSize: `
+      100% 100%,
       40px 40px,
       40px 40px,
-      100% 100%,
-      100% 100%,
-      100% 100%
+      40px 40px
     `,
 
-    backgroundPosition: `
+          backgroundPosition: `
+      center,
       0 0,
       0 0,
-      center,
-      center,
-      center
+      0 0
     `,
 
-    pt: { xs: 6, md: 2 },
-    pb: { xs: 8, md: 12 },
+          pt: {
+            xs: 6,
+            md: 2,
+          },
 
-    textAlign: "center",
-    position: "relative",
-    overflow: "hidden",
+          textAlign: "center",
+          position: "relative",
+          overflow: "hidden",
 
-    minHeight: {
-      xs: "auto",
-      md: "90vh",
-    },
+          minHeight: {
+            xs: "auto",
+            md: "90vh",
+          },
 
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-  }}
->
-        {/* Quick Access Menu - Desktop */}
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}
+      >
         {!isMobile && (
           <Zoom
             in={isVisible}
             timeout={800}
-            style={{ transitionDelay: "500ms" }}
+            style={{
+              transitionDelay: "500ms",
+            }}
           >
             <Box
               sx={{
@@ -244,28 +295,51 @@ export default function Landing() {
             >
               <GlassCard
                 sx={{
-                  width: 50,
-                  height: 50,
+                  position: "relative",
+                  zIndex: 20,
+                  width: 64,
+                  height: 64,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   cursor: "pointer",
-                  borderRadius: "14px",
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  borderRadius: "18px",
+                  border: "2px solid rgba(8, 135, 106, 0.42)",
+                  background: "#ffffff",
+                  boxShadow: "0 8px 20px rgba(8, 135, 106, 0.22)",
+                  opacity: 1,
+                  transition: "all 0.25s ease",
+
+                  "& svg": {
+                    width: 24,
+                    height: 24,
+                    color: "#0a7a65",
+                    opacity: 1,
+                    transition: "all 0.25s ease",
+                  },
+
                   "&:hover": {
-                    transform: "scale(1.1) rotate(90deg)",
-                    bgcolor: "#1e6658",
-                    "& svg": { color: "white" },
+                    transform: "scale(1.06)",
+                    boxShadow: "0 12px 26px rgba(8, 135, 106, 0.28)",
+
+                    "& svg": {
+                      color: "#065f52",
+                    },
                   },
                 }}
               >
-                <AppsIcon sx={{ width: 24, height: 24, color: "#1e6658" }} />
+                <AppsIcon
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    color: "#0a7a65",
+                  }}
+                />
               </GlassCard>
             </Box>
           </Zoom>
         )}
 
-        {/* Mobile Menu Button */}
         {isMobile && (
           <IconButton
             onClick={toggleMobileMenu}
@@ -274,12 +348,15 @@ export default function Landing() {
               top: 20,
               right: 20,
               zIndex: 10,
-              bgcolor: "white",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-              transition: "all 0.3s ease",
+
+              background: "linear-gradient(135deg, #FFFFFF 0%, #ECFDF5 100%)",
+
+              border: "1px solid rgba(7,135,106,0.12)",
+
+              boxShadow: "0 8px 25px rgba(7,135,106,0.10)",
+
               "&:hover": {
-                transform: "scale(1.1)",
-                bgcolor: "#f0fdf4",
+                background: "linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)",
               },
             }}
           >
@@ -287,7 +364,6 @@ export default function Landing() {
           </IconButton>
         )}
 
-        {/* Mobile Drawer */}
         <Drawer
           anchor="right"
           open={mobileMenuOpen}
@@ -297,55 +373,97 @@ export default function Landing() {
               width: 280,
               borderRadius: "20px 0 0 20px",
               p: 2,
-              background: "linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)",
+
+              background: `
+                linear-gradient(
+                  160deg,
+                  #FFFFFF 0%,
+                  #F0FDF4 45%,
+                  #EFF6FF 100%
+                )
+              `,
             },
           }}
         >
           <Typography
             variant="h6"
-            sx={{ mb: 3, fontWeight: 700, color: "#1e6658" }}
+            sx={{
+              mb: 3,
+              fontWeight: 700,
+              color: "#07876A",
+            }}
           >
             Quick Tools
           </Typography>
+
           <List>
             <ListItem
               button
               sx={{
                 borderRadius: 2,
-                mb: 1,
-                bgcolor: "#f0fdf4",
-                transition: "all 0.3s ease",
+                mb: 1.2,
+
+                background: "linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)",
+
+                border: "1px solid rgba(16,185,129,0.12)",
+
+                transition: "all 0.25s ease",
+
                 "&:hover": {
-                  bgcolor: "#e3fced",
                   transform: "translateX(5px)",
+
+                  background:
+                    "linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)",
                 },
               }}
             >
-              <DocumentScannerIcon sx={{ mr: 2, color: "#1e6658" }} />
+              <DocumentScannerIcon
+                sx={{
+                  mr: 2,
+                  color: "#07876A",
+                }}
+              />
+
               <ListItemText primary="AI Scanner" />
             </ListItem>
+
             <ListItem
               button
               sx={{
                 borderRadius: 2,
                 mb: 1,
-                bgcolor: "#f0f9ff",
-                transition: "all 0.3s ease",
+
+                background: "linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)",
+
+                border: "1px solid rgba(59,130,246,0.12)",
+
+                transition: "all 0.25s ease",
+
                 "&:hover": {
-                  bgcolor: "#e0f2fe",
                   transform: "translateX(5px)",
+
+                  background:
+                    "linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)",
                 },
               }}
             >
-              <TrendingUpIcon sx={{ mr: 2, color: "#0ea5e9" }} />
+              <TrendingUpIcon
+                sx={{
+                  mr: 2,
+                  color: "#0284C7",
+                }}
+              />
+
               <ListItemText primary="Health Trends" />
             </ListItem>
           </List>
+
           <Divider sx={{ my: 2 }} />
         </Drawer>
 
         <StyledContainer maxWidth="lg">
           <HeroContent />
+
           <SearchBar />
 
           <PopularSearches
@@ -357,17 +475,26 @@ export default function Landing() {
             isVisible={isVisible}
             slideUpFade={slideUpFade}
           />
-
         </StyledContainer>
-
       </Box>
-      <div >
+
+      <ElasticLine />
+      <HealthcareEcosystem />
+      <ElasticLine />
+
+      <div>
         <RadialOrbitalTimelineDemo />
       </div>
+      <ElasticLine />
       <HowItWorks />
-      <AppSvg />
+      <JeevanShowcase />
+      <ElasticLine />
+      {/* <AppSvg /> */}
+
       <Main />
+<FeedbackCTA />
       <JeevanDevLogo />
+
       <Footer />
     </Box>
   );

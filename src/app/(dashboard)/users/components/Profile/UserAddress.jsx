@@ -227,7 +227,7 @@ export default function UserAddress({
           sx={{
             minHeight: 44,
             px: 1.7,
-            backgroundColor: theme.palette.background.default,
+            backgroundColor: "#f8faf9",
             borderBottom: `1px solid ${theme.palette.divider}`,
 
             "&.Mui-expanded": {

@@ -3,6 +3,16 @@ import { profileService } from '../services/api';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../constants';
 const S3_BUCKET_URL =
   process.env.NEXT_PUBLIC_S3_BUCKET_URL || "";
+
+const getAssetUrl = (value) => {
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value)) return value;
+
+  const key = value.replace(/^\/+/, '');
+  const bucketUrl = S3_BUCKET_URL.replace(/\/+$/, '');
+  return bucketUrl ? `${bucketUrl}/${key}` : `/${key}`;
+};
+
 // Async thunks for profile operations
 export const fetchDoctorProfile = createAsyncThunk(
   'profile/fetchDoctorProfile',
@@ -55,12 +65,60 @@ export const uploadProfileImage = createAsyncThunk(
       formData.append('file', file);
 
       const response = await profileService.uploadImage(formData);
-      const uploadedFile = response.data?.path || response.fileUrl || response.data;
-      return uploadedFile;
+      return getUploadedFile(response).fileUrl;
     } catch (error) {
       return rejectWithValue(error.message);
     }
   }
+);
+
+const getUploadedFile = (response) => {
+  const responseBody = response?.data ?? response;
+  const uploadedFile = responseBody?.data ?? responseBody;
+  const returnedUrl = uploadedFile?.fileUrl || uploadedFile?.url ||
+    (typeof uploadedFile === 'string' && /^https?:\/\//i.test(uploadedFile)
+      ? uploadedFile
+      : '');
+  const fileKey =
+    uploadedFile?.fileKey || uploadedFile?.path || uploadedFile?.key ||
+    (returnedUrl && !/^https?:\/\//i.test(returnedUrl) ? returnedUrl : '') ||
+    (typeof uploadedFile === 'string' && !returnedUrl ? uploadedFile : '');
+  const normalizedKey = fileKey || returnedUrl;
+  const previewUrl = /^https?:\/\//i.test(returnedUrl)
+    ? returnedUrl
+    : getAssetUrl(normalizedKey);
+
+  if (!normalizedKey || !previewUrl) {
+    throw new Error('Upload completed, but the server did not return a file URL or key.');
+  }
+
+  return { fileKey: normalizedKey, fileUrl: previewUrl };
+};
+
+const uploadDoctorBrandingFile = async (file, uploadMethod, rejectWithValue) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const uploadResponse = await uploadMethod(formData);
+    const uploadedFile = getUploadedFile(uploadResponse);
+
+    return uploadedFile;
+  } catch (error) {
+    return rejectWithValue(error.message);
+  }
+};
+
+export const uploadDoctorLogo = createAsyncThunk(
+  'profile/uploadDoctorLogo',
+  (file, { rejectWithValue }) =>
+    uploadDoctorBrandingFile(file, profileService.uploadLogo, rejectWithValue)
+);
+
+export const uploadDoctorSignature = createAsyncThunk(
+  'profile/uploadDoctorSignature',
+  (file, { rejectWithValue }) =>
+    uploadDoctorBrandingFile(file, profileService.uploadSignature, rejectWithValue)
 );
 
 // LocalStorage se user data safely read karo
@@ -75,53 +133,23 @@ const getLocalUserData = () => {
 
 // Helper function to transform API data to form data
 const transformApiDataToForm = (apiData, userData) => {
-  const emptyWorkingHours = {
-    monday: { start: '', end: '' },
-    tuesday: { start: '', end: '' },
-    wednesday: { start: '', end: '' },
-    thursday: { start: '', end: '' },
-    friday: { start: '', end: '' },
-    saturday: { start: '', end: '' },
-    sunday: { start: '', end: '' },
-  };
-
   const emptyHospital = {
-    hospitalName: '',
-    flatNo: '',
-    building: '',
-    street: '',
-    area: '',
-    landmark: '',
-    city: '',
-    district: '',
-    state: '',
-    pinCode: '',
-  };
+  clinicId: null,
+  hospitalName: "",
+  flatNo: "",
+  building: "",
+  street: "",
+  area: "",
+  landmark: "",
+  city: "",
+  district: "",
+  state: "",
+  pinCode: "",
+  availability: [],
+};
 
-  // Transform working hours
-  const dayMap = {
-    Monday: 'monday',
-    Tuesday: 'tuesday',
-    Wednesday: 'wednesday',
-    Thursday: 'thursday',
-    Friday: 'friday',
-    Saturday: 'saturday',
-    Sunday: 'sunday',
-  };
-
-  const workingHours = { ...emptyWorkingHours };
-  apiData.availability?.forEach((item) => {
-    const key = dayMap[item.day];
-    if (key) {
-      workingHours[key] = {
-        start: item.startTime,
-        end: item.endTime,
-      };
-    }
-  });
-
-  // Transform hospital details
- const hospitalsFromApi = (apiData.hospital_detail || []).map((h) => ({
+const hospitalsFromApi = (apiData.hospital_detail || []).map((h) => ({
+  clinicId: h.clinicId ?? null,
   hospitalName: h.hospitalName || "",
   flatNo: h.flatPlotNo || "",
   building: h.buildingSociety || "",
@@ -132,6 +160,10 @@ const transformApiDataToForm = (apiData, userData) => {
   district: h.district || "",
   state: h.state || "",
   pinCode: h.pinCode || "",
+
+  availability: Array.isArray(h.availability)
+    ? h.availability
+    : [],
 }));
   // Ensure at least one hospital exists
   if (hospitalsFromApi.length === 0) {
@@ -177,9 +209,7 @@ registration_number: apiData.registration_number || "",
 
   registration_expiry_date:
     apiData.registration_expiry_date || "",
-
-  // Other read-only fields
-  age: apiData.age || "",
+dob: apiData.dob?.split("T")[0] || "",
   gender: apiData.gender || "",
   onboarding_status:
     apiData.onboarding_status || "",
@@ -196,8 +226,24 @@ registration_number: apiData.registration_number || "",
 
   selfie:
     apiData.selfie || "",
+  qrCode: getAssetUrl(
+    apiData.qr_url ||
+    apiData.qrUrl ||
+    apiData.qr_key ||
+    apiData.qr
+  ),
 
-  qr_url: apiData.qr_url || null,
+  logoUrl: getAssetUrl(
+    apiData.logoUrl || apiData.logo_url || apiData.logo_key || apiData.logo
+  ),
+  signatureUrl:
+    getAssetUrl(
+      apiData.signatureUrl || apiData.signature_url || apiData.signature_key || apiData.doctor_signature || apiData.signature
+    ),
+  logoKey: '',
+  signatureKey: '',
+  logoPreviewUrl: '',
+  signaturePreviewUrl: '',
 
   // Emergency patients
   accept_emergency_patients:
@@ -206,14 +252,10 @@ registration_number: apiData.registration_number || "",
     apiData.accept_emergency_patients === "1" ||
     apiData.accept_emergency_patients === true,
 
-  // UI transformed data
-  workingHours,
   hospitalDetail: hospitalsFromApi,
 
   rating: apiData.avgRating || 0,
- avatarUrl: apiData.img_key
-  ? `${S3_BUCKET_URL}${apiData.img_key}`
-  : "",
+ avatarUrl: getAssetUrl(apiData.img_key || apiData.photo),
 };
 };
 
@@ -231,7 +273,7 @@ const buildInitialState = () => {
       medicalLicense: '',
       email: u.email || '',
       qrCode: '',
-      age: "",
+   dob: "",
       gender: "",
       phone: u.mobile || u.phone_number || '',
       consultationFee: '',
@@ -240,30 +282,36 @@ const buildInitialState = () => {
       accept_emergency_patients: false,
       
       licenseFile: null,
-      workingHours: {
-        monday: { start: '', end: '' },
-        tuesday: { start: '', end: '' },
-        wednesday: { start: '', end: '' },
-        thursday: { start: '', end: '' },
-        friday: { start: '', end: '' },
-        saturday: { start: '', end: '' },
-        sunday: { start: '', end: '' },
-      },
       avatarUrl: '',
-      hospitalDetail: [{
-        hospitalName: '',
-        flatNo: '',
-        building: '',
-        street: '',
-        area: '',
-        landmark: '',
-        city: '',
-        district: '',
-        state: '',
-        pinCode: '',
-      }],
+      logoUrl: '',
+      signatureUrl: '',
+      logoKey: '',
+      signatureKey: '',
+      logoPreviewUrl: '',
+      signaturePreviewUrl: '',
+     hospitalDetail: [
+  {
+    clinicId: null,
+    hospitalName: "",
+    flatNo: "",
+    building: "",
+    street: "",
+    area: "",
+    landmark: "",
+    city: "",
+    district: "",
+    state: "",
+    pinCode: "",
+    availability: [],
+  },
+],
     },
     loading: false,
+    profileLoaded: false,
+    saving: false,
+    profileImageUploading: false,
+    logoUploading: false,
+    signatureUploading: false,
     error: null,
     successMessage: null,
     isEditing: false,
@@ -300,28 +348,85 @@ const profileSlice = createSlice({
       const { field, value } = action.payload;
       state.profileData[field] = value;
     },
-    handleWorkingHoursChange: (state, action) => {
-      const { day, field, value } = action.payload;
-      state.profileData.workingHours[day][field] = value;
-    },
+   handleClinicWorkingHoursChange: (state, action) => {
+  const { clinicId, day, field, value } = action.payload;
+
+  if (
+    clinicId === null ||
+    clinicId === undefined ||
+    clinicId === ""
+  ) {
+    return;
+  }
+
+  const hospital = state.profileData.hospitalDetail.find(
+    (item) =>
+      String(item.clinicId) === String(clinicId)
+  );
+
+  if (!hospital) {
+    return;
+  }
+
+  if (!Array.isArray(hospital.availability)) {
+    hospital.availability = [];
+  }
+
+  const dayLabel = String(day || "");
+
+  const normalizedDay =
+    dayLabel.charAt(0).toUpperCase() +
+    dayLabel.slice(1).toLowerCase();
+
+  let entry = hospital.availability.find(
+    (item) =>
+      String(item.day).toLowerCase() ===
+      normalizedDay.toLowerCase()
+  );
+
+  if (!entry) {
+    entry = {
+      day: normalizedDay,
+      startTime: "",
+      endTime: "",
+      isAvailable: false,
+    };
+
+    hospital.availability.push(entry);
+  }
+
+  if (field === "start") {
+    entry.startTime = value || "";
+  }
+
+  if (field === "end") {
+    entry.endTime = value || "";
+  }
+
+  entry.isAvailable = Boolean(
+    entry.startTime && entry.endTime
+  );
+},
     handleHospitalChange: (state, action) => {
       const { index, field, value } = action.payload;
       state.profileData.hospitalDetail[index][field] = value;
     },
     handleAddHospital: (state) => {
-      state.profileData.hospitalDetail.push({
-        hospitalName: '',
-        flatNo: '',
-        building: '',
-        street: '',
-        area: '',
-        landmark: '',
-        city: '',
-        district: '',
-        state: '',
-        pinCode: '',
-      });
-    },
+  state.profileData.hospitalDetail.push({
+    clinicId: null,
+    hospitalName: "",
+    flatNo: "",
+    building: "",
+    street: "",
+    area: "",
+    landmark: "",
+    city: "",
+    district: "",
+    state: "",
+    pinCode: "",
+    availability: [],
+  });
+},
     handleRemoveHospital: (state, action) => {
       const index = action.payload;
       if (state.profileData.hospitalDetail.length > 1) {
@@ -340,6 +445,7 @@ const profileSlice = createSlice({
     console.log("PROFILE API:", action.payload);
 
     state.loading = false;
+    state.profileLoaded = true;
 
     const userData = JSON.parse(localStorage.getItem("user") || "{}");
     const apiData = action.payload || {};
@@ -352,6 +458,7 @@ const profileSlice = createSlice({
 })
       .addCase(fetchDoctorProfile.rejected, (state, action) => {
         state.loading = false;
+        state.profileLoaded = true;
         state.error = action.payload;
         // API fail hone pe bhi localStorage ka data dikhao
         const u = getLocalUserData();
@@ -365,16 +472,16 @@ const profileSlice = createSlice({
 
       // Update profile
       .addCase(updateDoctorProfile.pending, (state) => {
-        state.loading = true;
+        state.saving = true;
         state.error = null;
       })
       .addCase(updateDoctorProfile.fulfilled, (state) => {
-        state.loading = false;
+        state.saving = false;
         state.successMessage = SUCCESS_MESSAGES.PROFILE_UPDATED;
         state.isEditing = false;
       })
       .addCase(updateDoctorProfile.rejected, (state, action) => {
-        state.loading = false;
+        state.saving = false;
         state.error = action.payload;
       })
 
@@ -399,16 +506,46 @@ const profileSlice = createSlice({
 
       // Upload profile image
       .addCase(uploadProfileImage.pending, (state) => {
-        state.loading = true;
+        state.profileImageUploading = true;
         state.error = null;
       })
       .addCase(uploadProfileImage.fulfilled, (state, action) => {
-        state.loading = false;
+        state.profileImageUploading = false;
         state.profileData.avatarUrl = action.payload;
         state.successMessage = SUCCESS_MESSAGES.IMAGE_UPLOADED;
       })
       .addCase(uploadProfileImage.rejected, (state, action) => {
-        state.loading = false;
+        state.profileImageUploading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(uploadDoctorLogo.pending, (state) => {
+        state.logoUploading = true;
+        state.error = null;
+      })
+      .addCase(uploadDoctorLogo.fulfilled, (state, action) => {
+        state.logoUploading = false;
+        state.profileData.logoKey = action.payload.fileKey;
+        state.profileData.logoPreviewUrl = action.payload.fileUrl;
+        state.successMessage = SUCCESS_MESSAGES.LOGO_UPLOADED;
+      })
+      .addCase(uploadDoctorLogo.rejected, (state, action) => {
+        state.logoUploading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(uploadDoctorSignature.pending, (state) => {
+        state.signatureUploading = true;
+        state.error = null;
+      })
+      .addCase(uploadDoctorSignature.fulfilled, (state, action) => {
+        state.signatureUploading = false;
+        state.profileData.signatureKey = action.payload.fileKey;
+        state.profileData.signaturePreviewUrl = action.payload.fileUrl;
+        state.successMessage = SUCCESS_MESSAGES.SIGNATURE_UPLOADED;
+      })
+      .addCase(uploadDoctorSignature.rejected, (state, action) => {
+        state.signatureUploading = false;
         state.error = action.payload;
       });
   },
@@ -423,7 +560,7 @@ export const {
   clearSuccessMessage,
   setRating,
   handleFieldChange,
-  handleWorkingHoursChange,
+  handleClinicWorkingHoursChange,
   handleHospitalChange,
   handleAddHospital,
   handleRemoveHospital,
@@ -433,6 +570,11 @@ export const {
 export const selectProfileData = (state) => state.profile.profileData;
 
 export const selectProfileLoading = (state) => state.profile.loading;
+export const selectProfileLoaded = (state) => state.profile.profileLoaded;
+export const selectProfileSaving = (state) => state.profile.saving;
+export const selectProfileImageUploading = (state) => state.profile.profileImageUploading;
+export const selectLogoUploading = (state) => state.profile.logoUploading;
+export const selectSignatureUploading = (state) => state.profile.signatureUploading;
 export const selectProfileError = (state) => state.profile.error;
 export const selectProfileSuccessMessage = (state) => state.profile.successMessage;
 export const selectIsEditing = (state) => state.profile.isEditing;

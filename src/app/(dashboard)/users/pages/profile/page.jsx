@@ -27,10 +27,11 @@ export default function PatientProfilePage() {
 
   const [formData, setFormData] = useState({
     name: "",
-    age: "",
+   dob: "",
     username: "",
     gender: "",
     email: "",
+    familyMedicalHistory: [],
     phone: "",
     bio: "",
     bloodGroup: "",
@@ -129,10 +130,19 @@ export default function PatientProfilePage() {
       payload.username = formData.username.trim();
     }
 
-    if (dirtyFields.age) {
-      payload.age = Number(formData.age);
-    }
+if (dirtyFields.dob) {
+  payload.dob = formData.dob || null;
+}
 
+if (dirtyFields.familyMedicalHistory) {
+  const history = formData.familyMedicalHistory || [];
+
+
+ payload.family_medical_history = {
+  Medical_Condition: history[0]?.medical_condition || "",
+  Family_Member: history[0]?.family_member || "",
+};
+}
     if (dirtyFields.gender) {
       payload.gender = formData.gender
         ? formData.gender.trim().toUpperCase()
@@ -290,8 +300,17 @@ export default function PatientProfilePage() {
       setFormData({
         name: userProfile.full_name || "",
         username: userProfile.username || "",
-        age: userProfile.age ?? "",
-
+     dob: userProfile?.dob?.slice(0, 10) || "",
+familyMedicalHistory: (
+  Array.isArray(userProfile.family_medical_history)
+    ? userProfile.family_medical_history
+    : userProfile.family_medical_history
+      ? [userProfile.family_medical_history]
+      : []
+).map((item) => ({
+  medical_condition: item.Medical_Condition ?? item.medical_condition ?? "",
+  family_member: item.Family_Member ?? item.family_member ?? "",
+})),
         gender: userProfile.gender
           ? userProfile.gender.toUpperCase()
           : "",

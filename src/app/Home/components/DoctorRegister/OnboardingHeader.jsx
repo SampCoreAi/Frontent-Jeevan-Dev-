@@ -5,11 +5,9 @@ import {
   Box,
   Stack,
   Typography,
-  useTheme,
-  useMediaQuery,
 } from "@mui/material";
+
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 
 const COLORS = {
@@ -25,30 +23,37 @@ const COLORS = {
 };
 
 export default function OnboardingHeader() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
-
   return (
     <>
-      {/* Header */}
+      {/* =========================
+          HEADER
+      ========================== */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        spacing={{ xs: 2, sm: 2 }}
+        spacing={{ xs: 1.5, sm: 2 }}
         alignItems={{ xs: "flex-start", sm: "center" }}
-        sx={{ mb: { xs: 2, sm: 3 } }}
+        sx={{
+          mb: { xs: 1.5, sm: 2 },
+          width: "100%",
+        }}
       >
+        {/* LEFT SIDE */}
         <Stack
           direction="row"
-          spacing={2}
+          spacing={{ xs: 1.2, sm: 1.5 }}
           alignItems="center"
-          sx={{ width: { xs: "100%", sm: "auto" } }}
+          sx={{
+            width: { xs: "100%", sm: "auto" },
+            flex: 1,
+            minWidth: 0,
+          }}
         >
+          {/* Icon */}
           <Box
             sx={{
-              width: { xs: 40, sm: 48 },
-              height: { xs: 40, sm: 48 },
-              borderRadius: 2,
+              width: { xs: 36, sm: 40 },
+              height: { xs: 36, sm: 40 },
+              borderRadius: "9px",
               bgcolor: COLORS.primaryLight,
               display: "flex",
               alignItems: "center",
@@ -57,26 +62,55 @@ export default function OnboardingHeader() {
               flexShrink: 0,
             }}
           >
-            <LocalHospitalIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
+            <LocalHospitalIcon
+              sx={{
+                fontSize: { xs: 18, sm: 20 },
+              }}
+            />
           </Box>
-          <Box sx={{ flex: 1 }}>
+
+          {/* Title */}
+          <Box
+            sx={{
+              minWidth: 0,
+              flex: 1,
+            }}
+          >
             <Typography
-              variant={isMobile ? "h6" : "h5"}
               sx={{
                 fontWeight: 700,
                 color: COLORS.primary,
-                fontSize: { xs: "1.1rem", sm: "1.5rem", md: "1.8rem" },
-                lineHeight: { xs: 1.3, sm: 1.2 },
+
+                fontSize: {
+                  xs: "0.95rem",
+                  sm: "1.1rem",
+                  md: "1.25rem",
+                },
+
+                lineHeight: 1.25,
+                letterSpacing: "-0.01em",
               }}
             >
               Doctor Verification &amp; Onboarding
             </Typography>
+
             <Typography
               variant="body2"
               sx={{
+                mt: 0.25,
                 color: COLORS.textSecondary,
-                fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                display: { xs: "none", sm: "block" },
+
+                fontSize: {
+                  sm: "0.7rem",
+                  md: "0.76rem",
+                },
+
+                lineHeight: 1.4,
+
+                display: {
+                  xs: "none",
+                  sm: "block",
+                },
               }}
             >
               Join our trusted network of healthcare professionals
@@ -84,31 +118,56 @@ export default function OnboardingHeader() {
           </Box>
         </Stack>
 
-        {/* Required fields indicator - hidden on mobile, shown on tablet+ */}
+        {/* RIGHT SIDE - REQUIRED FIELDS */}
         <Stack
           direction="row"
-          spacing={1}
+          spacing={0.7}
           alignItems="center"
           sx={{
-            display: { xs: "none", sm: "flex" },
-            ml: { sm: "auto", md: 0 },
+            display: {
+              xs: "none",
+              sm: "flex",
+            },
+
+            ml: {
+              sm: "auto !important",
+            },
+
             flexShrink: 0,
           }}
         >
           <VerifiedUserOutlinedIcon
-            fontSize="small"
-            sx={{ color: COLORS.textSecondary, fontSize: { sm: 16, md: 20 } }}
+            sx={{
+              color: COLORS.textSecondary,
+              fontSize: {
+                sm: 15,
+                md: 17,
+              },
+            }}
           />
+
           <Typography
             variant="body2"
             sx={{
               color: COLORS.textSecondary,
-              fontSize: { sm: "0.7rem", md: "0.875rem" },
+
+              fontSize: {
+                sm: "0.66rem",
+                md: "0.72rem",
+              },
+
               whiteSpace: "nowrap",
+              lineHeight: 1.3,
             }}
           >
             All fields marked with{" "}
-            <Box component="span" sx={{ color: COLORS.error }}>
+            <Box
+              component="span"
+              sx={{
+                color: COLORS.error,
+                fontWeight: 700,
+              }}
+            >
               *
             </Box>{" "}
             are required
@@ -116,99 +175,73 @@ export default function OnboardingHeader() {
         </Stack>
       </Stack>
 
-      {/* Subtitle for mobile only */}
+      {/* =========================
+          MOBILE SUBTITLE
+      ========================== */}
       <Typography
         variant="body2"
         sx={{
           color: COLORS.textSecondary,
-          fontSize: "0.75rem",
-          display: { xs: "block", sm: "none" },
-          mb: 2,
+          fontSize: "0.68rem",
+          lineHeight: 1.4,
+
+          display: {
+            xs: "block",
+            sm: "none",
+          },
+
+          mb: 1,
         }}
       >
         Join our trusted network of healthcare professionals
       </Typography>
 
-      {/* Required fields indicator for mobile only */}
+      {/* =========================
+          MOBILE REQUIRED FIELDS
+      ========================== */}
       <Stack
         direction="row"
-        spacing={1}
+        spacing={0.6}
         alignItems="center"
         sx={{
-          display: { xs: "flex", sm: "none" },
-          mb: 2,
+          display: {
+            xs: "flex",
+            sm: "none",
+          },
+
+          mb: 1.5,
         }}
       >
         <VerifiedUserOutlinedIcon
-          fontSize="small"
-          sx={{ color: COLORS.textSecondary, fontSize: 16 }}
+          sx={{
+            color: COLORS.textSecondary,
+            fontSize: 14,
+          }}
         />
+
         <Typography
           variant="body2"
           sx={{
             color: COLORS.textSecondary,
-            fontSize: "0.7rem",
+            fontSize: "0.65rem",
+            lineHeight: 1.3,
           }}
         >
           All fields marked with{" "}
-          <Box component="span" sx={{ color: COLORS.error }}>
+          <Box
+            component="span"
+            sx={{
+              color: COLORS.error,
+              fontWeight: 700,
+            }}
+          >
             *
           </Box>{" "}
           are required
         </Typography>
       </Stack>
 
-      {/* Info banner */}
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={{ xs: 1, sm: 1.5 }}
-        alignItems={{ xs: "flex-start", sm: "flex-start" }}
-        sx={{
-          p: { xs: 1.5, sm: 2 },
-          borderRadius: 2,
-          bgcolor: COLORS.primaryLight,
-          mb: { xs: 2, sm: 3 },
-        }}
-      >
-        <Box
-          sx={{
-            width: { xs: 22, sm: 26 },
-            height: { xs: 22, sm: 26 },
-            flexShrink: 0,
-            borderRadius: "50%",
-            bgcolor: COLORS.primary,
-            color: "#fff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            mt: { xs: 0.5, sm: 0 },
-          }}
-        >
-          <InfoOutlinedIcon sx={{ fontSize: { xs: 13, sm: 15 } }} />
-        </Box>
-        <Box>
-          <Typography
-            variant="body2"
-            sx={{
-              fontWeight: 600,
-              color: COLORS.textPrimary,
-              fontSize: { xs: "0.8rem", sm: "0.875rem" },
-            }}
-          >
-            Why do we collect this information?
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: COLORS.textSecondary,
-              fontSize: { xs: "0.75rem", sm: "0.875rem" },
-            }}
-          >
-            To verify your identity, communicate with you, and create your doctor
-            account after approval.
-          </Typography>
-        </Box>
-      </Stack>
+     
     </>
   );
 }

@@ -2,13 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import api from "../../../../../utils/axiosInstance";
-import {
-  Grid,
-  Typography,
-  Paper,
-  Snackbar,
-  Alert,
-} from "@mui/material";
+import { Grid, Typography, Paper, Snackbar, Alert } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
@@ -17,7 +11,6 @@ import HeaderSection from "../../../../Home/components/Appointment/HeaderSection
 import { useSearchParams } from "next/navigation";
 import LeftSide from "../../components/Appointment/LeftSide";
 import AppointmentForm from "../../components/Appointment/AppointmentForm";
-
 
 dayjs.extend(isBetween);
 
@@ -36,56 +29,135 @@ export default function AppointmentPage() {
   const doctorIdFromUrl = searchParams.get("id");
   const [schedule, setSchedule] = useState(null);
 
+  const getHospitalLabel = (schedule) => {
+    const raw = schedule?.hospitalName || schedule?.hospital_name;
+
+    if (!raw) return "Hospital";
+    if (typeof raw === "object") {
+      return raw.hospitalName || raw.hospital_name || "Hospital";
+    }
+
+    if (typeof raw === "string" && raw.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(raw);
+        return parsed?.hospitalName || parsed?.hospital_name || raw;
+      } catch {
+        return raw;
+      }
+    }
+
+    return raw;
+  };
+
+  const getScheduleClinicId = (schedule, hospitals = []) => {
+    const hospitalData = schedule?.hospitalName || schedule?.hospital_name;
+    let parsedHospitalData = hospitalData;
+
+    if (typeof hospitalData === "string") {
+      try {
+        parsedHospitalData = JSON.parse(hospitalData);
+      } catch {
+        parsedHospitalData = null;
+      }
+    }
+
+    const directClinicId =
+      schedule?.clinicId ??
+      schedule?.clinic_id ??
+      schedule?.location_id ??
+      schedule?.hospitalInfo?.clinicId ??
+      schedule?.hospitalInfo?.clinic_id ??
+      schedule?.hospitalInfo?.location_id ??
+      schedule?.hospital_info?.clinicId ??
+      schedule?.hospital_info?.clinic_id ??
+      schedule?.hospital_info?.location_id ??
+      parsedHospitalData?.clinicId ??
+      parsedHospitalData?.clinic_id ??
+      parsedHospitalData?.location_id ??
+      parsedHospitalData?.id;
+
+    if (directClinicId) return directClinicId;
+
+    const scheduleHospital = String(getHospitalLabel(schedule))
+      .trim()
+      .toLowerCase();
+    const matchingHospital = hospitals.find((hospital) => {
+      const hospitalName = String(
+        hospital?.hospitalName || hospital?.hospital_name || "",
+      )
+        .trim()
+        .toLowerCase();
+
+      return hospitalName && hospitalName === scheduleHospital;
+    });
+
+    if (matchingHospital) {
+      return (
+        matchingHospital.clinicId ??
+        matchingHospital.clinic_id ??
+        matchingHospital.location_id ??
+        matchingHospital.id ??
+        null
+      );
+    }
+
+    if (hospitals.length === 1) {
+      return (
+        hospitals[0]?.clinicId ??
+        hospitals[0]?.clinic_id ??
+        hospitals[0]?.location_id ??
+        hospitals[0]?.id ??
+        null
+      );
+    }
+
+    return null;
+  };
 
   const fetchSlots = async () => {
     if (!selectedDate || !schedule) return;
 
     try {
-      const hospitalName = getHospitalLabel(schedule);
+      const clinicId = getScheduleClinicId(schedule);
+
+      if (!clinicId) {
+        console.error(
+          "Appointment slot fetch error: selected schedule has no clinic ID.",
+        );
+        setFilteredSlots([]);
+        return;
+      }
+
+      const params = {
+        doctorId: doctorIdFromUrl,
+        clinicId,
+        date: selectedDate.format("YYYY-MM-DD"),
+      };
 
       const response = await api.get("/api/appointments/doctor-slots", {
-        params: {
-          doctorId: doctorIdFromUrl,
-          hospitalName,
-          date: selectedDate.format("YYYY-MM-DD"),
-        },
+        params,
       });
+      const availableSlots = response.data?.data?.slots || [];
 
       setFilteredSlots(
-        response.data.slots.map((slot) => ({
+        availableSlots.map((slot) => ({
           slotId: slot.slotId,
           start: slot.startTime,
           tokenNumber: slot.tokenNumber,
           end: slot.endTime,
           status: slot.status,
           date: selectedDate.format("YYYY-MM-DD"),
-        }))
+        })),
       );
     } catch (err) {
-      console.log(err);
+      console.error("Appointment slot fetch error:", err);
+      setFilteredSlots([]);
     }
   };
   useEffect(() => {
     fetchSlots();
   }, [selectedDate, schedule]);
   const toDate = (d) => dayjs(d).format("YYYY-MM-DD");
-  const getHospitalLabel = (schedule) => {
-    try {
-      const raw = schedule?.hospitalName || schedule?.hospital_name;
-
-      if (!raw) return "Hospital";
-
-      if (typeof raw === "string" && raw.startsWith("{")) {
-        const parsed = JSON.parse(raw);
-        return parsed?.hospitalName || "Hospital";
-      }
-
-      return raw;
-    } catch (e) {
-      console.log("Hospital parse error:", e);
-      return "Hospital";
-    }
-  };
 
   // Loading States
   const [initialLoading, setInitialLoading] = useState(true);
@@ -173,9 +245,7 @@ export default function AppointmentPage() {
     const selectedHospital = getHospitalLabel(schedule);
 
     const matchedSchedule = allSchedules.find((sch) => {
-
-      if (getHospitalLabel(sch) !== selectedHospital)
-        return false;
+      if (getHospitalLabel(sch) !== selectedHospital) return false;
 
       const start = toDate(sch.availability.startDate);
       const end = toDate(sch.availability.endDate);
@@ -184,11 +254,7 @@ export default function AppointmentPage() {
 
       const dayName = dayjs(selectedDate).format("ddd");
 
-      return (
-        current >= start &&
-        current <= end &&
-        activeDays.includes(dayName)
-      );
+      return current >= start && current <= end && activeDays.includes(dayName);
     });
 
     if (matchedSchedule) {
@@ -215,11 +281,11 @@ export default function AppointmentPage() {
             addressStr = profile.address;
           }
 
-
-
           // Parse city from address string
           try {
-            const cityInArrayMatch = addressStr.match(/"city"\s*:\s*"([^"]+)"/i);
+            const cityInArrayMatch = addressStr.match(
+              /"city"\s*:\s*"([^"]+)"/i,
+            );
             if (cityInArrayMatch) {
               const city = cityInArrayMatch[1].toLowerCase().trim();
               setUserCity(city);
@@ -251,11 +317,32 @@ export default function AppointmentPage() {
     };
     const fetchAppointmentSlots = async () => {
       try {
+        let doctorHospitals = [];
+
+        try {
+          const doctorResponse = await api.get(
+            `/api/doctors/getDoctorPublicProfileById/${doctorId}`,
+          );
+          doctorHospitals = doctorResponse.data?.data?.hospital_detail || [];
+        } catch (error) {
+          console.error("Doctor clinic details fetch error:", error);
+        }
+
         const response = await api.get(
-          `/api/schedules/getSchedulePublicByDoctorId/${doctorId}`
+          `/api/schedules/getSchedulePublicByDoctorId/${doctorId}`,
         );
 
-        const scheduleData = response.data.data;
+        const scheduleData = Array.isArray(response.data?.data)
+          ? response.data.data.map((item) => ({
+              ...item,
+              clinicId:
+                getScheduleClinicId(item, doctorHospitals) ??
+                item.clinicId ??
+                item.clinic_id ??
+                item.location_id ??
+                null,
+            }))
+          : [];
 
         if (scheduleData && scheduleData.length > 0) {
           setAllSchedules(scheduleData);
@@ -264,7 +351,7 @@ export default function AppointmentPage() {
           setSlots(scheduleData[0].slots || []);
 
           // Pre-fill hospital_name
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
             hospital_name: getHospitalLabel(scheduleData[0]),
           }));
@@ -273,7 +360,6 @@ export default function AppointmentPage() {
         console.error("Slot fetch error:", error);
       }
     };
-
 
     const init = async () => {
       setInitialLoading(true);
@@ -284,12 +370,8 @@ export default function AppointmentPage() {
     init();
   }, [getAuthConfig]);
 
-
-
-
   // Handle Booking For Change
   useEffect(() => {
-
     if (bookingFor === "self" && userProfile) {
       setFormData((prev) => {
         const updated = {
@@ -383,12 +465,10 @@ export default function AppointmentPage() {
       }),
     };
 
-
-
     try {
       const response = await api.post(
         `/api/appointments/create/${doctorId}`,
-        payload
+        payload,
       );
 
       setSnackbar({
@@ -428,7 +508,7 @@ export default function AppointmentPage() {
     const selectedHospital = getHospitalLabel(schedule);
 
     const hospitalSchedules = allSchedules.filter(
-      s => getHospitalLabel(s) === selectedHospital
+      (s) => getHospitalLabel(s) === selectedHospital,
     );
 
     return !hospitalSchedules.some((sch) => {
@@ -438,16 +518,9 @@ export default function AppointmentPage() {
       const dayName = dayjs(date).format("ddd");
       const activeDays = sch.availability?.activeDays || [];
 
-      return (
-        current >= start &&
-        current <= end &&
-        activeDays.includes(dayName)
-      );
+      return current >= start && current <= end && activeDays.includes(dayName);
     });
   };
-
-
-
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -579,22 +652,22 @@ export default function AppointmentPage() {
           open={snackbar.open}
           autoHideDuration={6000}
           onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
           <Alert
             onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
             severity={snackbar.severity}
             sx={{
-      color: "#fff",
+              color: "#fff",
 
-      "& .MuiAlert-icon": {
-        color: "#fff",
-      },
+              "& .MuiAlert-icon": {
+                color: "#fff",
+              },
 
-      "& .MuiAlert-action": {
-        color: "#fff",
-      },
-    }}
+              "& .MuiAlert-action": {
+                color: "#fff",
+              },
+            }}
             variant="filled"
           >
             {snackbar.message}

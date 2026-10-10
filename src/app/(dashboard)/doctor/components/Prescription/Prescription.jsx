@@ -143,8 +143,18 @@ export default function Prescription({
       setRows(formatted);
     }
   }, [apiData]);
+const imageUrl = (url) =>
+  !url ? null : /^https?:\/\//i.test(url)
+    ? url
+    : `${process.env.NEXT_PUBLIC_S3_BUCKET_URL.replace(/\/$/, "")}/${url.replace(/^\//, "")}`;
 
-  const doctor = apiData?.doctor;
+const doctor = {
+  ...apiData?.doctor,
+  qr_url: imageUrl(apiData?.doctor?.qr_url),
+  logo: imageUrl(apiData?.doctor?.logo),
+  doctor_signature: imageUrl(apiData?.doctor?.doctor_signature),
+};
+const prescriptionDoctor = doctor;
   const patientApi = apiData?.patient;
   const appointment = apiData?.appointment;
 const appointmentDate =
@@ -445,7 +455,7 @@ const downloadPdf = async () => {
         html2canvas: {
           scale: 2,
           useCORS: true,
-          allowTaint: true,
+          allowTaint: false,
           backgroundColor: "#ffffff",
 
           scrollX: 0,
@@ -605,7 +615,7 @@ return (
             }}
           >
             <PrescriptionPdfView
-              doctor={doctor}
+              doctor={prescriptionDoctor}
               patient={patient}
               dateNow={dateNow}
               diagnosis={diagnosis}
@@ -632,7 +642,7 @@ return (
         handleClick={handleClick}
         downloadPdf={downloadPdf}
         pdfRef={pdfRef}
-        doctor={doctor}
+        doctor={prescriptionDoctor}
         patient={patient}
         patientId={patientId}
         appointmentId={appointmentId}
@@ -664,7 +674,7 @@ return (
       >
         <div ref={pdfDownloadRef}>
           <PrescriptionPdfView
-            doctor={doctor}
+            doctor={prescriptionDoctor}
             patient={patient}
             dateNow={dateNow}
             diagnosis={diagnosis}

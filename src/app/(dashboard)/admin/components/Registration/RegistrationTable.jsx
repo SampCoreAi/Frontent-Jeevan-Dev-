@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Box,
   Chip,
@@ -342,7 +341,26 @@ const RegistrationTable = ({
       ),
     },
   ];
+const handleSortModelChange = useCallback(
+  (model) => {
+    const currentField = sortModel?.[0]?.field;
+    const currentSort = sortModel?.[0]?.sort;
 
+    const newField = model?.[0]?.field;
+    const newSort = model?.[0]?.sort;
+
+    // Same model hai to state update mat karo
+    if (
+      currentField === newField &&
+      currentSort === newSort
+    ) {
+      return;
+    }
+
+    setSortModel(model);
+  },
+  [sortModel, setSortModel]
+);
   return (
     <Box>
       {/* ================= SEARCH / FILTER ================= */}
@@ -497,12 +515,8 @@ const RegistrationTable = ({
             setPage(model.page);
           }}
 
-          sortModel={sortModel}
-
-          onSortModelChange={(model) => {
-            setSortModel(model);
-            setPage(0);
-          }}
+       sortModel={sortModel}
+onSortModelChange={handleSortModelChange}
 
           pageSizeOptions={[
             5,

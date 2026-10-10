@@ -186,20 +186,7 @@ export default function HeroContent() {
               userSelect: "none",
               WebkitUserSelect: "none",
 
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                left: "2px",
-                right: "2px",
-                top: "12%",
-                bottom: "5%",
-                background:
-                  "linear-gradient(100deg, #DDF8B7 0%, #CFF5A3 50%, #D9F8AE 100%)",
-                borderRadius: "3px 1px 3px 2px",
-                transform: "rotate(-0.5deg)",
-                zIndex: -1,
-                boxShadow: "0 3px 12px rgba(7,135,106,0.05)",
-              },
+             
             }}
           >
             right doctor.

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Box,
   List,
@@ -9,6 +10,8 @@ import {
   Typography,
   Collapse,
   Tooltip,
+  Popover,
+  Button,
 } from "@mui/material";
 
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
@@ -16,6 +19,7 @@ import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import AddIcon from "@mui/icons-material/Add";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
 export const DocumentExplorer = ({
   folders,
@@ -30,12 +34,16 @@ export const DocumentExplorer = ({
   parentForNewFolder,
   newFolderName,
   setNewFolderName,
+  folderNameError,
+  setFolderNameError,
   saveNewFolder,
   setCreatingFolder,
   setParentForNewFolder,
 
   createFolder,
 }) => {
+  const [rulesAnchor, setRulesAnchor] = useState(null);
+
   // =====================================================
   // FOLDER TREE
   // =====================================================
@@ -268,83 +276,71 @@ export const DocumentExplorer = ({
                             }}
                           />
 
-                          <Box
-                            component="input"
-                            autoFocus
-                            value={newFolderName}
-                            placeholder="Folder name"
-                            onChange={(e) =>
-                              setNewFolderName(
-                                e.target.value
-                              )
-                            }
-                            onBlur={saveNewFolder}
-                            onClick={(e) =>
-                              e.stopPropagation()
-                            }
-                            onKeyDown={(e) => {
-                              e.stopPropagation();
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Box
+                              component="input"
+                              autoFocus
+                              value={newFolderName}
+                              placeholder="Folder name or path"
+                            onChange={(e) => {
+  const value = e.target.value.replace(/\s+/g, "-");
 
-                              if (e.key === "Enter") {
-                                saveNewFolder();
-                              }
+  setNewFolderName(value);
+  setFolderNameError("");
+}}
 
-                              if (e.key === "Escape") {
-                                setCreatingFolder(false);
+                              onBlur={saveNewFolder}
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => {
+                                e.stopPropagation();
 
-                                setParentForNewFolder(
-                                  null
-                                );
+                                if (e.key === "Enter") {
+                                  saveNewFolder();
+                                }
 
-                                setNewFolderName("");
-                              }
-                            }}
-                            sx={{
-                              width: "100%",
-                              minWidth: 0,
-
-                              height: 30,
-
-                              px: 1,
-
-                              boxSizing: "border-box",
-
-                              border: "1px solid",
-                              borderColor: "divider",
-
-                              borderRadius: "6px",
-
-                              outline: "none",
-
-                              fontFamily: "inherit",
-                              fontSize: "13px",
-
-                              color: "text.primary",
-
-                              bgcolor: "background.paper",
-
-                              transition:
-                                "border-color 0.2s ease, box-shadow 0.2s ease",
-
-                              "&::placeholder": {
-                                color: "text.secondary",
-                                opacity: 0.7,
-                              },
-
-                              "&:hover": {
-                                borderColor:
-                                  "primary.light",
-                              },
-
-                              "&:focus": {
-                                borderColor:
-                                  "primary.main",
-
-                                boxShadow: (theme) =>
-                                  `0 0 0 2px ${theme.palette.secondary.light}`,
-                              },
-                            }}
-                          />
+                                if (e.key === "Escape") {
+                                  setCreatingFolder(false);
+                                  setParentForNewFolder(null);
+                                  setNewFolderName("");
+                                  setFolderNameError("");
+                                }
+                              }}
+                              sx={{
+                                width: "100%",
+                                minWidth: 0,
+                                height: 30,
+                                px: 1,
+                                boxSizing: "border-box",
+                                border: "1px solid",
+                                borderColor: folderNameError ? "error.main" : "divider",
+                                borderRadius: "6px",
+                                outline: "none",
+                                fontFamily: "inherit",
+                                fontSize: "13px",
+                                color: "text.primary",
+                                bgcolor: "background.paper",
+                                transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+                                "&::placeholder": {
+                                  color: "text.secondary",
+                                  opacity: 0.7,
+                                },
+                                "&:hover": { borderColor: "primary.light" },
+                                "&:focus": {
+                                  borderColor: "primary.main",
+                                  boxShadow: (theme) =>
+                                    `0 0 0 2px ${theme.palette.secondary.light}`,
+                                },
+                              }}
+                            />
+                            {folderNameError && (
+                              <Typography
+                                color="error"
+                                sx={{ mt: 0.4, fontSize: 11, lineHeight: 1.3 }}
+                              >
+                                {folderNameError}
+                              </Typography>
+                            )}
+                          </Box>
                         </ListItem>
                       )}
 
@@ -451,10 +447,6 @@ export const DocumentExplorer = ({
             EXPLORER
           </Typography>
         </Box>
-
-        {/* =================================================
-            CREATE FOLDER BUTTON
-        ================================================= */}
 
         <Tooltip title="Create Folder" arrow>
           <IconButton

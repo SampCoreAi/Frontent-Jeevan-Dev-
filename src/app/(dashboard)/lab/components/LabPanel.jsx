@@ -100,26 +100,182 @@ export default function LabPanel({ section = "dashboard" }) {
       slot_duration_minutes: updatedProfile?.slot_duration_minutes ?? updatedProfile?.slotDurationMinutes ?? current?.slot_duration_minutes ?? 30,
     }));
   };
+// ==========================================
+// LOAD STATIC SECTION DATA
+// ==========================================
 
-  const loadSection = async () => {
+useEffect(() => {
+  const loadInitialData = async () => {
     try {
       setLoading(true);
       setError("");
-      if (section === "connections") await Promise.all([loadProfile(), loadConnections()]);
-      else if (section === "technicians") await Promise.all([loadProfile(), loadTechnicians()]);
-      else if (section === "requests") await Promise.all([loadProfile(), loadRequests(), loadReports(), loadTechnicians()]);
-      else if (section === "reports") await Promise.all([loadProfile(), loadReports()]);
-      else await Promise.all([loadProfile(), loadConnections(), loadRequests(), loadReports()]);
+
+      if (section === "connections") {
+        await Promise.all([
+          loadProfile(),
+          loadConnections(),
+        ]);
+      }
+
+      else if (section === "technicians") {
+        await Promise.all([
+          loadProfile(),
+          loadTechnicians(),
+        ]);
+      }
+
+      else if (section === "requests") {
+        await Promise.all([
+          loadProfile(),
+          loadTechnicians(),
+          loadReports(),
+        ]);
+      }
+
+      else if (section === "reports") {
+        await loadProfile();
+      }
+
+      else if (section === "profile") {
+        await loadProfile();
+      }
+
+      else {
+        // Dashboard
+        await Promise.all([
+          loadProfile(),
+          loadConnections(),
+          loadRequests(),
+          loadReports(),
+        ]);
+      }
+
     } catch (requestError) {
-      setError(getErrorMessage(requestError, "Unable to load lab data."));
+      setError(
+        getErrorMessage(
+          requestError,
+          "Unable to load lab data."
+        )
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadSection();
-  }, [section, tableFilters.date, tableFilters.search, tableFilters.status, showDelayedOnly, tablePage]);
+  loadInitialData();
+}, [section]);
+
+
+// ==========================================
+// REQUESTS FILTER / PAGINATION
+// ==========================================
+
+useEffect(() => {
+  if (section !== "requests") return;
+
+  const fetchRequests = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      await loadRequests();
+
+    } catch (requestError) {
+      setError(
+        getErrorMessage(
+          requestError,
+          "Unable to load test requests."
+        )
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchRequests();
+
+}, [
+  section,
+  tableFilters.search,
+  tableFilters.status,
+  tableFilters.date,
+  showDelayedOnly,
+  tablePage,
+]);
+
+
+// ==========================================
+// REPORTS FILTER / PAGINATION
+// ==========================================
+
+useEffect(() => {
+  if (section !== "reports") return;
+
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      await loadReports();
+
+    } catch (requestError) {
+      setError(
+        getErrorMessage(
+          requestError,
+          "Unable to load lab reports."
+        )
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchReports();
+
+}, [
+  section,
+  tableFilters.search,
+  tableFilters.date,
+  tablePage,
+]);
+
+
+// ==========================================
+// CONNECTIONS FILTER
+// ==========================================
+
+useEffect(() => {
+  if (section !== "connections") return;
+
+  const fetchConnections = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      await loadConnections();
+
+    } catch (requestError) {
+      setError(
+        getErrorMessage(
+          requestError,
+          "Unable to load connections."
+        )
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchConnections();
+
+}, [
+  section,
+  tableFilters.search,
+  tableFilters.status,
+  tableFilters.date,
+  tablePage,
+]);
+ 
 
   useEffect(() => {
     setTablePage(1);

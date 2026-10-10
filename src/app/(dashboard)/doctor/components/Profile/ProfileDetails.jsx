@@ -21,12 +21,10 @@ import WorkHistoryOutlinedIcon from "@mui/icons-material/WorkHistoryOutlined";
 import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
 import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
-import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 
-import WorkingHoursModal from "./WorkingHoursModal";
 
 // ============================================================
 // COMMON STYLE
@@ -212,18 +210,12 @@ const ProfileDetails = ({
   profileData,
   isEditing,
   onFieldChange,
-  onWorkingHoursChange,
 }) => {
   const [
     documentsModalOpen,
     setDocumentsModalOpen,
   ] = useState(false);
-
-  const [
-    workingHoursModalOpen,
-    setWorkingHoursModalOpen,
-  ] = useState(false);
-
+const [languageInput, setLanguageInput] = useState("");
   const languageValue = Array.isArray(profileData?.language)
     ? profileData.language.join(", ")
     : profileData?.language || "";
@@ -231,31 +223,6 @@ const ProfileDetails = ({
   // ============================================================
   // TIME
   // ============================================================
-
-  const formatDisplayTime = (time) => {
-    if (!time) return "";
-
-    const [hour, minute] = time.split(":").map(Number);
-
-    const ampm = hour >= 12 ? "PM" : "AM";
-
-    const displayHour = hour % 12 || 12;
-
-    return `${displayHour}:${String(minute).padStart(
-      2,
-      "0"
-    )} ${ampm}`;
-  };
-
-  const days = [
-    ["monday", "Mon"],
-    ["tuesday", "Tue"],
-    ["wednesday", "Wed"],
-    ["thursday", "Thu"],
-    ["friday", "Fri"],
-    ["saturday", "Sat"],
-    ["sunday", "Sun"],
-  ];
 
   // ============================================================
   // DOCUMENTS
@@ -371,52 +338,242 @@ const ProfileDetails = ({
               width: "100%",
             }}
           >
-            {/* LANGUAGE */}
+           {/* LANGUAGES */}
+<Box sx={rowSx}>
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      width: {
+        xs: "100%",
+        sm: "auto",
+      },
+    }}
+  >
+    <Box sx={iconSx}>
+      <LanguageOutlinedIcon />
+    </Box>
 
-            <Box sx={rowSx}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  width: {
-                    xs: "100%",
-                    sm: "auto",
-                  },
-                }}
-              >
-                <Box sx={iconSx}>
-                  <LanguageOutlinedIcon />
-                </Box>
+    <Typography sx={labelSx}>
+      Languages
+    </Typography>
+  </Box>
 
-                <Typography sx={labelSx}>
-                  Language
-                </Typography>
-              </Box>
+  {isEditing ? (
+    <Box
+      sx={{
+        flex: 1,
+        width: {
+          xs: "100%",
+          sm: "auto",
+        },
+        minWidth: 0,
 
-              {isEditing ? (
-                <TextField
-                  fullWidth
-                  size="small"
-                  value={languageValue}
-                  placeholder="Hindi, English"
-                  onChange={(event) =>
-                    onFieldChange?.(
-                      "language",
-                      event.target.value
-                        .split(",")
-                        .map((item) => item.trim())
-                        .filter(Boolean)
-                    )
-                  }
-                  sx={inputSx}
-                />
-              ) : (
-                <Typography sx={valueSx}>
-                  {languageValue || "Not provided"}
-                </Typography>
-              )}
-            </Box>
+        display: "flex",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: "5px",
+
+        minHeight: "36px",
+        px: "8px",
+        py: "4px",
+
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: "7px",
+        bgcolor: "background.paper",
+
+        "&:focus-within": {
+          borderColor: "primary.main",
+        },
+      }}
+    >
+      {/* EXISTING LANGUAGES */}
+      {(Array.isArray(profileData?.language)
+        ? profileData.language
+        : []
+      ).map((language) => (
+        <Box
+          key={language}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+
+            px: "7px",
+            py: "3px",
+
+            bgcolor: "#EEF8F5",
+            border: "1px solid #D5EDE6",
+            borderRadius: "6px",
+
+            fontSize: "11.5px",
+            fontWeight: 600,
+            color: "#172033",
+          }}
+        >
+          {language}
+
+          <CloseIcon
+            onClick={() => {
+              const updatedLanguages =
+                profileData.language.filter(
+                  (item) => item !== language
+                );
+
+              onFieldChange?.(
+                "language",
+                updatedLanguages
+              );
+            }}
+            sx={{
+              fontSize: "13px",
+              cursor: "pointer",
+              color: "#74807B",
+
+              "&:hover": {
+                color: "#07876A",
+              },
+            }}
+          />
+        </Box>
+      ))}
+
+      {/* INPUT */}
+      <Box
+        component="input"
+        value={languageInput}
+        placeholder={
+          profileData?.language?.length
+            ? "Add language..."
+            : "Hindi, English..."
+        }
+        onChange={(event) => {
+          const value = event.target.value;
+
+          // comma detected
+          if (value.includes(",")) {
+            const newLanguage = value
+              .replace(",", "")
+              .trim();
+
+            if (newLanguage) {
+              const currentLanguages =
+                Array.isArray(profileData?.language)
+                  ? profileData.language
+                  : [];
+
+              const alreadyExists =
+                currentLanguages.some(
+                  (item) =>
+                    item.toLowerCase() ===
+                    newLanguage.toLowerCase()
+                );
+
+              if (!alreadyExists) {
+                onFieldChange?.("language", [
+                  ...currentLanguages,
+                  newLanguage,
+                ]);
+              }
+            }
+
+            setLanguageInput("");
+            return;
+          }
+
+          setLanguageInput(value);
+        }}
+        onKeyDown={(event) => {
+          // ENTER se bhi add
+          if (event.key === "Enter") {
+            event.preventDefault();
+
+            const newLanguage =
+              languageInput.trim();
+
+            if (!newLanguage) return;
+
+            const currentLanguages =
+              Array.isArray(profileData?.language)
+                ? profileData.language
+                : [];
+
+            const alreadyExists =
+              currentLanguages.some(
+                (item) =>
+                  item.toLowerCase() ===
+                  newLanguage.toLowerCase()
+              );
+
+            if (!alreadyExists) {
+              onFieldChange?.("language", [
+                ...currentLanguages,
+                newLanguage,
+              ]);
+            }
+
+            setLanguageInput("");
+          }
+        }}
+        sx={{
+          flex: 1,
+          minWidth: "100px",
+
+          border: "none",
+          outline: "none",
+          bgcolor: "transparent",
+
+          fontFamily: "inherit",
+          fontSize: "12.5px",
+          color: "text.primary",
+
+          py: "4px",
+
+          "&::placeholder": {
+            color: "#94A3B8",
+            opacity: 1,
+          },
+        }}
+      />
+    </Box>
+  ) : (
+    <Box
+      sx={{
+        ...valueSx,
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "5px",
+      }}
+    >
+      {Array.isArray(profileData?.language) &&
+      profileData.language.length ? (
+        profileData.language.map((language) => (
+          <Box
+            key={language}
+            sx={{
+              px: "7px",
+              py: "3px",
+
+              bgcolor: "#F1F7F5",
+              border: "1px solid #DDE9E5",
+              borderRadius: "6px",
+
+              fontSize: "11.5px",
+              fontWeight: 600,
+              color: "#475569",
+            }}
+          >
+            {language}
+          </Box>
+        ))
+      ) : (
+        "Not provided"
+      )}
+    </Box>
+  )}
+</Box>
 
             {/* EMAIL */}
 
@@ -434,41 +591,9 @@ const ProfileDetails = ({
               value={profileData?.mobile}
             />
 
-            {/* EXPERIENCE */}
-
-            <DetailRow
-              icon={<WorkHistoryOutlinedIcon />}
-              label="Experience"
-              value={profileData?.experience}
-              isEditing={isEditing}
-              editable
-              type="number"
-              placeholder="Years"
-              onChange={(event) =>
-                onFieldChange?.(
-                  "experience",
-                  event.target.value
-                )
-              }
-            />
+          
 
             {/* CONSULTATION FEE */}
-
-            <DetailRow
-              icon={<PaymentsOutlinedIcon />}
-              label="Consultation Fee"
-              value={profileData?.consultation_fee}
-              isEditing={isEditing}
-              editable
-              type="number"
-              placeholder="Fee"
-              onChange={(event) =>
-                onFieldChange?.(
-                  "consultation_fee",
-                  event.target.value
-                )
-              }
-            />
 
             {/* MEDICAL LICENSE */}
 
@@ -489,24 +614,6 @@ const ProfileDetails = ({
               }
             />
 
-            {/* REGISTRATION NUMBER */}
-
-            <DetailRow
-              icon={<ConfirmationNumberOutlinedIcon />}
-              label="Registration Number"
-              value={
-                profileData?.registration_number
-              }
-              isEditing={isEditing}
-              editable
-              placeholder="Registration number"
-              onChange={(event) =>
-                onFieldChange?.(
-                  "registration_number",
-                  event.target.value
-                )
-              }
-            />
           </Box>
         </Box>
 
@@ -523,185 +630,6 @@ const ProfileDetails = ({
             minWidth: 0,
           }}
         >
-          {/* ==================================================
-              WORKING HOURS
-          ================================================== */}
-
-          <Box
-            sx={{
-              p: {
-                xs: "10px",
-                sm: "12px",
-              },
-
-              border: "1px solid",
-              borderColor: "divider",
-
-              borderRadius: "10px",
-
-              bgcolor: "background.paper",
-
-              width: "100%",
-              boxSizing: "border-box",
-              minWidth: 0,
-            }}
-          >
-            {/* HEADER */}
-
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "8px",
-                mb: "10px",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  minWidth: 0,
-                }}
-              >
-                <Box sx={iconSx}>
-                  <AccessTimeOutlinedIcon />
-                </Box>
-
-                <Typography
-                  sx={{
-                    fontSize: {
-                      xs: "14px",
-                      sm: "15px",
-                    },
-                    fontWeight: 700,
-                    color: "text.primary",
-                  }}
-                >
-                  Working Hours
-                </Typography>
-              </Box>
-
-              {isEditing && (
-                <Typography
-                  component="button"
-                  onClick={() =>
-                    setWorkingHoursModalOpen(true)
-                  }
-                  sx={{
-                    border: 0,
-                    background: "none",
-                    cursor: "pointer",
-                    fontSize: "12.5px",
-                    fontWeight: 600,
-                    color: "primary.main",
-                    flexShrink: 0,
-                    p: 0,
-                  }}
-                >
-                  Change
-                </Typography>
-              )}
-            </Box>
-
-            {/* DAYS */}
-
-            <Box
-              sx={{
-                display: "grid",
-
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "repeat(2, minmax(0, 1fr))",
-                },
-
-                gap: "6px",
-                width: "100%",
-              }}
-            >
-              {days.map(([key, label]) => {
-                const day =
-                  profileData?.workingHours?.[key] || {};
-
-                const closed = !day.start || !day.end;
-
-                return (
-                  <Box
-                    key={key}
-                    sx={{
-                      minHeight: "42px",
-
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-
-                      gap: "8px",
-
-                      px: {
-                        xs: "8px",
-                        sm: "10px",
-                      },
-
-                      py: "6px",
-
-                      border: "1px solid",
-                      borderColor: "divider",
-
-                      borderRadius: "7px",
-
-                      bgcolor: "background.default",
-
-                      minWidth: 0,
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontSize: {
-                          xs: "12px",
-                          sm: "12.5px",
-                        },
-
-                        fontWeight: 650,
-
-                        color: "text.primary",
-
-                        flexShrink: 0,
-                      }}
-                    >
-                      {label}
-                    </Typography>
-
-                    <Typography
-                      sx={{
-                        fontSize: {
-                          xs: "11.5px",
-                          sm: "12.5px",
-                        },
-
-                        color: closed
-                          ? "text.disabled"
-                          : "text.secondary",
-
-                        textAlign: "right",
-
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      {closed
-                        ? "Closed"
-                        : `${formatDisplayTime(
-                            day.start
-                          )} - ${formatDisplayTime(
-                            day.end
-                          )}`}
-                    </Typography>
-                  </Box>
-                );
-              })}
-            </Box>
-          </Box>
-
           {/* ==================================================
               DOCUMENTS
           ================================================== */}
@@ -830,23 +758,44 @@ const ProfileDetails = ({
               />
             </Box>
           </Box>
+
+            {/* EXPERIENCE */}
+
+            <DetailRow
+              icon={<WorkHistoryOutlinedIcon />}
+              label="Experience"
+              value={profileData?.experience}
+              isEditing={isEditing}
+              editable
+              type="number"
+              placeholder="Years"
+              onChange={(event) =>
+                onFieldChange?.(
+                  "experience",
+                  event.target.value
+                )
+              }
+            />
+
+            
+            <DetailRow
+              icon={<PaymentsOutlinedIcon />}
+              label="Consultation Fee"
+              value={profileData?.consultation_fee}
+              isEditing={isEditing}
+              editable
+              type="number"
+              placeholder="Fee"
+              onChange={(event) =>
+                onFieldChange?.(
+                  "consultation_fee",
+                  event.target.value
+                )
+              }
+            />
+
         </Box>
       </Box>
-
-      {/* ======================================================
-          WORKING HOURS MODAL
-      ====================================================== */}
-
-      <WorkingHoursModal
-        open={workingHoursModalOpen}
-        onClose={() =>
-          setWorkingHoursModalOpen(false)
-        }
-        workingHours={profileData?.workingHours}
-        onWorkingHoursChange={
-          onWorkingHoursChange
-        }
-      />
 
       {/* ======================================================
           DOCUMENT DIALOG

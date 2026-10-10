@@ -18,8 +18,6 @@ import {
 } from "@mui/material";
 
 import SearchIcon from "@mui/icons-material/Search";
-import TuneIcon from "@mui/icons-material/Tune";
-import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import SearchActions from "../../../../Home/components/SearchPage/components/SearchActions";
 import api from "../../../../../utils/axiosInstance";
 
@@ -30,6 +28,7 @@ export default function SearchBar({
   onEmergencyClick, // add this
   isEmergencySelected,
 }) {
+  const [searchError, setSearchError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -112,20 +111,26 @@ const placeholderTexts = [
           data.results ??
           data.data ??
           [];
+const q = cleanQuery.toLowerCase();
 
-      const labels = results
-        .slice(0, 6)
-        .map(
-          (item) =>
-            item.fullName ||
-            item.username ||
-            item.specialization ||
-            item.hospitalDetail?.[0]?.hospitalName
-        )
-        .filter(Boolean);
+const labels = results
+  .flatMap((item) => {
+    const values = [
+      item.fullName,
+      item.username,
+      item.specialization,
+      ...(item.hospitalDetail || []).map((h) => h.hospitalName),
+    ].filter(Boolean);
 
-      setSuggestions(labels);
-      setShowSuggestions(labels.length > 0);
+    return values.filter((value) =>
+      value.toLowerCase().includes(q)
+    );
+  })
+  .filter((value, index, arr) => arr.indexOf(value) === index)
+  .slice(0, 6);
+
+setSuggestions(labels);
+setShowSuggestions(labels.length > 0);
     } catch (err) {
       console.error("Suggestion Error:", err);
 
@@ -137,30 +142,26 @@ const placeholderTexts = [
     }
   }, []);
 
-  // ==========================================
-  // INPUT CHANGE
-  // ==========================================
+const handleQueryChange = (e) => {
+  const value = e.target.value;
+  const query = value.trim();
 
-  const handleQueryChange = (e) => {
-    const value = e.target.value;
+  setSearchQuery(value);
+  clearTimeout(debounceRef.current);
 
-    setSearchQuery(value);
+  if (query.length < 3) {
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setSearchError(query ? "Enter at least 3 characters to search." : "");
+    return;
+  }
 
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
+  setSearchError("");
 
-    if (!value.trim()) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      lastQueryRef.current = "";
-      return;
-    }
-
-    debounceRef.current = setTimeout(() => {
-      fetchSuggestions(value);
-    }, 500);
-  };
+  debounceRef.current = setTimeout(() => {
+    fetchSuggestions(query);
+  }, 500);
+};
 
   // ==========================================
   // CLEANUP
@@ -174,17 +175,22 @@ const placeholderTexts = [
     };
   }, []);
 
-  // ==========================================
-  // SEARCH
-  // ==========================================
+const handleSearch = (e) => {
+  e.preventDefault();
 
-  const handleSearch = (e) => {
-    e.preventDefault();
+  const query = searchQuery.trim();
 
-    setShowSuggestions(false);
+  if (query.length < 3) {
+    setSearchError(
+      query ? "Enter at least 3 characters to search." : "Enter something to search."
+    );
+    return;
+  }
 
-    onSearch?.(searchQuery.trim());
-  };
+  setSearchError("");
+  setShowSuggestions(false);
+  onSearch?.(query);
+};
 
   // ==========================================
   // SUGGESTION CLICK
@@ -418,104 +424,81 @@ const placeholderTexts = [
             )}
           </Paper>
 
-          {/* =====================================
-              SUGGESTIONS
-          ====================================== */}
+        {/* SUGGESTIONS */}
+{showSuggestions && suggestions.length > 0 && (
+  <ClickAwayListener onClickAway={() => setShowSuggestions(false)}>
+    <Paper
+      elevation={0}
+      sx={{
+        position: "absolute",
+        top: "calc(100% + 5px)",
+        left: 0,
+        right: 0,
+        bgcolor: "background.paper",
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: 1,
+        overflow: "hidden",
+        boxShadow: "0 10px 25px rgba(15, 23, 42, 0.10)",
+        zIndex: 1500,
+      }}
+    >
+      {suggestions.map((item, index) => (
+        <Box
+          key={`${item}-${index}`}
+          onClick={() => handleSuggestionClick(item)}
+          sx={{
+            minHeight: "42px",
+            px: 1.6,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            cursor: "pointer",
+            borderBottom:
+              index !== suggestions.length - 1
+                ? "1px solid"
+                : "none",
+            borderColor: "divider",
+            "&:hover": {
+              bgcolor: "secondary.light",
+            },
+          }}
+        >
+          <SearchIcon
+            sx={{
+              fontSize: "17px",
+              color: "text.disabled",
+            }}
+          />
 
-          {showSuggestions &&
-            suggestions.length > 0 && (
-              <ClickAwayListener
-                onClickAway={() =>
-                  setShowSuggestions(false)
-                }
-              >
-                <Paper
-                  elevation={0}
-                  sx={{
-                    position: "absolute",
+          <Typography
+            sx={{
+              fontSize: "12.5px",
+              fontWeight: 500,
+            }}
+          >
+            {item}
+          </Typography>
+        </Box>
+      ))}
+    </Paper>
+  </ClickAwayListener>
+)}
 
-                    top: "calc(100% + 5px)",
-                    left: 0,
-                    right: 0,
-
-                    bgcolor: "background.paper",
-
-                    border: "1px solid",
-                    borderColor: "divider",
-
-                    borderRadius: 1,
-
-                    overflow: "hidden",
-
-                    boxShadow:
-                      "0 10px 25px rgba(15, 23, 42, 0.10)",
-
-                    zIndex: 1500,
-                  }}
-                >
-                  {suggestions.map(
-                    (item, index) => (
-                      <Box
-                        key={`${item}-${index}`}
-                        onClick={() =>
-                          handleSuggestionClick(item)
-                        }
-                        sx={{
-                          minHeight: "42px",
-
-                          px: 1.6,
-
-                          display: "flex",
-                          alignItems: "center",
-
-                          gap: 1,
-
-                          cursor: "pointer",
-
-                          borderBottom:
-                            index !==
-                            suggestions.length - 1
-                              ? "1px solid"
-                              : "none",
-
-                          borderColor: "divider",
-
-                          transition:
-                            "background-color 0.15s ease",
-
-                          "&:hover": {
-                            bgcolor:
-                              "secondary.light",
-                          },
-                        }}
-                      >
-                        <SearchIcon
-                          sx={{
-                            fontSize: "17px",
-
-                            color:
-                              "text.disabled",
-                          }}
-                        />
-
-                        <Typography
-                          sx={{
-                            fontSize: "12.5px",
-
-                            fontWeight: 500,
-
-                            color:
-                              "text.primary",
-                          }}
-                        >
-                          {item}
-                        </Typography>
-                      </Box>
-                    )
-                  )}
-                </Paper>
-              </ClickAwayListener>
-            )}
+{/* ERROR MESSAGE - ClickAwayListener KE BAHAR */}
+{searchError && (
+  <Typography
+    sx={{
+      mt: 0.5,
+      ml: 0.5,
+      fontSize: "11px",
+      color: "error.main",
+      position: "absolute",
+    }}
+  >
+    {searchError}
+  </Typography>
+)}
         </Box>
 
         {/* =====================================

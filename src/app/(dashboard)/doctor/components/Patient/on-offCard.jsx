@@ -21,6 +21,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export default function OnOffCard({
   selectedHospital,
   selectedMode,
+  date,
+  onDateChange,
 }) {
   const theme = useTheme();
   const router = useRouter();
@@ -43,9 +45,7 @@ const [pastSelectedDate, setPastSelectedDate] = useState("");
   const [error, setError] = useState("");
   const [patients, setPatients] = useState([]);
 
-  const [date, setDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+
 ;
 const [pastOpen, setPastOpen] = useState(false);
 const [pastLoading, setPastLoading] = useState(false);
@@ -632,14 +632,9 @@ const handlePastDateChange = async (selectedDate) => {
   };
 
   const handleDateChange = (value) => {
-    setDate(value);
-
-    setPagination((prev) => ({
-      ...prev,
-      page: 0,
-    }));
-  };
-
+  onDateChange(value);
+  setPagination((prev) => ({ ...prev, page: 0 }));
+};
   const handleStatusChange = (value) => {
     setStatus(value);
 
@@ -649,15 +644,11 @@ const handlePastDateChange = async (selectedDate) => {
     }));
   };
 
-  const handleClearFilters = () => {
-    setDate("");
-    setStatus("pending");
-
-    setPagination((prev) => ({
-      ...prev,
-      page: 0,
-    }));
-  };
+ const handleClearFilters = () => {
+  onDateChange("");
+  setStatus("pending");
+  setPagination((prev) => ({ ...prev, page: 0 }));
+};
 
   return (
     <>

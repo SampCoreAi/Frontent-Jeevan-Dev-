@@ -1,360 +1,376 @@
 "use client";
-
-import React from "react";
+import FamilyMedicalHistory from "./FamilyMedicalHistory";
+import { useState } from "react";
 import {
   Box,
   Stack,
-  Divider,
   Typography,
-  useTheme,
+  Autocomplete,
+  TextField,
+  Button,
+  IconButton,
+  Collapse,
+  Chip,
+  MenuItem,
 } from "@mui/material";
-
+import {
+  ExpandMore,
+  FamilyRestroomOutlined,
+  AddRounded,
+  CloseRounded,
+} from "@mui/icons-material";
 import UserAddress from "../Profile/UserAddress";
+const normalizeFamilyHistory = (value) => {
+  const records = Array.isArray(value) ? value : value ? [value] : [];
 
-const PatientProfileForm = ({
-  formData,
+  return records
+    .filter((item) => item && typeof item === "object")
+    .map((item) => ({
+      medical_condition: String(
+        item.medical_condition ?? item.Medical_Condition ?? ""
+      ).trim(),
+      family_member: String(
+        item.family_member ?? item.Family_Member ?? ""
+      ).trim(),
+    }))
+    .filter((item) => item.medical_condition || item.family_member);
+};
+const ALLERGIES = [
+  "Dust", "Eggs", "Wheat", "Soy", "Shellfish", "Milk", "Peanuts",
+  "Fish", "Insect Sting", "Penicillin", "Pollen", "Latex",
+  "Dust Mites", "Pet Dander",
+];
+
+const CONDITIONS = [
+  "Diabetes", "Hypertension", "Thyroid Disorder", "Heart Disease",
+  "Arthritis", "Migraine", "Asthma", "Kidney Disease",
+  "Epilepsy", "Tuberculosis", "PCOS", "Anemia",
+];
+
+const MEMBERS = [
+  "Father", "Mother", "Brother", "Sister", "Grandfather",
+  "Grandmother", "Uncle", "Aunt", "Son", "Daughter",
+];
+
+const BLOOD_GROUPS = [
+  "A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-",
+];
+
+const cleanText = (value) =>
+  String(value ?? "")
+    .replace(/[<>]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .slice(0, 250);
+
+const getValues = (value) =>
+  (Array.isArray(value) ? value : String(value || "").split(","))
+    .map((item) => String(item).trim())
+    .filter(Boolean);
+
+const fieldSx = {
+  "& .MuiInputBase-root": { fontSize: 12.5, bgcolor: "white" },
+  "& .MuiInputLabel-root": { fontSize: 12 },
+};
+
+const labelSx = {
+  fontSize: 12.5,
+  fontWeight: 600,
+  minWidth: { xs: 105, sm: 125 },
+  flexShrink: 0,
+};
+
+export default function PatientProfileForm({
+  formData = {},
   editable,
   handleChange,
-}) => {
-  const theme = useTheme();
+}) {
+  const [inputs, setInputs] = useState({
+    allergies: "",
+    existingConditions: "",
+  });
+  const [familyExpanded, setFamilyExpanded] = useState(false);
+  const [showFamilyHistory, setShowFamilyHistory] = useState(false);
+  const [familyCondition, setFamilyCondition] = useState("");
+  const [familyMember, setFamilyMember] = useState("");
 
-  const inputStyle = {
-    width: "100%",
-    minWidth: 0,
-    border: "none",
-    outline: "none",
-    background: "transparent",
-    fontSize: "12.5px",
-    padding: "6px 4px",
-    color: theme.palette.text.primary,
-    fontFamily: "inherit",
-    boxSizing: "border-box",
-  };
+  const familyHistory = Array.isArray(formData.familyMedicalHistory)
+    ? formData.familyMedicalHistory
+    : [];
 
-  const boxStyle = {
-    backgroundColor: theme.palette.background.default,
-    px: 1.5,
-    py: 0.7,
-    minHeight: 43,
-    borderRadius: 1.5,
+  const rowSx = {
     display: "flex",
     alignItems: "center",
     gap: 1,
-    width: "100%",
-    boxSizing: "border-box",
-    border: `1px solid ${theme.palette.divider}`,
-    transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-
-    "&:hover": {
-      borderColor: editable
-        ? theme.palette.primary.main
-        : theme.palette.divider,
-    },
-
+    minWidth: 0,
+    minHeight: 43,
+    px: 1.5,
+    py: 0.7,
+    border: "1px solid",
+    borderColor: "divider",
+    borderRadius: 1.5,
+    bgcolor: "background.default",
     "&:focus-within": {
-      borderColor: editable
-        ? theme.palette.primary.main
-        : theme.palette.divider,
-      boxShadow: editable
-        ? `0 0 0 2px ${theme.palette.primary.main}12`
-        : "none",
+      borderColor: editable ? "primary.main" : "divider",
     },
   };
 
-  const labelStyle = {
-    fontSize: "12.5px",
-    fontWeight: 600,
-    color: theme.palette.text.primary,
-    minWidth: {
-      xs: "105px",
-      sm: "125px",
-    },
-    flexShrink: 0,
-    whiteSpace: "nowrap",
-  };
+  const setInput = (field, value) =>
+    setInputs((prev) => ({ ...prev, [field]: value }));
 
-  const sanitizeCommaSeparatedText = (value) => {
-    return value
-      .replace(/[<>]/g, "")
-      .replace(/\s{2,}/g, " ")
-      .slice(0, 250);
-  };
-
-  const handleListChange = (field, value) => {
+  const updateValues = (field, values) => {
     if (!editable) return;
 
-    handleChange(
-      field,
-      sanitizeCommaSeparatedText(value)
-    );
+    const unique = values
+      .map((value) => cleanText(value).trim())
+      .filter(Boolean)
+      .filter(
+        (value, index, array) =>
+          array.findIndex(
+            (item) => item.toLowerCase() === value.toLowerCase()
+          ) === index
+      );
+
+    handleChange(field, unique.join(", "));
   };
 
-  const handleBioChange = (value) => {
-    if (!editable) return;
+  const renderMultiSelect = (field, options, placeholder) => (
+    <Autocomplete
+      multiple
+      freeSolo
+      filterSelectedOptions
+      options={options}
+      value={getValues(formData[field])}
+      inputValue={inputs[field]}
+      disabled={!editable}
+      onInputChange={(_, value) => setInput(field, value)}
+      onChange={(_, values) => {
+        updateValues(field, values);
+        setInput(field, "");
+      }}
+      sx={{
+        flex: 1,
+        minWidth: 0,
+        "& .MuiAutocomplete-inputRoot": {
+          padding: "2px 0 !important",
+          gap: "4px",
+        },
+        "& .MuiAutocomplete-tag": {
+          margin: "2px !important",
+          height: 28,
+          fontSize: 12,
+          bgcolor: "#EDF7F2",
+        },
+        "& .MuiAutocomplete-input": {
+          padding: "6px 4px !important",
+          fontSize: 12.5,
+        },
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          variant="standard"
+          placeholder={
+            getValues(formData[field]).length
+              ? ""
+              : editable
+                ? placeholder
+                : "Not provided"
+          }
+          InputProps={{
+            ...params.InputProps,
+            disableUnderline: true,
+          }}
+          onKeyDown={(event) => {
+            if (!editable || event.key !== ",") return;
 
-    handleChange(
-      "bio",
-      value
-        .replace(/[<>]/g, "")
-        .slice(0, 500)
-    );
+            event.preventDefault();
+
+            if (inputs[field].trim()) {
+              updateValues(field, [
+                ...getValues(formData[field]),
+                ...inputs[field].split(","),
+              ]);
+              setInput(field, "");
+            }
+          }}
+        />
+      )}
+    />
+  );
+
+  const toggleFamilyForm = () => {
+    setFamilyExpanded(true);
+    setShowFamilyHistory((prev) => !prev);
   };
+
+  const addFamilyHistory = () => {
+    const condition = cleanText(familyCondition).trim();
+
+    if (!editable || !condition || !familyMember) return;
+
+    handleChange("familyMedicalHistory", [
+      ...familyHistory,
+      {
+        medical_condition: condition,
+        family_member: familyMember,
+      },
+    ]);
+
+    setFamilyCondition("");
+    setFamilyMember("");
+  };
+
+  const historyColumns = editable
+    ? "minmax(0, 1fr) minmax(0, 1fr) 30px"
+    : "minmax(0, 1fr) minmax(0, 1fr)";
 
   return (
     <Box sx={{ width: "100%" }}>
       <Box
         sx={{
-          display: "flex",
-          flexDirection: {
-            xs: "column",
-            md: "row",
-          },
-          gap: {
-            xs: 1.2,
-            md: 2.5,
-          },
-          width: "100%",
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+          gap: { xs: 1.2, md: 2.5 },
         }}
       >
-        <Stack
-          spacing={1.2}
-          sx={{
-            flex: 1,
-            minWidth: 0,
-          }}
-        >
-          <Box sx={boxStyle}>
-            <Typography sx={labelStyle}>
-              Blood Group
-            </Typography>
+        <Stack spacing={1.2} sx={{ minWidth: 0 }}>
+          <Box sx={rowSx}>
+            <Typography sx={labelSx}>Blood Group</Typography>
 
             <select
-              value={formData?.bloodGroup || ""}
-              onChange={(e) =>
-                handleChange(
-                  "bloodGroup",
-                  e.target.value
-                )
-              }
+              value={formData.bloodGroup || ""}
               disabled={!editable}
               aria-label="Blood Group"
+              onChange={(event) =>
+                handleChange("bloodGroup", event.target.value)
+              }
               style={{
-                ...inputStyle,
-                cursor: editable
-                  ? "pointer"
-                  : "default",
+                flex: 1,
+                width: "100%",
+                minWidth: 0,
+                padding: "6px 4px",
+                border: "none",
+                outline: "none",
+                background: "transparent",
+                color: "inherit",
+                font: "inherit",
+                fontSize: 12.5,
+                cursor: editable ? "pointer" : "default",
               }}
             >
               <option value="">
-                Select Blood Group
+                {editable ? "Select Blood Group" : "Not provided"}
               </option>
 
-              {[
-                "A+",
-                "A-",
-                "B+",
-                "B-",
-                "O+",
-                "O-",
-                "AB+",
-                "AB-",
-              ].map((bloodGroup) => (
-                <option
-                  key={bloodGroup}
-                  value={bloodGroup}
-                >
-                  {bloodGroup}
+              {BLOOD_GROUPS.map((group) => (
+                <option key={group} value={group}>
+                  {group}
                 </option>
               ))}
             </select>
           </Box>
 
-          <Box sx={boxStyle}>
-            <Typography sx={labelStyle}>
+          <Box sx={{ ...rowSx, alignItems: "flex-start", minHeight: 50 }}>
+            <Typography sx={{ ...labelSx, pt: 1 }}>
               Allergies
             </Typography>
 
-            <input
-              type="text"
-              value={formData?.allergies || ""}
-              placeholder={
-                editable
-                  ? "e.g. Dust, Pollen"
-                  : "Not provided"
-              }
-              disabled={!editable}
-              maxLength={250}
-              onChange={(e) =>
-                handleListChange(
-                  "allergies",
-                  e.target.value
-                )
-              }
-              style={{
-                ...inputStyle,
-                cursor: editable
-                  ? "text"
-                  : "default",
-              }}
-            />
+            {renderMultiSelect(
+              "allergies",
+              ALLERGIES,
+              "Search or type allergy..."
+            )}
           </Box>
         </Stack>
 
-        <Divider
-          orientation="vertical"
-          flexItem
+        <Box
           sx={{
-            display: {
-              xs: "none",
-              md: "block",
-            },
-            borderColor: theme.palette.divider,
-          }}
-        />
-
-        <Stack
-          spacing={1.2}
-          sx={{
-            flex: 1,
             minWidth: 0,
+            pl: { md: 2.5 },
+            borderLeft: { md: "1px solid" },
+            borderColor: "divider",
           }}
         >
-          <Box sx={boxStyle}>
-            <Typography sx={labelStyle}>
+          <Box sx={{ ...rowSx, alignItems: "flex-start", minHeight: 50 }}>
+            <Typography sx={{ ...labelSx, pt: 1 }}>
               Existing Conditions
             </Typography>
 
-            <input
-              type="text"
-              value={
-                formData?.existingConditions || ""
-              }
-              placeholder={
-                editable
-                  ? "e.g. Diabetes, Asthma"
-                  : "Not provided"
-              }
-              disabled={!editable}
-              maxLength={250}
-              onChange={(e) =>
-                handleListChange(
-                  "existingConditions",
-                  e.target.value
-                )
-              }
-              style={{
-                ...inputStyle,
-                cursor: editable
-                  ? "text"
-                  : "default",
-              }}
-            />
+            {renderMultiSelect(
+              "existingConditions",
+              CONDITIONS,
+              "Search or type condition..."
+            )}
           </Box>
-        </Stack>
+        </Box>
       </Box>
 
+      {/* SHORT BIO */}
       <Box sx={{ mt: 2.5 }}>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            mb: 1,
-          }}
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ mb: 1 }}
         >
-          <Typography
-            sx={{
-              fontSize: "14px",
-              fontWeight: 700,
-              color: theme.palette.text.primary,
-            }}
-          >
+          <Typography sx={{ fontSize: 14, fontWeight: 700 }}>
             Short Bio
           </Typography>
 
           {editable && (
-            <Typography
-              sx={{
-                fontSize: "11px",
-                color: theme.palette.text.secondary,
-              }}
-            >
-              {(formData?.bio || "").length}/500
+            <Typography sx={{ fontSize: 11, color: "text.secondary" }}>
+              {(formData.bio || "").length}/500
             </Typography>
           )}
-        </Box>
+        </Stack>
 
-        <Box
+        <TextField
+          fullWidth
+          multiline
+          minRows={2}
+          value={formData.bio || ""}
+          disabled={!editable}
+          placeholder={editable ? "Write a short bio..." : "No bio provided"}
+          onChange={(event) => {
+            if (editable) {
+              handleChange(
+                "bio",
+                event.target.value.replace(/[<>]/g, "").slice(0, 500)
+              );
+            }
+          }}
           sx={{
-            backgroundColor:
-              theme.palette.background.default,
-            borderRadius: 1.5,
-            px: 1.5,
-            py: 1,
-            border: `1px solid ${theme.palette.divider}`,
-            transition:
-              "border-color 0.2s ease, box-shadow 0.2s ease",
-
-            "&:hover": {
-              borderColor: editable
-                ? theme.palette.primary.main
-                : theme.palette.divider,
-            },
-
-            "&:focus-within": {
-              borderColor: editable
-                ? theme.palette.primary.main
-                : theme.palette.divider,
-              boxShadow: editable
-                ? `0 0 0 2px ${theme.palette.primary.main}12`
-                : "none",
+            "& .MuiInputBase-root": {
+              fontSize: 12.5,
+              lineHeight: 1.6,
+              bgcolor: "background.default",
+              borderRadius: 1.5,
             },
           }}
-        >
-          <textarea
-            value={formData?.bio || ""}
-            onChange={(e) =>
-              handleBioChange(e.target.value)
-            }
-            disabled={!editable}
-            placeholder={
-              editable
-                ? "Write a short bio..."
-                : "No bio provided"
-            }
-            rows={2}
-            maxLength={500}
-            style={{
-              width: "100%",
-              minHeight: 48,
-              backgroundColor: "transparent",
-              border: "none",
-              outline: "none",
-              resize: "vertical",
-              padding: 0,
-              margin: 0,
-              fontSize: "12.5px",
-              lineHeight: 1.6,
-              color: theme.palette.text.primary,
-              fontFamily: "inherit",
-              boxSizing: "border-box",
-            }}
-          />
-        </Box>
+        />
       </Box>
+     <Box sx={{ mt: 2.5 }}>
+  <FamilyMedicalHistory
+    value={normalizeFamilyHistory(
+      formData.familyMedicalHistory ??
+      formData.family_medical_history
+    )}
+    editable={editable}
+    onChange={(history) =>
+      handleChange("familyMedicalHistory", history)
+    }
+  />
+</Box>
 
+      {/* ADDRESS */}
       <Box sx={{ mt: 2.5 }}>
         <UserAddress
-          address={formData?.address || {}}
-          emergencyContact={
-            formData?.emergencyContact || {}
-          }
+          address={formData.address || {}}
+          emergencyContact={formData.emergencyContact || {}}
           editable={editable}
           handleChange={handleChange}
         />
       </Box>
     </Box>
   );
-};
-
-export default PatientProfileForm;
+}

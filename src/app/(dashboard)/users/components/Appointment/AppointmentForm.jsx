@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 
 import { useRouter } from "next/navigation";
-
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -1022,91 +1022,93 @@ export default function AppointmentForm({
                           fontSize: "11px",
                         }}
                       >
-                        {hospital}
+                       {hospital}
+{[schedule.landmark, schedule.area].filter(Boolean).length > 0 &&
+  ` - ${[schedule.landmark, schedule.area].filter(Boolean).join(", ")}`}
                       </MenuItem>
                     );
                   }
                 )}
               </TextField>
 
-              <LocalizationProvider
-                dateAdapter={AdapterDayjs}
-              >
-                <DatePicker
-                  label="Select Date"
-                  value={selectedDate}
-                  onChange={handleDateChange}
-                  shouldDisableDate={
-                    shouldDisableDate
-                  }
-                  minDate={finalMinDate}
-                  slots={{
-                    day: AvailableDay,
-                  }}
-                  slotProps={{
-                    textField: {
-                      required: true,
-                      fullWidth: true,
-                      error: !!errors?.date,
-                      helperText: errors?.date,
+             <LocalizationProvider dateAdapter={AdapterDayjs}>
+  <DatePicker
+    label="Select Date"
+    value={selectedDate}
+    onChange={handleDateChange}
+    shouldDisableDate={shouldDisableDate}
+    minDate={finalMinDate}
 
-                      sx: {
-                        ...compactFieldSx,
+    slots={{
+      day: AvailableDay,
+      openPickerIcon: CalendarMonthOutlinedIcon,
+    }}
 
-                        "& .MuiOutlinedInput-root":
-                          {
-                            height:
-                              "52px !important",
-                            minHeight:
-                              "52px !important",
-                            maxHeight:
-                              "52px !important",
-                            boxSizing:
-                              "border-box",
-                            borderRadius: 2,
-                            backgroundColor:
-                              "background.paper",
+    slotProps={{
+      openPickerButton: {
+        sx: {
+          mr: 0.5,
+          p: 1,
+          width: 40,
+          height: 40,
+          flexShrink: 0,
+          color: "#64748B",
+          visibility: "visible",
+          display: "inline-flex",
+          "& .MuiSvgIcon-root": {
+            display: "block",
+            width: 20,
+            height: 20,
+            fontSize: 20,
+          },
+        },
+      },
 
-                            "& fieldset": {
-                              borderColor:
-                                "#b1b1b1",
-                            },
+      textField: {
+        required: true,
+        fullWidth: true,
+        error: !!errors?.date,
+        helperText: errors?.date,
 
-                            "&:hover fieldset":
-                              {
-                                borderColor:
-                                  "#b1b1b1",
-                              },
+        sx: {
+          ...compactFieldSx,
 
-                            "&.Mui-focused fieldset":
-                              {
-                                borderColor:
-                                  "#b1b1b1",
-                                borderWidth:
-                                  "1px",
-                              },
-                          },
+          "& .MuiOutlinedInput-root": {
+            height: "52px",
+            minHeight: "52px",
+            borderRadius: 2,
+            backgroundColor: "background.paper",
+            paddingRight: "4px",
 
-                        "& .MuiOutlinedInput-input":
-                          {
-                            height:
-                              "52px !important",
-                            minHeight:
-                              "52px !important",
-                            boxSizing:
-                              "border-box",
-                            padding:
-                              "0 14px !important",
-                            display: "flex",
-                            alignItems: "center",
-                            fontSize: "11.5px",
-                            fontWeight: 500,
-                          },
-                      },
-                    },
-                  }}
-                />
-              </LocalizationProvider>
+            "& fieldset": {
+              borderColor: "#b1b1b1",
+            },
+
+            "&:hover fieldset": {
+              borderColor: "#b1b1b1",
+            },
+
+            "&.Mui-focused fieldset": {
+              borderColor: "#b1b1b1",
+              borderWidth: "1px",
+            },
+          },
+
+          "& .MuiOutlinedInput-input": {
+            fontSize: "11.5px",
+            fontWeight: 500,
+          },
+
+          "& .MuiInputAdornment-positionEnd": {
+            display: "flex !important",
+            visibility: "visible !important",
+            opacity: "1 !important",
+          },
+        },
+      },
+    }}
+  />
+</LocalizationProvider>
             </Box>
 
             <TextField

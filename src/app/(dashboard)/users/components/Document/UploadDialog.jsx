@@ -353,13 +353,13 @@ export const UploadDialog = ({
               >
                 Browse Files
 
-                <input
-                  hidden
-                  multiple
-                  type="file"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.ppt,.pptx"
-                  onChange={uploadFiles}
-                />
+              <input
+  hidden
+  multiple
+  type="file"
+  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.ppt,.pptx"
+  onChange={uploadFiles}
+/>
               </Button>
             </Box>
 

@@ -2,6 +2,7 @@
 
 import React from "react";
 import dayjs from "dayjs";
+import { resolvePrescriptionImageUrl } from "./imageUtils";
 
 const C = {
   ink: "#172033",
@@ -16,7 +17,8 @@ const C = {
 };
 
 const FONT = "Inter, Arial, Helvetica, sans-serif";
-
+const NUDGE = 8;
+const NUDGE_COMPACT = 5;
 export default function PrescriptionPdfView({
   doctor,
   patient,
@@ -42,6 +44,12 @@ export default function PrescriptionPdfView({
       ? doctor.name
       : `Dr. ${doctor.name}`
     : "Doctor";
+  const logoUrl = resolvePrescriptionImageUrl(
+    doctor?.logo || doctor?.logoUrl || doctor?.logo_url || doctor?.logo_key
+  );
+  const signatureUrl = resolvePrescriptionImageUrl(
+    doctor?.doctor_signature
+  );
 
   const hospitalName =
     hospital?.hospitalName ||
@@ -92,41 +100,65 @@ export default function PrescriptionPdfView({
           style={{
             flex: 1,
             minWidth: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: compact ? "8px" : "12px",
           }}
-        >
-          <div
-            style={{
-              fontSize: compact ? "12.5px" : "16px",
-              fontWeight: 700,
-              lineHeight: 1.4,
-              wordBreak: "break-word",
-            }}
           >
-            {doctorName}
-          </div>
+          {logoUrl && (
+            <img
+            crossOrigin="anonymous"
+            src={logoUrl}
+            alt="Doctor logo"
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+            }}
+             style={{
+  display: "block",
+  width: compact ? "42px" : "76px",
+  height: compact ? "42px" : "66px",
+  flexShrink: 0,
+  objectFit: "contain",
+  transform: compact ? "translateY(0px)" : "translateY(6px)",
+}}
+            />
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: compact ? "12.5px" : "16px",
+                fontWeight: 700,
+                lineHeight: 1.4,
+                wordBreak: "break-word",
+                
+              }}
+              >
+              {doctorName}
+            </div>
 
-          {doctor?.qualification && (
+            {doctor?.qualification && (
+              <div
+                style={{
+                  fontSize: compact ? "10.5px" : "13px",
+                  color: C.muted,
+                  lineHeight: 1.45,
+                }}
+              >
+                {doctor.qualification}
+              </div>
+            )}
+
             <div
               style={{
                 fontSize: compact ? "10.5px" : "13px",
                 color: C.muted,
                 lineHeight: 1.45,
+                wordBreak: "break-word",
               }}
             >
-              {doctor.qualification}
+              Registration Number:{" "}
+              {doctor?.registration_number || "—"}
             </div>
-          )}
-
-          <div
-            style={{
-              fontSize: compact ? "10.5px" : "13px",
-              color: C.muted,
-              lineHeight: 1.45,
-              wordBreak: "break-word",
-            }}
-          >
-            Registration Number:{" "}
-            {doctor?.registration_number || "—"}
           </div>
         </div>
 
@@ -182,19 +214,29 @@ export default function PrescriptionPdfView({
           overflow: "hidden",
         }}
       >
-        <div
-          style={{
-            backgroundColor: C.brandTint,
-            padding: compact ? "6px 9px" : "8px 12px",
-            color: C.brand,
-            fontWeight: 700,
-            fontSize: compact ? "11px" : "13px",
-            lineHeight: 1.4,
-            borderBottom: `1px solid ${C.border}`,
-          }}
-        >
-          Patient Information
-        </div>
+       <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    height: compact ? "28px" : "38px",
+    padding: compact ? "0 9px" : "0 12px",
+    backgroundColor: C.brandTint,
+    color: C.brand,
+    fontWeight: 700,
+    fontSize: compact ? "11px" : "13px",
+    lineHeight: 1,
+    borderBottom: `1px solid ${C.border}`,
+  }}
+>
+  <span
+    style={{
+      display: "block",
+     transform: `translateY(-${compact ? NUDGE_COMPACT : NUDGE}px)`,
+    }}
+  >
+    Patient Information
+  </span>
+</div>
 
         <InfoRow bordered compact={compact}>
           <InfoCell
@@ -474,9 +516,10 @@ export default function PrescriptionPdfView({
           >
             {qrImage ? (
               <img
+              
+              crossOrigin="anonymous"
                 src={qrImage}
                 alt="Doctor QR"
-                crossOrigin="anonymous"
                 style={{
                   display: "block",
                   width: "100%",
@@ -544,11 +587,22 @@ export default function PrescriptionPdfView({
             minWidth: 0,
           }}
         >
-          <div
-            style={{
-              height: compact ? "24px" : "36px",
-            }}
-          />
+          {signatureUrl && (
+            <img
+            crossOrigin="anonymous"
+              src={signatureUrl}
+              alt="Doctor signature"
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+              }}
+              style={{
+                display: "block",
+                width: "100%",
+  height: compact ? "42px" : "66px",
+                objectFit: "contain",
+              }}
+            />
+          )}
 
           <div
             style={{
@@ -686,47 +740,33 @@ function InfoRow({
     </div>
   );
 }
-
-function InfoCell({
-  label,
-  value,
-  compact = false,
-}) {
+function InfoCell({ label, value, compact = false }) {
   return (
     <div
       style={{
-        padding: compact
-          ? "7px 8px"
-          : "9px 12px",
-        fontSize: compact
-          ? "10px"
-          : "13px",
-        lineHeight: 1.4,
+        display: "flex",
+        alignItems: "center",
+        minHeight: compact ? "30px" : "40px",
+        padding: compact ? "0 8px" : "0 12px",
+        boxSizing: "border-box",
+        fontSize: compact ? "10px" : "13px",
+        lineHeight: 1,
         minWidth: 0,
         wordBreak: "break-word",
       }}
     >
       <span
         style={{
-          color: C.label,
-          fontWeight: 600,
+          display: "block",
+        transform: `translateY(-${compact ? NUDGE_COMPACT : NUDGE}px)`,
         }}
       >
-        {label}:{" "}
-      </span>
-
-      <span
-        style={{
-          color: C.ink,
-          fontWeight: 700,
-        }}
-      >
-        {value || "—"}
+        <span style={{ color: C.label, fontWeight: 600 }}>{label}: </span>
+        <span style={{ color: C.ink, fontWeight: 700 }}>{value || "—"}</span>
       </span>
     </div>
   );
 }
-
 function FieldLabel({
   children,
   compact = false,
@@ -736,7 +776,7 @@ function FieldLabel({
       style={{
         marginBottom: compact
           ? "4px"
-          : "6px",
+          : "15px",
         fontSize: compact
           ? "9.5px"
           : "12px",
@@ -758,26 +798,27 @@ function FieldBox({
   return (
     <div
       style={{
-        padding: compact
-          ? "7px 9px"
-          : "10px 12px",
-        minHeight: compact
-          ? "34px"
-          : "42px",
+        display: "flex",
+        alignItems: "center",
+        minHeight: compact ? "32px" : "39px",
+        padding: compact ? "0 9px" : "0 12px",
         boxSizing: "border-box",
         border: `1px solid ${C.border}`,
         borderRadius: "6px",
-        fontSize: compact
-          ? "10px"
-          : "13px",
-        lineHeight: 1.4,
-        color: muted
-          ? C.faint
-          : C.ink,
+        fontSize: compact ? "10px" : "13px",
+        lineHeight: 1,
+        color: muted ? C.faint : C.ink,
         wordBreak: "break-word",
       }}
     >
-      {children}
+      <span
+        style={{
+          display: "block",
+         transform: `translateY(-${compact ? NUDGE_COMPACT : NUDGE}px)`,
+        }}
+      >
+        {children}
+      </span>
     </div>
   );
 }

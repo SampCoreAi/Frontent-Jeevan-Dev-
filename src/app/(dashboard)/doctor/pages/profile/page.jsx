@@ -9,8 +9,11 @@ import {
   updateDoctorProfile,
   uploadLicense,
   uploadProfileImage,
+  uploadDoctorLogo,
+  uploadDoctorSignature,
+  setProfileData,
   handleFieldChange,
-  handleWorkingHoursChange,
+  handleClinicWorkingHoursChange,
   handleHospitalChange,
   handleAddHospital,
   handleRemoveHospital,
@@ -22,9 +25,14 @@ import {
 import {
   selectProfileData,
   selectProfileLoading,
+  selectProfileLoaded,
+  selectProfileSaving,
   selectProfileError,
   selectProfileSuccessMessage,
   selectIsEditing,
+  selectLogoUploading,
+  selectSignatureUploading,
+  selectProfileImageUploading,
 } from "../../store/profileSlice";
 
 const Page = () => {
@@ -32,15 +40,17 @@ const Page = () => {
 
   const profileData = useSelector(selectProfileData);
   const loading = useSelector(selectProfileLoading);
+  const profileLoaded = useSelector(selectProfileLoaded);
+  const saving = useSelector(selectProfileSaving);
   const error = useSelector(selectProfileError);
-  const successMessage = useSelector(
-    selectProfileSuccessMessage
-  );
+  const successMessage = useSelector(selectProfileSuccessMessage);
   const isEditing = useSelector(selectIsEditing);
+  const logoUploading = useSelector(selectLogoUploading);
+  const signatureUploading = useSelector(selectSignatureUploading);
+  const profileImageUploading = useSelector(selectProfileImageUploading);
 
   // Track only fields changed by the user
-  const [changedFields, setChangedFields] =
-    React.useState({});
+  const [changedFields, setChangedFields] = React.useState({});
 
   // Snackbar
   const [snackbar, setSnackbar] = React.useState({
@@ -49,10 +59,7 @@ const Page = () => {
     severity: "success",
   });
 
-  const showSnackbar = (
-    message,
-    severity = "success"
-  ) => {
+  const showSnackbar = (message, severity = "success") => {
     setSnackbar({
       open: true,
       message,
@@ -75,25 +82,54 @@ const Page = () => {
     }
   }, [successMessage, dispatch]);
 
-  // Redux error message
   React.useEffect(() => {
-    if (error) {
-      showSnackbar(error, "error");
-      dispatch(clearError());
+    if (!error) return;
+
+    let userMessage = error;
+
+    const message = typeof error === "string" ? error : error?.message || "";
+
+    const match = message.match(
+      /Clinic\s+([^\s]+)\s+on\s+(\w+)\s+must start at or after Clinic\s+([^\s]+)\s+ends/i,
+    );
+
+    if (match) {
+      const [, firstClinicId, day, secondClinicId] = match;
+
+      const hospitals = profileData?.hospitalDetail || [];
+
+      const firstHospital = hospitals.find(
+        (hospital) => String(hospital.clinicId) === String(firstClinicId),
+      );
+
+      const secondHospital = hospitals.find(
+        (hospital) => String(hospital.clinicId) === String(secondClinicId),
+      );
+
+      const firstHospitalName = firstHospital?.hospitalName || "one clinic";
+
+      const secondHospitalName =
+        secondHospital?.hospitalName || "another clinic";
+
+      userMessage =
+        `${day} has a timing conflict. ` +
+        `${firstHospitalName}'s working hours must start after ` +
+        `${secondHospitalName}'s working hours end.`;
+    } else {
+      userMessage =
+        "Profile update failed. Please check the working hours and try again.";
     }
-  }, [error, dispatch]);
+
+    showSnackbar(userMessage, "error");
+    dispatch(clearError());
+  }, [error, profileData, dispatch]);
 
   // Fetch doctor profile
   React.useEffect(() => {
-    const user = JSON.parse(
-      localStorage.getItem("user") || "{}"
-    );
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
 
     if (!user?.id) {
-      showSnackbar(
-        "Session expired. Please login again.",
-        "error"
-      );
+      showSnackbar("Session expired. Please login again.", "error");
       return;
     }
 
@@ -107,7 +143,7 @@ const Page = () => {
       handleFieldChange({
         field,
         value,
-      })
+      }),
     );
 
     setChangedFields((prev) => ({
@@ -118,38 +154,37 @@ const Page = () => {
 
   // ================= WORKING HOURS =================
 
-  const handleWorkingHoursChangeLocal = (
-    day,
-    field,
-    value
-  ) => {
+  const handleClinicWorkingHoursChangeLocal = (clinicId, day, field, value) => {
     dispatch(
-      handleWorkingHoursChange({
+      handleClinicWorkingHoursChange({
+        clinicId,
         day,
         field,
         value,
-      })
+      }),
     );
 
     setChangedFields((prev) => ({
       ...prev,
-      availability: true,
+      hospitalDetail: true,
     }));
   };
 
+  const handleWorkingHoursSaved = () => {
+    setChangedFields((prev) => ({
+      ...prev,
+      hospitalDetail: true,
+    }));
+  };
   // ================= HOSPITAL =================
 
-  const handleHospitalChangeLocal = (
-    index,
-    field,
-    value
-  ) => {
+  const handleHospitalChangeLocal = (index, field, value) => {
     dispatch(
       handleHospitalChange({
         index,
         field,
         value,
-      })
+      }),
     );
 
     setChangedFields((prev) => ({
@@ -183,43 +218,34 @@ const Page = () => {
 
     // Name
     if (changedFields.name) {
-      payload.full_name =
-        profileData.name?.trim() || "";
+      payload.full_name = profileData.name?.trim() || "";
     }
-// Username
-if (changedFields.username) {
-  payload.username =
-    profileData.username
-      ?.replace(/^@/, "")
-      .trim() || "";
-}
+    // Username
+    if (changedFields.username) {
+      payload.username = profileData.username?.replace(/^@/, "").trim() || "";
+    }
 
-// Registration Number
-if (changedFields.registration_number) {
-  payload.registration_number =
-    profileData.registration_number?.trim() || "";
-}
+    // Registration Number
+    if (changedFields.registration_number) {
+      payload.registration_number =
+        profileData.registration_number?.trim() || "";
+    }
     // Language
     if (changedFields.language) {
-      payload.language = Array.isArray(
-        profileData.language
-      )
+      payload.language = Array.isArray(profileData.language)
         ? profileData.language
         : [];
     }
 
     // Bio
     if (changedFields.bio) {
-      payload.bio =
-        profileData.bio?.trim() || "";
+      payload.bio = profileData.bio?.trim() || "";
     }
 
     // Experience
     if (changedFields.experience) {
       payload.experience =
-        profileData.experience === ""
-          ? null
-          : Number(profileData.experience);
+        profileData.experience === "" ? null : Number(profileData.experience);
     }
 
     // Consultation Fee
@@ -227,103 +253,95 @@ if (changedFields.registration_number) {
       payload.consultationFee =
         profileData.consultation_fee === ""
           ? null
-          : Number(
-              profileData.consultation_fee
-            );
+          : Number(profileData.consultation_fee);
     }
 
-   if (changedFields.accept_emergency_patients) {
-  payload.acceptEmergencyPatients =
-    profileData.accept_emergency_patients
-      ? "YES"
-      : "NO";
+    if (changedFields.accept_emergency_patients) {
+      payload.acceptEmergencyPatients = Boolean(
+        profileData.accept_emergency_patients,
+      );
+    }
+
+if (changedFields.dob) {
+  payload.dob = profileData.dob;
 }
-    // Availability / Working Hours
-    if (changedFields.availability) {
-      const formatDay = (day) => {
-        return (
-          day.charAt(0).toUpperCase() +
-          day.slice(1)
-        );
-      };
-
-      const availability = Object.entries(
-        profileData.workingHours || {}
-      )
-        .filter(
-          ([_, value]) =>
-            value.start && value.end
-        )
-        .map(([day, value]) => ({
-          day: formatDay(day),
-          startTime: value.start,
-          endTime: value.end,
-        }));
-
-      payload.availability = availability;
-    }
-
-    // Hospital Details
     if (changedFields.hospitalDetail) {
-      const hospitalDetail = (
-        profileData.hospitalDetail || []
-      )
-        .filter((hospital) =>
-          hospital.hospitalName?.trim()
-        )
+      const hospitalDetail = (profileData.hospitalDetail || [])
+        .filter((hospital) => hospital.hospitalName?.trim())
         .map((hospital) => ({
-          hospitalName:
-            hospital.hospitalName?.trim() ||
-            "",
-          flatPlotNo:
-            hospital.flatNo?.trim() || "",
-          buildingSociety:
-            hospital.building?.trim() || "",
-          streetName:
-            hospital.street?.trim() || "",
-          areaLocality:
-            hospital.area?.trim() || "",
-          landmark:
-            hospital.landmark?.trim() || "",
-          city:
-            hospital.city?.trim() || "",
-          district:
-            hospital.district?.trim() || "",
-          state:
-            hospital.state?.trim() || "",
-          pinCode:
-            hospital.pinCode?.trim() || "",
+          ...(hospital.clinicId
+            ? {
+                clinicId: String(hospital.clinicId),
+              }
+            : {}),
+
+          hospitalName: hospital.hospitalName?.trim() || "",
+
+          flatPlotNo: hospital.flatNo?.trim() || "",
+
+          buildingSociety: hospital.building?.trim() || "",
+
+          streetName: hospital.street?.trim() || "",
+
+          areaLocality: hospital.area?.trim() || "",
+
+          landmark: hospital.landmark?.trim() || "",
+
+          city: hospital.city?.trim() || "",
+
+          district: hospital.district?.trim() || "",
+
+          state: hospital.state?.trim() || "",
+
+          pinCode: hospital.pinCode?.trim() || "",
         }));
 
-      payload.hospitalDetail =
-        hospitalDetail;
+      payload.hospitalDetail = hospitalDetail;
+
+      // ================= AVAILABILITY =================
+
+      payload.availability = (profileData.hospitalDetail || []).flatMap(
+        (hospital) => {
+          if (!hospital.clinicId) {
+            return [];
+          }
+
+          return (hospital.availability || [])
+            .filter((item) => item.startTime && item.endTime)
+            .map((item) => ({
+              day: item.day,
+
+              startTime: item.startTime || "",
+
+              endTime: item.endTime || "",
+
+              clinicId: String(hospital.clinicId),
+
+              isAvailable: item.isAvailable !== false,
+            }));
+        },
+      );
+    }
+    if (profileData.logoKey) {
+      payload.logo = profileData.logoKey;
     }
 
-
+    if (profileData.signatureKey) {
+      payload.doctor_signature = profileData.signatureKey;
+    }
 
     // Nothing changed
     if (Object.keys(payload).length === 0) {
-      showSnackbar(
-        "No changes to save.",
-        "info"
-      );
+      showSnackbar("No changes to save.", "info");
       return;
     }
 
-    const result = await dispatch(
-      updateDoctorProfile(payload)
-    );
+    const result = await dispatch(updateDoctorProfile(payload));
 
-    if (
-      updateDoctorProfile.fulfilled.match(
-        result
-      )
-    ) {
+    if (updateDoctorProfile.fulfilled.match(result)) {
       setChangedFields({});
 
-      await dispatch(
-        fetchDoctorProfile()
-      );
+      await dispatch(fetchDoctorProfile());
     }
   };
 
@@ -344,11 +362,42 @@ if (changedFields.registration_number) {
   const handleImageUpload = async (file) => {
     if (!file) return;
 
-    await dispatch(
-      uploadProfileImage(file)
-    );
+    const previousAvatarUrl = profileData.avatarUrl;
+    const localPreviewUrl = URL.createObjectURL(file);
+    dispatch(setProfileData({ avatarUrl: localPreviewUrl }));
 
-    dispatch(fetchDoctorProfile());
+    try {
+      const uploadedUrl = await dispatch(uploadProfileImage(file)).unwrap();
+
+      dispatch(setProfileData({ avatarUrl: localPreviewUrl }));
+
+      try {
+        await dispatch(fetchDoctorProfile()).unwrap();
+      } catch {
+        dispatch(setProfileData({ avatarUrl: uploadedUrl }));
+      }
+    } catch {
+      dispatch(setProfileData({ avatarUrl: previousAvatarUrl }));
+    } finally {
+      URL.revokeObjectURL(localPreviewUrl);
+    }
+  };
+
+  const handleBrandingUpload = async (file, uploadThunk) => {
+    if (!file) return;
+
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      showSnackbar("Choose a PNG, JPG, JPEG, or WebP image.", "error");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showSnackbar("Image must be 5 MB or smaller.", "error");
+      return;
+    }
+
+    return await dispatch(uploadThunk(file)).unwrap();
   };
 
   // ================= UPDATE BUTTON =================
@@ -362,34 +411,29 @@ if (changedFields.registration_number) {
 
   return (
     <ProfileContent
-      loading={loading}
+      loading={loading && !profileLoaded}
+      saving={saving}
       profileData={profileData}
       isEditing={isEditing}
       snackbar={snackbar}
       onFieldChange={handleChange}
-      onWorkingHoursChange={
-        handleWorkingHoursChangeLocal
-      }
+      onClinicWorkingHoursChange={handleClinicWorkingHoursChangeLocal}
+      onWorkingHoursSaved={handleWorkingHoursSaved}
       onUpdateClick={handleUpdateClick}
       onSaveClick={saveDoctorProfile}
-      onCloseSnackbar={
-        handleCloseSnackbar
+      onCloseSnackbar={handleCloseSnackbar}
+      onHospitalChange={handleHospitalChangeLocal}
+      onAddHospital={handleAddHospitalLocal}
+      onRemoveHospital={handleRemoveHospitalLocal}
+      onLicenseUpload={handleLicenseUpload}
+      onImageUpload={handleImageUpload}
+      onLogoUpload={(file) => handleBrandingUpload(file, uploadDoctorLogo)}
+      onSignatureUpload={(file) =>
+        handleBrandingUpload(file, uploadDoctorSignature)
       }
-      onHospitalChange={
-        handleHospitalChangeLocal
-      }
-      onAddHospital={
-        handleAddHospitalLocal
-      }
-      onRemoveHospital={
-        handleRemoveHospitalLocal
-      }
-      onLicenseUpload={
-        handleLicenseUpload
-      }
-      onImageUpload={
-        handleImageUpload
-      }
+      logoUploading={logoUploading}
+      signatureUploading={signatureUploading}
+      profileImageUploading={profileImageUploading}
     />
   );
 };

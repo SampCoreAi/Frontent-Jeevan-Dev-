@@ -16,8 +16,13 @@ import {
   Grid,
   Snackbar,
   TextField,
+  InputAdornment,
+  IconButton,
   Typography,
 } from "@mui/material";
+
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import axios from "axios";
 import UserPrivacySettings from "../../../component/Setting/UserPrivacySettings";
 import UserHelpSupport from "../../../component/Setting/UserHelpSupport";
@@ -56,7 +61,6 @@ const menuItems = [
     label: "Theme",
     icon: <PaletteOutlinedIcon />,
   },
-
 ];
 
 const cardSx = {
@@ -131,8 +135,10 @@ const SettingsContent = () => {
   const [openChangePassword, setOpenChangePassword] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [oldPassword, setOldPassword] = useState("");
-    const { mode, setColorMode } = useColorMode();
-
+  const { mode, setColorMode } = useColorMode();
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
@@ -285,7 +291,6 @@ const SettingsContent = () => {
           </Typography>
         </Box>
       </Box>
-
       <DialogContent sx={{ p: 2.5 }}>
         <Box
           sx={{
@@ -294,30 +299,71 @@ const SettingsContent = () => {
             gap: 1.7,
           }}
         >
+          {/* OLD PASSWORD */}
           <TextField
             fullWidth
             label="Old Password"
-            type="password"
+            type={showOldPassword ? "text" : "password"}
             value={oldPassword}
             onChange={(e) => setOldPassword(e.target.value)}
             size="small"
             sx={fieldSx}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowOldPassword((prev) => !prev)}
+                      edge="end"
+                      size="small"
+                    >
+                      {showOldPassword ? (
+                        <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} />
+                      ) : (
+                        <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
+                      )}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
           />
 
+          {/* NEW PASSWORD */}
           <TextField
             fullWidth
             label="New Password"
-            type="password"
+            type={showNewPassword ? "text" : "password"}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             size="small"
             sx={fieldSx}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowNewPassword((prev) => !prev)}
+                      edge="end"
+                      size="small"
+                    >
+                      {showNewPassword ? (
+                        <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} />
+                      ) : (
+                        <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
+                      )}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
           />
 
+          {/* CONFIRM PASSWORD */}
           <TextField
             fullWidth
             label="Confirm Password"
-            type="password"
+            type={showConfirmPassword ? "text" : "password"}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             size="small"
@@ -328,6 +374,25 @@ const SettingsContent = () => {
                 : ""
             }
             sx={fieldSx}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      edge="end"
+                      size="small"
+                    >
+                      {showConfirmPassword ? (
+                        <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} />
+                      ) : (
+                        <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
+                      )}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
           />
         </Box>
       </DialogContent>
@@ -641,24 +706,19 @@ const SettingsContent = () => {
             </Dialog>
           </Grid>
         );
-     case "privacy":
-  return (
-    <UserPrivacySettings
-      onViewPrivacyPolicy={() => {
-      }}
-    />
-  );
-    case "help":
-  return (
-    <UserHelpSupport
-      onReportIssue={() => {
-        // Report Issue page/dialog open karo
-      }}
-      onPrivacyHelp={() => {
-        // Privacy help page/dialog open karo
-      }}
-    />
-  );
+      case "privacy":
+        return <UserPrivacySettings onViewPrivacyPolicy={() => {}} />;
+      case "help":
+        return (
+          <UserHelpSupport
+            onReportIssue={() => {
+              // Report Issue page/dialog open karo
+            }}
+            onPrivacyHelp={() => {
+              // Privacy help page/dialog open karo
+            }}
+          />
+        );
       case "device":
         return (
           <Card sx={cardSx}>
@@ -794,20 +854,20 @@ const SettingsContent = () => {
                     }}
                   >
                     <Button
-  variant={mode === "light" ? "contained" : "outlined"}
-  onClick={() => setColorMode("light")}
-  sx={actionButtonSx}
->
-  Light
-</Button>
+                      variant={mode === "light" ? "contained" : "outlined"}
+                      onClick={() => setColorMode("light")}
+                      sx={actionButtonSx}
+                    >
+                      Light
+                    </Button>
 
-<Button
-  variant={mode === "dark" ? "contained" : "outlined"}
-  onClick={() => setColorMode("dark")}
-  sx={actionButtonSx}
->
-  Dark
-</Button>
+                    <Button
+                      variant={mode === "dark" ? "contained" : "outlined"}
+                      onClick={() => setColorMode("dark")}
+                      sx={actionButtonSx}
+                    >
+                      Dark
+                    </Button>
                   </Box>
                 </Box>
               </Box>
@@ -815,7 +875,6 @@ const SettingsContent = () => {
           </Card>
         );
 
-    
       default:
         return null;
     }
@@ -827,7 +886,6 @@ const SettingsContent = () => {
         open={openLogoutDialog}
         onClose={() => setOpenLogoutDialog(false)}
         aria-labelledby="logout-dialog-title"
-   
         fullWidth
         PaperProps={{
           sx: {
@@ -936,7 +994,7 @@ const SettingsContent = () => {
               borderBottom: "1px solid",
               borderColor: "divider",
               overflowX: "auto",
-              pt:2,
+              pt: 2,
               overflowY: "hidden",
               scrollbarWidth: "none",
               "&::-webkit-scrollbar": {

@@ -3,20 +3,22 @@
 /**
  * HowItWorks.jsx
  * "Get Healthcare in Minutes — How It Works"
- * Stack: Next.js (App Router, client component) + MUI v5 + Framer Motion
- *
- * npm install @mui/material @emotion/react @emotion/styled framer-motion
+ * Next.js + MUI + Framer Motion
  */
 
 import { useRef, useEffect } from "react";
 import { Box, Container, Typography, Stack } from "@mui/material";
 import { motion, useInView, useAnimation } from "framer-motion";
+
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import FactCheckRoundedIcon from "@mui/icons-material/FactCheckRounded";
 import VideocamRoundedIcon from "@mui/icons-material/VideocamRounded";
 
-// ---- design tokens -------------------------------------------------
+// ========================================
+// DESIGN TOKENS
+// ========================================
+
 const colors = {
   bg: "#FAFAF8",
   ink: "#16231F",
@@ -28,6 +30,10 @@ const colors = {
   coralDeep: "#D85A30",
   line: "#DCEAE6",
 };
+
+// ========================================
+// STEPS
+// ========================================
 
 const steps = [
   {
@@ -56,20 +62,36 @@ const steps = [
   },
 ];
 
-// ---- gentle continuous float for each illustration -------------------
+// ========================================
+// FLOATING ICON
+// ========================================
+
 function FloatingIcon({ children, delay = 0 }) {
   return (
     <motion.div
-      animate={{ y: [0, -6, 0] }}
-      transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay }}
-      style={{ width: 72, height: 72 }}
+      animate={{
+        y: [0, -6, 0],
+      }}
+      transition={{
+        duration: 3.2,
+        repeat: Infinity,
+        ease: "easeInOut",
+        delay,
+      }}
+      style={{
+        width: 72,
+        height: 72,
+      }}
     >
       {children}
     </motion.div>
   );
 }
 
-// ---- a dot that loops along the connecting line, once cards are in view
+// ========================================
+// TRAVELLING DOT
+// ========================================
+
 function TravelingPulse({ inView }) {
   const controls = useAnimation();
 
@@ -104,161 +126,251 @@ function TravelingPulse({ inView }) {
   );
 }
 
+// ========================================
+// CARD ANIMATION
+// ========================================
+
 const cardVariants = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: {
+    opacity: 0,
+    y: 24,
+  },
+
   visible: (i) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+
+    transition: {
+      delay: i * 0.15,
+      duration: 0.5,
+      ease: [0.22, 1, 0.36, 1],
+    },
   }),
 };
 
+// ========================================
+// MAIN COMPONENT
+// ========================================
+
 export default function HowItWorks() {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-100px" });
+
+  const inView = useInView(ref, {
+    once: true,
+    margin: "-100px",
+  });
 
   return (
     <Box
       component="section"
       ref={ref}
       sx={{
-        py: { xs: 6, md: 8 },
-        px: { xs: 1.5, md: 2 },
+      
+
+        px: {
+          xs: 1.5,
+          md: 2,
+        },
+
         position: "relative",
         overflow: "hidden",
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
+
+       py: {
+  xs: 5,
+  md: 6,
+},
       }}
     >
-      {/* Background */}
+      {/* ========================================
+          SAME BACKGROUND AS LANDING HERO
+      ======================================== */}
+
       <Box
         sx={{
           position: "absolute",
           inset: 0,
           zIndex: 0,
-          overflow: "hidden",
+          pointerEvents: "none",
+
+          backgroundColor: "#FFFFFF",
+
+        backgroundImage: `
+  linear-gradient(
+    90deg,
+    rgba(7, 135, 106, 0.13) 0%,
+    rgba(7, 135, 106, 0.04) 25%,
+    rgba(255, 255, 255, 0.35) 45%,
+    rgba(255, 255, 255, 0.35) 55%,
+    rgba(7, 135, 106, 0.04) 75%,
+    rgba(7, 135, 106, 0.13) 100%
+  ),
+
+  linear-gradient(
+    135deg,
+    rgba(7, 135, 106, 0.09) 0%,
+    rgba(52, 211, 153, 0.035) 45%,
+    rgba(255, 255, 255, 0.08) 100%
+  ),
+
+  linear-gradient(
+    rgba(7, 135, 106, 0.10) 1px,
+    transparent 1px
+  ),
+
+  linear-gradient(
+    90deg,
+    rgba(7, 135, 106, 0.10) 1px,
+    transparent 1px
+  )
+`,
+
+
+          backgroundSize: `
+            100% 100%,
+            40px 40px,
+            40px 40px,
+            40px 40px
+          `,
+
+          backgroundPosition: `
+            center,
+            0 0,
+            0 0,
+            0 0
+          `,
+        }}
+      />
+
+      {/* ========================================
+          CONTENT
+      ======================================== */}
+
+      <Container
+        maxWidth="lg"
+        sx={{
+          position: "relative",
+          zIndex: 1,
+
+          px: {
+            xs: 1,
+            md: 2,
+          },
         }}
       >
-        {/* Gradient */}
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(135deg, #dcfce7 0%, #ecfdf5 45%, #ffffff 100%)",
+        {/* ========================================
+            HEADING
+        ======================================== */}
+
+        <Stack
+          spacing={{
+            xs: 1,
+            md: 1.5,
           }}
-        />
-
-        {/* Large Grid - Mobile Responsive */}
-        <Box
+          alignItems="center"
+          textAlign="center"
           sx={{
-            position: "absolute",
-            inset: 0,
-            opacity: { xs: 0.1, md: 0.18 },
-            backgroundImage: `
-              linear-gradient(to right,#16a34a 1px,transparent 1px),
-              linear-gradient(to bottom,#16a34a 1px,transparent 1px)
-            `,
-            backgroundSize: { xs: "30px 30px", md: "60px 60px" },
+            mb: {
+              xs: 5,
+              md: 9,
+            },
           }}
-        />
-
-        {/* Small Grid - Mobile Responsive */}
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            opacity: { xs: 0.05, md: 0.08 },
-            backgroundImage: `
-              linear-gradient(to right,#15803d 1px,transparent 1px),
-              linear-gradient(to bottom,#15803d 1px,transparent 1px)
-            `,
-            backgroundSize: { xs: "10px 10px", md: "20px 20px" },
-          }}
-        />
-
-        {/* Radial Fade */}
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "radial-gradient(circle at center, transparent 0%, rgba(255,255,255,.3) 50%, rgba(255,255,255,.9) 100%)",
-          }}
-        />
-      </Box>
-
-      {/* Soft decorative blobs - Hide on mobile */}
-      <Box
-        sx={{
-          position: "absolute",
-          width: 220,
-          height: 220,
-          borderRadius: "50%",
-          background: `${colors.teal}0F`,
-          top: -80,
-          left: -60,
-          display: { xs: "none", md: "block" },
-        }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          width: 160,
-          height: 160,
-          borderRadius: "50%",
-          background: `${colors.coral}0F`,
-          bottom: -50,
-          right: -30,
-          display: { xs: "none", md: "block" },
-        }}
-      />
-
-      <Container maxWidth="lg" sx={{ position: "relative", px: { xs: 1, md: 2 } }}>
-        {/* Eyebrow + heading */}
-        <Stack 
-          spacing={{ xs: 1, md: 1.5 }} 
-          alignItems="center" 
-          textAlign="center" 
-          sx={{ mb: { xs: 5, md: 9 } }}
         >
+          {/* SMALL LABEL */}
+
           <Typography
             sx={{
               fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: { xs: 10, md: 12 },
+
+              fontSize: {
+                xs: 10,
+                md: 12,
+              },
+
               fontWeight: "bold",
+
               letterSpacing: "0.14em",
+
               textTransform: "uppercase",
+
               color: colors.teal,
             }}
           >
             Get healthcare in minutes
           </Typography>
 
-          {/* Decorative lines - Mobile responsive */}
-          <Box sx={{ width: { xs: "50%", md: "40%" }, height: 1, bgcolor: "#1e6658", borderRadius: "50%", opacity: 0.5 }} />
+          {/* TOP LINE */}
 
-          <Box sx={{ inline: "block", mb: { xs: 0.5, md: 1 } }}>
+          <Box
+            sx={{
+              width: {
+                xs: "50%",
+                md: "40%",
+              },
+
+              height: 1,
+
+              bgcolor: "#1e6658",
+
+              borderRadius: "50%",
+
+              opacity: 0.5,
+            }}
+          />
+
+          {/* TITLE */}
+
+          <Box
+            sx={{
+              display: "inline-block",
+
+              mb: {
+                xs: 0.5,
+                md: 1,
+              },
+            }}
+          >
             <Typography
-              component="h1"
+              component="h2"
               sx={{
-                fontSize: { xs: "2.5rem", sm: "3rem", md: "4.5rem" },
+                fontSize: {
+                  xs: "32px",
+                  sm: "38px",
+                  md: "48px",
+                },
+
                 fontWeight: 900,
+
                 letterSpacing: "-0.025em",
-                lineHeight: 0.9,
+
+                lineHeight: 0.95,
+
                 display: "flex",
+
                 flexWrap: "wrap",
+
                 justifyContent: "center",
-                gap: { xs: 0.5, md: 1 },
+
+                gap: {
+                  xs: 0.5,
+                  md: 1,
+                },
               }}
             >
-              <span style={{ color: "#1e6658" }}>HOW IT</span>
+              <span
+                style={{
+                  color: "#1e6658",
+                }}
+              >
+                HOW IT
+              </span>
+
               <span
                 style={{
                   color: "transparent",
-                  WebkitTextStroke: '2px #1e6658',
-                  MozTextStroke: '2px #1e6658',
+
+                  WebkitTextStroke: "2px #1e6658",
+
+                  MozTextStroke: "2px #1e6658",
                 }}
               >
                 WORKS
@@ -266,68 +378,174 @@ export default function HowItWorks() {
             </Typography>
           </Box>
 
-          <Box sx={{ width: { xs: "60%", md: "35%" }, height: 1, bgcolor: "#1e6658", borderRadius: "50%", opacity: 0.5 }} />
+          {/* BOTTOM LINE */}
 
-          <Typography 
-            sx={{ 
-              color: colors.inkMuted, 
-              maxWidth: { xs: "100%", md: 480 }, 
-              fontSize: { xs: 13, md: 15 },
-              px: { xs: 2, md: 0 }
+          <Box
+            sx={{
+              width: {
+                xs: "60%",
+                md: "35%",
+              },
+
+              height: 1,
+
+              bgcolor: "#1e6658",
+
+              borderRadius: "50%",
+
+              opacity: 0.5,
+            }}
+          />
+
+          {/* DESCRIPTION */}
+
+          <Typography
+            sx={{
+              color: colors.inkMuted,
+
+              maxWidth: {
+                xs: "100%",
+                md: 480,
+              },
+
+              fontSize: "13px",
+
+              lineHeight: 1.7,
+
+              px: {
+                xs: 2,
+                md: 0,
+              },
             }}
           >
-            Four steps between you and the right doctor — search, schedule, book, and show up
-            your way.
+            Four steps between you and the right doctor — search, schedule,
+            book, and show up your way.
           </Typography>
         </Stack>
 
-        {/* Path + steps */}
-        <Box sx={{ position: "relative" }}>
-          {/* connecting line + traveling pulse — desktop only */}
+        {/* ========================================
+            STEPS
+        ======================================== */}
+
+        <Box
+          sx={{
+            position: "relative",
+          }}
+        >
+          {/* ========================================
+              CONNECTING LINE
+              Desktop only
+          ======================================== */}
+
           <Box
             sx={{
-              display: { xs: "none", md: "block" },
+              display: {
+                xs: "none",
+                md: "block",
+              },
+
               position: "absolute",
+
               top: 34,
+
               left: 0,
               right: 0,
+
               height: 2,
+
               zIndex: 0,
             }}
           >
-            <Box sx={{ position: "absolute", left: "12.5%", right: "12.5%", top: 0, height: 2, bgcolor: colors.line }} />
+            {/* BASE LINE */}
+
+            <Box
+              sx={{
+                position: "absolute",
+
+                left: "12.5%",
+                right: "12.5%",
+
+                top: 0,
+
+                height: 2,
+
+                bgcolor: colors.line,
+              }}
+            />
+
+            {/* ANIMATED LINE */}
+
             <motion.div
               style={{
                 position: "absolute",
+
                 left: "12.5%",
                 right: "12.5%",
+
                 top: 0,
+
                 height: 2,
-                background: `linear-gradient(90deg, ${colors.teal}, ${colors.coral})`,
+
+                background: `linear-gradient(
+                  90deg,
+                  ${colors.teal},
+                  ${colors.coral}
+                )`,
+
                 transformOrigin: "left",
               }}
-              initial={{ scaleX: 0 }}
-              animate={inView ? { scaleX: 1 } : { scaleX: 0 }}
-              transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+              initial={{
+                scaleX: 0,
+              }}
+              animate={
+                inView
+                  ? {
+                      scaleX: 1,
+                    }
+                  : {
+                      scaleX: 0,
+                    }
+              }
+              transition={{
+                duration: 1.1,
+
+                ease: [0.22, 1, 0.36, 1],
+
+                delay: 0.2,
+              }}
             />
+
             <TravelingPulse inView={inView} />
           </Box>
+
+          {/* ========================================
+              STEP GRID
+          ======================================== */}
 
           <Box
             sx={{
               position: "relative",
+
               zIndex: 1,
+
               display: "grid",
-              gridTemplateColumns: { 
-                xs: "1fr", 
-                sm: "1fr 1fr", 
-                md: "repeat(4, 1fr)" 
+
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "1fr 1fr",
+                md: "repeat(4, 1fr)",
               },
-              gap: { xs: 3, sm: 3, md: 3 },
+
+              gap: {
+                xs: 3,
+                sm: 3,
+                md: 3,
+              },
             }}
           >
             {steps.map((step, i) => {
               const Icon = step.icon;
+
               return (
                 <motion.div
                   key={step.title}
@@ -335,78 +553,147 @@ export default function HowItWorks() {
                   variants={cardVariants}
                   initial="hidden"
                   animate={inView ? "visible" : "hidden"}
-                  whileHover={{ y: -6 }}
-                  style={{ cursor: "default" }}
+                  whileHover={{
+                    y: -6,
+                  }}
+                  style={{
+                    cursor: "default",
+                  }}
                 >
-                  <Stack 
-                    alignItems={{ xs: "center", md: "center" }} 
-                    spacing={{ xs: 1.5, md: 1.5 }}
+                  <Stack
+                    alignItems="center"
+                    spacing={{
+                      xs: 1.5,
+                      md: 1.5,
+                    }}
                     sx={{
-                      textAlign: { xs: "center", md: "center" },
-                      px: { xs: 1, md: 0 },
+                      textAlign: "center",
+
+                      px: {
+                        xs: 1,
+                        md: 0,
+                      },
                     }}
                   >
-                    {/* Icon Container - Mobile Responsive */}
-                    <Box
-                      sx={{
-                        width: { xs: 60, md: 68 },
-                        height: { xs: 60, md: 68 },
-                        borderRadius: "50%",
-                        bgcolor: colors.mint,
-                        border: `1.5px solid ${colors.teal}33`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        boxShadow: "none",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Icon 
-                        sx={{ 
-                          fontSize: { xs: 24, md: 28 }, 
-                          color: colors.teal 
-                        }} 
-                      />
-                    </Box>
+                    {/* ICON */}
 
-                    {/* Text Content - Mobile Responsive */}
+                    <FloatingIcon delay={i * 0.2}>
+                      <Box
+                        sx={{
+                          width: {
+                            xs: 60,
+                            md: 68,
+                          },
+
+                          height: {
+                            xs: 60,
+                            md: 68,
+                          },
+
+                          borderRadius: "50%",
+
+                          bgcolor: colors.mint,
+
+                          border: `1.5px solid ${colors.teal}33`,
+
+                          display: "flex",
+
+                          alignItems: "center",
+
+                          justifyContent: "center",
+
+                          boxShadow: "none",
+
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Icon
+                          sx={{
+                            fontSize: {
+                              xs: 24,
+                              md: 28,
+                            },
+
+                            color: colors.teal,
+                          }}
+                        />
+                      </Box>
+                    </FloatingIcon>
+
+                    {/* TEXT */}
+
                     <Stack
                       spacing={0.5}
-                      alignItems={{ xs: "center", md: "center" }}
-                      textAlign={{ xs: "center", md: "center" }}
-                      sx={{ width: "100%" }}
+                      alignItems="center"
+                      textAlign="center"
+                      sx={{
+                        width: "100%",
+                      }}
                     >
+                      {/* STEP NUMBER */}
+
                       <Typography
                         sx={{
                           fontFamily: "'IBM Plex Mono', monospace",
-                          fontSize: { xs: 10, md: 11 },
+
+                          fontSize: {
+                            xs: 10,
+                            md: 11,
+                          },
+
                           letterSpacing: "0.1em",
+
                           color: colors.coralDeep,
+
                           fontWeight: 600,
                         }}
                       >
                         {step.label}
                       </Typography>
-                      
+
+                      {/* STEP TITLE */}
+
                       <Typography
                         sx={{
                           fontFamily: "'Sora', sans-serif",
+
                           fontWeight: 700,
-                          fontSize: { xs: 16, md: 18 },
+
+                          fontSize: {
+                            xs: 16,
+                            md: 18,
+                          },
+
                           color: colors.ink,
+
                           lineHeight: 1.2,
                         }}
                       >
                         {step.title}
                       </Typography>
-                      
-                      <Typography 
-                        sx={{ 
-                          fontSize: { xs: 12.5, md: 13.5 }, 
-                          color: colors.inkMuted, 
-                          maxWidth: { xs: "100%", md: 220 },
+
+                      {/* DESCRIPTION */}
+
+                      <Typography
+                        sx={{
+                          fontSize: {
+                            xs: 12.5,
+                            md: 13.5,
+                          },
+
+                          color: colors.inkMuted,
+
+                          maxWidth: {
+                            xs: "100%",
+                            md: 220,
+                          },
+
                           lineHeight: 1.5,
-                          px: { xs: 2, md: 0 },
+
+                          px: {
+                            xs: 2,
+                            md: 0,
+                          },
                         }}
                       >
                         {step.desc}

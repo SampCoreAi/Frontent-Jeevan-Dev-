@@ -1,4 +1,7 @@
 "use client";
+
+import React, { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Box,
   Typography,
@@ -6,334 +9,205 @@ import {
   Popover,
   Tooltip,
   CircularProgress,
+  Button,
+  ButtonBase,
 } from "@mui/material";
 import {
   NotificationsNone as NotificationsIcon,
-  CheckCircle as CheckCircleIcon,
-  ErrorOutline as ErrorOutlineIcon,
+  CheckCircleOutline as SuccessIcon,
+  ErrorOutline as ErrorIcon,
   InfoOutlined as InfoIcon,
 } from "@mui/icons-material";
-import React, { useEffect, useState } from "react";
 import { socket } from "../../../../../socket/socket";
-const NotificationPopover = ({ sidebar = false }) => {
+
+const styles = {
+  SUCCESS: { Icon: SuccessIcon, color: "#16a34a", bg: "#edf9f0" },
+  ERROR: { Icon: ErrorIcon, color: "#dc2626", bg: "#fff1f1" },
+  INFO: { Icon: InfoIcon, color: "#2563eb", bg: "#eff6ff" },
+};
+
+const sameId = (a, b) => String(a) === String(b);
+
+const formatDate = (value) => {
+  if (!value) return "";
+  const date = new Date(String(value).replace(" ", "T"));
+  return Number.isNaN(date.getTime())
+    ? String(value)
+    : date.toLocaleString("en-IN", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+};
+
+export default function NotificationPopover({ sidebar = false }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+const [clearing, setClearing] = useState(false);
+const visibleNotifications = notifications.filter(
+  ({ is_read }) => Number(is_read) === 0
+);
 
-  const open = Boolean(anchorEl);
-
-  const unreadCount = notifications.filter(
-    (item) => Number(item.is_read) === 0
-  ).length;
+const unreadCount = visibleNotifications.length;
 
   const fetchNotifications = async () => {
+    setLoading(true);
+    setError("");
+
     try {
-      setLoading(true);
-
-      const token = localStorage.getItem("token");
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-      if (!API_URL) {
-        throw new Error("NEXT_PUBLIC_API_URL is not defined");
-      }
+      if (!API_URL) throw new Error("NEXT_PUBLIC_API_URL is not defined");
 
       const response = await fetch(
         `${API_URL}/api/notification/getNotifications`,
         {
-          method: "GET",
           headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
 
       const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result?.message || "Failed to fetch notifications"
-        );
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Unable to load notifications");
       }
 
-      if (result.success) {
-        setNotifications(result.data || []);
-      } else {
-        setNotifications([]);
-      }
+      setNotifications(Array.isArray(result.data) ? result.data : []);
     } catch (error) {
-      console.error("Notification Error:", error);
-      setNotifications([]);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-  const handleNewNotification = (notification) => {
-    console.log("🔔 New notification:", notification);
+  const handleClear = async () => {
+  setClearing(true);
+  setError("");
 
-    setNotifications((prev) => {
-      const exists = prev.some(
-        (item) => Number(item.id) === Number(notification.id)
-      );
-
-      if (exists) {
-        return prev;
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/notification/read-all`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       }
+    );
 
-      return [notification, ...prev];
-    });
-  };
+    if (!response.ok) throw new Error("Unable to clear notifications");
 
-  const handleNotificationRead = (notification) => {
     setNotifications((prev) =>
-      prev.map((item) =>
-        Number(item.id) === Number(notification.id)
-          ? notification
-          : item
-      )
+      prev.map((item) => ({ ...item, is_read: 1 }))
     );
-  };
+  } catch (error) {
+    setError(error.message);
+  } finally {
+    setClearing(false);
+  }
+};
 
-  const handleReadAll = () => {
-    setNotifications((prev) =>
-      prev.map((item) => ({
-        ...item,
-        is_read: 1,
-      }))
-    );
-  };
+  useEffect(() => {
+    const handlers = {
+      "notification:new": (notification) =>
+        setNotifications((prev) =>
+          prev.some((item) => sameId(item.id, notification.id))
+            ? prev
+            : [notification, ...prev]
+        ),
 
-  const handleDeleted = ({ notificationId }) => {
-    setNotifications((prev) =>
-      prev.filter(
-        (item) =>
-          Number(item.id) !== Number(notificationId)
-      )
-    );
-  };
+      "notification:read": (notification) =>
+        setNotifications((prev) =>
+          prev.map((item) =>
+            sameId(item.id, notification.id)
+              ? { ...item, ...notification }
+              : item
+          )
+        ),
 
-  socket.on(
-    "notification:new",
-    handleNewNotification
-  );
+      "notification:read-all": () =>
+        setNotifications((prev) =>
+          prev.map((item) => ({ ...item, is_read: 1 }))
+        ),
 
-  socket.on(
-    "notification:read",
-    handleNotificationRead
-  );
+      "notification:deleted": ({ notificationId }) =>
+        setNotifications((prev) =>
+          prev.filter((item) => !sameId(item.id, notificationId))
+        ),
+    };
 
-  socket.on(
-    "notification:read-all",
-    handleReadAll
-  );
-
-  socket.on(
-    "notification:deleted",
-    handleDeleted
-  );
-
-  return () => {
-    socket.off(
-      "notification:new",
-      handleNewNotification
+    Object.entries(handlers).forEach(([event, handler]) =>
+      socket.on(event, handler)
     );
 
-    socket.off(
-      "notification:read",
-      handleNotificationRead
-    );
+    return () =>
+      Object.entries(handlers).forEach(([event, handler]) =>
+        socket.off(event, handler)
+      );
+  }, []);
 
-    socket.off(
-      "notification:read-all",
-      handleReadAll
-    );
-
-    socket.off(
-      "notification:deleted",
-      handleDeleted
-    );
-  };
-}, []);
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
     fetchNotifications();
   };
 
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const getNotificationIcon = (type) => {
-    switch (type?.toUpperCase()) {
-      case "SUCCESS":
-        return (
-          <CheckCircleIcon
-            sx={{
-              color: "#16a34a",
-              fontSize: 22,
-            }}
-          />
-        );
-
-      case "ERROR":
-        return (
-          <ErrorOutlineIcon
-            sx={{
-              color: "#dc2626",
-              fontSize: 22,
-            }}
-          />
-        );
-
-      default:
-        return (
-          <InfoIcon
-            sx={{
-              color: "#2563eb",
-              fontSize: 22,
-            }}
-          />
-        );
-    }
-  };
-
-  const formatDate = (date) => {
-    if (!date) return "";
-
-    try {
-      return new Date(
-        date.replace(" ", "T")
-      ).toLocaleString();
-    } catch {
-      return date;
-    }
-  };
-
   return (
     <>
       <Tooltip title="Notifications">
-        <Box
+        <ButtonBase
           onClick={handleOpen}
+          aria-label="Open notifications"
+          aria-expanded={Boolean(anchorEl)}
           sx={{
-            display: { xs: "flex", sm: "none" },
-            width: "100%",
-            minHeight: sidebar ? "42px" : 52,
-            px: sidebar ? "11px" : 1.5,
-            mb: sidebar ? 0 : 1.5,
-            alignItems: "center",
-            gap: sidebar ? "10px" : 1,
-            border: sidebar ? "none" : "1px solid",
-            borderColor: "divider",
-            borderRadius: "8px",
-            color: "text.secondary",
-            cursor: "pointer",
-            boxSizing: "border-box",
-            transition: "all 0.2s ease",
-            "&:hover": {
-              bgcolor: sidebar
-                ? "secondary.light"
-                : "transparent",
-              color: sidebar
-                ? "primary.main"
-                : "text.secondary",
-            },
-          }}
-        >
-          <Box
-            sx={{
-              width: sidebar ? "23px" : "auto",
-              minWidth: sidebar ? "23px" : "auto",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <Badge
-              badgeContent={unreadCount}
-              color="error"
-              max={99}
-              invisible={unreadCount === 0}
-            >
-              <NotificationsIcon
-                sx={{
-                  fontSize: sidebar ? "19px" : "24px",
-                }}
-              />
-            </Badge>
-          </Box>
-
-          <Typography
-            sx={{
-              flex: sidebar ? 1 : "initial",
-              minWidth: 0,
-              fontSize: sidebar ? "12.5px" : "inherit",
-              fontWeight: 600,
-              color: "inherit",
-              textAlign: "left",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Notifications
-          </Typography>
-        </Box>
-      </Tooltip>
-
-      <Tooltip title="Notifications">
-        <Box
-          onClick={handleOpen}
-          sx={{
-            display: { xs: "none", sm: "flex" },
-            alignItems: "center",
-            gap: 0.8,
-            height: 40,
+            display: "flex",
+            justifyContent: "flex-start",
+            gap: 1.2,
+            width: sidebar ? "100%" : "auto",
+            minHeight: 40,
             px: 1.4,
             borderRadius: "8px",
-            border: "1px solid #d5eee7",
-            backgroundColor: "#f0faf7",
-            color: "#586762",
-            cursor: "pointer",
-            userSelect: "none",
-            transition: "all 0.2s ease",
-            "&:hover": {
-              backgroundColor: "#e5f7f1",
-              borderColor: "#b9e5d9",
-              color: "#0a9f7d",
-            },
+            border: sidebar ? "none" : "1px solid #dfe9e5",
+            bgcolor: sidebar ? "transparent" : "#fff",
+            color: "#52635d",
+            transition: "0.2s",
+            "&:hover": { bgcolor: "#f0f7f4", color: "#07876a" },
           }}
         >
-          <Badge
-            badgeContent={unreadCount}
-            color="error"
-            max={99}
-            invisible={unreadCount === 0}
-          >
-            <NotificationsIcon
-              sx={{
-                fontSize: 20,
-              }}
-            />
-          </Badge>
+         <Badge
+  badgeContent={unreadCount}
+  color="error"
+  max={99}
+  sx={{
+    "& .MuiBadge-badge": {
+      fontSize: 10,
+      fontWeight: 700,
+      height: 16,
+      minWidth: 16,
+      px: 0.5,
+      color: "#fff",
+      bgcolor: "#dc2626",
+      border: "2px solid #fff",
+      top: 2,
+      right: 2,
+    },
+  }}
+>
+  <NotificationsIcon sx={{ fontSize: 20 }} />
+</Badge>
 
-          <Typography
-            component="span"
-            sx={{
-              fontSize: "12px",
-              fontWeight: 600,
-              color: "inherit",
-            }}
-          >
+          <Typography sx={{ fontSize: 12.5, fontWeight: 600 }}>
             Notifications
           </Typography>
-        </Box>
+        </ButtonBase>
       </Tooltip>
 
       <Popover
-        open={open}
+        open={Boolean(anchorEl)}
         anchorEl={anchorEl}
-        onClose={handleClose}
+        onClose={() => setAnchorEl(null)}
         anchorOrigin={{
           vertical: "bottom",
           horizontal: sidebar ? "left" : "right",
@@ -342,282 +216,195 @@ const NotificationPopover = ({ sidebar = false }) => {
           vertical: "top",
           horizontal: sidebar ? "left" : "right",
         }}
-        PaperProps={{
-          sx: {
-            mt: { xs: 1, sm: 1.5 },
-            width: {
-              xs: "calc(100vw - 32px)",
-              sm: 420,
+        slotProps={{
+          paper: {
+            sx: {
+              mt: 1,
+              width: 390,
+              maxWidth: "calc(100vw - 32px)",
+              maxHeight: "70vh",
+              display: "flex",
+              flexDirection: "column",
+              borderRadius: "12px",
+              border: "1px solid #e3ebe7",
+              boxShadow: "0 12px 36px rgba(23,32,51,0.12)",
+              overflow: "hidden",
             },
-            maxWidth: {
-              xs: "calc(100vw - 32px)",
-              sm: 420,
-            },
-            maxHeight: {
-              xs: "70vh",
-              sm: 550,
-            },
-            backgroundColor: "#ffffff",
-            color: "#111827",
-            borderRadius: {
-              xs: "12px",
-              sm: "16px",
-            },
-            overflow: "hidden",
-            border: "1px solid #e5e7eb",
-            boxShadow:
-              "0 20px 50px rgba(15, 23, 42, 0.15)",
           },
         }}
       >
         <Box
           sx={{
-            px: { xs: 2, sm: 2.5 },
-            py: { xs: 1.5, sm: 2 },
+            px: 2,
+            py: 1.5,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            backgroundColor: "#ffffff",
-            borderBottom: "1px solid #e5e7eb",
+            borderBottom: "1px solid #edf1ef",
           }}
         >
-          <Typography
-            sx={{
-              fontSize: { xs: 17, sm: 20 },
-              fontWeight: 700,
-              color: "#111827",
-            }}
-          >
-            Notifications
-          </Typography>
+          <Box>
+            <Typography
+              sx={{ fontSize: 15, fontWeight: 700, color: "#172033" }}
+            >
+              Notifications
+            </Typography>
 
-          <Badge
-            badgeContent={unreadCount}
-            color="error"
-            invisible={unreadCount === 0}
-          >
-            <NotificationsIcon
-              sx={{
-                color: "#2563eb",
-                fontSize: 26,
-              }}
-            />
-          </Badge>
+            <Typography sx={{ mt: 0.3, fontSize: 11.5, color: "#74807b" }}>
+              {unreadCount ? `${unreadCount} unread notifications` : "You're all caught up"}
+            </Typography>
+          </Box>
+
+        <Button
+  size="small"
+  disabled={loading || clearing || !unreadCount}
+  onClick={handleClear}
+  sx={{
+    minWidth: 0,
+    px: 1,
+    fontSize: 12,
+    fontWeight: 600,
+    textTransform: "none",
+    color: "#07876a",
+    borderRadius: "6px",
+    "&:hover": { bgcolor: "#edf7f2" },
+  }}
+>
+  {clearing ? "Clearing..." : "Clear"}
+</Button>
         </Box>
 
         <Box
           sx={{
-            maxHeight: 430,
+            minHeight: 0,
             overflowY: "auto",
-            backgroundColor: "#ffffff",
-            "&::-webkit-scrollbar": {
-              width: "5px",
-            },
-            "&::-webkit-scrollbar-track": {
-              backgroundColor: "#f8fafc",
-            },
+            "&::-webkit-scrollbar": { width: 4 },
             "&::-webkit-scrollbar-thumb": {
-              backgroundColor: "#cbd5e1",
-              borderRadius: "10px",
-            },
-            "&::-webkit-scrollbar-thumb:hover": {
-              backgroundColor: "#94a3b8",
+              bgcolor: "#d2ddd7",
+              borderRadius: 4,
             },
           }}
         >
-          {loading ? (
+         {loading ? (
+  <Box sx={{ py: 6, textAlign: "center" }}>
+    <CircularProgress size={24} sx={{ color: "#07876a" }} />
+  </Box>
+) : error ? (
+  <Box sx={{ p: 3, textAlign: "center" }}>
+    <Typography sx={{ fontSize: 12, color: "#dc2626" }}>
+      {error}
+    </Typography>
+    <Button
+      onClick={fetchNotifications}
+      sx={{ fontSize: 12, textTransform: "none" }}
+    >
+      Retry
+    </Button>
+  </Box>
+) : (
+  <AnimatePresence initial={false} mode="wait">
+    {visibleNotifications.length ? (
+      visibleNotifications.map((notification) => {
+        const { Icon, color, bg } =
+          styles[notification.type?.toUpperCase()] || styles.INFO;
+
+        return (
+          <motion.div
+            key={notification.id}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto", x: 0 }}
+            exit={{ opacity: 0, height: 0, x: 35 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
             <Box
               sx={{
-                height: 180,
                 display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: "#ffffff",
-              }}
-            >
-              <CircularProgress size={28} />
-            </Box>
-          ) : notifications.length === 0 ? (
-            <Box
-              sx={{
-                py: 7,
-                px: 3,
-                textAlign: "center",
-                backgroundColor: "#ffffff",
+                gap: 1.3,
+                px: 2,
+                py: 1.6,
+                bgcolor: "#f7fbf9",
+                borderBottom: "1px solid #edf1ef",
               }}
             >
               <Box
                 sx={{
-                  width: 65,
-                  height: 65,
-                  margin: "0 auto 12px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "50%",
-                  backgroundColor: "#f1f5f9",
+                  width: 34,
+                  height: 34,
+                  flexShrink: 0,
+                  display: "grid",
+                  placeItems: "center",
+                  borderRadius: "9px",
+                  bgcolor: bg,
                 }}
               >
-                <NotificationsIcon
-                  sx={{
-                    fontSize: 34,
-                    color: "#94a3b8",
-                  }}
-                />
+                <Icon sx={{ fontSize: 19, color }} />
               </Box>
 
-              <Typography
-                sx={{
-                  fontSize: 15,
-                  fontWeight: 700,
-                  color: "#111827",
-                }}
-              >
-                No notifications
-              </Typography>
-
-              <Typography
-                sx={{
-                  fontSize: 13,
-                  color: "#6b7280",
-                  mt: 0.5,
-                }}
-              >
-                New notifications will appear here.
-              </Typography>
-            </Box>
-          ) : (
-            notifications.map((notification) => {
-              const isUnread =
-                Number(notification.is_read) === 0;
-
-              return (
-                <Box
-                  key={notification.id}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
                   sx={{
-                    position: "relative",
-                    display: "flex",
-                    gap: 1.5,
-                    px: 2.2,
-                    py: 2,
-                    backgroundColor: "#ffffff",
-                    borderBottom: "1px solid #e5e7eb",
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    ...(isUnread && {
-                      borderLeft: "4px solid #2563eb",
-                    }),
-                    "&:hover": {
-                      backgroundColor: "#f8fafc",
-                    },
-                    "&:last-child": {
-                      borderBottom: "none",
-                    },
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "#172033",
+                    overflowWrap: "anywhere",
                   }}
                 >
-                  <Box
-                    sx={{
-                      width: 44,
-                      height: 44,
-                      minWidth: 44,
-                      borderRadius: "50%",
-                      backgroundColor:
-                        notification.type?.toUpperCase() ===
-                        "SUCCESS"
-                          ? "#ecfdf5"
-                          : notification.type?.toUpperCase() ===
-                              "ERROR"
-                            ? "#fef2f2"
-                            : "#eff6ff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {getNotificationIcon(
-                      notification.type
-                    )}
-                  </Box>
+                  {notification.title || "Notification"}
+                </Typography>
 
-                  <Box
-                    sx={{
-                      flex: 1,
-                      minWidth: 0,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <Typography
-                        sx={{
-                          fontSize: 15,
-                          fontWeight: isUnread
-                            ? 700
-                            : 600,
-                          color: "#111827",
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        {notification.title ||
-                          "Notification"}
-                      </Typography>
+                <Typography
+                  sx={{
+                    mt: 0.4,
+                    fontSize: 12,
+                    lineHeight: 1.6,
+                    color: "#64748b",
+                    overflowWrap: "anywhere",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
+                  {notification.message || "No message available"}
+                </Typography>
 
-                      {isUnread && (
-                        <Box
-                          sx={{
-                            width: 7,
-                            height: 7,
-                            minWidth: 7,
-                            borderRadius: "50%",
-                            backgroundColor: "#2563eb",
-                          }}
-                        />
-                      )}
-                    </Box>
-
-                    <Typography
-                      sx={{
-                        mt: 0.5,
-                        fontSize: 13,
-                        color: "#4b5563",
-                        lineHeight: 1.55,
-                        fontWeight: 400,
-                        wordBreak: "break-word",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {notification.message ||
-                        "No message available"}
-                    </Typography>
-
-                    <Typography
-                      sx={{
-                        mt: 1,
-                        fontSize: "11.5px",
-                        color: "#9ca3af",
-                        fontWeight: 500,
-                      }}
-                    >
-                      {formatDate(
-                        notification.created_at
-                      )}
-                    </Typography>
-                  </Box>
-                </Box>
-              );
-            })
-          )}
+                <Typography
+                  sx={{ mt: 0.8, fontSize: 10.5, color: "#8b9892" }}
+                >
+                  {formatDate(notification.created_at)}
+                </Typography>
+              </Box>
+            </Box>
+          </motion.div>
+        );
+      })
+    ) : (
+      <motion.div
+        key="empty"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+      >
+        <Box sx={{ px: 3, py: 5, textAlign: "center" }}>
+          <NotificationsIcon
+            sx={{ fontSize: 36, color: "#a5b5ae", mb: 1 }}
+          />
+          <Typography
+            sx={{ fontSize: 13, fontWeight: 600, color: "#172033" }}
+          >
+            No notifications
+          </Typography>
+          <Typography sx={{ mt: 0.5, fontSize: 12, color: "#74807b" }}>
+            New updates will appear here.
+          </Typography>
+        </Box>
+      </motion.div>
+    )}
+  </AnimatePresence>
+)}
         </Box>
       </Popover>
     </>
   );
-};
-
-export default NotificationPopover;
+}

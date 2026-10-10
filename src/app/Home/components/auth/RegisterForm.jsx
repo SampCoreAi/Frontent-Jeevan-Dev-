@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
+
 import {
+  Box,
   Button,
   TextField,
   InputAdornment,
   IconButton,
   CircularProgress,
-  Box,
+  Typography,
 } from "@mui/material";
+import { useRouter } from "next/navigation";
 import {
   Visibility,
   VisibilityOff,
@@ -16,62 +19,118 @@ import {
   Phone,
   Email,
   Lock,
+  CheckCircleRounded,
+  RadioButtonUncheckedRounded,
 } from "@mui/icons-material";
+
 import axios from "../../../../utils/axiosInstance";
 
 export default function RegisterForm({
   showMessage,
   onSuccess,
 }) {
+  // =========================================================
+  // STATE
+  // =========================================================
+
   const [formData, setFormData] = useState({
     fullName: "",
     mobileNumber: "",
     email: "",
     password: "",
   });
-
+const router = useRouter();
   const [errors, setErrors] = useState({});
+
   const [loading, setLoading] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
+
   const [showPassword, setShowPassword] =
     useState(false);
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL;
 
+  // =========================================================
+  // PASSWORD RULES
+  // =========================================================
+
+  const passwordRules = [
+    {
+      label: "At least 8 characters",
+      valid: formData.password.length >= 8,
+    },
+    {
+      label: "One uppercase letter",
+      valid: /[A-Z]/.test(formData.password),
+    },
+    {
+      label: "One lowercase letter",
+      valid: /[a-z]/.test(formData.password),
+    },
+    {
+      label: "One number",
+      valid: /[0-9]/.test(formData.password),
+    },
+    {
+      label: "One special character",
+      valid: /[!@#$%^&*(),.?":{}|<>]/.test(
+        formData.password
+      ),
+    },
+  ];
+
+  // =========================================================
+  // INPUT STYLE
+  // =========================================================
+
   const inputSx = {
-    mb: 2.5,
+    mb: 2,
 
     "& .MuiOutlinedInput-root": {
-      borderRadius: "8px",
+      minHeight: 46,
+      borderRadius: "9px",
+
       backgroundColor: "background.default",
 
+      transition: "all 0.2s ease",
+
+      "& .MuiOutlinedInput-notchedOutline": {
+        borderColor: "divider",
+        borderWidth: "1px",
+      },
+
       "&:hover": {
-        backgroundColor: "secondary.light",
+        backgroundColor: "background.paper",
+      },
+
+      "&:hover .MuiOutlinedInput-notchedOutline": {
+        borderColor: "primary.main",
       },
 
       "&.Mui-focused": {
         backgroundColor: "background.paper",
-      },
 
-      "& .MuiOutlinedInput-notchedOutline": {
-        borderColor: "divider",
+        boxShadow:
+          "0 0 0 3px rgba(7, 135, 106, 0.06)",
       },
-
-      "&:hover .MuiOutlinedInput-notchedOutline":
-        {
-          borderColor: "primary.main",
-        },
 
       "&.Mui-focused .MuiOutlinedInput-notchedOutline":
         {
           borderColor: "primary.main",
-          borderWidth: "2px",
+          borderWidth: "1.5px",
+        },
+
+      "&.Mui-error .MuiOutlinedInput-notchedOutline":
+        {
+          borderColor: "error.main",
         },
     },
 
     "& .MuiInputBase-input": {
-      padding: "14px 14px",
-      fontSize: "0.95rem",
+      py: 1.35,
+      fontSize: "13px",
+
       color: "text.primary",
 
       "&::placeholder": {
@@ -81,10 +140,17 @@ export default function RegisterForm({
     },
 
     "& .MuiFormHelperText-root": {
-      mx: 0.5,
+      mx: 0.3,
       mt: 0.5,
+
+      fontSize: "11px",
+      lineHeight: 1.3,
     },
   };
+
+  // =========================================================
+  // CHANGE
+  // =========================================================
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({
@@ -92,6 +158,7 @@ export default function RegisterForm({
       [field]: value,
     }));
 
+    // Remove current error while correcting input
     if (errors[field]) {
       setErrors((prev) => ({
         ...prev,
@@ -100,19 +167,29 @@ export default function RegisterForm({
     }
   };
 
+  // =========================================================
+  // VALIDATION
+  // =========================================================
+
   const validateForm = () => {
     const newErrors = {};
 
-    const fullName =
-      formData.fullName.trim();
-
-    const email =
-      formData.email.trim().toLowerCase();
+    const fullName = formData.fullName
+      .trim()
+      .replace(/\s+/g, " ");
 
     const mobileNumber =
       formData.mobileNumber.trim();
 
+    const email = formData.email
+      .trim()
+      .toLowerCase();
+
     const password = formData.password;
+
+    // ==========================
+    // FULL NAME
+    // ==========================
 
     if (!fullName) {
       newErrors.fullName =
@@ -130,6 +207,10 @@ export default function RegisterForm({
         "Please enter a valid full name";
     }
 
+    // ==========================
+    // MOBILE
+    // ==========================
+
     if (!mobileNumber) {
       newErrors.mobileNumber =
         "Mobile number is required";
@@ -139,6 +220,10 @@ export default function RegisterForm({
       newErrors.mobileNumber =
         "Enter a valid 10-digit mobile number";
     }
+
+    // ==========================
+    // EMAIL
+    // ==========================
 
     if (!email) {
       newErrors.email =
@@ -150,10 +235,17 @@ export default function RegisterForm({
     ) {
       newErrors.email =
         "Enter a valid email address";
+    } else if (!email.endsWith("@gmail.com")) {
+      newErrors.email =
+        "Only Gmail addresses are allowed";
     } else if (email.length > 254) {
       newErrors.email =
         "Email address is too long";
     }
+
+    // ==========================
+    // PASSWORD
+    // ==========================
 
     if (!password) {
       newErrors.password =
@@ -163,7 +255,7 @@ export default function RegisterForm({
         "Password must be at least 8 characters";
     } else if (password.length > 128) {
       newErrors.password =
-        "Password is too long";
+        "Password cannot exceed 128 characters";
     } else if (!/[A-Z]/.test(password)) {
       newErrors.password =
         "Add at least one uppercase letter";
@@ -173,39 +265,65 @@ export default function RegisterForm({
     } else if (!/[0-9]/.test(password)) {
       newErrors.password =
         "Add at least one number";
+    } else if (
+      !/[!@#$%^&*(),.?":{}|<>]/.test(
+        password
+      )
+    ) {
+      newErrors.password =
+        "Add at least one special character";
     }
 
     setErrors(newErrors);
 
-    return (
-      Object.keys(newErrors).length === 0
-    );
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleRegister = async (e) => {
-    e?.preventDefault();
+  // =========================================================
+  // REGISTER
+  // =========================================================
+
+  const handleRegister = async (event) => {
+    event?.preventDefault();
 
     if (loading) return;
 
+    // Validate first
     if (!validateForm()) {
-      showMessage(
+      showMessage?.(
         "Please check the highlighted fields.",
         "error"
       );
+
       return;
     }
 
-    const fullName =
-      formData.fullName
-        .trim()
-        .replace(/\s+/g, " ");
+    // API ENV validation
+    if (!API_URL) {
+      showMessage?.(
+        "API URL is not configured.",
+        "error"
+      );
 
-    const email =
-      formData.email
-        .trim()
-        .toLowerCase();
+      return;
+    }
+
+    const fullName = formData.fullName
+      .trim()
+      .replace(/\s+/g, " ");
+
+    const email = formData.email
+      .trim()
+      .toLowerCase();
+
+    const mobileNumber =
+      formData.mobileNumber.trim();
 
     try {
+      // ==========================
+      // START LOADING
+      // ==========================
+
       setLoading(true);
 
       const response = await axios.post(
@@ -213,9 +331,11 @@ export default function RegisterForm({
         {
           full_name: fullName,
           email,
-          phone_number:
-            formData.mobileNumber,
+
+          phone_number: mobileNumber,
+
           password: formData.password,
+
           role_id: 1,
         }
       );
@@ -223,6 +343,10 @@ export default function RegisterForm({
       const successMessage =
         response?.data?.message ||
         "Registration successful! A verification link has been sent to your email.";
+
+      // ==========================
+      // CLEAR FORM
+      // ==========================
 
       setFormData({
         fullName: "",
@@ -233,10 +357,14 @@ export default function RegisterForm({
 
       setErrors({});
 
+      // ==========================
+      // SUCCESS
+      // ==========================
+
       if (onSuccess) {
         onSuccess(successMessage);
       } else {
-        showMessage(
+        showMessage?.(
           successMessage,
           "success"
         );
@@ -244,41 +372,81 @@ export default function RegisterForm({
     } catch (error) {
       console.error(
         "Registration failed:",
-        error.response?.data ||
-          error.message
+        error?.response?.data ||
+          error?.message
       );
 
       const status =
-        error.response?.status;
+        error?.response?.status;
 
       let errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
         "Registration failed. Please try again.";
+
+      // ==========================
+      // NETWORK ERROR
+      // ==========================
 
       if (!error.response) {
         errorMessage =
           "Unable to connect to the server. Please check your internet connection.";
-      } else if (status === 409) {
+      }
+
+      // ==========================
+      // VALIDATION ERROR
+      // ==========================
+
+      else if (status === 400) {
         errorMessage =
-          error.response?.data?.message ||
+          error?.response?.data?.message ||
+          "Please check your registration details.";
+      }
+
+      // ==========================
+      // ALREADY EXISTS
+      // ==========================
+
+      else if (status === 409) {
+        errorMessage =
+          error?.response?.data?.message ||
           "An account with this email or mobile number already exists.";
-      } else if (status === 429) {
+      }
+
+      // ==========================
+      // TOO MANY REQUESTS
+      // ==========================
+
+      else if (status === 429) {
         errorMessage =
           "Too many registration attempts. Please try again later.";
-      } else if (status >= 500) {
+      }
+
+      // ==========================
+      // SERVER ERROR
+      // ==========================
+
+      else if (status >= 500) {
         errorMessage =
           "Server error. Please try again after some time.";
       }
 
-      showMessage(
+      showMessage?.(
         errorMessage,
         "error"
       );
     } finally {
+      // ==========================
+      // STOP LOADING
+      // ==========================
+
       setLoading(false);
     }
   };
+
+  // =========================================================
+  // UI
+  // =========================================================
 
   return (
     <Box
@@ -289,46 +457,63 @@ export default function RegisterForm({
         width: "100%",
       }}
     >
+      {/* =====================================================
+          FULL NAME
+      ===================================================== */}
+
       <TextField
         fullWidth
         placeholder="Full Name"
         value={formData.fullName}
-        onChange={(e) =>
-          handleChange(
-            "fullName",
-            e.target.value
-          )
-        }
-        error={Boolean(errors.fullName)}
-        helperText={errors.fullName}
         disabled={loading}
         autoComplete="name"
+        error={Boolean(errors.fullName)}
+        helperText={errors.fullName}
+        onChange={(event) =>
+          handleChange(
+            "fullName",
+            event.target.value
+          )
+        }
         inputProps={{
           maxLength: 60,
           "aria-label": "Full Name",
         }}
-        sx={inputSx}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
               <Person
                 sx={{
                   color: "primary.main",
-                  fontSize: "1.2rem",
+                  fontSize: 18,
                 }}
               />
             </InputAdornment>
           ),
         }}
+        sx={inputSx}
       />
+
+      {/* =====================================================
+          MOBILE
+      ===================================================== */}
 
       <TextField
         fullWidth
         placeholder="Mobile Number"
         value={formData.mobileNumber}
-        onChange={(e) => {
+        disabled={loading}
+        autoComplete="tel"
+        error={Boolean(
+          errors.mobileNumber
+        )}
+        helperText={
+          errors.mobileNumber
+        }
+        onChange={(event) => {
+          // Numbers only + max 10 digits
           const value =
-            e.target.value
+            event.target.value
               .replace(/\D/g, "")
               .slice(0, 10);
 
@@ -337,68 +522,68 @@ export default function RegisterForm({
             value
           );
         }}
-        error={Boolean(
-          errors.mobileNumber
-        )}
-        helperText={
-          errors.mobileNumber
-        }
-        disabled={loading}
-        autoComplete="tel"
         inputProps={{
           maxLength: 10,
           inputMode: "numeric",
           pattern: "[0-9]*",
           "aria-label": "Mobile Number",
         }}
-        sx={inputSx}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
               <Phone
                 sx={{
                   color: "primary.main",
-                  fontSize: "1.2rem",
+                  fontSize: 18,
                 }}
               />
             </InputAdornment>
           ),
         }}
+        sx={inputSx}
       />
+
+      {/* =====================================================
+          EMAIL
+      ===================================================== */}
 
       <TextField
         fullWidth
         type="email"
         placeholder="Email Address"
         value={formData.email}
-        onChange={(e) =>
-          handleChange(
-            "email",
-            e.target.value
-          )
-        }
-        error={Boolean(errors.email)}
-        helperText={errors.email}
         disabled={loading}
         autoComplete="email"
+        error={Boolean(errors.email)}
+        helperText={errors.email}
+        onChange={(event) =>
+          handleChange(
+            "email",
+            event.target.value
+          )
+        }
         inputProps={{
           maxLength: 254,
           "aria-label": "Email Address",
         }}
-        sx={inputSx}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
               <Email
                 sx={{
                   color: "primary.main",
-                  fontSize: "1.2rem",
+                  fontSize: 18,
                 }}
               />
             </InputAdornment>
           ),
         }}
+        sx={inputSx}
       />
+
+      {/* =====================================================
+          PASSWORD
+      ===================================================== */}
 
       <TextField
         fullWidth
@@ -409,25 +594,19 @@ export default function RegisterForm({
         }
         placeholder="Password"
         value={formData.password}
-        onChange={(e) =>
-          handleChange(
-            "password",
-            e.target.value
-          )
-        }
-        error={Boolean(
-          errors.password
-        )}
-        helperText={errors.password}
         disabled={loading}
         autoComplete="new-password"
+        error={Boolean(errors.password)}
+        helperText={errors.password}
+        onChange={(event) =>
+          handleChange(
+            "password",
+            event.target.value
+          )
+        }
         inputProps={{
           maxLength: 128,
           "aria-label": "Password",
-        }}
-        sx={{
-          ...inputSx,
-          mb: 4,
         }}
         InputProps={{
           startAdornment: (
@@ -435,7 +614,7 @@ export default function RegisterForm({
               <Lock
                 sx={{
                   color: "primary.main",
-                  fontSize: "1.2rem",
+                  fontSize: 18,
                 }}
               />
             </InputAdornment>
@@ -445,53 +624,170 @@ export default function RegisterForm({
             <InputAdornment position="end">
               <IconButton
                 type="button"
-                onClick={() =>
-                  setShowPassword(
-                    (prev) => !prev
-                  )
-                }
                 edge="end"
+                size="small"
                 disabled={loading}
                 aria-label={
                   showPassword
                     ? "Hide password"
                     : "Show password"
                 }
+                onClick={() =>
+                  setShowPassword(
+                    (prev) => !prev
+                  )
+                }
+                onMouseDown={(event) =>
+                  event.preventDefault()
+                }
                 sx={{
-                  color:
-                    "text.secondary",
+                  color: "text.secondary",
 
                   "&:hover": {
-                    color:
-                      "primary.main",
+                    color: "primary.main",
                     backgroundColor:
                       "secondary.light",
                   },
                 }}
               >
                 {showPassword ? (
-                  <VisibilityOff />
+                  <VisibilityOff
+                    sx={{ fontSize: 19 }}
+                  />
                 ) : (
-                  <Visibility />
+                  <Visibility
+                    sx={{ fontSize: 19 }}
+                  />
                 )}
               </IconButton>
             </InputAdornment>
           ),
         }}
+        sx={{
+          ...inputSx,
+          mb: errors.password ? 1 : 1.4,
+        }}
       />
+
+      {/* =====================================================
+          LIVE PASSWORD VALIDATION
+      ===================================================== */}
+
+      <Box
+        sx={{
+          mb: 2.4,
+          p: 1.4,
+
+          borderRadius: "9px",
+
+          border:
+            "1px solid rgba(7,135,106,0.12)",
+
+          backgroundColor:
+            "rgba(7,135,106,0.035)",
+        }}
+      >
+        <Typography
+          sx={{
+            mb: 1,
+
+            color: "text.primary",
+
+            fontSize: "11.5px",
+            fontWeight: 600,
+          }}
+        >
+          Password must contain
+        </Typography>
+
+        <Box
+          sx={{
+            display: "grid",
+
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "1fr 1fr",
+            },
+
+            columnGap: 1.5,
+            rowGap: 0.8,
+          }}
+        >
+          {passwordRules.map(
+            (rule) => {
+              const RuleIcon =
+                rule.valid
+                  ? CheckCircleRounded
+                  : RadioButtonUncheckedRounded;
+
+              return (
+                <Box
+                  key={rule.label}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.65,
+                  }}
+                >
+                  <RuleIcon
+                    sx={{
+                      flexShrink: 0,
+
+                      fontSize: 14,
+
+                      color: rule.valid
+                        ? "primary.main"
+                        : "text.disabled",
+
+                      transition:
+                        "all 0.2s ease",
+                    }}
+                  />
+
+                  <Typography
+                    sx={{
+                      fontSize: "10.5px",
+
+                      lineHeight: 1.25,
+
+                      color: rule.valid
+                        ? "primary.main"
+                        : "text.secondary",
+
+                      fontWeight:
+                        rule.valid
+                          ? 600
+                          : 400,
+
+                      transition:
+                        "all 0.2s ease",
+                    }}
+                  >
+                    {rule.label}
+                  </Typography>
+                </Box>
+              );
+            }
+          )}
+        </Box>
+      </Box>
+
+      {/* =====================================================
+          REGISTER BUTTON
+      ===================================================== */}
 
       <Button
         fullWidth
         type="submit"
         variant="contained"
         color="primary"
-        size="large"
         disabled={loading}
         sx={{
-          borderRadius: "8px",
-          py: 1.8,
+          minHeight: 44,
 
-          fontSize: "1.1rem",
+          borderRadius: "9px",
+
+          fontSize: "13px",
           fontWeight: 600,
 
           textTransform: "none",
@@ -502,20 +798,32 @@ export default function RegisterForm({
           color:
             "primary.contrastText",
 
-          boxShadow: "none",
+          boxShadow:
+            "0 6px 18px rgba(7,135,106,0.16)",
+
+          transition:
+            "all 0.2s ease",
 
           "&:hover": {
             backgroundColor:
               "primary.dark",
-            boxShadow: "none",
+
+            boxShadow:
+              "0 8px 22px rgba(7,135,106,0.22)",
+          },
+
+          "&:active": {
+            transform: "scale(0.995)",
           },
 
           "&.Mui-disabled": {
             backgroundColor:
-              "primary.light",
+              "primary.main",
 
             color:
               "primary.contrastText",
+
+            opacity: 0.7,
           },
         }}
       >
@@ -524,23 +832,97 @@ export default function RegisterForm({
             sx={{
               display: "flex",
               alignItems: "center",
+              justifyContent: "center",
               gap: 1,
             }}
           >
             <CircularProgress
-              size={22}
+              size={17}
+              thickness={5}
               sx={{
-                color:
-                  "primary.contrastText",
+                color: "inherit",
               }}
             />
 
-            Registering...
+            <Typography
+              component="span"
+              sx={{
+                color: "inherit",
+                fontSize: "13px",
+                fontWeight: 600,
+              }}
+            >
+              Creating account...
+            </Typography>
           </Box>
         ) : (
-          "Sign Up"
+          "Create Account"
         )}
       </Button>
+      <Box
+  sx={{
+    mt: 1,
+    mb: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 0.5,
+  }}
+>
+  <Typography
+    sx={{
+      fontSize: "12.5px",
+      color: "text.secondary",
+    }}
+  >
+    Already have an account?
+  </Typography>
+
+  <Button
+    type="button"
+    variant="text"
+    disabled={loading || loginLoading}
+    onClick={() => {
+      if (loading || loginLoading) return;
+
+      setLoginLoading(true);
+      router.push("/Home/pages/Login");
+    }}
+    sx={{
+      minWidth: "auto",
+      p: 0,
+      fontSize: "12.5px",
+      fontWeight: 700,
+      color: "primary.main",
+      textTransform: "none",
+
+      "&:hover": {
+        backgroundColor: "transparent",
+        color: "primary.dark",
+        textDecoration: "underline",
+      },
+    }}
+  >
+    {loginLoading ? (
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 0.5,
+        }}
+      >
+        <CircularProgress
+          size={13}
+          thickness={5}
+          color="inherit"
+        />
+        Loading...
+      </Box>
+    ) : (
+      "Log In"
+    )}
+  </Button>
+</Box>
     </Box>
   );
 }

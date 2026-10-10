@@ -27,9 +27,20 @@ import api from "../../../../../utils/axiosInstance";
 
 const getRows = (response) => response?.data?.data || [];
 const getErrorMessage = (error) =>
-  error?.response?.data?.message || error?.message || "Unable to send lab request.";
+  error?.response?.data?.message ||
+  error?.message ||
+  "Unable to send lab request.";
 
-const SAMPLE_TYPES = ["BLOOD", "URINE", "SERUM", "PLASMA", "SWAB", "STOOL", "SPUTUM", "OTHER"];
+const SAMPLE_TYPES = [
+  "BLOOD",
+  "URINE",
+  "SERUM",
+  "PLASMA",
+  "SWAB",
+  "STOOL",
+  "SPUTUM",
+  "OTHER",
+];
 
 const normalizeLab = (lab = {}) => ({
   id: lab.id || lab.lab_id || lab.labId,
@@ -37,7 +48,13 @@ const normalizeLab = (lab = {}) => ({
   code: lab.lab_code || lab.code || "",
 });
 
-export default function LabTestRequestForm({ patientId, appointmentId, storageKey, resetKey, onSummaryChange }) {
+export default function LabTestRequestForm({
+  patientId,
+  appointmentId,
+  storageKey,
+  resetKey,
+  onSummaryChange,
+}) {
   const [open, setOpen] = useState(false);
   const [labs, setLabs] = useState([]);
   const [testInput, setTestInput] = useState("");
@@ -61,12 +78,14 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
     }
 
     try {
-      const saved = JSON.parse(window.localStorage.getItem(storageKey) || "null");
+      const saved = JSON.parse(
+        window.localStorage.getItem(storageKey) || "null",
+      );
       const savedAssignments = Array.isArray(saved?.assignments)
         ? saved.assignments
-        : (Array.isArray(saved?.tests) && saved?.labId
+        : Array.isArray(saved?.tests) && saved?.labId
           ? saved.tests.map((test) => ({ test, labId: String(saved.labId) }))
-          : []);
+          : [];
       setAssignments(savedAssignments);
       setDraftAssignments(savedAssignments);
       setSent(Boolean(saved?.sent));
@@ -84,7 +103,10 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
     if (!storageReady || !storageKey || typeof window === "undefined") return;
 
     if (assignments.length) {
-      window.localStorage.setItem(storageKey, JSON.stringify({ assignments, sent, sampleType }));
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify({ assignments, sent, sampleType }),
+      );
     } else {
       window.localStorage.removeItem(storageKey);
     }
@@ -99,7 +121,8 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
     setSampleType("BLOOD");
     setTestInput("");
     setOpen(false);
-    if (storageKey && typeof window !== "undefined") window.localStorage.removeItem(storageKey);
+    if (storageKey && typeof window !== "undefined")
+      window.localStorage.removeItem(storageKey);
   }, [resetKey, storageKey]);
 
   useEffect(() => {
@@ -110,7 +133,12 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
         setLoadingLabs(true);
         const response = await api.get("/api/labs/doctor/connections");
         const approvedLabs = getRows(response)
-          .filter((connection) => String(connection.status || connection.connection_status || "").toUpperCase() === "APPROVED")
+          .filter(
+            (connection) =>
+              String(
+                connection.status || connection.connection_status || "",
+              ).toUpperCase() === "APPROVED",
+          )
           .map(normalizeLab)
           .filter((lab) => lab.id);
         setLabs(approvedLabs);
@@ -167,7 +195,11 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
       setError("Please add at least one lab test.");
       return;
     }
-    if (finalAssignments.some((assignment) => !String(assignment.labId || "").trim())) {
+    if (
+      finalAssignments.some(
+        (assignment) => !String(assignment.labId || "").trim(),
+      )
+    ) {
       setError("Select a lab for every test before completing.");
       return;
     }
@@ -178,10 +210,10 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
 
   const handleSend = async () => {
     const pendingTests = testInput
-        .split(",")
-        .map((test) => test.trim())
-        .filter(Boolean)
-        .filter((test) => !assignments.some((item) => item.test === test));
+      .split(",")
+      .map((test) => test.trim())
+      .filter(Boolean)
+      .filter((test) => !assignments.some((item) => item.test === test));
     const finalAssignments = [
       ...assignments,
       ...pendingTests.map((test) => ({ test, labId: "" })),
@@ -191,7 +223,10 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
       setError("Patient details are not available for this appointment.");
       return;
     }
-    if (!finalAssignments.length || finalAssignments.some((item) => !String(item.labId || "").trim())) {
+    if (
+      !finalAssignments.length ||
+      finalAssignments.some((item) => !String(item.labId || "").trim())
+    ) {
       setError("Select a lab for every test before sending.");
       return;
     }
@@ -217,20 +252,26 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
             }
             throw requestError;
           }
-        })
+        }),
       );
 
-      const created = outcomes.filter((item) => item.status === "fulfilled" && item.value.created).length;
-      const skipped = outcomes.filter((item) => item.status === "fulfilled" && item.value.skipped).length;
+      const created = outcomes.filter(
+        (item) => item.status === "fulfilled" && item.value.created,
+      ).length;
+      const skipped = outcomes.filter(
+        (item) => item.status === "fulfilled" && item.value.skipped,
+      ).length;
 
       if (created > 0) {
         setNotice(
           skipped > 0
             ? `New requests sent. ${skipped} already existed and were skipped.`
-            : "Lab test request sent successfully."
+            : "Lab test request sent successfully.",
         );
       } else if (skipped > 0) {
-        setNotice(`${skipped} test request(s) already existed and were skipped.`);
+        setNotice(
+          `${skipped} test request(s) already existed and were skipped.`,
+        );
       }
 
       setSent(true);
@@ -245,7 +286,17 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
 
   useEffect(() => {
     onSummaryChange?.({
-      labName: [...new Set(assignments.map((assignment) => labs.find((lab) => String(lab.id) === String(assignment.labId))?.name).filter(Boolean))].join(", "),
+      labName: [
+        ...new Set(
+          assignments
+            .map(
+              (assignment) =>
+                labs.find((lab) => String(lab.id) === String(assignment.labId))
+                  ?.name,
+            )
+            .filter(Boolean),
+        ),
+      ].join(", "),
       tests: assignments.map((assignment) => assignment.test),
     });
   }, [assignments, labs, onSummaryChange]);
@@ -260,7 +311,13 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
 
   return (
     <>
-      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+      <Stack
+        direction="row"
+        spacing={1}
+        alignItems="center"
+        flexWrap="wrap"
+        useFlexGap
+      >
         <Button
           variant="outlined"
           startIcon={<ScienceOutlined />}
@@ -269,12 +326,29 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
             setDraftAssignments(assignments);
             setOpen(true);
           }}
-          sx={{ textTransform: "none", borderRadius: 1.5, minHeight: 32, px: 1.25, fontSize: "12px" }}
+          sx={{
+            textTransform: "none",
+            borderRadius: 1.5,
+            minHeight: 32,
+            px: 1.25,
+            fontSize: "12px",
+          }}
         >
           Lab Test
         </Button>
         {canSendToLab ? (
-          <Button size="small" variant="contained" onClick={handleSend} disabled={sending} sx={{ textTransform: "none", minHeight: 32, px: 1.25, fontSize: "12px" }}>
+          <Button
+            size="small"
+            variant="contained"
+            onClick={handleSend}
+            disabled={sending}
+            sx={{
+              textTransform: "none",
+              minHeight: 32,
+              px: 1.25,
+              fontSize: "12px",
+            }}
+          >
             {sending ? "Sending..." : "Send to Lab"}
           </Button>
         ) : null}
@@ -287,7 +361,12 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
         maxWidth="sm"
         aria-labelledby="lab-test-dialog-title"
       >
-        <DialogTitle id="lab-test-dialog-title" sx={{ py: 1.5, fontSize: "17px" }}>Prepare lab test request</DialogTitle>
+        <DialogTitle
+          id="lab-test-dialog-title"
+          sx={{ py: 1.5, fontSize: "17px" }}
+        >
+          Prepare lab test request
+        </DialogTitle>
         <DialogContent dividers sx={{ py: 1.5 }}>
           {loadingLabs ? (
             <Box display="flex" justifyContent="center" py={3}>
@@ -295,8 +374,19 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
             </Box>
           ) : (
             <Stack spacing={1.25}>
-              {!labs.length && !loadingLabs ? <Typography variant="body2" color="text.secondary">No approved lab connection found.</Typography> : null}
-              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.75, width: "100%" }}>
+              {!labs.length && !loadingLabs ? (
+                <Typography variant="body2" color="text.secondary">
+                  No approved lab connection found.
+                </Typography>
+              ) : null}
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 0.75,
+                  width: "100%",
+                }}
+              >
                 <TextField
                   size="small"
                   label="Lab test name"
@@ -321,7 +411,10 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
                 >
                   <AddCircleOutline sx={{ fontSize: 19 }} />
                 </IconButton>
-                <FormControl size="small" sx={{ width: { xs: 100, sm: 120 }, flexShrink: 0 }}>
+                <FormControl
+                  size="small"
+                  sx={{ width: { xs: 100, sm: 120 }, flexShrink: 0 }}
+                >
                   <InputLabel sx={{ fontSize: "12px" }}>Priority</InputLabel>
                   <Select
                     value={priority}
@@ -329,11 +422,18 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
                     onChange={(event) => setPriority(event.target.value)}
                     sx={{ fontSize: "12px", minHeight: 38 }}
                   >
-                    <MenuItem value="NORMAL" sx={{ fontSize: "12px" }}>Normal</MenuItem>
-                    <MenuItem value="URGENT" sx={{ fontSize: "12px" }}>Urgent</MenuItem>
+                    <MenuItem value="NORMAL" sx={{ fontSize: "12px" }}>
+                      Normal
+                    </MenuItem>
+                    <MenuItem value="URGENT" sx={{ fontSize: "12px" }}>
+                      Urgent
+                    </MenuItem>
                   </Select>
                 </FormControl>
-                <FormControl size="small" sx={{ width: { xs: 110, sm: 130 }, flexShrink: 0 }}>
+                <FormControl
+                  size="small"
+                  sx={{ width: { xs: 110, sm: 130 }, flexShrink: 0 }}
+                >
                   <InputLabel sx={{ fontSize: "12px" }}>Sample</InputLabel>
                   <Select
                     value={sampleType}
@@ -342,7 +442,11 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
                     sx={{ fontSize: "12px", minHeight: 38 }}
                   >
                     {SAMPLE_TYPES.map((type) => (
-                      <MenuItem key={type} value={type} sx={{ fontSize: "12px" }}>
+                      <MenuItem
+                        key={type}
+                        value={type}
+                        sx={{ fontSize: "12px" }}
+                      >
                         {type}
                       </MenuItem>
                     ))}
@@ -356,13 +460,33 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
                   </Typography>
                 )}
                 {draftAssignments.map((assignment) => (
-                  <Box key={assignment.test} sx={{ display: "grid", gap: 1.25 }}>
+                  <Box
+                    key={assignment.test}
+                    sx={{ display: "grid", gap: 1.25 }}
+                  >
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Chip
-                        label={assignment.test}
-                        onDelete={sent ? undefined : () => setDraftAssignments((current) => current.filter((item) => item.test !== assignment.test))}
-                        sx={{ flexShrink: 0 }}
-                      />
+                     <Chip
+  label={assignment.test}
+  onDelete={
+    sent
+      ? undefined
+      : () =>
+          setDraftAssignments((current) =>
+            current.filter((item) => item.test !== assignment.test)
+          )
+  }
+  sx={{
+    flexShrink: 0,
+    bgcolor: "#EDF7F2",
+    color: "#172033",
+    "& .MuiChip-label": {
+      display: "block",
+      fontSize: 13,
+      px: 1.5,
+      color: "#172033",
+    },
+  }}
+/>
                       <FormControl size="small" fullWidth>
                         <InputLabel>{`Lab for ${assignment.test}`}</InputLabel>
                         <Select
@@ -370,12 +494,37 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
                           label={`Lab for ${assignment.test}`}
                           disabled={sent}
                           onChange={(event) => {
-                            setDraftAssignments((current) => current.map((item) => (
-                              item.test === assignment.test ? { ...item, labId: event.target.value } : item
-                            )));
+                            setDraftAssignments((current) =>
+                              current.map((item) =>
+                                item.test === assignment.test
+                                  ? { ...item, labId: event.target.value }
+                                  : item,
+                              ),
+                            );
                           }}
                         >
-                          {labs.map((lab) => <MenuItem key={lab.id} value={String(lab.id)}>{lab.name}{lab.code ? ` (${lab.code})` : ""}</MenuItem>)}
+                          {labs.length ? (
+  labs.map((lab) => (
+    <MenuItem key={lab.id} value={String(lab.id)}>
+      {lab.name}
+      {lab.code ? ` (${lab.code})` : ""}
+    </MenuItem>
+  ))
+) : (
+<MenuItem
+  disabled
+  sx={{
+    fontSize: 13,
+    whiteSpace: "normal",
+    "&.Mui-disabled": {
+      opacity: 1,
+      color: "#475569",
+    },
+  }}
+>
+  No approved lab connection found. Please connect with a lab first.
+</MenuItem>
+)}
                         </Select>
                       </FormControl>
                     </Box>
@@ -386,16 +535,56 @@ export default function LabTestRequestForm({ patientId, appointmentId, storageKe
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setDraftAssignments(assignments); setTestInput(""); setOpen(false); }} sx={{ textTransform: "none", minHeight: 32, px: 1.25, fontSize: "12px" }}>Cancel</Button>
-          <Button variant="contained" onClick={handleDone} disabled={loadingLabs} sx={{ textTransform: "none", minHeight: 32, px: 1.25, fontSize: "12px" }}>Done</Button>
+          <Button
+            onClick={() => {
+              setDraftAssignments(assignments);
+              setTestInput("");
+              setOpen(false);
+            }}
+            sx={{
+              textTransform: "none",
+              minHeight: 32,
+              px: 1.25,
+              fontSize: "12px",
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleDone}
+            disabled={loadingLabs}
+            sx={{
+              textTransform: "none",
+              minHeight: 32,
+              px: 1.25,
+              fontSize: "12px",
+            }}
+          >
+            Done
+          </Button>
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={Boolean(error)} autoHideDuration={5000} onClose={() => setError("")}>
-        <Alert severity="error" onClose={() => setError("")}>{error}</Alert>
-      </Snackbar>
-      <Snackbar open={Boolean(notice)} autoHideDuration={3500} onClose={() => setNotice("")}>
-        <Alert severity="success" onClose={() => setNotice("")}>{notice}</Alert>
+    <Snackbar
+  open={Boolean(error)}
+  autoHideDuration={5000}
+  onClose={() => setError("")}
+  anchorOrigin={{ vertical: "top", horizontal: "center" }}
+>
+  <Alert severity="error" onClose={() => setError("")}>
+    {error}
+  </Alert>
+</Snackbar>
+      <Snackbar
+        open={Boolean(notice)}
+        autoHideDuration={3500}
+        onClose={() => setNotice("")}
+         anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert severity="success" onClose={() => setNotice("")}>
+          {notice}
+        </Alert>
       </Snackbar>
     </>
   );
