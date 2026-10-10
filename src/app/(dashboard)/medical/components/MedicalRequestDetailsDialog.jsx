@@ -234,6 +234,19 @@ export default function MedicalRequestDetailsDialog({
       {
         totalAmount: calculatedAmount,
         invoiceItems: invoiceLines,
+        invoiceNumber,
+        doctorName:
+          request.doctor_name ||
+          request.doctorName ||
+          "Manual entry",
+        source:
+          request.source ||
+          request.channel ||
+          request.store_name ||
+          "Walk-in / App / Doctor",
+        paymentMode:
+          request.payment_mode ||
+          "Cash / UPI / Card",
         batchNumber:
           invoiceLines[0].batch_number,
         expiryDate:

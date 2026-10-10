@@ -18,6 +18,7 @@ import {
   QrCode2Outlined,
   ScienceOutlined,
   AssignmentOutlined,
+  Inventory2Outlined,
 } from "@mui/icons-material";
 
 export const menuItems = {
@@ -268,9 +269,19 @@ export const menuItems = {
       route: "/medical/pages/connections",
     },
     {
-      label: "Medical Requests",
+      label: "Medicine",
       icon: <AssignmentOutlined />,
       route: "/medical/pages/requests",
+    },
+    {
+      label: "Stock Management",
+      icon: <Inventory2Outlined />,
+      route: "/medical/pages/stock-management",
+    },
+    {
+      label: "Invoice",
+      icon: <DescriptionOutlined />,
+      route: "/medical/pages/invoice",
     },
     {
       label: "History",

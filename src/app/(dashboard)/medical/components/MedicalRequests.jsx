@@ -32,7 +32,7 @@ export default function MedicalRequests({ requests = [], loading = false, filter
 
   return (
     <>
-      <SectionTitle title="Medical Requests" description="Review medicine requests from connected doctors and patients." />
+      <SectionTitle title="Medicine" description="Review medicine requests from connected doctors and patients." />
       <TableFilters {...filters} statusOptions={REQUEST_STATUSES} />
       <DataTable
         columns={["SNO", "PATIENT", "DOCTOR", "DATE", "STATUS", "UPDATE", "VIEW"]}

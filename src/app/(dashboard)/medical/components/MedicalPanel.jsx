@@ -52,9 +52,7 @@ export default function MedicalPanel({ section = "dashboard" }) {
     let loggedInUser = {};
 
     try {
-      loggedInUser = JSON.parse(
-        localStorage.getItem("user") || "{}"
-      );
+      loggedInUser = JSON.parse(localStorage.getItem("user") || "{}");
     } catch {
       loggedInUser = {};
     }
@@ -70,46 +68,37 @@ export default function MedicalPanel({ section = "dashboard" }) {
   };
 
   const loadConnections = async () => {
-    const response = await api.get(
-      "/api/medical-stores/connections",
-      {
-        params: {
-          search: tableFilters.search || undefined,
-          status: tableFilters.status || undefined,
-          date: tableFilters.date || undefined,
-        },
-      }
-    );
+    const response = await api.get("/api/medical-stores/connections", {
+      params: {
+        search: tableFilters.search || undefined,
+        status: tableFilters.status || undefined,
+        date: tableFilters.date || undefined,
+      },
+    });
 
     setConnections(getRows(response));
   };
 
   const loadRequests = async () => {
-    const response = await api.get(
-      "/api/medical-requests/medical-store",
-      {
-        params: {
-          search: tableFilters.search || undefined,
-          status: tableFilters.status || undefined,
-          date: tableFilters.date || undefined,
-        },
-      }
-    );
+    const response = await api.get("/api/medical-requests/medical-store", {
+      params: {
+        search: tableFilters.search || undefined,
+        status: tableFilters.status || undefined,
+        date: tableFilters.date || undefined,
+      },
+    });
 
     setRequests(getRows(response));
   };
 
   const loadReports = async () => {
-    const response = await api.get(
-      "/api/medical-requests/medical-store",
-      {
-        params: {
-          search: tableFilters.search || undefined,
-          status: tableFilters.status || "COMPLETED",
-          date: tableFilters.date || undefined,
-        },
-      }
-    );
+    const response = await api.get("/api/medical-requests/medical-store", {
+      params: {
+        search: tableFilters.search || undefined,
+        status: tableFilters.status || "COMPLETED",
+        date: tableFilters.date || undefined,
+      },
+    });
 
     setReports(getRows(response));
   };
@@ -120,21 +109,11 @@ export default function MedicalPanel({ section = "dashboard" }) {
       setError("");
 
       if (section === "connections") {
-        await Promise.all([
-          loadProfile(),
-          loadConnections(),
-        ]);
+        await Promise.all([loadProfile(), loadConnections()]);
       } else if (section === "requests") {
-        await Promise.all([
-          loadProfile(),
-          loadRequests(),
-          loadReports(),
-        ]);
+        await Promise.all([loadProfile(), loadRequests(), loadReports()]);
       } else if (section === "reports") {
-        await Promise.all([
-          loadProfile(),
-          loadReports(),
-        ]);
+        await Promise.all([loadProfile(), loadReports()]);
       } else if (section === "profile") {
         await loadProfile();
       } else {
@@ -147,10 +126,7 @@ export default function MedicalPanel({ section = "dashboard" }) {
       }
     } catch (requestError) {
       setError(
-        getErrorMessage(
-          requestError,
-          "Unable to load medical dashboard data."
-        )
+        getErrorMessage(requestError, "Unable to load medical dashboard data.")
       );
     } finally {
       setLoading(false);
@@ -159,30 +135,18 @@ export default function MedicalPanel({ section = "dashboard" }) {
 
   useEffect(() => {
     loadSection();
-  }, [
-    section,
-    tableFilters.date,
-    tableFilters.search,
-    tableFilters.status,
-  ]);
+  }, [section, tableFilters.date, tableFilters.search, tableFilters.status]);
 
   useEffect(() => {
     setTablePage(1);
-  }, [
-    section,
-    tableFilters.date,
-    tableFilters.search,
-    tableFilters.status,
-  ]);
+  }, [section, tableFilters.date, tableFilters.search, tableFilters.status]);
 
   const stats = useMemo(
     () => ({
       connections: connections.length,
       requests: requests.length,
       pending: requests.filter(
-        (request) =>
-          String(request.status || "").toUpperCase() ===
-          "PENDING"
+        (request) => String(request.status || "").toUpperCase() === "PENDING"
       ).length,
       reports: reports.length,
     }),
@@ -197,75 +161,48 @@ export default function MedicalPanel({ section = "dashboard" }) {
   };
 
   const handleResetFilters = () => {
-    setTableFilters({
-      search: "",
-      status: "",
-      date: "",
-    });
-
+    setTableFilters({ search: "", status: "", date: "" });
     setTablePage(1);
   };
 
-  const updateConnection = async (
-    connectionId,
-    status
-  ) => {
+  const updateConnection = async (connectionId, status) => {
     try {
       setActionId(connectionId);
 
-      await api.patch(
-        `/api/medical-stores/connections/${connectionId}/status`,
-        { status }
-      );
+      await api.patch(`/api/medical-stores/connections/${connectionId}/status`, {
+        status,
+      });
 
       setConnections((items) =>
         items.map((item) =>
-          (item.connection_id || item.id) === connectionId
-            ? { ...item, status }
-            : item
+          (item.connection_id || item.id) === connectionId ? { ...item, status } : item
         )
       );
 
-      setNotice(
-        `Connection ${status.toLowerCase()}.`
-      );
+      setNotice(`Connection ${status.toLowerCase()}.`);
     } catch (requestError) {
-      setError(
-        getErrorMessage(
-          requestError,
-          "Unable to update connection."
-        )
-      );
+      setError(getErrorMessage(requestError, "Unable to update connection."));
     } finally {
       setActionId(null);
     }
   };
 
-  const updateRequest = async (
-    requestId,
-    status,
-    note = null,
-    details = {}
-  ) => {
+  const updateRequest = async (requestId, status, note = null, details = {}) => {
     try {
       setActionId(requestId);
 
-      const response = await api.patch(
-        `/api/medical-requests/${requestId}/status`,
-        {
-          status,
-          note,
-          totalAmount: details.totalAmount,
-          batchNumber: details.batchNumber,
-          expiryDate: details.expiryDate,
-          unitPrice: details.unitPrice,
-          gstRate: details.gstRate,
-          amount: details.amount,
-        }
-      );
+      const response = await api.patch(`/api/medical-requests/${requestId}/status`, {
+        status,
+        note,
+        totalAmount: details.totalAmount,
+        batchNumber: details.batchNumber,
+        expiryDate: details.expiryDate,
+        unitPrice: details.unitPrice,
+        gstRate: details.gstRate,
+        amount: details.amount,
+      });
 
-      const updatedRequest =
-        response?.data?.data || {};
+      const updatedRequest = response?.data?.data || {};
 
       setRequests((items) =>
         items.map((item) => {
@@ -278,66 +215,28 @@ export default function MedicalPanel({ section = "dashboard" }) {
             ...updatedRequest,
             status,
             note,
-
-            medicine_name:
-              item.medicine_name ??
-              updatedRequest.medicine_name,
-
-            quantity:
-              item.quantity ??
-              updatedRequest.quantity,
-
-            medicine_items:
-              item.medicine_items ??
-              updatedRequest.medicine_items,
-
+            medicine_name: item.medicine_name ?? updatedRequest.medicine_name,
+            quantity: item.quantity ?? updatedRequest.quantity,
+            medicine_items: item.medicine_items ?? updatedRequest.medicine_items,
             total_amount:
-              details.totalAmount ??
-              item.total_amount ??
-              updatedRequest.total_amount,
-
+              details.totalAmount ?? item.total_amount ?? updatedRequest.total_amount,
             batch_number:
-              details.batchNumber ||
-              item.batch_number ||
-              updatedRequest.batch_number,
-
+              details.batchNumber || item.batch_number || updatedRequest.batch_number,
             expiry_date:
-              details.expiryDate ||
-              item.expiry_date ||
-              updatedRequest.expiry_date,
-
+              details.expiryDate || item.expiry_date || updatedRequest.expiry_date,
             unit_price:
-              details.unitPrice ??
-              item.unit_price ??
-              updatedRequest.unit_price,
-
+              details.unitPrice ?? item.unit_price ?? updatedRequest.unit_price,
             gst_rate:
-              details.gstRate ??
-              item.gst_rate ??
-              updatedRequest.gst_rate,
-
-            amount:
-              details.amount ??
-              item.amount ??
-              updatedRequest.amount,
-
-            invoice_number:
-              updatedRequest.invoice_number ||
-              item.invoice_number,
+              details.gstRate ?? item.gst_rate ?? updatedRequest.gst_rate,
+            amount: details.amount ?? item.amount ?? updatedRequest.amount,
+            invoice_number: updatedRequest.invoice_number || item.invoice_number,
           };
         })
       );
 
-      setNotice(
-        "Medical request status updated."
-      );
+      setNotice("Medical request status updated.");
     } catch (requestError) {
-      setError(
-        getErrorMessage(
-          requestError,
-          "Unable to update medical request."
-        )
-      );
+      setError(getErrorMessage(requestError, "Unable to update medical request."));
     } finally {
       setActionId(null);
     }
@@ -397,9 +296,7 @@ export default function MedicalPanel({ section = "dashboard" }) {
         );
 
       case "profile":
-        return (
-          <MedicalProfile profile={profile} />
-        );
+        return <MedicalProfile profile={profile} />;
 
       default:
         return (
@@ -407,16 +304,13 @@ export default function MedicalPanel({ section = "dashboard" }) {
             profile={profile}
             stats={stats}
             variant="medical"
-            onNavigate={(path) =>
-              router.push(path)
-            }
+            onNavigate={(path) => router.push(path)}
           />
         );
     }
   };
 
-  const dashboardLoading =
-    loading && section === "dashboard";
+  const dashboardLoading = loading && section === "dashboard";
 
   return (
     <Box
@@ -424,10 +318,7 @@ export default function MedicalPanel({ section = "dashboard" }) {
         width: "100%",
         minWidth: 0,
         minHeight: "calc(100vh - 64px)",
-        mt: {
-          xs: 7,
-          md: 8,
-        },
+        mt: { xs: 7, md: 8 },
         bgcolor: "#F8FAF9",
       }}
     >
@@ -435,17 +326,8 @@ export default function MedicalPanel({ section = "dashboard" }) {
         sx={{
           width: "100%",
           minWidth: 0,
-          px: {
-            xs: 1.5,
-            sm: 2,
-            md: 2.5,
-            lg: 3,
-          },
-          py: {
-            xs: 1.5,
-            sm: 2,
-            md: 2.5,
-          },
+          px: { xs: 1.5, sm: 2, md: 2.5, lg: 3 },
+          py: { xs: 1.5, sm: 2, md: 2.5 },
         }}
       >
         {dashboardLoading ? (
@@ -470,24 +352,11 @@ export default function MedicalPanel({ section = "dashboard" }) {
                 borderRadius: "12px",
               }}
             >
-              <CircularProgress
-                size={25}
-                thickness={4}
-                sx={{
-                  color: "#07876A",
-                }}
-              />
+              <CircularProgress size={25} thickness={4} sx={{ color: "#07876A" }} />
             </Box>
           </Box>
         ) : (
-          <Box
-            sx={{
-              width: "100%",
-              minWidth: 0,
-            }}
-          >
-            {renderContent()}
-          </Box>
+          <Box sx={{ width: "100%", minWidth: 0 }}>{renderContent()}</Box>
         )}
       </Box>
 
@@ -495,26 +364,15 @@ export default function MedicalPanel({ section = "dashboard" }) {
         open={Boolean(error)}
         autoHideDuration={6000}
         onClose={() => setError("")}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-        sx={{
-          mt: {
-            xs: 7,
-            md: 8,
-          },
-        }}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        sx={{ mt: { xs: 7, md: 8 } }}
       >
         <Alert
           severity="error"
           onClose={() => setError("")}
           sx={{
             width: "100%",
-            minWidth: {
-              xs: "auto",
-              sm: 320,
-            },
+            minWidth: { xs: "auto", sm: 320 },
             bgcolor: "#FFFFFF",
             color: "#172033",
             border: "1px solid #FECACA",
@@ -522,10 +380,7 @@ export default function MedicalPanel({ section = "dashboard" }) {
             fontSize: "12.5px",
             fontWeight: 500,
             alignItems: "center",
-
-            "& .MuiAlert-icon": {
-              color: "#DC2626",
-            },
+            "& .MuiAlert-icon": { color: "#DC2626" },
           }}
         >
           {error}
@@ -536,26 +391,15 @@ export default function MedicalPanel({ section = "dashboard" }) {
         open={Boolean(notice)}
         autoHideDuration={3500}
         onClose={() => setNotice("")}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-        sx={{
-          mt: {
-            xs: 7,
-            md: 8,
-          },
-        }}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        sx={{ mt: { xs: 7, md: 8 } }}
       >
         <Alert
           severity="success"
           onClose={() => setNotice("")}
           sx={{
             width: "100%",
-            minWidth: {
-              xs: "auto",
-              sm: 320,
-            },
+            minWidth: { xs: "auto", sm: 320 },
             bgcolor: "#FFFFFF",
             color: "#172033",
             border: "1px solid #A7F3D0",
@@ -563,10 +407,7 @@ export default function MedicalPanel({ section = "dashboard" }) {
             fontSize: "12.5px",
             fontWeight: 500,
             alignItems: "center",
-
-            "& .MuiAlert-icon": {
-              color: "#07876A",
-            },
+            "& .MuiAlert-icon": { color: "#07876A" },
           }}
         >
           {notice}
@@ -575,3 +416,4 @@ export default function MedicalPanel({ section = "dashboard" }) {
     </Box>
   );
 }
+

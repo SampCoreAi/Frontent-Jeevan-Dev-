@@ -43,6 +43,8 @@ export default function LabDashboard({ profile, stats, onNavigate, variant = "la
         items: isMedical ? [
           { label: "Review medical requests", route: "/medical/pages/requests", variant: "contained" },
           { label: "Manage doctor connections", route: "/medical/pages/connections", variant: "outlined" },
+          { label: "Stock management", route: "/medical/pages/stock-management", variant: "outlined" },
+          { label: "Invoices", route: "/medical/pages/invoice", variant: "outlined" },
           { label: "Open history", route: "/medical/pages/reports", variant: "outlined" },
         ] : [
           { label: "Review test requests", route: "/lab/pages/requests", variant: "contained" },

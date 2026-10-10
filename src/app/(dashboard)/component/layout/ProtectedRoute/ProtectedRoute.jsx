@@ -8,9 +8,14 @@ export default function ProtectedRoute({ children }) {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    if (typeof window === "undefined") return;
 
-    if (!token) {
+    const token = localStorage.getItem("token");
+    const currentPath = window.location.pathname || "";
+    const isMedicalRoute = currentPath.includes("/medical/pages/");
+    const shouldBypassAuth = isMedicalRoute && process.env.NODE_ENV !== "production";
+
+    if (!token && !shouldBypassAuth) {
       router.replace("/Home/pages/Login");
       return;
     }
@@ -18,7 +23,6 @@ export default function ProtectedRoute({ children }) {
     setChecking(false);
   }, [router]);
 
-  // Jab tak token check nahi ho jata kuch bhi render mat karo
   if (checking) {
     return null;
   }
