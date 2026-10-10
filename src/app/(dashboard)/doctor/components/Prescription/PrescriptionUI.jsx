@@ -771,12 +771,12 @@ export default function PrescriptionUI(props) {
             </Box>
           </Button>
 
-          {!isPatient && editable && isTodayAppointment && (
+          {(
             <Button
               variant="contained"
               disableElevation
               onClick={handleSavePrescription}
-              disabled={isSavingPrescription}
+             disabled={!editable || !isTodayAppointment || isSavingPrescription}
               startIcon={
                 isSavingPrescription ? (
                   <CircularProgress size={16} color="inherit" />

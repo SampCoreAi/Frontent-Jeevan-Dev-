@@ -177,7 +177,7 @@ export default function AppointmentTable({
       },
     ];
 
-    if (roleId === 2) {
+
       data.push({
         field: "action",
         headerName: "Action",
@@ -221,7 +221,7 @@ export default function AppointmentTable({
           );
         },
       });
-    }
+    
 
     data.push({
       field: "details",
