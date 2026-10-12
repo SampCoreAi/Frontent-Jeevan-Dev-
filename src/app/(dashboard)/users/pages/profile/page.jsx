@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -27,7 +26,7 @@ export default function PatientProfilePage() {
 
   const [formData, setFormData] = useState({
     name: "",
-   dob: "",
+    dob: "",
     username: "",
     gender: "",
     email: "",
@@ -60,9 +59,7 @@ export default function PatientProfilePage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const storedUser = JSON.parse(
-        localStorage.getItem("user") || "{}"
-      );
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
 
       setFormData((prev) => ({
         ...prev,
@@ -130,18 +127,16 @@ export default function PatientProfilePage() {
       payload.username = formData.username.trim();
     }
 
-if (dirtyFields.dob) {
-  payload.dob = formData.dob || null;
-}
-
+    if (dirtyFields.dob) {
+      payload.dob = formData.dob || null;
+    }
 if (dirtyFields.familyMedicalHistory) {
-  const history = formData.familyMedicalHistory || [];
-
-
- payload.family_medical_history = {
-  Medical_Condition: history[0]?.medical_condition || "",
-  Family_Member: history[0]?.family_member || "",
-};
+  payload.family_medical_history = (
+    formData.familyMedicalHistory || []
+  ).map((item) => ({
+    family_member: item.family_member.trim().toUpperCase(),
+    medical_condition: item.medical_condition.trim(),
+  }));
 }
     if (dirtyFields.gender) {
       payload.gender = formData.gender
@@ -166,15 +161,11 @@ if (dirtyFields.familyMedicalHistory) {
     }
 
     if (dirtyFields.existingConditions) {
-      payload.existing_conditions = stringToArray(
-        formData.existingConditions
-      );
+      payload.existing_conditions = stringToArray(formData.existingConditions);
     }
 
     if (dirtyFields.allergies) {
-      payload.allergies = stringToArray(
-        formData.allergies
-      );
+      payload.allergies = stringToArray(formData.allergies);
     }
 
     if (dirtyFields.bio) {
@@ -189,14 +180,10 @@ if (dirtyFields.familyMedicalHistory) {
 
     if (addressChanged) {
       payload.address = {
-        street:
-          formData.address?.street?.trim() || "",
-        city:
-          formData.address?.city?.trim() || "",
-        state:
-          formData.address?.state?.trim() || "",
-        pincode:
-          formData.address?.pincode?.trim() || "",
+        street: formData.address?.street?.trim() || "",
+        city: formData.address?.city?.trim() || "",
+        state: formData.address?.state?.trim() || "",
+        pincode: formData.address?.pincode?.trim() || "",
       };
     }
 
@@ -208,14 +195,10 @@ if (dirtyFields.familyMedicalHistory) {
 
     if (emergencyChanged) {
       payload.emergency_contact = {
-        name:
-          formData.emergencyContact?.name?.trim() || "",
-        relation:
-          formData.emergencyContact?.relationship?.trim() || "",
-        email:
-          formData.emergencyContact?.email?.trim() || "",
-        phone_number:
-          formData.emergencyContact?.phone?.trim() || "",
+        name: formData.emergencyContact?.name?.trim() || "",
+        relation: formData.emergencyContact?.relationship?.trim() || "",
+        email: formData.emergencyContact?.email?.trim() || "",
+        phone_number: formData.emergencyContact?.phone?.trim() || "",
       };
     }
 
@@ -226,10 +209,7 @@ if (dirtyFields.familyMedicalHistory) {
     try {
       const payload = preparePayload();
 
-      console.log(
-        "PROFILE UPDATE PAYLOAD:",
-        payload
-      );
+      console.log("PROFILE UPDATE PAYLOAD:", payload);
 
       if (Object.keys(payload).length === 0) {
         setEditable(false);
@@ -239,9 +219,7 @@ if (dirtyFields.familyMedicalHistory) {
       const token = localStorage.getItem("token");
 
       if (!token) {
-        throw new Error(
-          "Authentication token not found."
-        );
+        throw new Error("Authentication token not found.");
       }
 
       setSaving(true);
@@ -255,16 +233,13 @@ if (dirtyFields.familyMedicalHistory) {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(
-          data?.message ||
-            "Failed to update profile."
-        );
+        throw new Error(data?.message || "Failed to update profile.");
       }
 
       setDirtyFields({});
@@ -275,10 +250,7 @@ if (dirtyFields.familyMedicalHistory) {
     } catch (err) {
       console.error("Save Error:", err);
 
-      setErrorToast(
-        err?.message ||
-          "Failed to update profile."
-      );
+      setErrorToast(err?.message || "Failed to update profile.");
     } finally {
       setSaving(false);
     }
@@ -300,20 +272,18 @@ if (dirtyFields.familyMedicalHistory) {
       setFormData({
         name: userProfile.full_name || "",
         username: userProfile.username || "",
-     dob: userProfile?.dob?.slice(0, 10) || "",
-familyMedicalHistory: (
-  Array.isArray(userProfile.family_medical_history)
-    ? userProfile.family_medical_history
-    : userProfile.family_medical_history
-      ? [userProfile.family_medical_history]
-      : []
-).map((item) => ({
-  medical_condition: item.Medical_Condition ?? item.medical_condition ?? "",
-  family_member: item.Family_Member ?? item.family_member ?? "",
-})),
-        gender: userProfile.gender
-          ? userProfile.gender.toUpperCase()
-          : "",
+        dob: userProfile?.dob?.slice(0, 10) || "",
+        familyMedicalHistory: (Array.isArray(userProfile.family_medical_history)
+          ? userProfile.family_medical_history
+          : userProfile.family_medical_history
+            ? [userProfile.family_medical_history]
+            : []
+        ).map((item) => ({
+          medical_condition:
+            item.Medical_Condition ?? item.medical_condition ?? "",
+          family_member: item.Family_Member ?? item.family_member ?? "",
+        })),
+        gender: userProfile.gender ? userProfile.gender.toUpperCase() : "",
 
         email: userProfile.email || "",
         phone: userProfile.phone_number || "",
@@ -323,27 +293,21 @@ familyMedicalHistory: (
         height: userProfile.height ?? "",
 
         address: {
-          street:
-            userProfile.address?.street || "",
-          city:
-            userProfile.address?.city || "",
-          state:
-            userProfile.address?.state || "",
-          pincode:
-            userProfile.address?.pincode || "",
+          street: userProfile.address?.street || "",
+          city: userProfile.address?.city || "",
+          state: userProfile.address?.state || "",
+          pincode: userProfile.address?.pincode || "",
         },
 
         emergencyContact: {
-          name:
-            userProfile.emergency_contact?.name || "",
+          name: userProfile.emergency_contact?.name || "",
 
           relationship:
             userProfile.emergency_contact?.relation ||
             userProfile.emergency_contact?.relationship ||
             "",
 
-          email:
-            userProfile.emergency_contact?.email || "",
+          email: userProfile.emergency_contact?.email || "",
 
           phone:
             userProfile.emergency_contact?.phone_number ||
@@ -351,21 +315,15 @@ familyMedicalHistory: (
             "",
         },
 
-        existingConditions: Array.isArray(
-          userProfile.existing_conditions
-        )
+        existingConditions: Array.isArray(userProfile.existing_conditions)
           ? userProfile.existing_conditions.join(", ")
           : "",
 
-        allergies: Array.isArray(
-          userProfile.allergies
-        )
+        allergies: Array.isArray(userProfile.allergies)
           ? userProfile.allergies.join(", ")
           : "",
 
-        language: Array.isArray(
-          userProfile.language
-        )
+        language: Array.isArray(userProfile.language)
           ? userProfile.language.join(", ")
           : "",
       });
@@ -393,10 +351,7 @@ familyMedicalHistory: (
         handleChange={handleChange}
       />
 
-      <Divider
-        orientation="vertical"
-        flexItem
-      />
+      <Divider orientation="vertical" flexItem />
 
       <Box
         sx={{
@@ -441,10 +396,7 @@ familyMedicalHistory: (
                 gap: 1,
               }}
             >
-              <CircularProgress
-                size={15}
-                sx={{ color: "white" }}
-              />
+              <CircularProgress size={15} sx={{ color: "white" }} />
               Saving...
             </Box>
           ) : editable ? (
@@ -459,10 +411,7 @@ familyMedicalHistory: (
           autoHideDuration={2000}
           onClose={() => setOpenToast(false)}
         >
-          <Alert
-            severity="success"
-            onClose={() => setOpenToast(false)}
-          >
+          <Alert severity="success" onClose={() => setOpenToast(false)}>
             Profile Saved Successfully!
           </Alert>
         </Snackbar>
@@ -472,10 +421,7 @@ familyMedicalHistory: (
           autoHideDuration={3500}
           onClose={() => setErrorToast("")}
         >
-          <Alert
-            severity="error"
-            onClose={() => setErrorToast("")}
-          >
+          <Alert severity="error" onClose={() => setErrorToast("")}>
             {errorToast}
           </Alert>
         </Snackbar>

@@ -915,6 +915,7 @@ const handlePageChange = (newPage) => {
         <FiltersSidebar
           selectedFilters={selectedFilters}
           setSelectedFilters={setSelectedFilters}
+          open={filterOpen}
           onClose={() => setFilterOpen(false)}
           onApply={() => {
             setFilterOpen(false);

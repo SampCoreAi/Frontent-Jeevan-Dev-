@@ -86,7 +86,16 @@ export default function PatientHistoryPage() {
   token: item.token_number || "-",
   code: item.code || "-",
 
-  hospital_name: item.hospital_name || "N/A",
+  hospital_name: item.hospitalDetail?.hospital_name || "N/A",
+
+address:
+  [
+    item.hospitalDetail?.hospital_name,
+    item.hospitalDetail?.areaLocality,
+    item.hospitalDetail?.landmark,
+  ]
+    .filter(Boolean)
+    .join(", ") || "Address not provided",
 }));
 
         setConsultationHistory(formatted);

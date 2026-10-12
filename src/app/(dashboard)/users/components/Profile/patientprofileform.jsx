@@ -20,10 +20,8 @@ import {
   CloseRounded,
 } from "@mui/icons-material";
 import UserAddress from "../Profile/UserAddress";
-const normalizeFamilyHistory = (value) => {
-  const records = Array.isArray(value) ? value : value ? [value] : [];
-
-  return records
+const normalizeFamilyHistory = (value) =>
+  (Array.isArray(value) ? value : value ? [value] : [])
     .filter((item) => item && typeof item === "object")
     .map((item) => ({
       medical_condition: String(
@@ -31,10 +29,12 @@ const normalizeFamilyHistory = (value) => {
       ).trim(),
       family_member: String(
         item.family_member ?? item.Family_Member ?? ""
-      ).trim(),
+      )
+        .trim()
+        .toLowerCase()
+        .replace(/\b\w/g, (letter) => letter.toUpperCase()),
     }))
     .filter((item) => item.medical_condition || item.family_member);
-};
 const ALLERGIES = [
   "Dust", "Eggs", "Wheat", "Soy", "Shellfish", "Milk", "Peanuts",
   "Fish", "Insect Sting", "Penicillin", "Pollen", "Latex",

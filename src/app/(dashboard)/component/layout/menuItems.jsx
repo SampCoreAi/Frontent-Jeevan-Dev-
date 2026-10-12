@@ -39,7 +39,7 @@ export const menuItems = {
       route: "/users/pages/document",
     },
     {
-      label: "History",
+      label: "Appointments",
       icon: <HistoryOutlined />,
       route: "/users/pages/history",
     },

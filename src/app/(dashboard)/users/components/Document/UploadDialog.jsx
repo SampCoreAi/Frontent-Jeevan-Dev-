@@ -1,29 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Button,
-  Box,
-  Typography,
-  CircularProgress,
-  LinearProgress,
   Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogContent,
   IconButton,
+  LinearProgress,
+  Typography,
 } from "@mui/material";
-
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import CloseIcon from "@mui/icons-material/Close";
-import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
-import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
-import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import SlideshowOutlinedIcon from "@mui/icons-material/SlideshowOutlined";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 
-const THEME_COLOR = "#0f4f3f";
-const THEME_COLOR_DARK = "#0c3f33";
+const MAX_SIZE = 5 * 1024 * 1024;
+const ACCEPT = ".pdf,.doc,.docx,.jpg,.jpeg,.png,.ppt,.pptx";
+const primary = "#07876A";
 
 export const UploadDialog = ({
   openUpload,
@@ -37,353 +32,253 @@ export const UploadDialog = ({
   uploadProgress,
   uploadSuccess,
   currentFolderName,
-  isMobile,
 }) => {
-  const handleClose = () => {
-    // Upload ke time dialog close nahi hone denge
-    if (uploading) return;
+  const [error, setError] = useState("");
+  const progress = Math.min(100, Math.max(0, Number(uploadProgress) || 0));
 
+  const close = () => {
+    if (uploading) return;
+    setError("");
     setOpenUpload(false);
   };
-  
+
+  const validate = (files) => {
+    const oversized = Array.from(files || []).find(
+      (file) => file.size > MAX_SIZE,
+    );
+
+    setError(
+      oversized ? `${oversized.name} exceeds the 5 MB file limit.` : "",
+    );
+    return !oversized;
+  };
 
   return (
     <Dialog
       open={openUpload}
-      onClose={handleClose}
-      maxWidth="sm"
+      onClose={close}
       fullWidth
-      fullScreen={isMobile}
+      maxWidth="xs"
       PaperProps={{
         sx: {
-          borderRadius: isMobile ? 0 : 3,
+          m: 2,
+          width: "100%",
+          borderRadius: 3,
+          border: "1px solid",
+          borderColor: "divider",
+          boxShadow: "0 20px 60px rgba(23,32,51,0.12)",
         },
       }}
     >
-      {/* ================= TITLE ================= */}
-
-      <DialogTitle
+      <Box
         sx={{
-          fontWeight: 600,
-          fontSize: isMobile ? "1.1rem" : "1.25rem",
-          p: isMobile ? 2 : 3,
-          color: THEME_COLOR,
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
+          gap: 1.5,
+          p: 2.5,
+          pb: 2,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {uploadSuccess ? (
-            <CheckCircleOutlineIcon sx={{ color: THEME_COLOR }} />
-          ) : (
-            <CloudUploadOutlinedIcon sx={{ color: THEME_COLOR }} />
-          )}
-          {uploading
-            ? "Uploading File"
-            : uploadSuccess
-            ? "Upload Complete"
-            : "Upload Files"}
+       <Box
+  sx={{
+    width: 44,
+    height: 44,
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 2,
+    bgcolor: "#EDF7F2",
+  }}
+>
+  <CloudUploadOutlinedIcon
+    sx={{
+      fontSize: 26,
+      color: "#07876A",
+      visibility: "visible",
+      opacity: 1,
+    }}
+  />
+</Box>
+        <Box sx={{ flex: 1 }}>
+          <Typography sx={{ fontSize: 16, fontWeight: 600 }}>
+            {uploading
+              ? "Uploading files"
+              : uploadSuccess
+                ? "Upload complete"
+                : "Upload documents"}
+          </Typography>
+          <Typography sx={{ fontSize: 12, color: "text.secondary", mt: 0.3 }}>
+            Keep your health documents in one place.
+          </Typography>
         </Box>
 
-        {!uploading && (
-          <IconButton
-            onClick={handleClose}
-            size="small"
-            sx={{ color: THEME_COLOR }}
+        <IconButton
+          size="small"
+          aria-label="Close upload dialog"
+          disabled={uploading}
+          onClick={close}
+        >
+          <CloseRoundedIcon sx={{ fontSize: 20 }} />
+        </IconButton>
+      </Box>
+
+      <DialogContent sx={{ px: 2.5, pt: 0, pb: 2.5 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0.8,
+            px: 1.2,
+            py: 1,
+            mb: 2,
+            borderRadius: 1.5,
+            bgcolor: "#F8FAF9",
+            border: "1px solid",
+            borderColor: "divider",
+          }}
+        >
+          <FolderOutlinedIcon sx={{ fontSize: 18, color: primary }} />
+          <Typography
+            noWrap
+            title={currentFolderName || "Document"}
+            sx={{ fontSize: 12.5, minWidth: 0 }}
           >
-            <CloseIcon fontSize="small" />
-          </IconButton>
-        )}
-      </DialogTitle>
-
-      {/* ================= CONTENT ================= */}
-
-      <DialogContent
-        sx={{
-          p: isMobile ? 2 : 3,
-        }}
-      >
-        {/* ================= UPLOADING ================= */}
+            {currentFolderName || "Document"}
+          </Typography>
+        </Box>
 
         {uploading ? (
-  <Box
-    sx={{
-      border: `2px dashed ${THEME_COLOR}`,
-      borderRadius: 2,
-      height: isMobile ? "220px" : "250px",
-      bgcolor: "#fafafa",
+          <Box sx={{ py: 3, textAlign: "center" }}>
+            <CloudUploadOutlinedIcon sx={{ fontSize: 42, color: primary }} />
 
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      alignItems: "center",
+            <Typography sx={{ mt: 1, fontSize: 14, fontWeight: 600 }}>
+              {progress === 100 ? "Finishing upload…" : "Uploading your files…"}
+            </Typography>
 
-      textAlign: "center",
-      px: 3,
-    }}
-  >
-    <CloudUploadOutlinedIcon
-      sx={{
-        fontSize: isMobile ? 40 : 50,
-        color: THEME_COLOR,
-        mb: 1.5,
-      }}
-    />
+            <Typography sx={{ my: 1.5, fontSize: 28, fontWeight: 600 }}>
+              {progress}%
+            </Typography>
 
-    <Typography
-      fontWeight={600}
-      fontSize={isMobile ? 15 : 18}
-      color={THEME_COLOR}
-    >
-      Uploading File...
-    </Typography>
-
-    {/* PERCENTAGE */}
-
-    <Typography
-      sx={{
-        mt: 1.5,
-        fontSize: isMobile ? 24 : 30,
-        fontWeight: 700,
-        color: THEME_COLOR,
-      }}
-    >
-      {uploadProgress}%
-    </Typography>
-
-    {/* PROGRESS BAR */}
-
-    <Box
-      sx={{
-        width: "100%",
-        maxWidth: 350,
-        mt: 1.5,
-      }}
-    >
-      <LinearProgress
-        variant="determinate"
-        value={uploadProgress}
-        sx={{
-          height: 8,
-          borderRadius: 10,
-          bgcolor: "#dce8e4",
-
-          "& .MuiLinearProgress-bar": {
-            borderRadius: 10,
-            bgcolor: THEME_COLOR,
-          },
-        }}
-      />
-    </Box>
-
-    <Typography
-      sx={{
-        mt: 1.5,
-        fontSize: isMobile ? 11 : 13,
-        color: "text.secondary",
-      }}
-    >
-      Please wait while your file is being uploaded.
-    </Typography>
-  </Box>
-) : uploadSuccess ? (
-  <Box
-    sx={{
-      minHeight: isMobile ? "220px" : "250px",
-
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      alignItems: "center",
-
-      textAlign: "center",
-    }}
-  >
-    <CheckCircleOutlineIcon
-      sx={{
-        fontSize: isMobile ? 55 : 65,
-        color: "#2e7d32",
-      }}
-    />
-
-    <Typography
-      sx={{
-        mt: 1.5,
-        fontSize: isMobile ? 18 : 21,
-        fontWeight: 700,
-        color: THEME_COLOR,
-      }}
-    >
-      Upload Complete
-    </Typography>
-
-    <Typography
-      sx={{
-        mt: 0.5,
-        fontSize: isMobile ? 12 : 14,
-        color: "text.secondary",
-      }}
-    >
-      {uploadSuccess}
-    </Typography>
-
-    <Button
-      variant="contained"
-      onClick={handleClose}
-      sx={{
-        mt: 3,
-        minWidth: 120,
-
-        bgcolor: THEME_COLOR,
-        textTransform: "none",
-        fontWeight: 600,
-
-        "&:hover": {
-          bgcolor: THEME_COLOR_DARK,
-        },
-      }}
-    >
-      Close
-    </Button>
-  </Box>
-        ) : (
-          /* ================= NORMAL UPLOAD UI ================= */
-
-          <>
-            <Box
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
+            <LinearProgress
+              variant="determinate"
+              value={progress}
               sx={{
-                border: `2px dashed ${THEME_COLOR}`,
-                borderRadius: 2,
+                height: 6,
+                borderRadius: 3,
+                bgcolor: "#E7EFEB",
+                "& .MuiLinearProgress-bar": {
+                  bgcolor: primary,
+                  borderRadius: 3,
+                },
+              }}
+            />
 
-                p: isMobile ? 2 : 4,
+            <Typography sx={{ mt: 1.5, fontSize: 12, color: "text.secondary" }}>
+              Please keep this window open.
+            </Typography>
+          </Box>
+        ) : uploadSuccess ? (
+          <Box sx={{ py: 2, textAlign: "center" }}>
+            <CheckCircleRoundedIcon sx={{ fontSize: 54, color: primary }} />
 
-                textAlign: "center",
+            <Typography sx={{ mt: 1, fontSize: 16, fontWeight: 600 }}>
+              Files saved successfully
+            </Typography>
 
-                bgcolor: isDragging ? "#e6f2ef" : "#fafafa",
+            <Typography sx={{ mt: 0.7, fontSize: 13, color: "text.secondary" }}>
+              {uploadSuccess}
+            </Typography>
 
-                transition: "0.2s",
-
-                height: isMobile ? "200px" : "250px",
-
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={close}
+              sx={{
+                mt: 2.5,
+                bgcolor: primary,
+                textTransform: "none",
+                boxShadow: "none",
+                borderRadius: 1.5,
+                "&:hover": { bgcolor: "#066D56", boxShadow: "none" },
               }}
             >
-              {/* Cloud Icon */}
-
+              Done
+            </Button>
+          </Box>
+        ) : (
+          <>
+            <Box
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => {
+                e.preventDefault();
+                handleDragLeave();
+                if (validate(e.dataTransfer.files)) handleDrop(e);
+              }}
+              sx={{
+                py: 3,
+                px: 2,
+                textAlign: "center",
+                border: "1.5px dashed",
+                borderColor: isDragging ? primary : "#CBDAD3",
+                borderRadius: 2,
+                bgcolor: isDragging ? "#EDF7F2" : "#FCFDFC",
+                transition: "background-color 0.2s, border-color 0.2s",
+              }}
+            >
               <CloudUploadOutlinedIcon
-                sx={{
-                  fontSize: isMobile ? 40 : 56,
-                  color: THEME_COLOR,
-                  mb: 1,
-                }}
+                sx={{ fontSize: 38, color: primary, mb: 1 }}
               />
 
-              {/* Heading */}
-
-              <Typography
-                fontWeight={600}
-                fontSize={isMobile ? 14 : 18}
-                color={THEME_COLOR}
-                sx={{
-                  mb: 0.5,
-                }}
-              >
-                Drag & Drop or Click to Upload
+              <Typography sx={{ fontSize: 14, fontWeight: 600 }}>
+                Drop your files here
               </Typography>
 
-              {/* Details */}
-
-              <Typography
-                fontSize={isMobile ? 11 : 13}
-                color="black"
-                sx={{
-                  mb: 1.5,
-                }}
-                textAlign="center"
-              >
-                Files will be uploaded to:{" "}
-                <strong>{currentFolderName || "Document"}</strong>
-                <br />
-                Max size: 20MB
+              <Typography sx={{ mt: 0.5, fontSize: 12, color: "text.secondary" }}>
+                PDF, Word, images and PowerPoint
               </Typography>
-
-              {/* Supported format icons */}
-
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: 1.5,
-                  mb: 2,
-                  color: THEME_COLOR,
-                  opacity: 0.75,
-                }}
-              >
-                <PictureAsPdfOutlinedIcon fontSize={isMobile ? "small" : "medium"} />
-                <DescriptionOutlinedIcon fontSize={isMobile ? "small" : "medium"} />
-                <ImageOutlinedIcon fontSize={isMobile ? "small" : "medium"} />
-                <SlideshowOutlinedIcon fontSize={isMobile ? "small" : "medium"} />
-              </Box>
-
-              {/* Browse Button */}
 
               <Button
                 component="label"
                 variant="contained"
-                size={isMobile ? "small" : "medium"}
-                startIcon={<InsertDriveFileOutlinedIcon />}
                 sx={{
-                  bgcolor: THEME_COLOR,
-
-                  "&:hover": {
-                    bgcolor: THEME_COLOR_DARK,
-                  },
-
-                  fontSize: isMobile ? "0.75rem" : "0.875rem",
-
-                  textTransform: "none",
+                  mt: 2,
                   px: 3,
-                }}
-              >
-                Browse Files
-
-              <input
-  hidden
-  multiple
-  type="file"
-  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.ppt,.pptx"
-  onChange={uploadFiles}
-/>
-              </Button>
-            </Box>
-
-            {/* Close Button */}
-
-            <Box
-              sx={{
-                textAlign: "right",
-                mt: 2,
-              }}
-            >
-              <Button
-                onClick={handleClose}
-                size={isMobile ? "small" : "medium"}
-                sx={{
-                  fontSize: isMobile ? "0.75rem" : "0.875rem",
-
-                  color: THEME_COLOR,
+                  bgcolor: primary,
+                  borderRadius: 1.5,
                   textTransform: "none",
+                  fontSize: 13,
+                  boxShadow: "none",
+                  "&:hover": { bgcolor: "#066D56", boxShadow: "none" },
                 }}
               >
-                Close
+                Choose files
+                <input
+                  hidden
+                  multiple
+                  type="file"
+                  accept={ACCEPT}
+                  onChange={(e) => {
+                    if (validate(e.target.files)) {
+                      uploadFiles(e);
+                    } else {
+                      e.target.value = "";
+                    }
+                  }}
+                />
               </Button>
+
+              <Typography sx={{ mt: 1.5, fontSize: 11.5, color: "text.secondary" }}>
+                Maximum 5 MB per file
+              </Typography>
             </Box>
+
+            {error && (
+              <Alert severity="error" sx={{ mt: 1.5, fontSize: 12 }}>
+                {error}
+              </Alert>
+            )}
           </>
         )}
       </DialogContent>
