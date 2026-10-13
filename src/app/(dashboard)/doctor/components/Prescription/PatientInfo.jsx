@@ -264,15 +264,13 @@ export function PatientInfo({ patient, dateNow, isDownloading }) {
   );
 }
 
-/* =========================================================
-   DIAGNOSIS
-========================================================= */
-
 export function DiagnosisSection({
   diagnosis,
   editable,
   setDiagnosis,
   isDownloading,
+  registerVoiceTarget,
+  onEnterNext,
 }) {
   const currentLength = (diagnosis || "").length;
 
