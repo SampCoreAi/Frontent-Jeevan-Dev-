@@ -307,37 +307,43 @@ export default function Navbar() {
             />
 
             <Box>
-              <Typography
-                sx={{
-                  fontSize: {
-                    xs: "16px",
-                    sm: "18px",
-                  },
-                  lineHeight: 1.1,
-                  fontWeight: 800,
-                  color: "primary.main",
-                  letterSpacing: "-0.3px",
-                }}
-              >
-                Jeevan Dev
-              </Typography>
+             <Box>
+  <Typography
+    sx={{
+      fontSize: {
+        xs: "16px",
+        sm: "18px",
+      },
+      lineHeight: 1.1,
+      fontWeight: 800,
+      letterSpacing: "-0.3px",
+    }}
+  >
+    <Box component="span" sx={{ color: "#006AA0" }}>
+      Jeevan
+    </Box>{" "}
+    <Box component="span" sx={{ color: "primary.main" }}>
+      Dev
+    </Box>
+  </Typography>
 
-              <Typography
-                sx={{
-                  display: {
-                    xs: "none",
-                    sm: "block",
-                  },
-                  mt: 0.2,
-                  fontSize: "9.5px",
-                  lineHeight: 1,
-                  fontWeight: 500,
-                  color: "text.secondary",
-                  letterSpacing: "0.5px",
-                }}
-              >
-                HEALTHCARE PLATFORM
-              </Typography>
+  <Typography
+    sx={{
+      display: {
+        xs: "none",
+        sm: "block",
+      },
+      mt: 0.2,
+      fontSize: "9.5px",
+      lineHeight: 1,
+      fontWeight: 500,
+      color: "text.secondary",
+      letterSpacing: "0.5px",
+    }}
+  >
+    HEALTHCARE PLATFORM
+  </Typography>
+</Box>
             </Box>
           </Box>
 

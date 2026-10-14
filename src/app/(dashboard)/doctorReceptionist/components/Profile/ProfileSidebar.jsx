@@ -2,102 +2,121 @@
 
 import React from "react";
 import {
-  Box,
   Avatar,
-  Typography,
-  Rating,
-  Chip,
-  TextField,
+  Box,
   Button,
+  TextField,
+  Typography,
 } from "@mui/material";
 
-const ProfileSidebar = ({
+const infoBoxBg = "#f5f7f6";
+
+function SidebarRow({ label, children }) {
+  return (
+    <Box
+      sx={{
+        width: "100%",
+        minHeight: 44,
+        p: 1.25,
+        mb: 1.25,
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
+        bgcolor: infoBoxBg,
+        borderRadius: 1.5,
+      }}
+    >
+      <Typography
+        sx={{
+          minWidth: 90,
+          fontSize: 13,
+          fontWeight: 600,
+          color: "#153933",
+        }}
+      >
+        {label}
+      </Typography>
+      {children}
+    </Box>
+  );
+}
+
+export default function ProfileSidebar({
   profileImage,
   profileData,
   isEditing,
-  editingChip,
   onImageUpload,
   onImageRemove,
-  onChipEdit,
-  onChipSave,
   onFieldChange,
-}) => {
-  const infoBoxBg = "#f5f5f5";
+}) {
   return (
     <Box
       sx={{
         width: { xs: "100%", lg: 320 },
+        p: { xs: 2, sm: 3 },
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        padding: { xs: 2, sm: 3, md: 4 },
-        borderRight: { xs: "none", lg: "1px solid #e0e0e0" },
-        borderBottom: { xs: "1px solid #e0e0e0", lg: "none" },
-        backgroundColor: "#fbfdfc",
-        position: "relative",
+        bgcolor: "#fbfdfc",
+        borderRight: { xs: "none", lg: "1px solid #e0e7e4" },
+        borderBottom: { xs: "1px solid #e0e7e4", lg: "none" },
+        fontSize: 13,
       }}
     >
-      {/* Profile Image */}
-      <Box sx={{ position: "relative", mb: { xs: 2, md: 3 } }}>
+      <Box sx={{ position: "relative", mb: 2 }}>
         <Avatar
           src={profileImage}
-          alt="Doctor"
-          variant="square"
+          alt="Profile"
+          variant="rounded"
           sx={{
-            width: { xs: 150, sm: 180, md: 200 },
-            height: { xs: 170, sm: 200, md: 230 },
-            borderRadius: 2,
-            border: "4px solid #14b8a6",
+            width: { xs: 140, sm: 160 },
+            height: { xs: 150, sm: 170 },
+            border: "2px solid #14b8a6",
+            bgcolor: "#eef8f5",
           }}
         />
 
-        {/* Image Upload/Remove Buttons */}
         {isEditing && (
-          <Box sx={{
-            position: "absolute",
-            bottom: 8,
-            right: 8,
-            display: "flex",
-            gap: 1
-          }}>
-            <input
-              type="file"
-              id="upload-image"
-              style={{ display: "none" }}
-              accept="image/*"
-              onChange={onImageUpload}
-            />
+          <Box
+            sx={{
+              position: "absolute",
+              right: 6,
+              bottom: 6,
+              display: "flex",
+              gap: 0.75,
+            }}
+          >
             <Button
-              variant="contained"
-              component="span"
-              onClick={() => document.getElementById("upload-image").click()}
+              component="label"
               size="small"
+              variant="contained"
               sx={{
-                backgroundColor: "#14b8a6",
-                "&:hover": { backgroundColor: "#0f7468" },
-                color: "white",
+                minWidth: 0,
+                px: 1,
+                fontSize: 13,
                 textTransform: "none",
-                fontWeight: 600,
-                fontSize: "0.7rem",
-                minWidth: "auto",
-                padding: "4px 8px",
+                bgcolor: "#07876a",
               }}
             >
               Upload
+              <input
+                hidden
+                type="file"
+                accept="image/*"
+                onChange={onImageUpload}
+              />
             </Button>
+
             <Button
-              variant="contained"
               size="small"
+              variant="contained"
               onClick={onImageRemove}
               sx={{
-                backgroundColor: "#ff4444",
-                "&:hover": { backgroundColor: "#cc0000" },
-                color: "white",
+                minWidth: 0,
+                px: 1,
+                fontSize: 13,
                 textTransform: "none",
-                fontWeight: 600,
-                fontSize: "0.7rem",
-                minWidth: "auto",
-                padding: "4px 8px",
+                bgcolor: "#dc3545",
               }}
             >
               Remove
@@ -106,104 +125,47 @@ const ProfileSidebar = ({
         )}
       </Box>
 
-      {/* Name */}
-      <Box
-        sx={{
-          width: "100%",
-          backgroundColor: infoBoxBg,
-          borderRadius: 1,
-          p: 1.5,
-          display: "flex",
-          alignItems: "center",
-          gap: 1,
-          mb: 2,
-        }}
-      >
-        <Typography
-          fontWeight={600}
-          color="#153933"
-          sx={{ minWidth: 90 }}
-        >
-          Full Name:
+      <SidebarRow label="Full Name:">
+        <Typography sx={{ fontSize: 13, color: "#64748b" }}>
+          {profileData.name || "Not Provided"}
         </Typography>
+      </SidebarRow>
 
-        <Typography color="#7e8180">
-          {profileData.name}
-        </Typography>
-      </Box>
-      <Box
-        sx={{
-          width: "100%",
-          backgroundColor: infoBoxBg,
-          borderRadius: 1,
-          p: 1.5,
-          display: "flex",
-          alignItems: "center",
-          gap: 1,
-          mb: 2,
-        }}
-      >
-        <Typography
-          fontWeight={600}
-          color="#153933"
-          sx={{ minWidth: 90 }}
-        >
-          Specialist:
-        </Typography>
-
+      <SidebarRow label="Specialist:">
         {isEditing ? (
           <TextField
-   value={profileData.department}
-onChange={(e) => onFieldChange("department", e.target.value)}
             size="small"
             fullWidth
-            onBlur={onChipSave}
+            value={profileData.department || ""}
+            onChange={(event) =>
+              onFieldChange("department", event.target.value)
+            }
+            sx={{ "& .MuiInputBase-root": { fontSize: 13 } }}
           />
         ) : (
-          <Typography color="#7e8180">
-            {profileData.chipLabel}
+          <Typography sx={{ fontSize: 13, color: "#64748b" }}>
+            {profileData.department || "Not Provided"}
           </Typography>
         )}
-      </Box>
-      <Box
-        sx={{
-          width: "100%",
-          backgroundColor: infoBoxBg,
-          borderRadius: 1,
-          p: 1.5,
-          display: "flex",
-          alignItems: "center",
-          gap: 1,
-          mb: 2,
-        }}
-      >
-        <Typography
-          fontWeight={600}
-          color="#153933"
-          sx={{ minWidth: 90 }}
-        >
-          Qualification:
-        </Typography>
+      </SidebarRow>
 
-       
+      <SidebarRow label="Qualification:">
         {isEditing ? (
-  <TextField
-    value={profileData.education}
-    onChange={(e) => onFieldChange("education", e.target.value)}
-    size="small"
-    fullWidth
-  />
-) : (
-  <Typography color="#7e8180">
-    {profileData.education}
-  </Typography>
-)}
-      </Box>
-
-
-
+          <TextField
+            size="small"
+            fullWidth
+            value={profileData.education || ""}
+            onChange={(event) =>
+              onFieldChange("education", event.target.value)
+            }
+            sx={{ "& .MuiInputBase-root": { fontSize: 13 } }}
+          />
+        ) : (
+          <Typography sx={{ fontSize: 13, color: "#64748b" }}>
+            {profileData.education || "Not Provided"}
+          </Typography>
+        )}
+      </SidebarRow>
     </Box>
   );
-};
-
-export default ProfileSidebar;
+}

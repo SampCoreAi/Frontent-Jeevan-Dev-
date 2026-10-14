@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Box, Typography, Divider } from "@mui/material";
+import { Box } from "@mui/material";
 
 const ProfileContent = ({ children }) => {
   return (
@@ -10,19 +10,18 @@ const ProfileContent = ({ children }) => {
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        mt: 7,
-        padding: { xs: 1, sm: 2, md: 1 }
+        minWidth: 0,
+        mt: { xs: 2, sm: 3, md: 4 },
+        mb: { xs: 2, md: 3 },
       }}
     >
       <Box
         sx={{
           backgroundColor: "white",
           borderRadius: 1,
-          boxShadow: "0 4px 12px #0f7468",
-          overflow: "hidden",
+          minWidth: 0,
           display: "flex",
           flexDirection: { xs: "column", lg: "row" },
-          height: "100%",
         }}
       >
         {children}

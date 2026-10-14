@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -7,6 +8,7 @@ import {
   Paper,
   Stack,
   Typography,
+  LinearProgress,
 } from "@mui/material";
 
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
@@ -16,24 +18,26 @@ import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import ArrowForwardIosRoundedIcon from "@mui/icons-material/ArrowForwardIosRounded";
 
 const COLORS = {
   primary: "#07876A",
+  primaryDark: "#066F58",
   primaryLight: "#EAF7F3",
   primarySoft: "#F5FAF8",
   border: "#E1E9E6",
-  line: "#D8E2DE",
+  line: "#DCE5E2",
   text: "#172033",
   muted: "#74807B",
   white: "#FFFFFF",
-  inactive: "#F0F3F2",
+  inactive: "#F2F5F4",
 };
 
 const steps = [
   {
     id: 1,
     title: "Store Information",
-    description: "Store & location details",
+    description: "Store identity and location",
     icon: StorefrontOutlinedIcon,
   },
   {
@@ -45,7 +49,7 @@ const steps = [
   {
     id: 3,
     title: "Address Details",
-    description: "Adress Form",
+    description: "Registered business address",
     icon: SettingsOutlinedIcon,
   },
   {
@@ -57,7 +61,7 @@ const steps = [
   {
     id: 5,
     title: "Verification",
-    description: "Review and submit",
+    description: "Review and submit details",
     icon: VerifiedUserOutlinedIcon,
   },
 ];
@@ -66,80 +70,124 @@ export default function Sidebar({
   activeStep = 1,
   onStepChange,
 }) {
+  const progress = (activeStep / steps.length) * 100;
+
   return (
     <Paper
       elevation={0}
       sx={{
         width: "100%",
-        p: 2,
-        borderRadius: "16px",
+        p: { xs: 1.8, sm: 2.2 },
         border: `1px solid ${COLORS.border}`,
         bgcolor: COLORS.white,
+        boxShadow: "0 4px 20px rgba(23,32,51,0.035)",
       }}
     >
-      <Box sx={{ mb: 2, px: 0.5 }}>
+      {/* HEADER */}
+
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1.3}
+        sx={{ mb: 2.2 }}
+      >
+        <Box
+          sx={{
+            width: 42,
+            height: 42,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "12px",
+            bgcolor: COLORS.primaryLight,
+            color: COLORS.primary,
+            flexShrink: 0,
+          }}
+        >
+          <StorefrontOutlinedIcon sx={{ fontSize: 23 }} />
+        </Box>
+
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: 800,
+              color: COLORS.text,
+              lineHeight: 1.4,
+            }}
+          >
+            Pharmacy Registration
+          </Typography>
+
+          <Typography
+            sx={{
+              mt: 0.3,
+              fontSize: "10.5px",
+              color: COLORS.muted,
+            }}
+          >
+            Complete your store profile
+          </Typography>
+        </Box>
+      </Stack>
+
+      {/* PROGRESS */}
+
+      <Box
+        sx={{
+          p: 1.5,
+          mb: 2,
+          bgcolor: COLORS.primarySoft,
+          borderRadius: "11px",
+          border: `1px solid ${COLORS.border}`,
+        }}
+      >
         <Stack
           direction="row"
           alignItems="center"
           justifyContent="space-between"
+          sx={{ mb: 1 }}
         >
-          <Box>
-            <Typography
-              sx={{
-                fontSize: "14px",
-                fontWeight: 750,
-                color: COLORS.text,
-              }}
-            >
-              Pharmacy Registration
-            </Typography>
-
-            <Typography
-              sx={{
-                mt: 0.3,
-                fontSize: "10.5px",
-                color: COLORS.muted,
-              }}
-            >
-              Complete your medical store profile
-            </Typography>
-          </Box>
-
-          <Box
+          <Typography
             sx={{
-              px: 1,
-              py: 0.45,
-              borderRadius: "7px",
-              bgcolor: COLORS.primaryLight,
-              color: COLORS.primary,
-              fontSize: "10px",
+              fontSize: "11px",
               fontWeight: 700,
+              color: COLORS.text,
             }}
           >
-            {activeStep} / {steps.length}
-          </Box>
+            Registration progress
+          </Typography>
+
+          <Typography
+            sx={{
+              fontSize: "11px",
+              fontWeight: 800,
+              color: COLORS.primary,
+            }}
+          >
+            {activeStep} of {steps.length}
+          </Typography>
         </Stack>
 
-        <Box
+        <LinearProgress
+          variant="determinate"
+          value={progress}
           sx={{
-            mt: 1.5,
-            width: "100%",
-            height: 4,
-            bgcolor: "#EDF2F0",
-            borderRadius: "100px",
-            overflow: "hidden",
-          }}
-        >
-          <Box
-            sx={{
-              width: `${(activeStep / steps.length) * 100}%`,
-              height: "100%",
+            height: 6,
+            borderRadius: "20px",
+            bgcolor: "#E0EAE6",
+            "& .MuiLinearProgress-bar": {
+              borderRadius: "20px",
               bgcolor: COLORS.primary,
-              transition: "width .3s ease",
-            }}
-          />
-        </Box>
+              transition: "transform .3s ease",
+            },
+          }}
+        />
+
+     
       </Box>
+
+      {/* STEP LIST */}
 
       <Box>
         {steps.map((step, index) => {
@@ -152,163 +200,183 @@ export default function Sidebar({
               key={step.id}
               sx={{
                 position: "relative",
-                pb: index === steps.length - 1 ? 0 : 0.7,
+                pb: index === steps.length - 1 ? 0 : 1,
               }}
             >
+              {/* CONNECTOR */}
+
               {index !== steps.length - 1 && (
                 <Box
                   sx={{
                     position: "absolute",
-                    left: 19,
-                    top: 43,
-                    bottom: -3,
-                    borderLeft: "1px dashed",
-                    borderColor: completed
-                      ? "rgba(7,135,106,.4)"
+                    left: 22,
+                    top: 48,
+                    bottom: 0,
+                    width: "2px",
+                    bgcolor: completed
+                      ? COLORS.primary
                       : COLORS.line,
+                    opacity: completed ? 0.65 : 1,
                   }}
                 />
               )}
 
+              {/* STEP ITEM */}
+
               <Box
+                component="button"
+                type="button"
+                aria-current={active ? "step" : undefined}
                 onClick={() => onStepChange?.(step.id)}
                 sx={{
                   position: "relative",
                   zIndex: 1,
                   display: "flex",
                   alignItems: "center",
-                  gap: 1.1,
-                  minHeight: 58,
-                  px: 1,
-                  py: 0.9,
-                  borderRadius: "10px",
+                  gap: 1.2,
+                  width: "100%",
+                  minHeight: 64,
+                  p: 1.1,
+                  textAlign: "left",
                   border: "1px solid",
                   borderColor: active
-                    ? "rgba(7,135,106,.25)"
+                    ? "#B7E3D5"
                     : "transparent",
+                  borderRadius: "12px",
                   bgcolor: active
                     ? COLORS.primaryLight
                     : "transparent",
                   cursor: "pointer",
+                  font: "inherit",
+                  transition: "all .2s ease",
 
                   "&:hover": {
                     bgcolor: active
                       ? COLORS.primaryLight
                       : COLORS.primarySoft,
+                    borderColor: active
+                      ? "#B7E3D5"
+                      : COLORS.border,
+                  },
+
+                  "&:focus-visible": {
+                    outline: `2px solid ${COLORS.primary}`,
+                    outlineOffset: 2,
                   },
                 }}
               >
+                {/* STEP ICON */}
+
                 <Box
                   sx={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: "10px",
+                    width: 44,
+                    height: 44,
                     flexShrink: 0,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-
+                    borderRadius: "12px",
                     bgcolor:
                       active || completed
                         ? COLORS.primary
                         : COLORS.inactive,
-
                     color:
                       active || completed
-                        ? "#fff"
+                        ? COLORS.white
                         : COLORS.muted,
+                    boxShadow: active
+                      ? "0 4px 10px rgba(7,135,106,.18)"
+                      : "none",
+                    transition: "all .2s ease",
                   }}
                 >
                   {completed ? (
-                    <CheckRoundedIcon sx={{ fontSize: 18 }} />
+                    <CheckRoundedIcon sx={{ fontSize: 22 }} />
                   ) : (
-                    <Typography
-                      sx={{
-                        fontSize: "11px",
-                        fontWeight: 800,
-                      }}
-                    >
-                      {String(step.id).padStart(2, "0")}
-                    </Typography>
+                    <Icon sx={{ fontSize: 21 }} />
                   )}
                 </Box>
 
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    spacing={0.6}
-                  >
-                    <Icon
-                      sx={{
-                        fontSize: 15,
-                        color: active
-                          ? COLORS.primary
-                          : COLORS.muted,
-                      }}
-                    />
+                {/* STEP CONTENT */}
 
-                    <Typography
-                      sx={{
-                        fontSize: "12px",
-                        fontWeight: active ? 750 : 650,
-                        color: active
-                          ? COLORS.primary
-                          : COLORS.text,
-                      }}
-                    >
-                      {step.title}
-                    </Typography>
-                  </Stack>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    sx={{
+                      fontSize: "12px",
+                      fontWeight: active ? 800 : 650,
+                      color: active
+                        ? COLORS.primaryDark
+                        : COLORS.text,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {step.title}
+                  </Typography>
 
                   <Typography
                     sx={{
-                      mt: 0.25,
+                      mt: 0.4,
                       fontSize: "10px",
+                      lineHeight: 1.4,
                       color: COLORS.muted,
                     }}
                   >
                     {step.description}
                   </Typography>
                 </Box>
+
+                {/* ACTIVE INDICATOR */}
+
+                {active && (
+                  <ArrowForwardIosRoundedIcon
+                    sx={{
+                      fontSize: 13,
+                      color: COLORS.primary,
+                      mr: 0.3,
+                    }}
+                  />
+                )}
               </Box>
             </Box>
           );
         })}
       </Box>
 
-      <Stack
-        direction="row"
-        spacing={1}
+      {/* SECURITY CARD */}
+
+      <Box
         sx={{
-          mt: 2,
-          p: 1.2,
-          bgcolor: "#F7FAF9",
+          mt: 2.2,
+          p: 1.5,
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 1.2,
+          bgcolor: "#F8FAF9",
           border: `1px solid ${COLORS.border}`,
-          borderRadius: "10px",
+          borderRadius: "12px",
         }}
       >
         <Box
           sx={{
-            width: 30,
-            height: 30,
-            borderRadius: "8px",
-            bgcolor: COLORS.primaryLight,
-            color: COLORS.primary,
+            width: 34,
+            height: 34,
+            flexShrink: 0,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            flexShrink: 0,
+            borderRadius: "10px",
+            bgcolor: COLORS.primaryLight,
+            color: COLORS.primary,
           }}
         >
-          <LockOutlinedIcon sx={{ fontSize: 15 }} />
+          <LockOutlinedIcon sx={{ fontSize: 18 }} />
         </Box>
 
-        <Box>
+        <Box sx={{ flex: 1 }}>
           <Typography
             sx={{
               fontSize: "11px",
-              fontWeight: 700,
+              fontWeight: 750,
               color: COLORS.text,
             }}
           >
@@ -317,16 +385,17 @@ export default function Sidebar({
 
           <Typography
             sx={{
-              mt: 0.2,
-              fontSize: "9.5px",
-              lineHeight: 1.4,
+              mt: 0.4,
+              fontSize: "10px",
+              lineHeight: 1.6,
               color: COLORS.muted,
             }}
           >
-            Store details are securely stored and used for verification.
+          Used for registration
+            and verification.
           </Typography>
         </Box>
-      </Stack>
+      </Box>
     </Paper>
   );
 }

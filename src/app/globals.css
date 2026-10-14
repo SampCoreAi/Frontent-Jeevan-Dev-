@@ -78,7 +78,7 @@ html.lenis body {
 }
 
 .highlight {
-  color: #1e6658;
+  color: #07876a;
 
   mask-image: radial-gradient(
     circle at var(--x, -999px) var(--y, -999px),

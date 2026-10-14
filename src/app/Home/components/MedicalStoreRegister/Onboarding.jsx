@@ -1,12 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  Alert,
-  Box,
-  Grid,
-  Snackbar,
-} from "@mui/material";
+import { Alert, Box, Grid, Snackbar } from "@mui/material";
 
 import Sidebar from "./Sidebar";
 import StoreInformationForm from "./StoreInformationForm";
@@ -14,45 +9,53 @@ import LicenseBusinessForm from "./LicenseBusinessForm";
 import AddressForm from "./AddressForm";
 import DocumentsForm from "./DocumentsForm";
 import Verification from "./Verification";
+import Navbar from "../../components/Navbar";
 
 const INITIAL_DATA = {
-  // STEP 1
-  storeName: "",
-  pharmacyCategory: "",
-  registeredEntityName: "",
-  email: "",
-  phone: "",
-  alternatePhone: "",
-  storefrontImage: "",
-
-  shopUnitNumber: "",
-  streetAddress: "",
-  landmark: "",
-  pinCode: "",
-  city: "",
+  licensedTradeName: "",
+  legalEntityName: "",
+  entityType: "",
+  storeEmail: "",
+  storePhone: "",
+  signatoryFullName: "",
+  signatoryDesignation: "",
+  signatoryEmail: "",
+  signatoryPhone: "",
+  entityPan: "",
+  personalPan: "",
+  shopUnit: "",
+  street: "",
+  area: "",
+  cityDistrict: "",
   state: "",
-
-  // STEP 2
+  pinCode: "",
+  landmark: "",
   gstin: "",
+  gstinApplicable: false,
+  shopEstablishmentApplicable: false,
+  retentionFeeRequired: false,
+  appointmentLetterRequired: false,
   drugLicenseNumber: "",
   licenseExpiryDate: "",
-
-  // STEP 3
-  openingTime: "",
-  closingTime: "",
-  prescriptionOrders: true,
-  walkInOrders: true,
-  pickupAvailable: true,
-  homeDelivery: false,
-  partialFulfillment: true,
-  allowAlternatives: true,
-  autoAcceptOrders: false,
-
-  // STEP 4
-  drugLicenseDocument: "",
-  governmentIdProof: "",
-
-  // FINAL
+  issuingAuthority: "",
+  form20Number: "",
+  form20GrantDate: "",
+  retentionDueDate: "",
+  dispenseScheduleC1: false,
+  pharmacistFullName: "",
+  registrationNumber: "",
+  statePharmacyCouncil: "",
+  registrationValidityDate: "",
+  hprDigiPharmedId: "",
+  employmentType: "Full-time Employee",
+  pharmacistPhone: "",
+  collectPayments: false,
+  coldChainMedicines: false,
+  retentionFeeReceipt: null,
+  pharmacistRegistrationCertificate: null,
+  entityProof: null,
+  panCard: null,
+  pharmacistAppointmentLetter: null,
   onboardingStatus: "",
 };
 
@@ -60,6 +63,11 @@ export default function MedicalStoreOnboarding() {
   const [activeStep, setActiveStep] = React.useState(1);
   const [loading, setLoading] = React.useState(false);
   const [data, setData] = React.useState(INITIAL_DATA);
+  const [registrationId, setRegistrationId] = React.useState(() =>
+    typeof window === "undefined"
+      ? null
+      : localStorage.getItem("pharmacyRegistrationId"),
+  );
 
   const [snackbar, setSnackbar] = React.useState({
     open: false,
@@ -82,19 +90,201 @@ export default function MedicalStoreOnboarding() {
     }));
   };
 
-  const handleNext = (nextStep) => {
+  const handleNext = (nextStep, result) => {
+    if (nextStep === 2) {
+      const id =
+        result?.data?.data?.id ||
+        result?.data?.data?.registrationId ||
+        result?.data?.id ||
+        result?.data?.registrationId ||
+        result?.id ||
+        result?.registrationId;
+
+      if (!id) {
+        showSnackbar(
+          "Registration ID was not returned by the server.",
+          "error",
+        );
+        return;
+      }
+
+      setRegistrationId(id);
+      localStorage.setItem("pharmacyRegistrationId", String(id));
+    }
+
     setActiveStep(nextStep);
   };
 
-  const handleFinalSubmit = async () => {
+  const handleFinalSubmit = async ({ declarationAccepted } = {}) => {
     try {
       setLoading(true);
+      const baseURL = (process.env.NEXT_PUBLIC_API_URL || "").replace(
+        /\/+$/,
+        "",
+      );
 
-      console.log("FINAL MEDICAL STORE DATA:", data);
+      if (!baseURL) {
+        throw new Error("Please configure NEXT_PUBLIC_API_URL in .env.local");
+      }
 
-      // API will be added here later.
+      if (!registrationId) {
+        throw new Error(
+          "Registration ID not found. Please complete Step 1 first.",
+        );
+      }
 
-      await new Promise((resolve) => setTimeout(resolve, 700));
+      if (!declarationAccepted) {
+        throw new Error("Please accept all declarations before submitting.");
+      }
+
+      const token = localStorage.getItem("token");
+      const headers = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+      const payload = {
+        registrationId,
+        licensedTradeName: data.licensedTradeName.trim(),
+        legalEntityName: data.legalEntityName.trim(),
+        entityType: data.entityType,
+        storeEmail: data.storeEmail.trim(),
+        storePhone: data.storePhone,
+        premisesDetails: {
+          shopUnit: data.shopUnit.trim(),
+          street: data.street.trim(),
+          area: data.area.trim(),
+          cityDistrict: data.cityDistrict.trim(),
+          state: data.state.trim(),
+          pinCode: data.pinCode,
+        },
+        signatoryDetails: {
+          fullName: data.signatoryFullName.trim(),
+          designation: data.signatoryDesignation.trim(),
+          email: data.signatoryEmail.trim(),
+          phone: data.signatoryPhone,
+          entityPan:
+            data.entityType !== "Proprietorship" && data.entityPan
+              ? data.entityPan.trim().toUpperCase()
+              : null,
+          personalPan:
+            data.entityType === "Proprietorship" && data.personalPan
+              ? data.personalPan.trim().toUpperCase()
+              : null,
+        },
+        drugLicenceDetails: {
+          issuingAuthority: data.issuingAuthority.trim(),
+          form20Number: data.form20Number.trim(),
+          form20GrantDate: data.form20GrantDate,
+          retentionDueDate: data.retentionDueDate,
+          dispensesScheduleCC1: Boolean(data.dispenseScheduleC1),
+          drugLicenseNumber: data.drugLicenseNumber.trim(),
+          licenseExpiryDate: data.licenseExpiryDate,
+        },
+        pharmacistDetails: {
+          fullName: data.pharmacistFullName.trim(),
+          registrationNumber: data.registrationNumber.trim(),
+          statePharmacyCouncil: data.statePharmacyCouncil.trim(),
+          registrationValidityDate: data.registrationValidityDate,
+          employmentType: data.employmentType,
+          phone: data.pharmacistPhone,
+          hprDigiPharmedId: data.hprDigiPharmedId.trim(),
+        },
+        gstin:
+          (data.gstinApplicable || data.collectPayments) && data.gstin
+            ? data.gstin.trim().toUpperCase()
+            : null,
+        shopEstablishmentNumber:
+          data.shopEstablishmentApplicable
+            ? (data.shopEstablishmentNumber || "").trim()
+            : null,
+        udyamRegistrationNumber:
+          (data.udyamRegistrationNumber || "").trim() || null,
+        retentionFeeRequired: Boolean(data.retentionFeeRequired),
+        appointmentLetterRequired: Boolean(data.appointmentLetterRequired),
+        collectPlatformPayments: Boolean(data.collectPayments),
+        handlesColdChainMedicines: Boolean(data.coldChainMedicines),
+        declarationAccepted: true,
+      };
+
+      const registrationResponse = await fetch(
+        `${baseURL}/api/pharmacy-registration/create`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        },
+      );
+
+      if (!registrationResponse.ok) {
+        const body = await registrationResponse.text();
+        let message = body;
+        try {
+          const errorResult = JSON.parse(body);
+          message = errorResult.message || errorResult.error || body;
+        } catch {
+          // Non-JSON error bodies are displayed as returned by the API.
+        }
+        throw new Error(
+          message || `Unable to save registration (${registrationResponse.status})`,
+        );
+      }
+
+      const registrationResult = await registrationResponse.json();
+      if (registrationResult?.success === false) {
+        throw new Error(
+          registrationResult.message || "Unable to save registration.",
+        );
+      }
+
+      const formData = new FormData();
+      formData.append("registrationId", String(registrationId));
+
+      [
+        "retentionFeeReceipt",
+        "pharmacistRegistrationCertificate",
+        "entityProof",
+        "panCard",
+        "pharmacistAppointmentLetter",
+      ].forEach((field) => {
+        const file = data[field];
+        if (file instanceof File) formData.append(field, file);
+      });
+
+      const uploadResponse = await fetch(
+        `${baseURL}/api/pharmacy-registration/upload-documents`,
+        {
+          method: "POST",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: formData,
+        },
+      );
+
+      if (!uploadResponse.ok) {
+        const body = await uploadResponse.text();
+        let message = body;
+        try {
+          const errorResult = JSON.parse(body);
+          message = errorResult.message || errorResult.error || body;
+        } catch {
+          // Non-JSON error bodies are displayed as returned by the API.
+        }
+        throw new Error(
+          message || `Unable to upload documents (${uploadResponse.status})`,
+        );
+      }
+
+      if (
+        uploadResponse.headers
+          .get("content-type")
+          ?.includes("application/json")
+      ) {
+        const uploadResult = await uploadResponse.json();
+        if (uploadResult?.success === false) {
+          throw new Error(
+            uploadResult.message || "Unable to upload documents.",
+          );
+        }
+      }
 
       setData((prev) => ({
         ...prev,
@@ -103,12 +293,12 @@ export default function MedicalStoreOnboarding() {
 
       showSnackbar(
         "Medical store registration submitted successfully.",
-        "success"
+        "success",
       );
     } catch (error) {
       showSnackbar(
-        "Something went wrong while submitting registration.",
-        "error"
+        error.message || "Something went wrong while submitting registration.",
+        "error",
       );
     } finally {
       setLoading(false);
@@ -117,19 +307,61 @@ export default function MedicalStoreOnboarding() {
 
   return (
     <>
+      <Navbar />
+
       <Box
         sx={{
-          minHeight: "100vh",
-          bgcolor: "#F6F8F7",
-          px: {
-            xs: 1.5,
-            sm: 2,
-            md: 3,
-          },
-          py: {
-            xs: 2,
-            md: 3,
-          },
+          backgroundColor: "#FFFFFF",
+
+          backgroundImage: `
+    linear-gradient(
+      90deg,
+      rgba(7, 135, 106, 0.13) 0%,
+      rgba(7, 135, 106, 0.05) 25%,
+      rgba(255, 255, 255, 0.35) 45%,
+      rgba(255, 255, 255, 0.35) 55%,
+      rgba(7, 135, 106, 0.05) 75%,
+      rgba(7, 135, 106, 0.13) 100%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(7, 135, 106, 0.09) 0%,
+      rgba(52, 211, 153, 0.035) 45%,
+      rgba(255, 255, 255, 0.08) 100%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(7, 135, 106, 0.18) 0%,
+      rgba(52, 211, 153, 0.08) 50%,
+      rgba(255, 255, 255, 0.45) 100%
+    ),
+    linear-gradient(rgba(7, 135, 106, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(7, 135, 106, 0.16) 1px, transparent 1px)
+  `,
+
+          backgroundSize: `
+    100% 100%,
+    100% 100%,
+    40px 40px,
+    40px 40px,
+    40px 40px
+  `,
+
+          backgroundPosition: `
+    center,
+    center,
+    0 0,
+    0 0,
+    0 0
+  `,
+
+          pt: { xs: 3, md: 2 },
+          pb: { xs: 4, md: 5 },
+          px: { xs: 1.25, sm: 2, md: 3 },
+          textAlign: "left",
+          position: "relative",
+          overflow: "visible",
+          minHeight: "calc(100vh - 110px)",
         }}
       >
         <Box
@@ -141,26 +373,34 @@ export default function MedicalStoreOnboarding() {
         >
           <Grid
             container
-            spacing={2}
+            spacing={{ xs: 1.5, md: 2 }}
             sx={{
-              alignItems: "flex-start",
+              alignItems: "stretch",
             }}
           >
             {/* LEFT SIDEBAR */}
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Sidebar
-                activeStep={activeStep}
-                onStepChange={setActiveStep}
-              />
+            <Grid
+              size={{ xs: 12, md: 3 }}
+              sx={{
+                alignSelf: "flex-start",
+                position: { md: "sticky" },
+                top: { md: 16 },
+              }}
+            >
+              <Sidebar activeStep={activeStep} onStepChange={setActiveStep} />
             </Grid>
-
-            {/* RIGHT CONTENT */}
-            <Grid size={{ xs: 12, md: 9 }}>
+            <Grid
+              size={{ xs: 12, md: 9 }}
+              sx={{
+                minWidth: 0,
+                alignSelf: "stretch",
+              }}
+            >
               {activeStep === 1 && (
                 <StoreInformationForm
                   data={data}
                   onChange={updateData}
-                  onNext={() => handleNext(2)}
+                  onNext={(result) => handleNext(2, result)}
                   loading={loading}
                 />
               )}

@@ -3,8 +3,10 @@
 import * as React from "react";
 
 import {
+  Alert,
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Divider,
   FormControl,
@@ -18,45 +20,37 @@ import {
   Typography,
 } from "@mui/material";
 
-import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
-import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
-import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
-import SignpostOutlinedIcon from "@mui/icons-material/SignpostOutlined";
-import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-
-/* =========================================================
-   COLORS
-========================================================= */
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import LocalPharmacyOutlinedIcon from "@mui/icons-material/LocalPharmacyOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 
 const C = {
   primary: "#07876A",
   hover: "#066F58",
-  text: "#172033",
-  muted: "#74807B",
-  border: "#DDE9E5",
-  input: "#CBD5E1",
+  text: "#263445",
+  muted: "#74808A",
+  border: "#E3E8EC",
+  input: "#D9DDE3",
   error: "#E5484D",
   white: "#FFFFFF",
 };
 
-/* =========================================================
-   INPUT STYLE
-========================================================= */
-
 const inputSx = {
   "& .MuiOutlinedInput-root": {
-    minHeight: 46,
-    borderRadius: "8px",
-    backgroundColor: "#fff",
+    minHeight: 36,
+    borderRadius: "7px",
+    bgcolor: C.white,
+    fontSize: "12px",
 
     "& fieldset": {
       borderColor: C.input,
     },
 
     "&:hover fieldset": {
-      borderColor: "#9CB7AF",
+      borderColor: "#A8BDB6",
     },
 
     "&.Mui-focused fieldset": {
@@ -71,25 +65,28 @@ const inputSx = {
 
   "& .MuiInputBase-input": {
     fontSize: "12px",
-    py: 1.2,
+    py: 0.9,
+    px: 1.2,
+  },
+
+  "& .MuiSelect-select": {
+    py: "8px !important",
+    fontSize: "12px",
   },
 
   "& .MuiFormHelperText-root": {
     fontSize: "10px",
-    mx: 0.5,
-    mt: 0.5,
+    lineHeight: 1.4,
+    mx: 0,
+    mt: 0.4,
   },
 };
 
-/* =========================================================
-   LABEL
-========================================================= */
-
-function Label({ children, optional = false }) {
+function FieldLabel({ children, optional = false }) {
   return (
     <Typography
       sx={{
-        mb: 0.6,
+        mb: 0.55,
         fontSize: "12px",
         fontWeight: 600,
         color: C.text,
@@ -100,34 +97,23 @@ function Label({ children, optional = false }) {
       {optional ? (
         <Box
           component="span"
-          sx={{
-            color: C.muted,
-            fontWeight: 400,
-          }}
+          sx={{ color: C.muted, fontWeight: 400 }}
         >
-          {" "}
-          (Optional)
+          {" "}(Optional)
         </Box>
       ) : (
         <Box
           component="span"
-          sx={{
-            color: C.error,
-          }}
+          sx={{ color: C.error }}
         >
-          {" "}
-          *
+          {" "}*
         </Box>
       )}
     </Typography>
   );
 }
 
-/* =========================================================
-   COMPONENT
-========================================================= */
-
-export default function StoreAddressForm({
+export default function DrugLicencePharmacistForm({
   data = {},
   onChange,
   onBack,
@@ -136,86 +122,75 @@ export default function StoreAddressForm({
 }) {
   const [errors, setErrors] = React.useState({});
 
-  /* =======================================================
-     UPDATE FIELD
-  ======================================================= */
-
   const setField = (field, value) => {
-    onChange?.({
-      [field]: value,
-    });
+    onChange?.({ [field]: value });
 
-    if (errors[field]) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: "",
-      }));
-    }
+    setErrors((prev) => ({
+      ...prev,
+      [field]: "",
+    }));
+
   };
 
-  /* =======================================================
-     VALIDATION
-  ======================================================= */
+  const today = new Date();
+  const todayString = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0"),
+  ].join("-");
 
   const validate = () => {
     const nextErrors = {};
 
-    /* STORE NAME */
+    const requiredFields = [
+      ["issuingAuthority", "Issuing State / Authority is required"],
+      ["form20Number", "Form 20 Number is required"],
+      ["form20GrantDate", "Form 20 Date of Grant is required"],
+      ["retentionDueDate", "Retention Due Date is required"],
+      ["pharmacistFullName", "Pharmacist Full Name is required"],
+      ["registrationNumber", "Registration Number is required"],
+      ["statePharmacyCouncil", "State Pharmacy Council is required"],
+      ["registrationValidityDate", "Registration Validity Date is required"],
+      ["employmentType", "Employment Type is required"],
+      ["pharmacistPhone", "Pharmacist Phone is required"],
+    ];
 
-    if (!String(data.storeName || "").trim()) {
-      nextErrors.storeName =
-        "Medical Store / Pharmacy Name is required";
+    requiredFields.forEach(([field, message]) => {
+      if (!String(data[field] || "").trim()) {
+        nextErrors[field] = message;
+      }
+    });
+
+    if (
+      data.retentionDueDate &&
+      data.retentionDueDate <= todayString
+    ) {
+      nextErrors.retentionDueDate =
+        "Retention due date must be a future date";
     }
 
-    /* SHOP NUMBER */
-
-    if (!String(data.shopUnitNumber || "").trim()) {
-      nextErrors.shopUnitNumber =
-        "Shop / Unit Number is required";
+    if (
+      data.registrationValidityDate &&
+      data.registrationValidityDate < todayString
+    ) {
+      nextErrors.registrationValidityDate =
+        "Registration validity date cannot be in the past";
     }
 
-    /* BUILDING */
-
-    if (!String(data.buildingName || "").trim()) {
-      nextErrors.buildingName =
-        "Building / Complex Name is required";
+    if (
+      data.form20GrantDate &&
+      data.form20GrantDate > todayString
+    ) {
+      nextErrors.form20GrantDate =
+        "Grant date cannot be in the future";
     }
 
-    /* STREET */
-
-    if (!String(data.streetAddress || "").trim()) {
-      nextErrors.streetAddress =
-        "Street / Road Name is required";
-    }
-
-    /* AREA */
-
-    if (!String(data.areaLocality || "").trim()) {
-      nextErrors.areaLocality =
-        "Area / Locality is required";
-    }
-
-    /* PIN CODE */
-
-    if (!String(data.pinCode || "").trim()) {
-      nextErrors.pinCode = "PIN Code is required";
-    } else if (!/^[1-9]\d{5}$/.test(data.pinCode)) {
-      nextErrors.pinCode =
-        "Enter a valid 6-digit PIN Code";
-    }
-
-    /* CITY */
-
-    if (!String(data.city || "").trim()) {
-      nextErrors.city =
-        "City / Town is required";
-    }
-
-    /* STATE */
-
-    if (!String(data.state || "").trim()) {
-      nextErrors.state =
-        "State is required";
+    if (
+      data.pharmacistPhone &&
+      !/^[6-9]\d{9}$/.test(data.pharmacistPhone)
+    ) {
+      nextErrors.pharmacistPhone =
+        "Enter a valid 10-digit mobile number";
     }
 
     setErrors(nextErrors);
@@ -223,599 +198,373 @@ export default function StoreAddressForm({
     return Object.keys(nextErrors).length === 0;
   };
 
-  /* =======================================================
-     NEXT
-  ======================================================= */
-
   const handleNext = () => {
-    if (!validate()) return;
-
+    if (loading || !validate()) return;
     onNext?.();
   };
 
-  /* =======================================================
-     ICON
-  ======================================================= */
-
   const icon = (Icon) => (
     <InputAdornment position="start">
-      <Icon
-        sx={{
-          fontSize: 17,
-          color: C.muted,
-        }}
-      />
+      <Icon sx={{ fontSize: 16, color: C.muted }} />
     </InputAdornment>
   );
 
-  /* =======================================================
-     UI
-  ======================================================= */
+  const renderField = ({
+    field,
+    label,
+    placeholder = "",
+    helperText = "",
+    type = "text",
+    Icon,
+    maxLength,
+    numeric = false,
+    optional = false,
+    min,
+  }) => (
+    <Grid size={{ xs: 12, sm: 6 }}>
+      <FieldLabel optional={optional}>{label}</FieldLabel>
+
+      <TextField
+        fullWidth
+        type={type}
+        placeholder={placeholder}
+        value={data[field] || ""}
+        onChange={(e) => {
+          let value = e.target.value;
+
+          if (numeric) {
+            value = value.replace(/\D/g, "");
+          }
+
+          if (maxLength) {
+            value = value.slice(0, maxLength);
+          }
+
+          setField(field, value);
+        }}
+        error={Boolean(errors[field])}
+        helperText={errors[field] || helperText || ""}
+        sx={inputSx}
+        slotProps={{
+          htmlInput: {
+            ...(maxLength ? { maxLength } : {}),
+            ...(numeric ? { inputMode: "numeric" } : {}),
+            ...(min ? { min } : {}),
+          },
+          input: Icon
+            ? { startAdornment: icon(Icon) }
+            : {},
+        }}
+      />
+    </Grid>
+  );
 
   return (
-    <Box>
+    <Box sx={{ width: "100%", minWidth: 0 }}>
       <Paper
         elevation={0}
         sx={{
-          p: {
-            xs: 2,
-            md: 2.5,
-          },
-
+          p: { xs: 2, sm: 2.5, md: 3 },
           border: `1px solid ${C.border}`,
           borderRadius: "12px",
           bgcolor: C.white,
         }}
       >
-        {/* ================= HEADER ================= */}
+        {/* HEADER + ACTION BUTTONS */}
 
-        <Stack
-          direction="row"
-          alignItems="center"
-          spacing={1}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: { xs: "flex-start", sm: "center" },
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 1.5,
+            mb: 2.5,
+          }}
         >
-          <Box
-            sx={{
-              width: 38,
-              height: 38,
-              borderRadius: "9px",
-
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-
-              bgcolor: "#EAF7F3",
-              color: C.primary,
-
-              flexShrink: 0,
-            }}
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
           >
-            <LocationOnOutlinedIcon
-              sx={{
-                fontSize: 21,
-              }}
+            <DescriptionOutlinedIcon
+              sx={{ color: C.text, fontSize: 21 }}
             />
-          </Box>
 
-          <Box>
             <Typography
               sx={{
-                fontSize: "15px",
+                fontSize: { xs: "15px", sm: "18px" },
                 fontWeight: 750,
                 color: C.text,
-                lineHeight: 1.3,
               }}
             >
-              Medical Store Address
+              D. Drug Licence & E. Pharmacist
             </Typography>
+          </Stack>
 
-            <Typography
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              justifyContent: "flex-end",
+            }}
+          >
+            <Button
+              variant="outlined"
+              onClick={onBack}
+              disabled={loading}
+              startIcon={<ArrowBackRoundedIcon />}
               sx={{
-                mt: 0.15,
-                fontSize: "10.5px",
-                color: C.muted,
-                lineHeight: 1.4,
+                height: 35,
+                px: 1.5,
+                borderColor: C.border,
+                color: C.text,
+                borderRadius: "7px",
+                textTransform: "none",
+                fontSize: "11px",
+                fontWeight: 600,
               }}
             >
-              Enter the complete physical address of your
-              medical store or pharmacy.
-            </Typography>
-          </Box>
-        </Stack>
+              Back
+            </Button>
 
-        <Divider
+            <Button
+              variant="contained"
+              onClick={handleNext}
+              disabled={loading}
+              endIcon={
+                loading ? (
+                  <CircularProgress size={13} color="inherit" />
+                ) : (
+                  <ArrowForwardRoundedIcon />
+                )
+              }
+              sx={{
+                height: 35,
+                px: 1.5,
+                bgcolor: C.primary,
+                borderRadius: "7px",
+                boxShadow: "none",
+                textTransform: "none",
+                fontSize: "11px",
+                fontWeight: 700,
+                "&:hover": { bgcolor: C.hover, boxShadow: "none" },
+              }}
+            >
+              {loading ? "Saving..." : "Next"}
+            </Button>
+          </Stack>
+        </Box>
+
+        {/* DRUG LICENCE DETAILS */}
+
+        <Grid container spacing={{ xs: 1.7, md: 2 }}>
+          {renderField({
+            field: "issuingAuthority",
+            label: "Issuing State / Authority",
+            placeholder: "e.g., MP FDA",
+          })}
+
+          {renderField({
+            field: "form20Number",
+            label: "Form 20 Number",
+            placeholder: "Enter Form 20 number",
+            maxLength: 50,
+          })}
+
+          {renderField({
+            field: "form20GrantDate",
+            label: "Form 20 Date of Grant",
+            type: "date",
+            max: todayString,
+          })}
+
+          {renderField({
+            field: "retentionDueDate",
+            label: "Retention Due Date",
+            type: "date",
+            min: todayString,
+            helperText: "Must be a future date",
+          })}
+        </Grid>
+
+        {/* SCHEDULE C / C1 CHECKBOX */}
+
+        <Box
           sx={{
-            my: 1.8,
-            borderColor: C.border,
+            mt: 2.5,
+            p: 1.3,
+            border: `1px solid ${C.border}`,
+            borderRadius: "9px",
+            bgcolor: "#F8FAFC",
           }}
-        />
-
-        {/* ================= FORM ================= */}
-
-        <Grid container spacing={2}>
-          {/* ========================================
-              MEDICAL STORE NAME
-          ======================================== */}
-
-          <Grid size={{ xs: 12 }}>
-            <Label>
-              Medical Store / Pharmacy Name
-            </Label>
-
-            <TextField
-              fullWidth
-              placeholder="e.g. City Care Medical & Pharmacy"
-              value={data.storeName || ""}
+        >
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+          >
+            <Checkbox
+              checked={Boolean(data.dispenseScheduleC1)}
               onChange={(e) =>
-                setField(
-                  "storeName",
-                  e.target.value
-                )
+                setField("dispenseScheduleC1", e.target.checked)
               }
-              error={Boolean(errors.storeName)}
-              helperText={
-                errors.storeName ||
-                "Enter the registered or displayed name of your pharmacy"
-              }
-              sx={inputSx}
-              InputProps={{
-                startAdornment: icon(
-                  StorefrontOutlinedIcon
-                ),
+              size="small"
+              sx={{
+                p: 0.5,
+                color: "#AEB8C2",
+                "&.Mui-checked": { color: C.primary },
               }}
             />
-          </Grid>
 
-          {/* ========================================
-              SHOP / UNIT NUMBER
-          ======================================== */}
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: C.text,
+                }}
+              >
+                Do you dispense Schedule C/C1 drugs?
+              </Typography>
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Label>
-              Shop / Unit Number
-            </Label>
+              <Typography
+                sx={{
+                  mt: 0.25,
+                  fontSize: "10px",
+                  color: C.muted,
+                }}
+              >
+                Antibiotics, Insulins, Vaccines etc. Requires Form 21.
+              </Typography>
+            </Box>
+          </Stack>
+        </Box>
 
-            <TextField
-              fullWidth
-              placeholder="e.g. Shop No. 12"
-              value={data.shopUnitNumber || ""}
-              onChange={(e) =>
-                setField(
-                  "shopUnitNumber",
-                  e.target.value
-                )
-              }
-              error={Boolean(
-                errors.shopUnitNumber
-              )}
-              helperText={
-                errors.shopUnitNumber
-              }
-              sx={inputSx}
-              InputProps={{
-                startAdornment: icon(
-                  BusinessOutlinedIcon
-                ),
-              }}
-            />
-          </Grid>
+        {/* REGISTERED PHARMACIST */}
 
-          {/* ========================================
-              BUILDING / COMPLEX NAME
-          ======================================== */}
+        <Box sx={{ mt: 2.5 }}>
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: 750,
+              color: C.text,
+              mb: 1,
+            }}
+          >
+            Registered Pharmacist Details
+          </Typography>
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Label>
-              Building / Complex Name
-            </Label>
+          <Divider sx={{ mb: 1.8, borderColor: C.border }} />
 
-            <TextField
-              fullWidth
-              placeholder="e.g. City Center Complex"
-              value={data.buildingName || ""}
-              onChange={(e) =>
-                setField(
-                  "buildingName",
-                  e.target.value
-                )
-              }
-              error={Boolean(
-                errors.buildingName
-              )}
-              helperText={
-                errors.buildingName
-              }
-              sx={inputSx}
-              InputProps={{
-                startAdornment: icon(
-                  BusinessOutlinedIcon
-                ),
-              }}
-            />
-          </Grid>
+          <Grid container spacing={{ xs: 1.7, md: 2 }}>
+            {renderField({
+              field: "pharmacistFullName",
+              label: "Pharmacist Full Name",
+              placeholder: "As per Licence Endorsement",
+              Icon: LocalPharmacyOutlinedIcon,
+              maxLength: 100,
+            })}
 
-          {/* ========================================
-              STREET / ROAD
-          ======================================== */}
+            {renderField({
+              field: "registrationNumber",
+              label: "Registration Number",
+              placeholder: "Enter registration number",
+              maxLength: 50,
+            })}
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Label>
-              Street / Road Name
-            </Label>
+            {renderField({
+              field: "statePharmacyCouncil",
+              label: "State Pharmacy Council",
+              placeholder: "Enter state pharmacy council",
+              maxLength: 100,
+            })}
 
-            <TextField
-              fullWidth
-              placeholder="e.g. MG Road"
-              value={data.streetAddress || ""}
-              onChange={(e) =>
-                setField(
-                  "streetAddress",
-                  e.target.value
-                )
-              }
-              error={Boolean(
-                errors.streetAddress
-              )}
-              helperText={
-                errors.streetAddress
-              }
-              sx={inputSx}
-              InputProps={{
-                startAdornment: icon(
-                  SignpostOutlinedIcon
-                ),
-              }}
-            />
-          </Grid>
+            {renderField({
+              field: "registrationValidityDate",
+              label: "Registration Validity Date",
+              type: "date",
+              Icon: CalendarMonthOutlinedIcon,
+              min: todayString,
+            })}
 
-          {/* ========================================
-              AREA / LOCALITY
-          ======================================== */}
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <FieldLabel>Employment Type</FieldLabel>
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Label>
-              Area / Locality
-            </Label>
+              <FormControl fullWidth>
+                <Select
+                  value={data.employmentType || "Full-time Employee"}
+                  onChange={(e) => {
+                    const employmentType = e.target.value;
+                    onChange?.({
+                      employmentType,
+                      ...(employmentType === "Owner"
+                        ? { appointmentLetterRequired: false }
+                        : {}),
+                    });
+                    setErrors((previous) => ({
+                      ...previous,
+                      employmentType: "",
+                    }));
+                  }}
+                  sx={inputSx}
+                >
+                  <MenuItem value="Full-time Employee">
+                    Full-time Employee
+                  </MenuItem>
+                  <MenuItem value="Part-time Employee">
+                    Part-time Employee
+                  </MenuItem>
+                  <MenuItem value="Owner">
+                    Owner
+                  </MenuItem>
+                  <MenuItem value="Consultant">
+                    Consultant
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
 
-            <TextField
-              fullWidth
-              placeholder="e.g. Vijay Nagar"
-              value={data.areaLocality || ""}
-              onChange={(e) =>
-                setField(
-                  "areaLocality",
-                  e.target.value
-                )
-              }
-              error={Boolean(
-                errors.areaLocality
-              )}
-              helperText={
-                errors.areaLocality
-              }
-              sx={inputSx}
-              InputProps={{
-                startAdornment: icon(
-                  LocationOnOutlinedIcon
-                ),
-              }}
-            />
-          </Grid>
+            {renderField({
+              field: "hprDigiPharmedId",
+              label: "HPR / DigiPharmed ID",
+              placeholder: "Enter ID",
+              optional: true,
+              maxLength: 60,
+            })}
 
-          {/* ========================================
-              LANDMARK
-          ======================================== */}
+            <Grid size={{ xs: 12 }}>
+              <FieldLabel>Pharmacist Phone (For Consent OTP)</FieldLabel>
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Label optional>
-              Landmark
-            </Label>
-
-            <TextField
-              fullWidth
-              placeholder="e.g. Opposite Civil Hospital"
-              value={data.landmark || ""}
-              onChange={(e) =>
-                setField(
-                  "landmark",
-                  e.target.value
-                )
-              }
-              sx={inputSx}
-              InputProps={{
-                startAdornment: icon(
-                  LocationOnOutlinedIcon
-                ),
-              }}
-            />
-          </Grid>
-
-          {/* ========================================
-              PIN CODE
-          ======================================== */}
-
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Label>
-              PIN Code
-            </Label>
-
-            <TextField
-              fullWidth
-              placeholder="e.g. 452010"
-              value={data.pinCode || ""}
-              onChange={(e) =>
-                setField(
-                  "pinCode",
-                  e.target.value
-                    .replace(/\D/g, "")
-                    .slice(0, 6)
-                )
-              }
-              error={Boolean(errors.pinCode)}
-              helperText={errors.pinCode}
-              sx={inputSx}
-              inputProps={{
-                inputMode: "numeric",
-                maxLength: 6,
-              }}
-              InputProps={{
-                startAdornment: icon(
-                  LocationOnOutlinedIcon
-                ),
-              }}
-            />
-          </Grid>
-
-          {/* ========================================
-              CITY
-          ======================================== */}
-
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Label>
-              City / Town
-            </Label>
-
-            <TextField
-              fullWidth
-              placeholder="e.g. Indore"
-              value={data.city || ""}
-              onChange={(e) =>
-                setField(
-                  "city",
-                  e.target.value
-                )
-              }
-              error={Boolean(errors.city)}
-              helperText={errors.city}
-              sx={inputSx}
-              InputProps={{
-                startAdornment: icon(
-                  LocationOnOutlinedIcon
-                ),
-              }}
-            />
-          </Grid>
-
-          {/* ========================================
-              STATE
-          ======================================== */}
-
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Label>
-              State
-            </Label>
-
-            <FormControl
-              fullWidth
-              error={Boolean(errors.state)}
-            >
-              <Select
-                displayEmpty
-                value={data.state || ""}
+              <TextField
+                fullWidth
+                placeholder="Enter 10-digit mobile number"
+                value={data.pharmacistPhone || ""}
                 onChange={(e) =>
                   setField(
-                    "state",
-                    e.target.value
+                    "pharmacistPhone",
+                    e.target.value.replace(/\D/g, "").slice(0, 10)
                   )
                 }
-                startAdornment={icon(
-                  MapOutlinedIcon
-                )}
-                sx={{
-                  height: 46,
-                  borderRadius: "8px",
-                  fontSize: "12px",
-                  bgcolor: "#fff",
-
-                  "& fieldset": {
-                    borderColor: C.input,
+                error={Boolean(errors.pharmacistPhone)}
+                helperText={
+                  errors.pharmacistPhone ||
+                  "Required to confirm pharmacist presence and prevent certificate lending."
+                }
+                sx={inputSx}
+                slotProps={{
+                  htmlInput: {
+                    inputMode: "numeric",
+                    maxLength: 10,
                   },
-
-                  "&:hover fieldset": {
-                    borderColor: "#9CB7AF",
-                  },
-
-                  "&.Mui-focused fieldset": {
-                    borderColor: C.primary,
-                    borderWidth: "1px",
-                  },
+                  input: { startAdornment: icon(PhoneOutlinedIcon) },
                 }}
-                renderValue={(value) =>
-                  value || (
-                    <Box
-                      sx={{
-                        color: C.muted,
-                      }}
-                    >
-                      Select state...
-                    </Box>
-                  )
-                }
-              >
-                <MenuItem value="Madhya Pradesh">
-                  Madhya Pradesh
-                </MenuItem>
-
-                <MenuItem value="Maharashtra">
-                  Maharashtra
-                </MenuItem>
-
-                <MenuItem value="Karnataka">
-                  Karnataka
-                </MenuItem>
-
-                <MenuItem value="Delhi">
-                  Delhi
-                </MenuItem>
-
-                <MenuItem value="Uttar Pradesh">
-                  Uttar Pradesh
-                </MenuItem>
-
-                <MenuItem value="Rajasthan">
-                  Rajasthan
-                </MenuItem>
-
-                <MenuItem value="Gujarat">
-                  Gujarat
-                </MenuItem>
-
-                <MenuItem value="Haryana">
-                  Haryana
-                </MenuItem>
-
-                <MenuItem value="Punjab">
-                  Punjab
-                </MenuItem>
-
-                <MenuItem value="Bihar">
-                  Bihar
-                </MenuItem>
-              </Select>
-
-              {errors.state && (
-                <Typography
-                  sx={{
-                    mt: 0.5,
-                    ml: 1,
-                    fontSize: "10px",
-                    color: C.error,
-                  }}
-                >
-                  {errors.state}
-                </Typography>
-              )}
-            </FormControl>
+              />
+            </Grid>
           </Grid>
-        </Grid>
+        </Box>
       </Paper>
-
-      {/* =====================================================
-          ACTION BUTTONS
-      ===================================================== */}
-
-      <Box
-        sx={{
-          mt: 2,
-
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-
-          gap: 2,
-        }}
-      >
-        {/* BACK */}
-
-        <Button
-          variant="outlined"
-          onClick={onBack}
-          startIcon={
-            <ArrowBackIcon
-              sx={{
-                fontSize: "16px !important",
-              }}
-            />
-          }
-          sx={{
-            height: 42,
-            px: 2.5,
-
-            borderColor: C.border,
-            color: C.text,
-
-            borderRadius: "8px",
-
-            textTransform: "none",
-
-            fontSize: "11.5px",
-            fontWeight: 600,
-
-            "&:hover": {
-              borderColor: C.primary,
-              bgcolor: "#F8FCFA",
-            },
-          }}
-        >
-          Back
-        </Button>
-
-        {/* NEXT */}
-
-        <Button
-          variant="contained"
-          onClick={handleNext}
-          disabled={loading}
-          endIcon={
-            loading ? (
-              <CircularProgress
-                size={14}
-                color="inherit"
-              />
-            ) : (
-              <ArrowForwardIcon
-                sx={{
-                  fontSize: "16px !important",
-                }}
-              />
-            )
-          }
-          sx={{
-            minWidth: {
-              xs: 170,
-              sm: 220,
-            },
-
-            height: 42,
-            px: 2.5,
-
-            bgcolor: C.primary,
-
-            borderRadius: "8px",
-
-            boxShadow: "none",
-
-            textTransform: "none",
-
-            fontSize: "11.5px",
-            fontWeight: 700,
-
-            "&:hover": {
-              bgcolor: C.hover,
-              boxShadow: "none",
-            },
-
-            "&.Mui-disabled": {
-              bgcolor: "#A9BDB6",
-              color: "#fff",
-            },
-          }}
-        >
-          {loading
-            ? "Saving..."
-            : "Next: License & Business"}
-        </Button>
-      </Box>
     </Box>
   );
 }

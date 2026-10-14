@@ -1,10 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  Paper,
-  useTheme,
-} from "@mui/material";
+import { Paper, useTheme } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { scheduleService } from "../../services/api";
@@ -13,7 +10,7 @@ import api from "../../../../../utils/axiosInstance";
 import AppointmentHeader from "./AppointmentHeader";
 import AppointmentTable from "./AppointmentTable";
 import PatientDetailsDialog from "./PatientDetailsDialog";
-import MedicalDetailsDialog from "./MedicalDetailsDialog";
+import MedicalDetailsDialog from "../../../users/components/Medical/MedicalRequestInvoiceDialog";
 import TokenVerificationDialog from "./TokenVerificationDialog";
 import PastDetailsDialog from "./PastDetailsDialog";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -27,17 +24,14 @@ export default function OnOffCard({
   const theme = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [medicalInvoice, setMedicalInvoice] = useState(null);
+  const appointmentIdFromDashboard = searchParams.get("appointment_id");
 
-  const appointmentIdFromDashboard =
-    searchParams.get("appointment_id");
+  const verifyFromDashboard = searchParams.get("verify");
 
-  const verifyFromDashboard =
-    searchParams.get("verify");
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
 
-  const [selectedAppointmentId, setSelectedAppointmentId] =
-    useState(null);
-
-const [pastSelectedDate, setPastSelectedDate] = useState("");
+  const [pastSelectedDate, setPastSelectedDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
 
@@ -45,46 +39,26 @@ const [pastSelectedDate, setPastSelectedDate] = useState("");
   const [error, setError] = useState("");
   const [patients, setPatients] = useState([]);
 
-
-;
-const [pastOpen, setPastOpen] = useState(false);
-const [pastLoading, setPastLoading] = useState(false);
-const [pastData, setPastData] = useState([]);
-const [pastError, setPastError] = useState("");
-const [pastPatient, setPastPatient] = useState(null);
+  const [pastOpen, setPastOpen] = useState(false);
+  const [pastLoading, setPastLoading] = useState(false);
+  const [pastData, setPastData] = useState([]);
+  const [pastError, setPastError] = useState("");
+  const [pastPatient, setPastPatient] = useState(null);
   const [status, setStatus] = useState("pending");
   const [token, setToken] = useState("");
 
   const [viewOpen, setViewOpen] = useState(false);
-  const [selectedPatient, setSelectedPatient] =
-    useState(null);
+  const [selectedPatient, setSelectedPatient] = useState(null);
 
-  const [
-    approvedMedicalStores,
-    setApprovedMedicalStores,
-  ] = useState([]);
+  const [approvedMedicalStores, setApprovedMedicalStores] = useState([]);
 
-  const [
-    medicalDetailsOpen,
-    setMedicalDetailsOpen,
-  ] = useState(false);
+  const [medicalDetailsOpen, setMedicalDetailsOpen] = useState(false);
 
-  const [
-    medicalDetailRows,
-    setMedicalDetailRows,
-  ] = useState([]);
+  const [medicalDetailRows, setMedicalDetailRows] = useState([]);
 
-  const [
-    medicalDetailsLoading,
-    setMedicalDetailsLoading,
-  ] = useState(false);
+  const [medicalDetailsLoading, setMedicalDetailsLoading] = useState(false);
 
-  const [
-    medicalDetailsPatient,
-    setMedicalDetailsPatient,
-  ] = useState(null);
-  
-
+  const [medicalDetailsPatient, setMedicalDetailsPatient] = useState(null);
 
   const [pagination, setPagination] = useState({
     page: 0,
@@ -93,9 +67,7 @@ const [pastPatient, setPastPatient] = useState(null);
 
   const user =
     typeof window !== "undefined"
-      ? JSON.parse(
-          localStorage.getItem("user") || "{}"
-        )
+      ? JSON.parse(localStorage.getItem("user") || "{}")
       : {};
 
   const roleId = user?.role_id;
@@ -104,18 +76,15 @@ const [pastPatient, setPastPatient] = useState(null);
     const loadApprovedMedicalStores = async () => {
       try {
         const response = await api.get(
-          "/api/medical-stores/doctor/connections"
+          "/api/medical-stores/doctor/connections",
         );
 
-        const connections =
-          response?.data?.data || [];
+        const connections = response?.data?.data || [];
 
         const stores = connections
           .filter(
             (connection) =>
-              String(
-                connection?.status || ""
-              ).toUpperCase() === "APPROVED"
+              String(connection?.status || "").toUpperCase() === "APPROVED",
           )
           .map((connection) => ({
             id:
@@ -128,24 +97,15 @@ const [pastPatient, setPastPatient] = useState(null);
               connection.medical_store_name ||
               "Medical Store",
 
-            city:
-              connection.city ||
-              connection.address ||
-              "",
+            city: connection.city || connection.address || "",
 
-            phone:
-              connection.phone ||
-              connection.phone_number ||
-              "",
+            phone: connection.phone || connection.phone_number || "",
           }))
           .filter((store) => store.id);
 
         setApprovedMedicalStores(stores);
       } catch (requestError) {
-        console.error(
-          "Medical stores error:",
-          requestError
-        );
+        console.error("Medical stores error:", requestError);
       }
     };
 
@@ -153,20 +113,12 @@ const [pastPatient, setPastPatient] = useState(null);
   }, []);
 
   useEffect(() => {
-    if (
-      verifyFromDashboard === "true" &&
-      appointmentIdFromDashboard
-    ) {
-      setSelectedAppointmentId(
-        appointmentIdFromDashboard
-      );
+    if (verifyFromDashboard === "true" && appointmentIdFromDashboard) {
+      setSelectedAppointmentId(appointmentIdFromDashboard);
 
       setTokenOpen(true);
     }
-  }, [
-    verifyFromDashboard,
-    appointmentIdFromDashboard,
-  ]);
+  }, [verifyFromDashboard, appointmentIdFromDashboard]);
 
   useEffect(() => {
     if (!selectedHospital || !selectedMode) {
@@ -180,81 +132,54 @@ const [pastPatient, setPastPatient] = useState(null);
       try {
         const paginationParams = {
           limit: pagination.pageSize,
-          offset:
-            pagination.page *
-            pagination.pageSize,
+          offset: pagination.page * pagination.pageSize,
         };
 
-        const res =
-          await scheduleService.getDoctorAppointments(
-            selectedHospital,
-            selectedMode,
-            status,
-            date,
-            paginationParams
-          );
+        const res = await scheduleService.getDoctorAppointments(
+          selectedHospital,
+          selectedMode,
+          status,
+          date,
+          paginationParams,
+        );
 
-        const appointments = Array.isArray(
-          res?.appointments
-        )
+        const appointments = Array.isArray(res?.appointments)
           ? res.appointments
           : [];
 
-        const formattedPatients =
-          appointments.map((appointment) => ({
-            id: appointment.appointment_id,
+        const formattedPatients = appointments.map((appointment) => ({
+          id: appointment.appointment_id,
 
-            patientId:
-              appointment.patient_id ||
-              appointment.patientId ||
-              appointment.user_id ||
-              appointment.userId,
+          patientId:
+            appointment.patient_id ||
+            appointment.patientId ||
+            appointment.user_id ||
+            appointment.userId,
 
-            tokenNumber:
-              appointment.token_number,
+          tokenNumber: appointment.token_number,
 
-            name:
-              appointment.name ||
-              "Not provided",
+          name: appointment.name || "Not provided",
 
-            phoneNumber:
-              appointment.phone_number ||
-              "Not provided",
+          phoneNumber: appointment.phone_number || "Not provided",
 
-            Diagnostic:
-              appointment.diagnostic ||
-              "Not provided",
+          Diagnostic: appointment.diagnostic || "Not provided",
 
-            date:
-              appointment.date ||
-              "Not provided",
+          date: appointment.date || "Not provided",
 
-            time:
-              appointment.time ||
-              "Not provided",
+          time: appointment.time || "Not provided",
 
-            mode:
-              appointment.mode ||
-              "Not provided",
+          mode: appointment.mode || "Not provided",
 
-            hospitalName:
-              appointment.hospital_name ||
-              "Not provided",
+          hospitalName: appointment.hospital_name || "Not provided",
 
-            status:
-              appointment.status ||
-              "Not provided",
+          status: appointment.status || "Not provided",
 
-            bookedAt:
-              appointment.booked_at,
-          }));
+          bookedAt: appointment.booked_at,
+        }));
 
         setPatients(formattedPatients);
       } catch (err) {
-        console.error(
-          "Appointment API Error:",
-          err
-        );
+        console.error("Appointment API Error:", err);
 
         setPatients([]);
       } finally {
@@ -273,16 +198,13 @@ const [pastPatient, setPastPatient] = useState(null);
   ]);
 
   const handleOpen = (patient) => {
-    const appointmentStatus =
-      patient?.status?.toLowerCase();
+    const appointmentStatus = patient?.status?.toLowerCase();
 
     if (
       appointmentStatus === "in_progress" ||
       appointmentStatus === "completed"
     ) {
-      router.push(
-        `/doctor/pages/prescription?appointment_id=${patient.id}`
-      );
+      router.push(`/doctor/pages/prescription?appointment_id=${patient.id}`);
 
       return;
     }
@@ -299,8 +221,7 @@ const [pastPatient, setPastPatient] = useState(null);
     if (!patient?.id) return;
 
     try {
-      const authToken =
-        localStorage.getItem("token");
+      const authToken = localStorage.getItem("token");
 
       if (!authToken) return;
 
@@ -308,10 +229,9 @@ const [pastPatient, setPastPatient] = useState(null);
         `${API_URL}/api/user/getPatientDetails/${patient.id}`,
         {
           headers: {
-            Authorization:
-              `Bearer ${authToken}`,
+            Authorization: `Bearer ${authToken}`,
           },
-        }
+        },
       );
 
       const result = await response.json();
@@ -321,10 +241,7 @@ const [pastPatient, setPastPatient] = useState(null);
         setViewOpen(true);
       }
     } catch (err) {
-      console.error(
-        "Patient details error:",
-        err
-      );
+      console.error("Patient details error:", err);
     }
   };
 
@@ -332,155 +249,137 @@ const [pastPatient, setPastPatient] = useState(null);
     setMedicalDetailsPatient(row);
     handleView(row);
   };
-const fetchPastPrescription = async (patientId, prescriptionDate) => {
-  if (!patientId || !prescriptionDate) return;
+  const fetchPastPrescription = async (patientId, prescriptionDate) => {
+    if (!patientId || !prescriptionDate) return;
 
-  setPastLoading(true);
-  setPastError("");
-  setPastData([]);
+    setPastLoading(true);
+    setPastError("");
+    setPastData([]);
 
-  try {
-    const response = await api.get(
-      "/api/appointments/getprescriptions",
-      {
+    try {
+      const response = await api.get("/api/appointments/getprescriptions", {
         params: {
           user_id: patientId,
           date: prescriptionDate,
         },
+      });
+
+      const prescriptions = Array.isArray(response?.data?.data)
+        ? response.data.data
+        : [];
+
+      setPastData(prescriptions);
+
+      if (!prescriptions.length) {
+        setPastError("No prescription found for this date.");
       }
-    );
+    } catch (err) {
+      console.error("Prescription API Error:", err);
 
-    const prescriptions = Array.isArray(response?.data?.data)
-      ? response.data.data
-      : [];
-
-    setPastData(prescriptions);
-
-    if (!prescriptions.length) {
-      setPastError("No prescription found for this date.");
+      setPastError(
+        err?.response?.data?.message || "Unable to load prescription.",
+      );
+    } finally {
+      setPastLoading(false);
     }
-  } catch (err) {
-    console.error("Prescription API Error:", err);
+  };
 
-    setPastError(
-      err?.response?.data?.message ||
-        "Unable to load prescription."
-    );
-  } finally {
-    setPastLoading(false);
-  }
-};
+  const normalizeApiDate = (value) => {
+    if (!value || value === "Not provided") return "";
 
-const normalizeApiDate = (value) => {
-  if (!value || value === "Not provided") return "";
+    const cleanValue = String(value).split("T")[0].trim();
 
-  const cleanValue = String(value).split("T")[0].trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(cleanValue)) {
+      return cleanValue;
+    }
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(cleanValue)) {
-    return cleanValue;
-  }
+    if (/^\d{2}-\d{2}-\d{4}$/.test(cleanValue)) {
+      const [day, month, year] = cleanValue.split("-");
+      return `${year}-${month}-${day}`;
+    }
 
-  if (/^\d{2}-\d{2}-\d{4}$/.test(cleanValue)) {
-    const [day, month, year] = cleanValue.split("-");
-    return `${year}-${month}-${day}`;
-  }
+    return "";
+  };
 
-  return "";
-};
+  const handleViewHistory = async (row) => {
+    setPastPatient(row);
+    setPastOpen(true);
+    setPastLoading(true);
+    setPastError("");
+    setPastData([]);
+    setPastSelectedDate("");
 
-const handleViewHistory = async (row) => {
-  setPastPatient(row);
-  setPastOpen(true);
-  setPastLoading(true);
-  setPastError("");
-  setPastData([]);
-  setPastSelectedDate("");
-
-  if (!row?.patientId) {
-    setPastError("Patient ID not found.");
-    setPastLoading(false);
-    return;
-  }
-
-  try {
-    const response = await api.get(
-      "/api/appointments/getprescriptions",
-      {
-        params: {
-          user_id: row.patientId,
-        },
-      }
-    );
-
-    const prescriptions = Array.isArray(response?.data?.data)
-      ? response.data.data
-      : [];
-
-    if (!prescriptions.length) {
-      setPastData([]);
-      setPastError("No past prescriptions found.");
+    if (!row?.patientId) {
+      setPastError("Patient ID not found.");
+      setPastLoading(false);
       return;
     }
 
-    const sortedPrescriptions = [...prescriptions].sort((a, b) => {
-      const dateA = a?.appointment?.date || "";
-      const dateB = b?.appointment?.date || "";
+    try {
+      const response = await api.get("/api/appointments/getprescriptions", {
+        params: {
+          user_id: row.patientId,
+        },
+      });
 
-      if (dateA !== dateB) {
-        return dateB.localeCompare(dateA);
+      const prescriptions = Array.isArray(response?.data?.data)
+        ? response.data.data
+        : [];
+
+      if (!prescriptions.length) {
+        setPastData([]);
+        setPastError("No past prescriptions found.");
+        return;
       }
 
-      const timeA = a?.appointment?.start_time || "";
-      const timeB = b?.appointment?.start_time || "";
+      const sortedPrescriptions = [...prescriptions].sort((a, b) => {
+        const dateA = a?.appointment?.date || "";
+        const dateB = b?.appointment?.date || "";
 
-      return timeB.localeCompare(timeA);
-    });
+        if (dateA !== dateB) {
+          return dateB.localeCompare(dateA);
+        }
 
-    setPastData(sortedPrescriptions);
+        const timeA = a?.appointment?.start_time || "";
+        const timeB = b?.appointment?.start_time || "";
 
-    const latestDate =
-      sortedPrescriptions[0]?.appointment?.date || "";
+        return timeB.localeCompare(timeA);
+      });
 
-    setPastSelectedDate(latestDate);
-  } catch (err) {
-    console.error("Past prescriptions error:", err);
+      setPastData(sortedPrescriptions);
 
-    setPastError(
-      err?.response?.data?.message ||
-        "Unable to load past prescriptions."
-    );
-  } finally {
+      const latestDate = sortedPrescriptions[0]?.appointment?.date || "";
+
+      setPastSelectedDate(latestDate);
+    } catch (err) {
+      console.error("Past prescriptions error:", err);
+
+      setPastError(
+        err?.response?.data?.message || "Unable to load past prescriptions.",
+      );
+    } finally {
+      setPastLoading(false);
+    }
+  };
+
+  const handlePastClose = () => {
+    setPastOpen(false);
+    setPastPatient(null);
+    setPastData([]);
+    setPastError("");
+    setPastSelectedDate("");
     setPastLoading(false);
-  }
-};
+  };
 
-const handlePastClose = () => {
-  setPastOpen(false);
-  setPastPatient(null);
-  setPastData([]);
-  setPastError("");
-  setPastSelectedDate("");
-  setPastLoading(false);
-};
+  const handlePastDateChange = async (selectedDate) => {
+    if (!pastPatient?.patientId || !selectedDate) return;
 
-const handlePastDateChange = async (selectedDate) => {
-  if (!pastPatient?.patientId || !selectedDate) return;
+    setPastSelectedDate(selectedDate);
 
-  setPastSelectedDate(selectedDate);
+    await fetchPastPrescription(pastPatient.patientId, selectedDate);
+  };
 
-  await fetchPastPrescription(
-    pastPatient.patientId,
-    selectedDate
-  );
-};
-
-
-
-
-
-  const handleViewMedicalDetails = async (
-    row
-  ) => {
+  const handleViewMedicalDetails = async (row) => {
     if (!row?.patientId) {
       setError("Patient ID not found.");
       return;
@@ -491,60 +390,43 @@ const handlePastDateChange = async (selectedDate) => {
     setError("");
 
     try {
-      const response = await api.get(
-        "/api/medical-requests/doctor"
+      const response = await api.get("/api/medical-requests/doctor");
+
+      const requests = response?.data?.data || [];
+
+      const patientRequests = requests.filter(
+        (request) =>
+          Number(request.patient_id) === Number(row.patientId) &&
+          String(request.status || "").toUpperCase() === "COMPLETED",
       );
-
-      const requests =
-        response?.data?.data || [];
-
-      const patientRequests =
-        requests.filter(
-          (request) =>
-            Number(request.patient_id) ===
-              Number(row.patientId) &&
-            String(
-              request.status || ""
-            ).toUpperCase() === "COMPLETED"
-        );
 
       if (!patientRequests.length) {
         setError(
-          "Invoice tabhi available hoga jab medical store medicine deliver karega."
+          "Invoice tabhi available hoga jab medical store medicine deliver karega.",
         );
 
         return;
       }
 
-      const rows = patientRequests.map(
-        (request) => ({
-          id: request.id,
+      const rows = patientRequests.map((request) => ({
+        id: request.id,
 
-          medicineName:
-            request.medicine_name,
+        medicineName: request.medicine_name,
 
-          quantity:
-            request.quantity || 1,
+        quantity: request.quantity || 1,
 
-          storeId:
-            request.medical_store_id,
+        storeId: request.medical_store_id,
 
-          amount:
-            request.total_amount ||
-            request.amount ||
-            0,
+        amount: request.total_amount || request.amount || 0,
 
-          status:
-            request.status,
-        })
-      );
-
-      setMedicalDetailRows(rows);
+        status: request.status,
+      }));
+      setMedicalInvoice(patientRequests[0]);
       setMedicalDetailsOpen(true);
     } catch (requestError) {
       setError(
         requestError?.response?.data?.message ||
-          "Unable to load medical details."
+          "Unable to load medical details.",
       );
     } finally {
       setMedicalDetailsLoading(false);
@@ -582,13 +464,10 @@ const handlePastDateChange = async (selectedDate) => {
     setError("");
 
     try {
-      const jwtToken =
-        localStorage.getItem("token");
+      const jwtToken = localStorage.getItem("token");
 
       if (!jwtToken) {
-        setError(
-          "Authentication token not found"
-        );
+        setError("Authentication token not found");
 
         setLoading(false);
         return;
@@ -599,42 +478,35 @@ const handlePastDateChange = async (selectedDate) => {
         {
           method: "GET",
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
 
-            Authorization:
-              `Bearer ${jwtToken}`,
+            Authorization: `Bearer ${jwtToken}`,
           },
-        }
+        },
       );
 
       const res = await response.json();
 
       if (res?.success) {
         router.push(
-          `/doctor/pages/prescription?appointment_id=${selectedAppointmentId}`
+          `/doctor/pages/prescription?appointment_id=${selectedAppointmentId}`,
         );
 
         return;
       }
 
-      setError(
-        res?.message || "Invalid token"
-      );
+      setError(res?.message || "Invalid token");
     } catch (err) {
-      setError(
-        err?.message ||
-          "Token expired or invalid"
-      );
+      setError(err?.message || "Token expired or invalid");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDateChange = (value) => {
-  onDateChange(value);
-  setPagination((prev) => ({ ...prev, page: 0 }));
-};
+    onDateChange(value);
+    setPagination((prev) => ({ ...prev, page: 0 }));
+  };
   const handleStatusChange = (value) => {
     setStatus(value);
 
@@ -644,11 +516,11 @@ const handlePastDateChange = async (selectedDate) => {
     }));
   };
 
- const handleClearFilters = () => {
-  onDateChange("");
-  setStatus("pending");
-  setPagination((prev) => ({ ...prev, page: 0 }));
-};
+  const handleClearFilters = () => {
+    onDateChange("");
+    setStatus("pending");
+    setPagination((prev) => ({ ...prev, page: 0 }));
+  };
 
   return (
     <>
@@ -656,10 +528,8 @@ const handlePastDateChange = async (selectedDate) => {
         elevation={0}
         sx={{
           width: "100%",
-          bgcolor:
-            theme.palette.background.paper,
-          border:
-            `1px solid ${theme.palette.divider}`,
+          bgcolor: theme.palette.background.paper,
+          border: `1px solid ${theme.palette.divider}`,
           borderRadius: 2,
           overflow: "hidden",
         }}
@@ -682,13 +552,9 @@ const handlePastDateChange = async (selectedDate) => {
           roleId={roleId}
           onStart={handleOpen}
           onViewDetails={handleViewDetails}
-          onViewMedicalDetails={
-            handleViewMedicalDetails
-          }
+          onViewMedicalDetails={handleViewMedicalDetails}
           onViewHistory={handleViewHistory}
-          medicalDetailsLoading={
-            medicalDetailsLoading
-          }
+          medicalDetailsLoading={medicalDetailsLoading}
         />
       </Paper>
 
@@ -702,24 +568,21 @@ const handlePastDateChange = async (selectedDate) => {
         open={medicalDetailsOpen}
         onClose={() => {
           setMedicalDetailsOpen(false);
-          setMedicalDetailRows([]);
-          setMedicalDetailsPatient(null);
+          setMedicalInvoice(null);
         }}
-        patient={medicalDetailsPatient}
-        stores={approvedMedicalStores}
-        rows={medicalDetailRows}
+        invoice={medicalInvoice}
       />
 
-<PastDetailsDialog
-  open={pastOpen}
-  onClose={handlePastClose}
-  loading={pastLoading}
-  error={pastError}
-  data={pastData}
-  patient={pastPatient}
-  selectedDate={pastSelectedDate}
-  onDateChange={setPastSelectedDate}
-/>
+      <PastDetailsDialog
+        open={pastOpen}
+        onClose={handlePastClose}
+        loading={pastLoading}
+        error={pastError}
+        data={pastData}
+        patient={pastPatient}
+        selectedDate={pastSelectedDate}
+        onDateChange={setPastSelectedDate}
+      />
       <TokenVerificationDialog
         open={tokenOpen}
         token={token}

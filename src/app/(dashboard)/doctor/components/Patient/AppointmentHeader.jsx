@@ -20,11 +20,22 @@ export default function AppointmentHeader({
   selectedMode,
   date,
   status,
+  roleId,
   onDateChange,
   onStatusChange,
   onClear,
 }) {
   const theme = useTheme();
+  const isAssistant = String(roleId) === "3";
+  const displayedStatus = isAssistant ? "completed" : status;
+
+  const statusOptions = isAssistant
+    ? [{ value: "completed", label: "Completed" }]
+    : [
+        { value: "pending", label: "Pending" },
+        { value: "in_progress", label: "In Progress" },
+        { value: "completed", label: "Completed" },
+      ];
 
   const fieldStyle = {
     "& .MuiInputLabel-root": {
@@ -146,9 +157,7 @@ export default function AppointmentHeader({
           size="small"
           value={date}
           onChange={(e) => onDateChange(e.target.value)}
-          InputLabelProps={{
-            shrink: true,
-          }}
+          InputLabelProps={{ shrink: true }}
           sx={{
             ...fieldStyle,
             width: { xs: "100%", sm: 165 },
@@ -170,8 +179,9 @@ export default function AppointmentHeader({
           <InputLabel>Status</InputLabel>
 
           <Select
-            value={status}
+            value={displayedStatus}
             label="Status"
+            disabled={isAssistant}
             onChange={(e) => onStatusChange(e.target.value)}
             MenuProps={{
               PaperProps: {
@@ -183,9 +193,11 @@ export default function AppointmentHeader({
               },
             }}
           >
-            <MenuItem value="pending">Pending</MenuItem>
-            <MenuItem value="in_progress">In Progress</MenuItem>
-            <MenuItem value="completed">Completed</MenuItem>
+            {statusOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
 

@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
 import api from "../../../../utils/axiosInstance";
 import {
@@ -7,6 +6,10 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   InputAdornment,
   Pagination,
   Snackbar,
@@ -22,25 +25,19 @@ import {
 } from "../../lab/components/LabUi";
 import LabReports from "../../lab/components/LabReports";
 import { SearchIcon } from "lucide-react";
-
 const getRows = (response) => response?.data?.data || [];
-
 const getErrorMessage = (error, fallback) =>
   error.response?.data?.message || error.message || fallback;
-
 const getSearchResultRows = (response) => {
   const payload = response?.data;
-
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.data)) return payload.data;
   if (Array.isArray(payload?.results)) return payload.results;
   if (Array.isArray(payload?.labs)) return payload.labs;
   if (Array.isArray(payload?.items)) return payload.items;
   if (Array.isArray(payload?.rows)) return payload.rows;
-
   return [];
 };
-
 const normalizeLab = (lab = {}) => ({
   ...lab,
   id: lab.id || lab.lab_id || lab.labId,
@@ -56,7 +53,6 @@ const normalizeLab = (lab = {}) => ({
     lab.address_line ||
     "-",
 });
-
 const normalizeMedicalStore = (store = {}) => ({
   ...store,
   id:
@@ -91,12 +87,12 @@ const normalizeMedicalStore = (store = {}) => ({
     "-",
   city: store.city || store.location || store.area || "-",
 });
-
 const normalizeConnectionRow = (connection = {}) => {
+  const rawType = String(connection.type || "").toUpperCase();
   const type =
-    connection.type ||
-    (connection.lab_code ? "LAB" : connection.store_code ? "PHARMACY" : "LAB");
-
+    rawType.includes("PHARMACY") || rawType.includes("MEDICAL") || connection.store_code
+      ? "PHARMACY"
+      : "LAB";
   return {
     ...connection,
     connection_id: connection.connection_id || connection.id,
@@ -107,6 +103,11 @@ const normalizeConnectionRow = (connection = {}) => {
       connection.store_name ||
       connection.partner_name ||
       "-",
+    rejection_reason:
+      connection.rejection_reason ||
+      connection.rejectionReason ||
+      connection.reject_reason ||
+      "",
     code:
       connection.code || connection.lab_code || connection.store_code || "-",
     status: connection.status || "PENDING",
@@ -114,7 +115,6 @@ const normalizeConnectionRow = (connection = {}) => {
     approved_at: connection.approved_at || null,
   };
 };
-
 export default function DoctorLabPanel({ section = "connections" }) {
   const [labs, setLabs] = useState([]);
   const [connections, setConnections] = useState([]);
@@ -122,37 +122,31 @@ export default function DoctorLabPanel({ section = "connections" }) {
   const [medicalConnections, setMedicalConnections] = useState([]);
   const [requests, setRequests] = useState([]);
   const [reports, setReports] = useState([]);
-
+  const [rejectConnection, setRejectConnection] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectingId, setRejectingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [connectingId, setConnectingId] = useState(null);
   const [connectingMedicalId, setConnectingMedicalId] = useState(null);
-
   const [searchText, setSearchText] = useState("");
   const [medicalSearchText, setMedicalSearchText] = useState("");
   const [connectionSearch, setConnectionSearch] = useState("");
-
   const [tableFilters, setTableFilters] = useState({
     search: "",
     status: "",
     date: "",
   });
-
   const [tablePage, setTablePage] = useState(1);
   const [showPreviousReports, setShowPreviousReports] = useState(false);
-
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-
   const pageSize = 10;
-
   const loadLabs = async () => {
     const trimmed = searchText.trim();
-
     if (!trimmed) {
       setLabs([]);
       return;
     }
-
     try {
       const response = await api.get("/api/labs/search", {
         params: {
@@ -165,10 +159,8 @@ export default function DoctorLabPanel({ section = "connections" }) {
           code: trimmed,
         },
       });
-
       const rawLabs = getSearchResultRows(response).map(normalizeLab);
       const query = trimmed.toLowerCase();
-
       const filteredLabs = rawLabs.filter((lab) => {
         const haystack = [
           lab.lab_name,
@@ -182,10 +174,8 @@ export default function DoctorLabPanel({ section = "connections" }) {
           .filter(Boolean)
           .join(" ")
           .toLowerCase();
-
         return haystack.includes(query);
       });
-
       setLabs(filteredLabs.length ? filteredLabs : rawLabs);
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to search labs."));
@@ -196,7 +186,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
     try {
       const response = await api.get("/api/doctors/connections");
       const rows = response?.data?.data || [];
-
       setConnections(rows.map(normalizeConnectionRow));
     } catch (requestError) {
       setError(
@@ -207,12 +196,10 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
   const loadMedicalStores = async () => {
     const trimmed = medicalSearchText.trim();
-
     if (!trimmed) {
       setMedicalStores([]);
       return;
     }
-
     try {
       const response = await api.get("/api/medical-stores/search", {
         params: {
@@ -225,13 +212,10 @@ export default function DoctorLabPanel({ section = "connections" }) {
           code: trimmed,
         },
       });
-
       const rows = getRows(response);
-
       setMedicalStores(rows.length ? rows.map(normalizeMedicalStore) : []);
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to load medical stores."));
-
       setMedicalStores([]);
     }
   };
@@ -239,9 +223,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
   const loadMedicalConnections = async () => {
     try {
       const response = await api.get("/api/medical-stores/doctor/connections");
-
       const rows = getRows(response);
-
       setMedicalConnections(rows);
     } catch (requestError) {
       setError(
@@ -250,7 +232,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
           "Unable to load your medical connections.",
         ),
       );
-
       setMedicalConnections([]);
     }
   };
@@ -264,7 +245,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
           date: tableFilters.date || undefined,
         },
       });
-
       setRequests(getRows(response));
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to load lab requests."));
@@ -279,7 +259,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
           date: tableFilters.date || undefined,
         },
       });
-
       setReports(getRows(response));
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to load lab reports."));
@@ -302,33 +281,27 @@ export default function DoctorLabPanel({ section = "connections" }) {
       return false;
     }
   };
-
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (section === "connections") {
         loadLabs();
       }
     }, 300);
-
     return () => clearTimeout(timeout);
   }, [searchText, section]);
-
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (section === "connections") {
         loadMedicalStores();
       }
     }, 300);
-
     return () => clearTimeout(timeout);
   }, [medicalSearchText, section]);
-
   useEffect(() => {
     const loadBySection = async () => {
       try {
         setLoading(true);
         setError("");
-
         if (section === "connections") {
           await loadConnections();
         } else if (section === "requests") {
@@ -344,10 +317,8 @@ export default function DoctorLabPanel({ section = "connections" }) {
         setLoading(false);
       }
     };
-
     loadBySection();
   }, [section, tableFilters.date, tableFilters.search, tableFilters.status]);
-
   useEffect(() => {
     setTablePage(1);
   }, [
@@ -357,7 +328,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
     tableFilters.status,
     connectionSearch,
   ]);
-
   const handleFilter = (field) => (value) => {
     setTableFilters((current) => ({
       ...current,
@@ -369,16 +339,13 @@ export default function DoctorLabPanel({ section = "connections" }) {
     try {
       setConnectingId(labId);
       setError("");
-
       await api.post("/api/doctors/connections", {
         type: "LAB",
         targetId: labId,
       });
-
       setNotice("Lab connection request sent successfully.");
       setSearchText("");
       setLabs([]);
-
       await loadConnections();
     } catch (requestError) {
       setError(
@@ -393,18 +360,14 @@ export default function DoctorLabPanel({ section = "connections" }) {
     try {
       setConnectingMedicalId(storeId);
       setError("");
-
       const response = await api.post("/api/doctors/connections", {
         type: "PHARMACY",
         targetId: storeId,
       });
-
       if (response?.status === 200 || response?.status === 201) {
         setNotice("Medical connection request sent successfully.");
-
         setMedicalSearchText("");
         setMedicalStores([]);
-
         await loadConnections();
       }
     } catch (requestError) {
@@ -419,6 +382,40 @@ export default function DoctorLabPanel({ section = "connections" }) {
     }
   };
 
+  const handleRejectConnection = async () => {
+    const reason = rejectionReason.trim();
+    const connectionId = rejectConnection?.connection_id || rejectConnection?.id;
+    if (!reason) {
+      setError("Please enter a rejection note.");
+      return;
+    }
+    if (!connectionId) {
+      setError("Connection ID is missing.");
+      return;
+    }
+    try {
+      setRejectingId(connectionId);
+      setError("");
+      const connectionType =
+        rejectConnection.type === "PHARMACY" ? "medical-doctor" : "lab-doctor";
+
+      await api.patch(
+        `/api/lab-requests/${connectionType}/${connectionId}/reject`,
+        { rejection_reason: reason },
+      );
+      setRejectConnection(null);
+      setRejectionReason("");
+      setNotice("Connection rejected successfully.");
+      await loadConnections();
+    } catch (requestError) {
+      setError(
+        getErrorMessage(requestError, "Unable to reject this connection."),
+      );
+    } finally {
+      setRejectingId(null);
+    }
+  };
+
   const filterProps = useMemo(
     () => ({
       search: tableFilters.search,
@@ -430,7 +427,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
     }),
     [tableFilters],
   );
-
   const getRequestNote = (request = {}) =>
     request.latest_status_note ||
     request.latestStatusNote ||
@@ -439,12 +435,9 @@ export default function DoctorLabPanel({ section = "connections" }) {
     request.reason ||
     request.statusReason ||
     "";
-
   const filteredConnections = useMemo(() => {
     const query = connectionSearch.trim().toLowerCase();
-
     if (!query) return connections;
-
     return connections.filter((connection) => {
       const searchableText = [
         connection.name,
@@ -455,21 +448,17 @@ export default function DoctorLabPanel({ section = "connections" }) {
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
-
       return searchableText.includes(query);
     });
   }, [connections, connectionSearch]);
-
   const visibleConnections = filteredConnections.slice(
     (tablePage - 1) * pageSize,
     tablePage * pageSize,
   );
-
   const visibleRequests = requests.slice(
     (tablePage - 1) * pageSize,
     tablePage * pageSize,
   );
-
   const reportRows = useMemo(() => {
     const uploadedRequestIds = new Set(
       reports.map((report) =>
@@ -478,7 +467,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
         ),
       ),
     );
-
     const normalizedReports = reports.map((report) => {
       const uploadedAt =
         report.uploadedAt ||
@@ -488,21 +476,18 @@ export default function DoctorLabPanel({ section = "connections" }) {
         report.createdAt ||
         report.created_at ||
         null;
-
       const patientKey =
         report.patientId ||
         report.patient_id ||
         report.patientName ||
         report.patient_name ||
         "unknown";
-
       const appointmentId =
         report.appointmentId ||
         report.appointment_id ||
         report.appointment?.id ||
         report.appointment?.appointment_id ||
         null;
-
       return {
         ...report,
         patientKey,
@@ -512,36 +497,30 @@ export default function DoctorLabPanel({ section = "connections" }) {
         uploadedAt,
       };
     });
-
     const pendingRequests = requests
       .filter((request) => !uploadedRequestIds.has(Number(request.id)))
       .map((request) => {
         let requestedTests = request.requested_tests || "-";
-
         if (typeof requestedTests === "string") {
           try {
             const parsed = JSON.parse(requestedTests);
-
             if (Array.isArray(parsed)) {
               requestedTests = parsed.join(", ");
             }
           } catch {}
         }
-
         const patientKey =
           request.patient_id ||
           request.patientId ||
           request.patient_name ||
           request.patientName ||
           "unknown";
-
         const appointmentId =
           request.appointmentId ||
           request.appointment_id ||
           request.appointment?.id ||
           request.appointment?.appointment_id ||
           null;
-
         return {
           id: `request-${request.id}`,
           requestId: request.id,
@@ -561,10 +540,8 @@ export default function DoctorLabPanel({ section = "connections" }) {
           reportCode: null,
         };
       });
-
     return [...normalizedReports, ...pendingRequests];
   }, [reports, requests]);
-
   const getReportDateTimestamp = (row = {}) => {
     const value =
       row.expected_report_at ||
@@ -576,11 +553,8 @@ export default function DoctorLabPanel({ section = "connections" }) {
       row.createdAt ||
       row.created_at ||
       null;
-
     if (!value) return 0;
-
     const parsed = Date.parse(value);
-
     return Number.isNaN(parsed) ? 0 : parsed;
   };
 
@@ -591,11 +565,9 @@ export default function DoctorLabPanel({ section = "connections" }) {
       row.appointment?.id ||
       row.appointment?.appointment_id ||
       null;
-
     if (appointmentId) {
       return `appointment:${String(appointmentId)}`;
     }
-
     return `patient:${String(
       row.patientKey || row.patientId || row.patient_id || "unknown",
     )}`;
@@ -608,14 +580,11 @@ export default function DoctorLabPanel({ section = "connections" }) {
       ),
     [reportRows],
   );
-
   const latestReportRows = useMemo(() => {
     const latestByGroup = new Map();
-
     sortedReportRows.forEach((row) => {
       const key = getReportGroupKey(row);
       const previous = latestByGroup.get(key);
-
       if (
         !previous ||
         getReportDateTimestamp(row) > getReportDateTimestamp(previous)
@@ -623,17 +592,13 @@ export default function DoctorLabPanel({ section = "connections" }) {
         latestByGroup.set(key, row);
       }
     });
-
     return [...latestByGroup.values()];
   }, [sortedReportRows]);
-
   const previousReportRows = useMemo(() => {
     const latestByGroup = new Map();
-
     sortedReportRows.forEach((row) => {
       const key = getReportGroupKey(row);
       const previous = latestByGroup.get(key);
-
       if (
         !previous ||
         getReportDateTimestamp(row) > getReportDateTimestamp(previous)
@@ -641,15 +606,12 @@ export default function DoctorLabPanel({ section = "connections" }) {
         latestByGroup.set(key, row);
       }
     });
-
     return sortedReportRows.filter((row) => {
       const key = getReportGroupKey(row);
       const latestRow = latestByGroup.get(key);
-
       return latestRow && latestRow.id !== row.id;
     });
   }, [sortedReportRows]);
-
   if (section === "connections") {
     const connectionCardSx = {
       border: "1px solid #dfeaf3",
@@ -658,7 +620,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
       p: 1.75,
       boxShadow: "0 1px 0 rgba(15, 23, 42, 0.02)",
     };
-
     const compactButtonSx = {
       minHeight: 30,
       px: 1.25,
@@ -670,13 +631,11 @@ export default function DoctorLabPanel({ section = "connections" }) {
         boxShadow: "none",
       },
     };
-
     const compactCellSx = {
       fontSize: "12.5px",
       color: "#1f2937",
       py: 1.2,
     };
-
     return (
       <Box
         sx={{
@@ -722,7 +681,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
               >
                 My Connections
               </Typography>
-
               <Typography
                 sx={{
                   mt: 0.4,
@@ -735,7 +693,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
                 status.
               </Typography>
             </Box>
-
             <TextField
               size="small"
               label="Find Partner"
@@ -761,31 +718,25 @@ export default function DoctorLabPanel({ section = "connections" }) {
                   md: 360,
                 },
                 flexShrink: 0,
-
                 "& .MuiOutlinedInput-root": {
                   height: 40,
                   fontSize: "12.5px",
                   bgcolor: "background.paper",
                   borderRadius: "8px",
-
                   "& fieldset": {
                     borderColor: "#757575",
                   },
-
                   "&:hover fieldset": {
                     borderColor: "primary.main",
                   },
-
                   "&.Mui-focused fieldset": {
                     borderColor: "primary.main",
                     borderWidth: "1px",
                   },
                 },
-
                 "& .MuiInputLabel-root": {
                   fontSize: "12.5px",
                 },
-
                 "& .MuiFormHelperText-root": {
                   mx: 0.5,
                   mt: 0.5,
@@ -795,7 +746,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
               }}
             />
           </Box>
-
        <Box
   sx={{
     display: "grid",
@@ -827,7 +777,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
     >
       Search Lab
     </Typography>
-
     <TextField
       size="small"
       fullWidth
@@ -846,7 +795,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
         },
       }}
     />
-
     <Box>
       {labs.length ? (
         <Box
@@ -882,7 +830,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
                 >
                   {lab.lab_name || "Lab"}
                 </Typography>
-
                 <Typography
                   sx={{
                     fontSize: "10.5px",
@@ -892,7 +839,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
                   {lab.lab_code || "-"}
                 </Typography>
               </Box>
-
               <Button
                 size="small"
                 variant="outlined"
@@ -924,7 +870,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
       )}
     </Box>
   </Box>
-
   {/* Search Pharmacy */}
   <Box
     sx={{
@@ -945,7 +890,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
     >
       Search Pharmacy
     </Typography>
-
     <TextField
       size="small"
       fullWidth
@@ -964,7 +908,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
         },
       }}
     />
-
     <Box>
       {medicalStores.length ? (
         <Box
@@ -1000,7 +943,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
                 >
                   {store.name || store.store_name || "Pharmacy"}
                 </Typography>
-
                 <Typography
                   sx={{
                     fontSize: "10.5px",
@@ -1010,7 +952,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
                   {store.code || store.store_code || "-"}
                 </Typography>
               </Box>
-
               <Button
                 size="small"
                 variant="outlined"
@@ -1045,16 +986,16 @@ export default function DoctorLabPanel({ section = "connections" }) {
     </Box>
   </Box>
 </Box>
-
           <DataTable
-            columns={[
-              "NAME",
-              "TYPE",
-              "CODE",
-              "STATUS",
-              "REQUESTED",
-              "APPROVED",
-            ]}
+           columns={[
+  "NAME",
+  "TYPE",
+  "CODE",
+  "STATUS",
+  "REQUESTED",
+  "APPROVED",
+  "ACTIONS",
+]}
             loading={loading}
             emptyMessage={
               connectionSearch
@@ -1094,7 +1035,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
                     >
                       {connection.name || "-"}
                     </TableCell>
-
                     <TableCell
                       sx={{
                         color: "text.primary",
@@ -1103,7 +1043,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
                     >
                       {connection.type === "PHARMACY" ? "Pharmacy" : "Lab"}
                     </TableCell>
-
                     <TableCell
                       sx={{
                         color: "text.primary",
@@ -1111,21 +1050,26 @@ export default function DoctorLabPanel({ section = "connections" }) {
                     >
                       {connection.code || "-"}
                     </TableCell>
-
                     <TableCell>
-                      <Chip
-                        size="small"
-                        label={connection.status || "PENDING"}
-                        color={
-                          connection.status === "APPROVED"
-                            ? "success"
-                            : connection.status === "REJECTED"
-                              ? "error"
-                              : "warning"
-                        }
-                      />
+                      <Box sx={{ display: "grid", justifyItems: "start", gap: 0.5 }}>
+                        <Chip
+                          size="small"
+                          label={connection.status || "PENDING"}
+                          color={
+                            connection.status === "APPROVED"
+                              ? "success"
+                              : connection.status === "REJECTED"
+                                ? "error"
+                                : "warning"
+                          }
+                        />
+                        {connection.status === "REJECTED" && connection.rejection_reason && (
+                          <Typography sx={{ fontSize: "11px", color: "text.secondary" }}>
+                            {connection.rejection_reason}
+                          </Typography>
+                        )}
+                      </Box>
                     </TableCell>
-
                     <TableCell
                       sx={{
                         color: "text.secondary",
@@ -1135,7 +1079,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
                         ? new Date(connection.requested_at).toLocaleDateString()
                         : "-"}
                     </TableCell>
-
                     <TableCell
                       sx={{
                         color: "text.secondary",
@@ -1145,12 +1088,72 @@ export default function DoctorLabPanel({ section = "connections" }) {
                         ? new Date(connection.approved_at).toLocaleDateString()
                         : "-"}
                     </TableCell>
+                    <TableCell>
+                      {["LAB", "PHARMACY"].includes(connection.type?.toUpperCase()) &&
+                      (connection.status || "").toUpperCase() !== "REJECTED" ? (
+                        <Button
+                          size="small"
+                          color="error"
+                          variant="outlined"
+                          onClick={() => {
+                            setRejectConnection(connection);
+                            setRejectionReason("");
+                          }}
+                          sx={{
+                            minHeight: 28,
+                            fontSize: "11px",
+                            textTransform: "none",
+                          }}
+                        >
+                          Reject
+                        </Button>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))
               : null}
           </DataTable>
         </Box>
-
+        <Dialog
+          open={Boolean(rejectConnection)}
+          onClose={() => {
+            if (!rejectingId) setRejectConnection(null);
+          }}
+          fullWidth
+          maxWidth="sm"
+        >
+          <DialogTitle>Reject connection</DialogTitle>
+          <DialogContent>
+            <Typography sx={{ mb: 1, fontSize: "13px", color: "text.secondary" }}>
+              Enter a reason for rejecting this connection.
+            </Typography>
+            <TextField
+              autoFocus
+              fullWidth
+              multiline
+              minRows={3}
+              label="Rejection note"
+              value={rejectionReason}
+              onChange={(event) => setRejectionReason(event.target.value)}
+              placeholder="Example: Required documents are incomplete."
+            />
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={() => setRejectConnection(null)} disabled={Boolean(rejectingId)}>
+              Cancel
+            </Button>
+            <Button
+              color="error"
+              variant="contained"
+              onClick={handleRejectConnection}
+              disabled={!rejectionReason.trim() || Boolean(rejectingId)}
+            >
+              {rejectingId ? "Rejecting..." : "Reject connection"}
+            </Button>
+          </DialogActions>
+        </Dialog>
         <Snackbar
           open={Boolean(error)}
           autoHideDuration={6000}
@@ -1160,7 +1163,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
             {error}
           </Alert>
         </Snackbar>
-
         <Snackbar
           open={Boolean(notice)}
           autoHideDuration={3500}
@@ -1173,7 +1175,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
       </Box>
     );
   }
-
   if (section === "requests") {
     return (
       <Box
@@ -1187,7 +1188,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
           title="Lab Requests"
           description="View your patient test requests and their status."
         />
-
         <TableFilters
           {...filterProps}
           statusOptions={[
@@ -1206,7 +1206,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
             "CANCELLED",
           ]}
         />
-
         <DataTable
           columns={[
             "ORDER ID",
@@ -1237,11 +1236,9 @@ export default function DoctorLabPanel({ section = "connections" }) {
                   <TableCell sx={{ color: "#0B5C8E", fontWeight: 700 }}>
                     {request.order_id || request.orderId || "-"}
                   </TableCell>
-
                   <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>
                     {request.sample_type || request.sampleType || "-"}
                   </TableCell>
-
                   <TableCell
                     sx={{
                       color: "text.primary",
@@ -1250,7 +1247,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
                   >
                     {request.patient_name || request.patient_id || "-"}
                   </TableCell>
-
                   <TableCell
                     sx={{
                       color: "text.primary",
@@ -1258,7 +1254,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
                   >
                     {request.lab_name || "-"}
                   </TableCell>
-
                   <TableCell
                     sx={{
                       color: "text.primary",
@@ -1270,7 +1265,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
                       ? request.requested_tests.join(", ")
                       : request.requested_tests || "-"}
                   </TableCell>
-
                   <TableCell>
                     <Chip
                       size="small"
@@ -1280,7 +1274,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
                       }
                     />
                   </TableCell>
-
                   <TableCell>
                     <Chip
                       size="small"
@@ -1295,7 +1288,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
                       }
                     />
                   </TableCell>
-
                   <TableCell
                     sx={{
                       color: "text.secondary",
@@ -1308,7 +1300,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
                       ? getRequestNote(request) || "No reason provided."
                       : "-"}
                   </TableCell>
-
                   <TableCell
                     sx={{
                       color: "text.secondary",
@@ -1322,7 +1313,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
               ))
             : null}
         </DataTable>
-
         <Snackbar
           open={Boolean(error)}
           autoHideDuration={6000}
@@ -1335,7 +1325,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
       </Box>
     );
   }
-
   if (section === "reports") {
     return (
       <Box
@@ -1355,7 +1344,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
           onPageChange={setTablePage}
           onReview={reviewReport}
         />
-
         <Snackbar
           open={Boolean(error)}
           autoHideDuration={6000}
@@ -1368,6 +1356,5 @@ export default function DoctorLabPanel({ section = "connections" }) {
       </Box>
     );
   }
-
   return null;
 }

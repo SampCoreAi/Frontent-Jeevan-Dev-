@@ -1,34 +1,29 @@
+
 "use client";
 
 import * as React from "react";
-
 import {
+  Alert,
   Box,
   Button,
   CircularProgress,
   Divider,
   FormControl,
   Grid,
-  InputAdornment,
   MenuItem,
   Paper,
   Select,
   Stack,
   TextField,
   Typography,
+  InputAdornment,
 } from "@mui/material";
 
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
-import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
-import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-
-/* =========================================================
-   COLORS
-========================================================= */
 
 const C = {
   primary: "#07876A",
@@ -41,44 +36,31 @@ const C = {
   white: "#FFFFFF",
 };
 
-/* =========================================================
-   INPUT STYLE
-========================================================= */
-
 const inputSx = {
   "& .MuiOutlinedInput-root": {
     minHeight: 46,
     borderRadius: "8px",
-    backgroundColor: "#fff",
-
+    backgroundColor: "#FFFFFF",
     "& fieldset": {
       borderColor: C.input,
     },
-
     "&:hover fieldset": {
       borderColor: "#9CB7AF",
     },
-
     "&.Mui-focused fieldset": {
       borderColor: C.primary,
       borderWidth: "1px",
     },
   },
-
   "& .MuiInputBase-input": {
     fontSize: "12px",
     py: 1.2,
   },
-
   "& .MuiFormHelperText-root": {
     fontSize: "10px",
     mx: 0.5,
   },
 };
-
-/* =========================================================
-   LABEL
-========================================================= */
 
 function Label({ children, optional = false }) {
   return (
@@ -91,454 +73,456 @@ function Label({ children, optional = false }) {
       }}
     >
       {children}
-
       {optional ? (
         <Box
           component="span"
-          sx={{
-            color: C.muted,
-            fontWeight: 400,
-          }}
+          sx={{ color: C.muted, fontWeight: 400 }}
         >
-          {" "}
-          (Optional)
+          {" "}(Optional)
         </Box>
       ) : (
-        <Box
-          component="span"
-          sx={{
-            color: C.error,
-          }}
-        >
-          {" "}
-          *
+        <Box component="span" sx={{ color: C.error }}>
+          {" "}*
         </Box>
       )}
     </Typography>
   );
 }
 
-/* =========================================================
-   COMPONENT
-========================================================= */
-
 export default function StoreInformationForm({
-  data,
+  data = {},
   onChange,
   onNext,
-  loading,
+  loading = false,
 }) {
   const [errors, setErrors] = React.useState({});
-
-  /* =======================================================
-     UPDATE FIELD
-  ======================================================= */
+  const [submitting, setSubmitting] = React.useState(false);
 
   const setField = (field, value) => {
-    onChange({
-      [field]: value,
-    });
+    onChange({ [field]: value });
 
-    if (errors[field]) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: "",
-      }));
-    }
+    setErrors((prev) => ({
+      ...prev,
+      [field]: "",
+      api: "",
+      otpMessage: "",
+    }));
   };
-
-  /* =======================================================
-     VALIDATION
-  ======================================================= */
 
   const validate = () => {
     const nextErrors = {};
 
-    if (!String(data.storeName || "").trim()) {
-      nextErrors.storeName =
-        "Medical Store / Pharmacy Name is required";
+    if (!String(data.licensedTradeName || "").trim()) {
+      nextErrors.licensedTradeName =
+        "Licensed Trade Name is required";
     }
 
-    if (!String(data.pharmacyCategory || "").trim()) {
-      nextErrors.pharmacyCategory =
-        "Pharmacy Category / Type is required";
+    if (!String(data.legalEntityName || "").trim()) {
+      nextErrors.legalEntityName =
+        "Legal Entity Name is required";
     }
 
-    if (!String(data.email || "").trim()) {
-      nextErrors.email = "Store Contact Email is required";
+    if (!String(data.entityType || "").trim()) {
+      nextErrors.entityType = "Entity Type is required";
+    }
+
+    if (!String(data.storeEmail || "").trim()) {
+      nextErrors.storeEmail = "Store Email is required";
     } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        data.storeEmail.trim()
+      )
     ) {
-      nextErrors.email = "Enter a valid email address";
+      nextErrors.storeEmail = "Enter a valid email address";
     }
 
-    if (!String(data.phone || "").trim()) {
-      nextErrors.phone =
-        "Primary Contact Phone Number is required";
-    } else if (!/^[6-9]\d{9}$/.test(data.phone)) {
-      nextErrors.phone =
+    if (!String(data.storePhone || "").trim()) {
+      nextErrors.storePhone = "Store Phone is required";
+    } else if (!/^[6-9]\d{9}$/.test(data.storePhone)) {
+      nextErrors.storePhone =
         "Enter a valid 10-digit mobile number";
+    }
+
+    [
+      ["signatoryFullName", "Signatory full name is required"],
+      ["signatoryDesignation", "Signatory designation is required"],
+      ["signatoryEmail", "Signatory email is required"],
+      ["signatoryPhone", "Signatory phone is required"],
+    ].forEach(([field, message]) => {
+      if (!String(data[field] || "").trim()) {
+        nextErrors[field] = message;
+      }
+    });
+
+    if (
+      data.signatoryEmail &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.signatoryEmail.trim())
+    ) {
+      nextErrors.signatoryEmail = "Enter a valid email address";
     }
 
     if (
-      data.alternatePhone &&
-      !/^[6-9]\d{9}$/.test(data.alternatePhone)
+      data.signatoryPhone &&
+      !/^[6-9]\d{9}$/.test(data.signatoryPhone)
     ) {
-      nextErrors.alternatePhone =
+      nextErrors.signatoryPhone =
         "Enter a valid 10-digit mobile number";
     }
 
-    setErrors(nextErrors);
+    ["entityPan", "personalPan"].forEach((field) => {
+      if (
+        data[field] &&
+        !/^[A-Z]{5}\d{4}[A-Z]$/.test(data[field].toUpperCase())
+      ) {
+        nextErrors[field] = "Enter a valid PAN number";
+      }
+    });
 
+    if (!String(data.shopUnit || "").trim()) {
+      nextErrors.shopUnit =
+        "Shop/Unit No. & Building is required";
+    }
+
+    if (!String(data.street || "").trim()) {
+      nextErrors.street = "Street is required";
+    }
+
+    if (!String(data.cityDistrict || "").trim()) {
+      nextErrors.cityDistrict = "City/District is required";
+    }
+
+    if (!String(data.state || "").trim()) {
+      nextErrors.state = "State is required";
+    }
+
+    if (!String(data.pinCode || "").trim()) {
+      nextErrors.pinCode = "PIN Code is required";
+    } else if (!/^\d{6}$/.test(data.pinCode)) {
+      nextErrors.pinCode = "Enter a valid 6-digit PIN Code";
+    }
+
+    setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
 
-  /* =======================================================
-     NEXT
-  ======================================================= */
+  const handleNext = async () => {
+    if (submitting || loading || !validate()) return;
 
-  const handleNext = () => {
-    if (!validate()) return;
+    setSubmitting(true);
 
-    onNext();
+    try {
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("token")
+          : null;
+
+      const baseURL = (
+        process.env.NEXT_PUBLIC_API_URL || ""
+      ).replace(/\/+$/, "");
+
+      if (!baseURL) {
+        throw new Error(
+          "Please configure NEXT_PUBLIC_API_URL in .env.local"
+        );
+      }
+
+      const payload = {
+        licensedTradeName: data.licensedTradeName.trim(),
+        legalEntityName: data.legalEntityName.trim(),
+        entityType: data.entityType,
+        storeEmail: data.storeEmail.trim(),
+        storePhone: data.storePhone,
+        premisesDetails: {
+          shopUnit: data.shopUnit.trim(),
+          street: data.street.trim(),
+          area: (data.area || "").trim(),
+          cityDistrict: data.cityDistrict.trim(),
+          state: data.state.trim(),
+          pinCode: data.pinCode,
+        },
+        signatoryDetails: {
+          fullName: (data.signatoryFullName || "").trim(),
+          designation: (data.signatoryDesignation || "").trim(),
+          email: (data.signatoryEmail || "").trim(),
+          phone: data.signatoryPhone || "",
+          entityPan:
+            data.entityType !== "Proprietorship" && data.entityPan
+              ? data.entityPan.trim().toUpperCase()
+              : null,
+          personalPan:
+            data.entityType === "Proprietorship" && data.personalPan
+              ? data.personalPan.trim().toUpperCase()
+              : null,
+        },
+      };
+
+      const response = await fetch(
+        `${baseURL}/api/pharmacy-registration/create`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token
+              ? { Authorization: `Bearer ${token}` }
+              : {}),
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          result.message ||
+            result.error ||
+            `Registration failed (${response.status})`
+        );
+      }
+
+      if (result?.success === false) {
+        throw new Error(result.message || "Registration could not be created.");
+      }
+
+      if (typeof onNext === "function") {
+        onNext(result);
+      } else {
+        throw new Error("Next step navigation is not connected.");
+      }
+    } catch (error) {
+      console.error("Pharmacy registration error:", error);
+
+      setErrors((prev) => ({
+        ...prev,
+        api: error.message || "Registration failed",
+      }));
+    } finally {
+      setSubmitting(false);
+    }
   };
-
-  /* =======================================================
-     ICON
-  ======================================================= */
 
   const icon = (Icon) => (
     <InputAdornment position="start">
-      <Icon
-        sx={{
-          fontSize: 17,
-          color: C.muted,
-        }}
-      />
+      <Icon sx={{ fontSize: 17, color: C.muted }} />
     </InputAdornment>
   );
 
-  /* =======================================================
-     UI
-  ======================================================= */
+  const renderTextField = ({
+    field,
+    label,
+    placeholder = "",
+    optional = false,
+    type = "text",
+    adornment = null,
+    maxLength,
+    numeric = false,
+    helperText = "",
+  }) => (
+    <Grid size={{ xs: 12, md: 6 }}>
+      <Label optional={optional}>{label}</Label>
+
+      <TextField
+        fullWidth
+        type={type}
+        placeholder={placeholder}
+        value={data[field] || ""}
+        onChange={(e) => {
+          let value = e.target.value;
+
+          if (numeric) value = value.replace(/\D/g, "");
+          if (field === "entityPan" || field === "personalPan") {
+            value = value.toUpperCase();
+          }
+          if (maxLength) value = value.slice(0, maxLength);
+
+          setField(field, value);
+        }}
+        error={Boolean(errors[field])}
+        helperText={errors[field] || helperText}
+        sx={inputSx}
+        slotProps={{
+          htmlInput: {
+            ...(maxLength ? { maxLength } : {}),
+            ...(numeric ? { inputMode: "numeric" } : {}),
+          },
+          input: adornment
+            ? { startAdornment: icon(adornment) }
+            : {},
+        }}
+      />
+    </Grid>
+  );
 
   return (
-    <Box>
+    <Box
+      sx={{
+        width: "100%",
+        minWidth: 0,
+      }}
+    >
       <Paper
         elevation={0}
         sx={{
-          p: {
-            xs: 2,
-            md: 2.5,
-          },
+          p: { xs: 1.5, sm: 2.25, md: 3 },
           border: `1px solid ${C.border}`,
-          borderRadius: "12px",
+          borderRadius: { xs: "10px", sm: "14px" },
           bgcolor: C.white,
+          boxShadow: "0 8px 28px rgba(23, 32, 51, 0.06)",
         }}
       >
-        {/* ================= HEADER ================= */}
-
+        {/* HEADING + NEXT BUTTON */}
         <Stack
-          direction="row"
-          alignItems="center"
-          spacing={1}
+          direction={{ xs: "column", sm: "row" }}
+          alignItems={{ xs: "stretch", sm: "center" }}
+          justifyContent="space-between"
+          spacing={1.5}
+          sx={{
+            position: "sticky",
+            top: 0,
+            zIndex: 3,
+            py: 1,
+            mb: 1.5,
+            bgcolor: C.white,
+            borderBottom: `1px solid ${C.border}`,
+          }}
         >
-          <StorefrontOutlinedIcon
-            sx={{
-              color: C.primary,
-              fontSize: 22,
-            }}
-          />
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <StorefrontOutlinedIcon
+              sx={{ color: C.primary, fontSize: 22 }}
+            />
 
-          <Box>
             <Typography
               sx={{
-                fontSize: "15px",
+                fontSize: { xs: "14px", sm: "15px" },
                 fontWeight: 750,
                 color: C.text,
               }}
             >
-              Store Information
+              A. Pharmacy Identity & C. Premises
             </Typography>
+          </Stack>
 
-            <Typography
-              sx={{
-                mt: 0.1,
-                fontSize: "10.5px",
-                color: C.muted,
-              }}
-            >
-              Enter the basic details of your medical store or
-              pharmacy.
-            </Typography>
-          </Box>
-        </Stack>
-
-        <Divider sx={{ my: 1.6 }} />
-
-        {/* ================= FORM ================= */}
-
-        <Grid container spacing={2}>
-          {/* STORE NAME */}
-
-
-{/* OWNER NAME */}
-<Grid size={{ xs: 12, md: 6 }}>
-  <Label>Owner Full Name</Label>
-
-  <TextField
-    fullWidth
-    placeholder="e.g. Rahul Sharma"
-    value={data.ownerName || ""}
-    onChange={(e) => setField("ownerName", e.target.value)}
-    error={Boolean(errors.ownerName)}
-    helperText={errors.ownerName}
-    sx={inputSx}
-  />
-</Grid>
-
-{/* OWNER EMAIL */}
-<Grid size={{ xs: 12, md: 6 }}>
-  <Label>Owner Email Address</Label>
-
-  <TextField
-    fullWidth
-    type="email"
-    placeholder="e.g. rahul@gmail.com"
-    value={data.ownerEmail || ""}
-    onChange={(e) =>
-      setField("ownerEmail", e.target.value.replace(/\s/g, ""))
-    }
-    error={Boolean(errors.ownerEmail)}
-    helperText={errors.ownerEmail}
-    sx={inputSx}
-    InputProps={{
-      startAdornment: icon(MailOutlineIcon),
-    }}
-  />
-</Grid>
-
-{/* OWNER PHONE */}
-<Grid size={{ xs: 12, md: 6 }}>
-  <Label>Owner Phone Number</Label>
-
-  <TextField
-    fullWidth
-    placeholder="9876543210"
-    value={data.ownerPhone || ""}
-    onChange={(e) =>
-      setField(
-        "ownerPhone",
-        e.target.value.replace(/\D/g, "").slice(0, 10)
-      )
-    }
-    error={Boolean(errors.ownerPhone)}
-    helperText={errors.ownerPhone}
-    sx={inputSx}
-    inputProps={{
-      inputMode: "numeric",
-      maxLength: 10,
-    }}
-    InputProps={{
-      startAdornment: (
-        <InputAdornment position="start">
-          <PhoneOutlinedIcon
+          <Button
+            variant="contained"
+            onClick={handleNext}
+            disabled={loading || submitting}
+            endIcon={
+              loading || submitting ? (
+                <CircularProgress size={14} color="inherit" />
+              ) : (
+                <ArrowForwardIcon sx={{ fontSize: "16px !important" }} />
+              )
+            }
             sx={{
-              fontSize: 17,
-              color: C.muted,
-              mr: 1,
-            }}
-          />
-
-          <Typography
-            sx={{
+              alignSelf: { xs: "stretch", sm: "center" },
+              flexShrink: 0,
+              minWidth: 105,
+              height: 38,
+              px: 2,
+              bgcolor: "#07876A",
+              borderRadius: "8px",
+              boxShadow: "none",
+              textTransform: "none",
               fontSize: "12px",
-              color: C.text,
+              fontWeight: 700,
+              "&:hover": {
+                bgcolor: "#066F58",
+                boxShadow: "none",
+              },
             }}
           >
-            +91
-          </Typography>
-        </InputAdornment>
-      ),
-    }}
-  />
-</Grid>
+            {submitting ? "Saving..." : "Next Step"}
+          </Button>
+        </Stack>
 
-{/* OWNER AGE */}
-<Grid size={{ xs: 12, md: 3 }}>
-  <Label>Owner Age</Label>
+        {/* MANDATORY NOTE */}
+        <Alert
+          severity="info"
+          icon={false}
+          sx={{
+            mt: 2,
+            mb: 2,
+            py: 0.2,
+            bgcolor: "#EFF6FF",
+            color: "#315A9B",
+            border: "1px solid #DBEAFE",
+            borderRadius: "8px",
+            fontSize: "12px",
+          }}
+        >
+          <strong>Mandatory:</strong> Ensure the names and
+          addresses perfectly match your Form 20/21 Drug Licence.
+        </Alert>
 
-  <TextField
-    fullWidth
-    placeholder="e.g. 35"
-    value={data.ownerAge || ""}
-    onChange={(e) =>
-      setField(
-        "ownerAge",
-        e.target.value.replace(/\D/g, "").slice(0, 3)
-      )
-    }
-    error={Boolean(errors.ownerAge)}
-    helperText={errors.ownerAge}
-    sx={inputSx}
-    inputProps={{
-      inputMode: "numeric",
-      maxLength: 3,
-    }}
-  />
-</Grid>
+        {/* STORE DETAILS */}
+        <Grid container spacing={2}>
+          {renderTextField({
+            field: "licensedTradeName",
+            label: "Licensed Trade Name",
+            placeholder: "As per Drug Licence",
+          })}
 
-{/* OWNER GENDER */}
-<Grid size={{ xs: 12, md: 3 }}>
-  <Label>Owner Gender</Label>
-
-  <FormControl
-    fullWidth
-    error={Boolean(errors.ownerGender)}
-  >
-    <Select
-      displayEmpty
-      value={data.ownerGender || ""}
-      onChange={(e) =>
-        setField("ownerGender", e.target.value)
-      }
-      sx={{
-        height: 46,
-        borderRadius: "8px",
-        fontSize: "12px",
-
-        "& fieldset": {
-          borderColor: C.input,
-        },
-
-        "&:hover fieldset": {
-          borderColor: "#9CB7AF",
-        },
-
-        "&.Mui-focused fieldset": {
-          borderColor: C.primary,
-          borderWidth: "1px",
-        },
-      }}
-      renderValue={(value) =>
-        value || (
-          <Box sx={{ color: C.muted }}>
-            Select gender...
-          </Box>
-        )
-      }
-    >
-      <MenuItem value="MALE">Male</MenuItem>
-      <MenuItem value="FEMALE">Female</MenuItem>
-      <MenuItem value="OTHER">Other</MenuItem>
-    </Select>
-
-    {errors.ownerGender && (
-      <Typography
-        sx={{
-          color: C.error,
-          fontSize: "10px",
-          mt: 0.5,
-          ml: 1,
-        }}
-      >
-        {errors.ownerGender}
-      </Typography>
-    )}
-  </FormControl>
-</Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Label>
-              Medical Store / Pharmacy Name
-            </Label>
-
-            <TextField
-              fullWidth
-              placeholder="e.g. City Care Medical & Pharmacy"
-              value={data.storeName || ""}
-              onChange={(e) =>
-                setField("storeName", e.target.value)
-              }
-              error={Boolean(errors.storeName)}
-              helperText={errors.storeName}
-              sx={inputSx}
-              InputProps={{
-                startAdornment: icon(
-                  StorefrontOutlinedIcon
-                ),
-              }}
-            />
-          </Grid>
-
-          {/* PHARMACY CATEGORY */}
+          {renderTextField({
+            field: "legalEntityName",
+            label: "Legal Entity Name",
+            placeholder: "As per PAN/COI",
+          })}
 
           <Grid size={{ xs: 12, md: 6 }}>
-            <Label>
-              Pharmacy Category / Type
-            </Label>
+            <Label>Entity Type</Label>
 
-            <FormControl
-              fullWidth
-              error={Boolean(
-                errors.pharmacyCategory
-              )}
-            >
+            <FormControl fullWidth error={Boolean(errors.entityType)}>
               <Select
+                value={data.entityType || ""}
                 displayEmpty
-                value={data.pharmacyCategory || ""}
-                onChange={(e) =>
-                  setField(
-                    "pharmacyCategory",
-                    e.target.value
-                  )
-                }
-                startAdornment={icon(
-                  CategoryOutlinedIcon
-                )}
+                onChange={(e) => {
+                  const entityType = e.target.value;
+                  onChange({
+                    entityType,
+                    personalPan:
+                      entityType === "Proprietorship"
+                        ? data.personalPan
+                        : "",
+                    entityPan:
+                      entityType === "Proprietorship"
+                        ? ""
+                        : data.entityPan,
+                  });
+                  setErrors((previous) => ({
+                    ...previous,
+                    entityType: "",
+                    personalPan: "",
+                    entityPan: "",
+                  }));
+                }}
                 sx={{
                   height: 46,
                   borderRadius: "8px",
+                  bgcolor: "#FFFFFF",
                   fontSize: "12px",
-
-                  "& fieldset": {
-                    borderColor: C.input,
-                  },
-
-                  "&:hover fieldset": {
-                    borderColor: "#9CB7AF",
-                  },
-
+                  "& fieldset": { borderColor: C.input },
+                  "&:hover fieldset": { borderColor: "#9CB7AF" },
                   "&.Mui-focused fieldset": {
                     borderColor: C.primary,
-                    borderWidth: "1px",
                   },
                 }}
                 renderValue={(value) =>
                   value || (
                     <Box sx={{ color: C.muted }}>
-                      Select category...
+                      Select entity type
                     </Box>
                   )
                 }
               >
-                <MenuItem value="Retail Pharmacy">
-                  Retail Pharmacy
-                </MenuItem>
-
-                <MenuItem value="Hospital Pharmacy">
-                  Hospital Pharmacy
-                </MenuItem>
-
-                <MenuItem value="Clinic Pharmacy">
-                  Clinic Pharmacy
-                </MenuItem>
-
-                <MenuItem value="Wholesale Pharmacy">
-                  Wholesale Pharmacy
-                </MenuItem>
+                <MenuItem value="Proprietorship">Proprietorship</MenuItem>
+                <MenuItem value="Partnership">Partnership</MenuItem>
+                <MenuItem value="LLP">LLP</MenuItem>
+                <MenuItem value="Private Limited">Private Limited</MenuItem>
+                <MenuItem value="Public Limited">Public Limited</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
               </Select>
 
-              {errors.pharmacyCategory && (
+              {errors.entityType && (
                 <Typography
                   sx={{
                     color: C.error,
@@ -547,147 +531,205 @@ export default function StoreInformationForm({
                     ml: 1,
                   }}
                 >
-                  {errors.pharmacyCategory}
+                  {errors.entityType}
                 </Typography>
               )}
             </FormControl>
           </Grid>
 
-        
-          {/* EMAIL */}
-
           <Grid size={{ xs: 12, md: 6 }}>
-            <Label>
-              Store Contact Email
-            </Label>
+            <Label>Store Email</Label>
 
             <TextField
               fullWidth
               type="email"
-              placeholder="e.g. citycare@gmail.com"
-              value={data.email || ""}
+              placeholder="Enter store email"
+              value={data.storeEmail || ""}
               onChange={(e) =>
-                setField(
-                  "email",
-                  e.target.value.replace(/\s/g, "")
-                )
+                setField("storeEmail", e.target.value.replace(/\s/g, ""))
               }
-              error={Boolean(errors.email)}
-              helperText={
-                errors.email ||
-                "Official email for store communication."
-              }
+              error={Boolean(errors.storeEmail)}
+              helperText={errors.storeEmail || ""}
               sx={inputSx}
-              InputProps={{
-                startAdornment: icon(
-                  MailOutlineIcon
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: icon(MailOutlineIcon),
+
+                },
               }}
             />
           </Grid>
 
-          {/* PRIMARY PHONE */}
-
           <Grid size={{ xs: 12, md: 6 }}>
-            <Label>
-              Store Phone Number
-            </Label>
+            <Label>Store Phone</Label>
 
             <TextField
               fullWidth
-              placeholder="9876543210"
-              value={data.phone || ""}
+              placeholder="10-digit mobile number"
+              value={data.storePhone || ""}
               onChange={(e) =>
                 setField(
-                  "phone",
-                  e.target.value
-                    .replace(/\D/g, "")
-                    .slice(0, 10)
+                  "storePhone",
+                  e.target.value.replace(/\D/g, "").slice(0, 10)
                 )
               }
-              error={Boolean(errors.phone)}
-              helperText={errors.phone}
+              error={Boolean(errors.storePhone)}
+              helperText={errors.storePhone || ""}
               sx={inputSx}
-              inputProps={{
-                inputMode: "numeric",
-                maxLength: 10,
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PhoneOutlinedIcon
-                      sx={{
-                        fontSize: 17,
-                        color: C.muted,
-                        mr: 1,
-                      }}
-                    />
+              slotProps={{
+                htmlInput: {
+                  inputMode: "numeric",
+                  maxLength: 10,
+                },
+                input: {
+                  startAdornment: icon(PhoneOutlinedIcon),
 
-                    <Typography
-                      sx={{
-                        fontSize: "12px",
-                        color: C.text,
-                      }}
-                    >
-                      +91
-                    </Typography>
-                  </InputAdornment>
-                ),
+                },
               }}
             />
           </Grid>
-
-     
         </Grid>
+
+        {errors.otpMessage && (
+          <Typography sx={{ mt: 1, color: C.muted, fontSize: "11px" }}>
+            {errors.otpMessage}
+          </Typography>
+        )}
+
+        {/* AUTHORIZED SIGNATORY */}
+        <Box sx={{ mt: 3 }}>
+          <Typography
+            sx={{
+              fontSize: "15px",
+              fontWeight: 750,
+              color: C.text,
+              mb: 1,
+            }}
+          >
+            Authorized Signatory Details
+          </Typography>
+
+          <Divider sx={{ mb: 2 }} />
+
+          <Grid container spacing={2}>
+            {renderTextField({
+              field: "signatoryFullName",
+              label: "Full Name",
+              placeholder: "As per identity documents",
+            })}
+            {renderTextField({
+              field: "signatoryDesignation",
+              label: "Designation",
+              placeholder: "e.g. Owner, Director",
+            })}
+            {renderTextField({
+              field: "signatoryEmail",
+              label: "Email",
+              placeholder: "Enter signatory email",
+              type: "email",
+            })}
+            {renderTextField({
+              field: "signatoryPhone",
+              label: "Phone",
+              placeholder: "10-digit mobile number",
+              numeric: true,
+              maxLength: 10,
+            })}
+            {data.entityType === "Proprietorship" &&
+              renderTextField({
+                field: "personalPan",
+                label: "Personal PAN",
+                placeholder: "ABCDE1234F",
+                type: "password",
+                helperText: "Optional; provide only if required for verification",
+                optional: true,
+                maxLength: 10,
+              })}
+            {data.entityType &&
+              data.entityType !== "Proprietorship" &&
+              renderTextField({
+                field: "entityPan",
+                label: "Entity PAN",
+                placeholder: "ABCDE1234F",
+                type: "password",
+                helperText: "Optional; provide only if required for verification",
+                optional: true,
+                maxLength: 10,
+              })}
+          </Grid>
+        </Box>
+
+        {/* PREMISES DETAILS */}
+        <Box sx={{ mt: 3 }}>
+          <Typography
+            sx={{
+              fontSize: "15px",
+              fontWeight: 750,
+              color: C.text,
+              mb: 1,
+            }}
+          >
+            Premises Details
+          </Typography>
+
+          <Divider sx={{ mb: 2 }} />
+
+          <Grid container spacing={2}>
+            {renderTextField({
+              field: "shopUnit",
+              label: "Shop/Unit No. & Building",
+              placeholder: "Enter building details",
+              adornment: BusinessOutlinedIcon,
+            })}
+
+            {renderTextField({
+              field: "street",
+              label: "Street",
+              placeholder: "Enter street",
+            })}
+
+            {renderTextField({
+              field: "area",
+              label: "Area",
+              placeholder: "Enter area",
+              optional: true,
+            })}
+
+            {renderTextField({
+              field: "cityDistrict",
+              label: "City/District",
+              placeholder: "Enter city or district",
+            })}
+
+            {renderTextField({
+              field: "state",
+              label: "State",
+              placeholder: "Enter state",
+            })}
+
+            {renderTextField({
+              field: "pinCode",
+              label: "PIN Code",
+              placeholder: "6-digit PIN code",
+              numeric: true,
+              maxLength: 6,
+            })}
+
+            {renderTextField({
+              field: "landmark",
+              label: "Landmark",
+              placeholder: "Enter nearby landmark",
+              optional: true,
+            })}
+          </Grid>
+        </Box>
+
+        {errors.api && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {errors.api}
+          </Alert>
+        )}
       </Paper>
-
-      {/* ================= NEXT BUTTON ================= */}
-
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "flex-end",
-          mt: 2,
-        }}
-      >
-        <Button
-          variant="contained"
-          onClick={handleNext}
-          disabled={loading}
-          endIcon={
-            loading ? (
-              <CircularProgress
-                size={14}
-                color="inherit"
-              />
-            ) : (
-              <ArrowForwardIcon
-                sx={{
-                  fontSize: "16px !important",
-                }}
-              />
-            )
-          }
-          sx={{
-            minWidth: 190,
-            height: 42,
-            px: 2.5,
-            bgcolor: C.primary,
-            borderRadius: "8px",
-            boxShadow: "none",
-            textTransform: "none",
-            fontSize: "11.5px",
-            fontWeight: 700,
-
-            "&:hover": {
-              bgcolor: C.hover,
-              boxShadow: "none",
-            },
-          }}
-        >
-          Next: Store Address
-        </Button>
-      </Box>
     </Box>
   );
 }

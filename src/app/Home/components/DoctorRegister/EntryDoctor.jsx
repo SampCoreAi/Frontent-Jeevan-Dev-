@@ -193,16 +193,17 @@ Be a Part of Our Growing
             const BottomIcon = item.bottomIcon;
 
             return (
-              <article
+            <article
   key={item.number}
   className="
     group relative overflow-hidden
-    rounded-[26px] border border-white bg-white p-[3px]
+    rounded-[26px] border-2 bg-white p-[3px]
     shadow-[0_14px_45px_rgba(25,72,59,0.07)]
     transition-all duration-500
     hover:-translate-y-1
     hover:shadow-[0_22px_55px_rgba(25,72,59,0.13)]
   "
+  style={{ borderColor: `${item.accent}70` }}
 >
   <div
     className="
@@ -213,20 +214,7 @@ Be a Part of Our Growing
       background: `linear-gradient(135deg, #ffffff 10%, ${item.light} 100%)`,
     }}
   >
-    {/* Number */}
-    <div className="mb-4 flex items-center gap-2">
-      <span
-        className="text-[11px] font-semibold tracking-[0.08em]"
-        style={{ color: item.accent }}
-      >
-        {item.number}
-      </span>
-
-      <span
-        className="h-px w-8 opacity-30"
-        style={{ backgroundColor: item.accent }}
-      />
-    </div>
+   
 
     {/* MAIN CONTENT */}
     <div className="grid grid-cols-1 gap-5 md:grid-cols-[42%_1fr] md:gap-7">
@@ -324,17 +312,6 @@ Be a Part of Our Growing
             {item.highlight}
           </span>
         </h3>
-
-        {/* Description */}
-        <p
-          className="
-            mt-4 max-w-[330px]
-            text-[13px] leading-[1.65]
-            text-[#66706D]
-          "
-        >
-          {item.description}
-        </p>
 
         {/* Divider */}
         <div className="my-4 h-px w-full bg-black/[0.06]" />

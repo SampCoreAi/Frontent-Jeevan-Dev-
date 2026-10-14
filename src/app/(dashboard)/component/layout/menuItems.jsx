@@ -145,11 +145,7 @@ export const menuItems = {
       icon: <CalendarMonthOutlined />,
       route: "/doctorReceptionist/pages/appointment",
     },
-    {
-      label: "Feedback",
-      icon: <ThumbUpOffAltOutlined />,
-      route: "/doctorReceptionist/pages/feedback",
-    },
+  
     {
       label: "Profile",
       icon: <PersonOutlined />,
