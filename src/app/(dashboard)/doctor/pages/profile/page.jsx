@@ -116,8 +116,7 @@ const Page = () => {
         `${firstHospitalName}'s working hours must start after ` +
         `${secondHospitalName}'s working hours end.`;
     } else {
-      userMessage =
-        "Profile update failed. Please check the working hours and try again.";
+      userMessage = message || "Profile update failed. Please try again.";
     }
 
     showSnackbar(userMessage, "error");
@@ -214,6 +213,27 @@ const Page = () => {
   // ================= SAVE PROFILE =================
 
   const saveDoctorProfile = async () => {
+    if (
+      changedFields.bio &&
+      (profileData.bio || "").length > 150
+    ) {
+      showSnackbar("Short Bio cannot be longer than 150 characters.", "error");
+      return;
+    }
+
+    for (const [field, label] of [
+      ["experience", "Experience"],
+      ["consultation_fee", "Consultation Fee"],
+    ]) {
+      if (!changedFields[field] || profileData[field] === "") continue;
+
+      const value = Number(profileData[field]);
+      if (!Number.isFinite(value) || value < 0) {
+        showSnackbar(`${label} must be a valid non-negative number.`, "error");
+        return;
+      }
+    }
+
     const payload = {};
 
     // Name
@@ -265,6 +285,17 @@ const Page = () => {
 if (changedFields.dob) {
   payload.dob = profileData.dob;
 }
+    if (changedFields.gender) {
+      const normalizedGender = profileData.gender?.trim().toLowerCase();
+      payload.gender =
+        normalizedGender === "male"
+          ? "Male"
+          : normalizedGender === "female"
+            ? "Female"
+            : normalizedGender === "other"
+              ? "Other"
+              : "";
+    }
     if (changedFields.hospitalDetail) {
       const hospitalDetail = (profileData.hospitalDetail || [])
         .filter((hospital) => hospital.hospitalName?.trim())

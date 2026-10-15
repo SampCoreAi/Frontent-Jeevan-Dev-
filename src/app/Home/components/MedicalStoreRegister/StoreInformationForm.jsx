@@ -245,14 +245,15 @@ export default function StoreInformationForm({
           designation: (data.signatoryDesignation || "").trim(),
           email: (data.signatoryEmail || "").trim(),
           phone: data.signatoryPhone || "",
-          entityPan:
-            data.entityType !== "Proprietorship" && data.entityPan
-              ? data.entityPan.trim().toUpperCase()
-              : null,
-          personalPan:
-            data.entityType === "Proprietorship" && data.personalPan
-              ? data.personalPan.trim().toUpperCase()
-              : null,
+         entityPan:
+  data.entityType === "Proprietorship"
+    ? data.personalPan.trim().toUpperCase()
+    : data.entityPan.trim().toUpperCase(),
+
+personalPan:
+  data.entityType === "Proprietorship"
+    ? data.personalPan.trim().toUpperCase()
+    : null,
         },
       };
 

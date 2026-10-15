@@ -304,17 +304,6 @@ const handlePrescriptionKeyDown = (event) => {
   const diagnosisField = current.matches?.(
     'textarea[placeholder="Enter diagnosis..."], input[placeholder="Enter diagnosis..."]',
   );
-  const medicineField = current.matches?.(
-    'input[placeholder="Enter medicine name"]',
-  );
-  const remarkSelector =
-    'textarea[placeholder="Add remark for patient"], input[placeholder="Add remark for patient"]';
-
-  if (current.matches?.(remarkSelector)) {
-    event.preventDefault();
-    return;
-  }
-
   if (diagnosisField) {
     event.preventDefault();
 
@@ -328,9 +317,9 @@ const handlePrescriptionKeyDown = (event) => {
 
     let attempts = 0;
     const focusMedicine = () => {
-      const input = document.querySelector(
+      const input = [...document.querySelectorAll(
         'input[placeholder="Enter medicine name"]:not(:disabled)',
-      );
+      )].find((field) => field.getClientRects().length > 0);
 
       if (input) {
         input.focus();
@@ -340,12 +329,6 @@ const handlePrescriptionKeyDown = (event) => {
     };
 
     requestAnimationFrame(focusMedicine);
-    return;
-  }
-
-  if (medicineField) {
-    event.preventDefault();
-    document.querySelector(remarkSelector)?.focus();
   }
 };
   const startDiagnosisDictation = () => {

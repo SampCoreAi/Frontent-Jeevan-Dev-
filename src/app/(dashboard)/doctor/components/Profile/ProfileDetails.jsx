@@ -158,6 +158,10 @@ const DetailRow = ({
   editable = false,
   type = "text",
   placeholder,
+  error = false,
+  helperText,
+  min,
+  step,
   onChange,
 }) => {
   return (
@@ -186,6 +190,14 @@ const DetailRow = ({
           type={type}
           value={value ?? ""}
           placeholder={placeholder}
+          error={error}
+          helperText={helperText}
+          slotProps={{
+            htmlInput: {
+              ...(min !== undefined ? { min } : {}),
+              ...(step !== undefined ? { step } : {}),
+            },
+          }}
           onChange={onChange}
           sx={inputSx}
         />
@@ -769,6 +781,21 @@ const [languageInput, setLanguageInput] = useState("");
               editable
               type="number"
               placeholder="Years"
+              min={0}
+              step="any"
+              error={
+                isEditing &&
+                profileData?.experience !== "" &&
+                (!Number.isFinite(Number(profileData?.experience)) ||
+                  Number(profileData?.experience) < 0)
+              }
+              helperText={
+                isEditing &&
+                profileData?.experience !== "" &&
+                Number(profileData?.experience) < 0
+                  ? "Experience cannot be negative."
+                  : ""
+              }
               onChange={(event) =>
                 onFieldChange?.(
                   "experience",
@@ -786,6 +813,21 @@ const [languageInput, setLanguageInput] = useState("");
               editable
               type="number"
               placeholder="Fee"
+              min={0}
+              step="any"
+              error={
+                isEditing &&
+                profileData?.consultation_fee !== "" &&
+                (!Number.isFinite(Number(profileData?.consultation_fee)) ||
+                  Number(profileData?.consultation_fee) < 0)
+              }
+              helperText={
+                isEditing &&
+                profileData?.consultation_fee !== "" &&
+                Number(profileData?.consultation_fee) < 0
+                  ? "Consultation fee cannot be negative."
+                  : ""
+              }
               onChange={(event) =>
                 onFieldChange?.(
                   "consultation_fee",

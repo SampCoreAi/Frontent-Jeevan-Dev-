@@ -4,6 +4,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import SearchBar from "../components/landing/SearchBar";
 import HeroContent from "../components/landing/HeroContent";
 import JeevanShowcase from "../components/MobileUi/JeevanShowcase";
+import LabBill from "../../(dashboard)/lab/components/LabBill";
+
 import {
   Box,
   Container,
@@ -490,7 +492,7 @@ export default function Landing() {
       <JeevanShowcase />
       <ElasticLine />
       {/* <AppSvg /> */}
-
+<LabBill />
       <Main />
 <FeedbackCTA />
       <JeevanDevLogo />

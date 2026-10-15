@@ -93,14 +93,25 @@ const ProfileBio = ({
             profileData?.bio || ""
           }
           placeholder="Write a short bio..."
+          helperText={`${(profileData?.bio || "").length}/150 characters`}
+          slotProps={{
+            htmlInput: {
+              maxLength: 150,
+            },
+          }}
           onChange={(event) =>
             onFieldChange?.(
               "bio",
-              event.target.value
+              event.target.value.slice(0, 150)
             )
           }
           sx={{
             flex: 1,
+
+            "& .MuiFormHelperText-root": {
+              textAlign: "right",
+              mr: 0,
+            },
 
             "& .MuiInputBase-root": {
               fontSize: "12.5px",

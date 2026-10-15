@@ -373,7 +373,6 @@ export default function MedicalStoreOnboarding() {
         >
           <Grid
             container
-            spacing={{ xs: 1.5, md: 2 }}
             sx={{
               alignItems: "stretch",
             }}

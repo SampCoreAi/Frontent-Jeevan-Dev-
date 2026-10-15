@@ -49,7 +49,7 @@ export const menuItems = {
       route: "/users/pages/lab/reports",
     },
     {
-      label: "Medical",
+      label: "Pharmacy",
       icon: <LocalPharmacyOutlined />,
       route: "/users/pages/medical",
     },
@@ -101,7 +101,7 @@ export const menuItems = {
       route: "/doctor/pages/lab/connections",
     },
     {
-      label: "Medical",
+      label: "Pharmacy",
       icon: <LocalPharmacyOutlined />,
       route: "/doctor/pages/medical",
     },
@@ -220,7 +220,17 @@ export const menuItems = {
       route: "/admin/pages/qrcode",
     },
     {
-      label: "Registration",
+      label: "Doctor Registration",
+      icon: <ManageAccountsOutlined />,
+      route: "/admin/pages/Registration",
+    },
+    {
+      label: "Lab Registration",
+      icon: <ManageAccountsOutlined />,
+      route: "/admin/pages/LabRegistration",
+    },
+    {
+      label: "Pharmacy Registration",
       icon: <ManageAccountsOutlined />,
       route: "/admin/pages/Registration",
     },
@@ -235,7 +245,7 @@ export const menuItems = {
       route: "/admin/pages/labs",
     },
     {
-      label: "Medical",
+      label: "Pharmacy",
       icon: <LocalPharmacyOutlined />,
       route: "/admin/pages/medical",
     },
@@ -264,7 +274,7 @@ export const menuItems = {
       route: "/medical/pages/connections",
     },
     {
-      label: "Medical Requests",
+      label: "Pharmacy Requests",
       icon: <AssignmentOutlined />,
       route: "/medical/pages/requests",
     },

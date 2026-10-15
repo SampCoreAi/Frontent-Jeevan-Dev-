@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import {
+  Alert,
   Box,
   Chip,
   LinearProgress,
@@ -46,6 +48,21 @@ const C = {
 
   border: "#DDE9E5",
   error: "#E5484D",
+};
+
+const getApiBaseUrl = () => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(
+    /\/+$/,
+    ""
+  );
+
+  if (!baseUrl) {
+    throw new Error(
+      "Please configure NEXT_PUBLIC_API_URL in .env.local"
+    );
+  }
+
+  return baseUrl;
 };
 
 /* =========================================================
@@ -599,6 +616,12 @@ export default function LabOnboarding() {
   const [data, setData] = useState(initialData);
 
   const [loading, setLoading] = useState(false);
+  const [registrationId, setRegistrationId] = useState(() =>
+    typeof window === "undefined"
+      ? null
+      : localStorage.getItem("labRegistrationId")
+  );
+  const [saveError, setSaveError] = useState("");
 
   /* =========================================================
      UPDATE DATA
@@ -610,6 +633,86 @@ export default function LabOnboarding() {
       ...values,
     }));
   };
+
+  const loadRegistration = async (id) => {
+    const response = await axios.get(
+      `${getApiBaseUrl()}/api/lab-registration/getLabRegistrationById/${id}`
+    );
+
+    if (response.data?.success === false) {
+      throw new Error(
+        response.data.message ||
+          "Unable to fetch lab registration."
+      );
+    }
+
+    const registration =
+      response.data?.data?.registrationData ||
+      response.data?.data ||
+      {};
+    const labInformation = registration.labInformation || {};
+    const labAddress = registration.labAddress || {};
+    const licenseBusiness = registration.licenseBusiness || {};
+
+    setData((previous) => ({
+      ...previous,
+      labName:
+        labInformation.diagnosticLabName ??
+        labInformation.labName ??
+        previous.labName,
+      labType: labInformation.labType ?? previous.labType,
+      email:
+        labInformation.labContactEmail ??
+        labInformation.email ??
+        previous.email,
+      phone:
+        labInformation.labContactPhone ??
+        labInformation.phone ??
+        previous.phone,
+      ownerName:
+        labInformation.ownerFullName ??
+        labInformation.ownerName ??
+        previous.ownerName,
+      ownerEmail: labInformation.ownerEmail ?? previous.ownerEmail,
+      ownerPhone: labInformation.ownerPhone ?? previous.ownerPhone,
+      ownerAge: labInformation.ownerAge ?? previous.ownerAge,
+      ownerGender: labInformation.ownerGender ?? previous.ownerGender,
+      shopUnitNumber:
+        labAddress.shopUnitNumber ?? previous.shopUnitNumber,
+      buildingName:
+        labAddress.buildingComplexName ?? previous.buildingName,
+      streetAddress:
+        labAddress.streetRoadName ?? previous.streetAddress,
+      areaLocality: labAddress.areaLocality ?? previous.areaLocality,
+      landmark: labAddress.landmark ?? previous.landmark,
+      pinCode: labAddress.pinCode ?? previous.pinCode,
+      city: labAddress.cityTown ?? previous.city,
+      state: labAddress.state ?? previous.state,
+      labRegistrationNumber:
+        licenseBusiness.registrationLicenseNumber ??
+        previous.labRegistrationNumber,
+      licenseExpiryDate:
+        licenseBusiness.licenseExpiryDate?.split("T")[0] ??
+        previous.licenseExpiryDate,
+      gstin: licenseBusiness.gstin ?? previous.gstin,
+      services: registration.services ?? previous.services,
+    }));
+
+    return response.data;
+  };
+
+  useEffect(() => {
+    if (!registrationId) return;
+
+    loadRegistration(registrationId).catch((error) => {
+      console.error("Lab registration fetch error:", error);
+      setSaveError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to load saved lab registration."
+      );
+    });
+  }, [registrationId]);
 
   /* =========================================================
      NEXT
@@ -641,23 +744,217 @@ export default function LabOnboarding() {
     });
   };
 
+  const handleInformationNext = async () => {
+    try {
+      setLoading(true);
+      setSaveError("");
+
+      const response = await axios.post(
+        `${getApiBaseUrl()}/api/lab-registration/create`,
+        {
+          labInformation: {
+            diagnosticLabName: data.labName.trim(),
+            labType: data.labType,
+            labContactEmail: data.email.trim(),
+            labContactPhone: data.phone,
+            ownerFullName: data.ownerName.trim(),
+            ownerEmail: data.ownerEmail.trim(),
+            ownerPhone: data.ownerPhone,
+            ownerAge: Number(data.ownerAge),
+            ownerGender: data.ownerGender,
+          },
+        }
+      );
+
+      if (response.data?.success === false) {
+        throw new Error(
+          response.data.message || "Unable to save lab information."
+        );
+      }
+
+      const id =
+        response.data?.data?.registrationId ||
+        response.data?.data?.id ||
+        response.data?.registrationId ||
+        response.data?.id;
+
+      if (!id) {
+        throw new Error("Registration ID was not returned by the server.");
+      }
+
+      setRegistrationId(String(id));
+      localStorage.setItem("labRegistrationId", String(id));
+      next();
+    } catch (error) {
+      console.error("Lab information save error:", error);
+      throw new Error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to save lab information."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddressNext = async () => {
+    if (!registrationId) {
+      setSaveError(
+        "Registration ID not found. Please complete Lab Information first."
+      );
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setSaveError("");
+      const response = await axios.post(
+        `${getApiBaseUrl()}/api/lab-registration/create`,
+        {
+          registrationId,
+          labAddress: {
+            shopUnitNumber: data.shopUnitNumber.trim(),
+            buildingComplexName: data.buildingName.trim(),
+            streetRoadName: data.streetAddress.trim(),
+            areaLocality: data.areaLocality.trim(),
+            landmark: data.landmark.trim(),
+            pinCode: data.pinCode,
+            cityTown: data.city.trim(),
+            state: data.state,
+          },
+        }
+      );
+
+      if (response.data?.success === false) {
+        throw new Error(response.data.message || "Unable to save lab address.");
+      }
+
+      next();
+    } catch (error) {
+      console.error("Lab address save error:", error);
+      setSaveError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to save lab address."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLicenseNext = async () => {
+    if (!registrationId) {
+      setSaveError(
+        "Registration ID not found. Please complete Lab Information first."
+      );
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setSaveError("");
+      const response = await axios.post(
+        `${getApiBaseUrl()}/api/lab-registration/create`,
+        {
+          registrationId,
+          licenseBusiness: {
+            registrationLicenseNumber:
+              data.labRegistrationNumber.trim(),
+            licenseExpiryDate: data.licenseExpiryDate,
+            gstin: data.gstin.trim(),
+          },
+        }
+      );
+
+      if (response.data?.success === false) {
+        throw new Error(
+          response.data.message ||
+            "Unable to save license and business details."
+        );
+      }
+
+      next();
+    } catch (error) {
+      console.error("Lab license details save error:", error);
+      setSaveError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to save license and business details."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDocumentsNext = async () => {
+    if (!registrationId) {
+      setSaveError(
+        "Registration ID not found. Please complete Lab Information first."
+      );
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setSaveError("");
+      const formData = new FormData();
+      formData.append("registrationId", String(registrationId));
+      formData.append(
+        "labRegistrationCertificate",
+        data.labRegistrationDocument
+      );
+      formData.append("governmentIdProof", data.governmentIdProof);
+      formData.append("businessProof", data.businessProof);
+      if (data.gstCertificate) {
+        formData.append("gstCertificate", data.gstCertificate);
+      }
+
+      const response = await axios.post(
+        `${getApiBaseUrl()}/api/lab-registration/upload-documents`,
+        formData
+      );
+      if (response.data?.success === false) {
+        throw new Error(
+          response.data.message || "Unable to upload lab documents."
+        );
+      }
+      next();
+    } catch (error) {
+      console.error("Lab document upload error:", error);
+      setSaveError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to upload lab documents."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   /* =========================================================
      SEND OTP
   ========================================================= */
 
   const handleSendOtp = async ({ email }) => {
-    console.log("Send OTP to:", email);
-
-    /*
-      API EXAMPLE
-
-      await axios.post(
-        "/api/lab-registration/send-email-otp",
-        {
-          email,
-        }
+    if (!registrationId) {
+      throw new Error(
+        "Registration ID not found. Please complete Lab Information first."
       );
-    */
+    }
+
+    const response = await axios.post(
+      `${getApiBaseUrl()}/api/lab-registration/send-email-otp`,
+      { registrationId, email }
+    );
+
+    if (response.data?.success === false) {
+      throw new Error(
+        response.data.message ||
+          "Unable to send verification code."
+      );
+    }
+
+    return response.data;
   };
 
   /* =========================================================
@@ -665,19 +962,28 @@ export default function LabOnboarding() {
   ========================================================= */
 
   const handleVerifyOtp = async ({ email, otp }) => {
-    console.log("Verify OTP:", email, otp);
-
-    /*
-      API EXAMPLE
-
-      await axios.post(
-        "/api/lab-registration/verify-email-otp",
-        {
-          email,
-          otp,
-        }
+    if (!registrationId) {
+      throw new Error(
+        "Registration ID not found. Please complete Lab Information first."
       );
-    */
+    }
+
+    const response = await axios.post(
+      `${getApiBaseUrl()}/api/lab-registration/verify-email-otp`,
+      { registrationId, email, otp }
+    );
+
+    if (
+      response.data?.success === false ||
+      response.data?.verified === false
+    ) {
+      throw new Error(
+        response.data.message ||
+          "Email verification failed."
+      );
+    }
+
+    return response.data;
   };
 
   /* =========================================================
@@ -687,19 +993,53 @@ export default function LabOnboarding() {
   const handleSubmit = async () => {
     try {
       setLoading(true);
-
-      console.log("LAB REGISTRATION DATA:", data);
-
-      /*
-        await axios.post(
-          "/api/lab-registration",
-          data
+      if (!registrationId) {
+        throw new Error(
+          "Registration ID not found. Please complete Lab Information first."
         );
-      */
+      }
+
+      const formData = new FormData();
+      formData.append("registrationId", String(registrationId));
+
+      Object.entries(data).forEach(([key, value]) => {
+        if (value == null) return;
+
+        if (
+          typeof File !== "undefined" &&
+          value instanceof File
+        ) {
+          formData.append(key, value);
+          return;
+        }
+
+        formData.append(
+          key,
+          Array.isArray(value) ? JSON.stringify(value) : String(value)
+        );
+      });
+
+      const response = await axios.post(
+        `${getApiBaseUrl()}/api/lab-registration/create`,
+        formData
+      );
+
+      if (response.data?.success === false) {
+        throw new Error(
+          response.data.message || "Lab registration submission failed."
+        );
+      }
+
+      return response.data;
     } catch (error) {
       console.error(
         "Lab registration error:",
         error
+      );
+      throw new Error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Lab registration submission failed."
       );
     } finally {
       setLoading(false);
@@ -717,7 +1057,8 @@ export default function LabOnboarding() {
           <LabInformationForm
             data={data}
             onChange={updateData}
-            onNext={next}
+            onNext={handleInformationNext}
+            loading={loading}
           />
         );
 
@@ -727,7 +1068,7 @@ export default function LabOnboarding() {
             data={data}
             onChange={updateData}
             onBack={back}
-            onNext={next}
+            onNext={handleAddressNext}
           />
         );
 
@@ -737,7 +1078,7 @@ export default function LabOnboarding() {
             data={data}
             onChange={updateData}
             onBack={back}
-            onNext={next}
+            onNext={handleLicenseNext}
           />
         );
 
@@ -757,7 +1098,8 @@ export default function LabOnboarding() {
             data={data}
             onChange={updateData}
             onBack={back}
-            onNext={next}
+            onNext={handleDocumentsNext}
+            loading={loading}
           />
         );
 
@@ -1091,6 +1433,15 @@ export default function LabOnboarding() {
                   },
                 }}
               >
+                {saveError && (
+                  <Alert
+                    severity="error"
+                    onClose={() => setSaveError("")}
+                    sx={{ mb: 1.5, fontSize: "11px" }}
+                  >
+                    {saveError}
+                  </Alert>
+                )}
                 {renderForm()}
               </Box>
             </Box>
