@@ -385,6 +385,7 @@ const downloadRows = rows.filter(
           <input
             ref={medicineInputRef}
             type="text"
+             autoFocus={currentRowIndex >= 0}
             value={currentRow?.name || ""}
             onChange={(event) => {
               updateRow(

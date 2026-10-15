@@ -3,27 +3,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import {
-
- Box,
-
- Paper,
-
- Typography,
-
- Button,
-
- CircularProgress,
-
- Dialog,
-
- DialogActions,
-
- DialogContent,
-
- DialogTitle,
-
- TextField,
-
+  Box,
+  Paper,
+  Typography,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
 } from "@mui/material";
 
 import Snackbar from "@mui/material/Snackbar";
@@ -59,101 +48,86 @@ import PrescriptionPdfView from "./PrescriptionPdfView";
 import { waitForPrescriptionImages } from "./imageUtils";
 
 import {
-
- PRIMARY_COLOR,
-
- WHITE,
-
- inputStyle,
-
- autocompleteStyle,
-
- dateInputStyle,
-
- datePickerPopupStyle,
-
+  PRIMARY_COLOR,
+  WHITE,
+  inputStyle,
+  autocompleteStyle,
+  dateInputStyle,
+  datePickerPopupStyle,
 } from "./prescriptionStyles";
 
 const unitOptions = [
+  "Tablet",
 
- "Tablet",
+  "Capsule",
 
- "Capsule",
+  "Syrup",
 
- "Syrup",
+  "Injection",
 
- "Injection",
+  "Drops",
 
- "Drops",
+  "Cream",
 
- "Cream",
-
- "Ointment",
-
+  "Ointment",
 ];
 
 const frequencyOptions = [
+  "Once Daily",
 
- "Once Daily",
+  "Twice Daily",
 
- "Twice Daily",
+  "Three Times Daily",
 
- "Three Times Daily",
+  "Four Times Daily",
 
- "Four Times Daily",
+  "At Bedtime",
 
- "At Bedtime",
-
- "Immediately",
-
+  "Immediately",
 ];
 
 const doseOptions = ["1", "1/2", "2", "5 ml", "10 ml", "15 ml"];
 
 const instructionOptions = [
+  "After Food",
 
- "After Food",
+  "Before Food",
 
- "Before Food",
+  "With Water",
 
- "With Water",
+  "At Bedtime",
 
- "At Bedtime",
+  "Empty Stomach",
 
- "Empty Stomach",
+  "After Breakfast",
 
- "After Breakfast",
+  "After Lunch",
 
- "After Lunch",
-
- "After Dinner",
-
+  "After Dinner",
 ];
 
 const actionButtonSx = (minSm) => ({
+  minWidth: { xs: 64, sm: minSm },
 
- minWidth: { xs: 64, sm: minSm },
+  px: { xs: 1.4, sm: 2 },
 
- px: { xs: 1.4, sm: 2 },
+  py: { xs: 0.65, sm: 0.75 },
 
- py: { xs: 0.65, sm: 0.75 },
+  borderRadius: 1.5,
 
- borderRadius: 1.5,
+  fontSize: "12px",
 
- fontSize: "12px",
+  fontWeight: 600,
 
- fontWeight: 600,
+  textTransform: "none",
 
- textTransform: "none",
+  whiteSpace: "nowrap",
 
- whiteSpace: "nowrap",
+  bgcolor: "primary.main",
 
- bgcolor: "primary.main",
+  color: WHITE,
 
- color: WHITE,
-
- "&:hover": { bgcolor: "primary.dark" },
-
+  "&:hover": { bgcolor: "primary.dark" },
 });
 
 const PRINT_PAGE_STYLE = `
@@ -191,230 +165,230 @@ const PRINT_PAGE_STYLE = `
 `;
 
 export default function PrescriptionUI(props) {
+  const router = useRouter();
 
- const router = useRouter();
+  const recognitionRef = useRef(null);
 
- const recognitionRef = useRef(null);
+  const activeVoiceInputRef = useRef(null);
+  const speechBaseRef = useRef({ field: null, text: "", resultStart: 0 });
+  const speechResultCountRef = useRef(0);
 
- const activeVoiceInputRef = useRef(null);
- const speechBaseRef = useRef({ field: null, text: "", resultStart: 0 });
- const speechResultCountRef = useRef(0);
+  const [isListening, setIsListening] = useState(false);
 
- const [isListening, setIsListening] = useState(false);
+  const [speechError, setSpeechError] = useState("");
 
- const [speechError, setSpeechError] = useState("");
+  const [labTestSummary, setLabTestSummary] = useState({
+    labName: "",
 
- const [labTestSummary, setLabTestSummary] = useState({
+    tests: [],
+  });
 
-  labName: "",
+  const [labTestResetKey, setLabTestResetKey] = useState(0);
 
-  tests: [],
+  const [currentPatientReports, setCurrentPatientReports] = useState([]);
 
- });
+  const [oldPatientReports, setOldPatientReports] = useState([]);
 
- const [labTestResetKey, setLabTestResetKey] = useState(0);
+  const [currentPatientLabRequests, setCurrentPatientLabRequests] = useState(
+    [],
+  );
 
- const [currentPatientReports, setCurrentPatientReports] = useState([]);
+  const [oldPatientLabRequests, setOldPatientLabRequests] = useState([]);
 
- const [oldPatientReports, setOldPatientReports] = useState([]);
+  const [patientReports, setPatientReports] = useState([]);
 
- const [currentPatientLabRequests, setCurrentPatientLabRequests] = useState(
+  const [patientLabRequests, setPatientLabRequests] = useState([]);
 
-  [],
+  const [reportsLoading, setReportsLoading] = useState(false);
 
- );
+  const [reportsOpen, setReportsOpen] = useState(false);
 
- const [oldPatientLabRequests, setOldPatientLabRequests] = useState([]);
+  const [labReportView, setLabReportView] = useState("current");
 
- const [patientReports, setPatientReports] = useState([]);
+  const [cancellingRequestId, setCancellingRequestId] = useState(null);
 
- const [patientLabRequests, setPatientLabRequests] = useState([]);
+  const [cancelRequest, setCancelRequest] = useState(null);
 
- const [reportsLoading, setReportsLoading] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
 
- const [reportsOpen, setReportsOpen] = useState(false);
+  const [repeatRequest, setRepeatRequest] = useState(null);
 
- const [labReportView, setLabReportView] = useState("current");
+  const [repeatingRequestId, setRepeatingRequestId] = useState(null);
 
- const [cancellingRequestId, setCancellingRequestId] = useState(null);
+  const {
+    isPatient,
 
- const [cancelRequest, setCancelRequest] = useState(null);
+    editable,
 
- const [cancelReason, setCancelReason] = useState("");
+    apiData,
 
- const [repeatRequest, setRepeatRequest] = useState(null);
+    isTodayAppointment,
 
- const [repeatingRequestId, setRepeatingRequestId] = useState(null);
+    isDownloading,
 
- const {
+    snackbar,
 
-  isPatient,
+    setSnackbar,
 
-  editable,
+    handleSavePrescription,
 
-  apiData,
+    isSavingPrescription,
 
-  isTodayAppointment,
+    downloadPdf,
 
-  isDownloading,
+    pdfRef,
 
-  snackbar,
+    doctor,
 
-  setSnackbar,
+    patient,
 
-  handleSavePrescription,
+    patientId,
 
-  isSavingPrescription,
+    appointmentId,
 
-  downloadPdf,
+    dateNow,
 
-  pdfRef,
+    diagnosis,
 
-  doctor,
+    setDiagnosis,
 
-  patient,
+    rows,
 
-  patientId,
+    setRows,
 
-  appointmentId,
+    addRow,
 
-  dateNow,
+    removeRow,
 
-  diagnosis,
+    remark,
 
-  setDiagnosis,
+    setRemark,
 
-  rows,
+    followUpDate,
 
-  setRows,
+    setFollowUpDate,
 
-  addRow,
+    qrImage,
+  } = props;
 
-  removeRow,
+  const voiceFieldSelector =
+    'textarea[placeholder="Enter diagnosis..."], input[placeholder="Enter diagnosis..."], input[placeholder="Enter medicine name"], textarea[placeholder="Add remark for patient"], input[placeholder="Add remark for patient"]';
 
-  remark,
+  const handleVoiceFieldFocus = (event) => {
+    const target = event.target;
 
-  setRemark,
+    if (
+      target?.closest?.(
+        '[aria-label="Start voice typing"], [aria-label="Stop voice typing"]',
+      )
+    )
+      return;
 
-  followUpDate,
+    const nextField = target?.matches?.(voiceFieldSelector) ? target : null;
+    if (nextField !== activeVoiceInputRef.current) {
+      activeVoiceInputRef.current = nextField;
+      speechBaseRef.current = {
+        field: nextField,
+        text: nextField?.value || "",
+        resultStart: speechResultCountRef.current,
+      };
+    }
+  };
 
-  setFollowUpDate,
-
-  qrImage,
-
- } = props;
-
- const voiceFieldSelector =
-
-  'textarea[placeholder="Enter diagnosis..."], input[placeholder="Enter diagnosis..."], input[placeholder="Enter medicine name"], textarea[placeholder="Add remark for patient"], input[placeholder="Add remark for patient"]';
-
- const handleVoiceFieldFocus = (event) => {
-
-  const target = event.target;
-
-  if (target?.closest?.('[aria-label="Start voice typing"], [aria-label="Stop voice typing"]')) return;
-
-  const nextField = target?.matches?.(voiceFieldSelector) ? target : null;
-  if (nextField !== activeVoiceInputRef.current) {
-   activeVoiceInputRef.current = nextField;
-   speechBaseRef.current = {
-    field: nextField,
-    text: nextField?.value || "",
-    resultStart: speechResultCountRef.current,
-   };
+const handlePrescriptionKeyDown = (event) => {
+  if (event.defaultPrevented || event.key !== "Enter" || event.shiftKey) {
+    return;
   }
-
- };
-
- const handlePrescriptionKeyDown = (event) => {
-
-  if (event.key !== "Enter" || event.shiftKey) return;
 
   const current = event.target;
-
   const diagnosisField = current.matches?.(
-
-   'textarea[placeholder="Enter diagnosis..."], input[placeholder="Enter diagnosis..."]',
-
+    'textarea[placeholder="Enter diagnosis..."], input[placeholder="Enter diagnosis..."]',
   );
-
   const medicineField = current.matches?.(
-
-   'input[placeholder="Enter medicine name"]',
-
+    'input[placeholder="Enter medicine name"]',
   );
+  const remarkSelector =
+    'textarea[placeholder="Add remark for patient"], input[placeholder="Add remark for patient"]';
 
-  const remarkField = current.matches?.(
-
-   'textarea[placeholder="Add remark for patient"], input[placeholder="Add remark for patient"]',
-
-  );
-
-  if (remarkField) {
-
-   event.preventDefault();
-
-   return;
-
+  if (current.matches?.(remarkSelector)) {
+    event.preventDefault();
+    return;
   }
 
-  if (!diagnosisField && !medicineField) return;
+  if (diagnosisField) {
+    event.preventDefault();
 
-  event.preventDefault();
-
-  const medicineFields = Array.from(
-
-   document.querySelectorAll('input[placeholder="Enter medicine name"]'),
-
-  );
-
-  const currentMedicineIndex = medicineFields.indexOf(current);
-
-  const nextField = diagnosisField
-
-   ? medicineFields[0]
-
-   : medicineFields[currentMedicineIndex + 1] ||
-
-    document.querySelector(
-
-     'textarea[placeholder="Add remark for patient"], input[placeholder="Add remark for patient"]',
-
+    const addButton = [...document.querySelectorAll("button")].find(
+      (button) => button.textContent?.includes("Add Medicine"),
     );
 
-  nextField?.focus();
+    if (!addButton || addButton.disabled) return;
 
- };
+    addButton.click();
 
- const startDiagnosisDictation = () => {
+    let attempts = 0;
+    const focusMedicine = () => {
+      const input = document.querySelector(
+        'input[placeholder="Enter medicine name"]:not(:disabled)',
+      );
 
-  const SpeechRecognition =
+      if (input) {
+        input.focus();
+      } else if (attempts++ < 10) {
+        requestAnimationFrame(focusMedicine);
+      }
+    };
 
-   window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-
-   setSpeechError("Voice typing is not supported in this browser. Try Chrome.");
-
-   return;
-
+    requestAnimationFrame(focusMedicine);
+    return;
   }
 
-  const recognition = new SpeechRecognition();
+  if (medicineField) {
+    event.preventDefault();
+    document.querySelector(remarkSelector)?.focus();
+  }
+};
+  const startDiagnosisDictation = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  recognition.lang = "en-IN";
+    if (!SpeechRecognition) {
+      setSpeechError(
+        "Voice typing is not supported in this browser. Try Chrome.",
+      );
 
-  recognition.continuous = true;
+      return;
+    }
 
-  recognition.interimResults = true;
+    const recognition = new SpeechRecognition();
 
-  activeVoiceInputRef.current = null;
-  speechBaseRef.current = { field: null, text: "", resultStart: 0 };
-  speechResultCountRef.current = 0;
+    recognition.lang = "en-IN";
 
-  setSpeechError("");
+    recognition.continuous = true;
 
-  recognition.onresult = (event) => {
+    recognition.interimResults = true;
+
+const diagnosisField = document.querySelector(
+  'textarea[placeholder="Enter diagnosis..."], input[placeholder="Enter diagnosis..."]',
+);
+
+if (!diagnosisField) {
+  setSpeechError("Diagnosis field nahi mila.");
+  return;
+}
+
+activeVoiceInputRef.current = diagnosisField;
+speechBaseRef.current = {
+  field: diagnosisField,
+  text: diagnosisField.value || "",
+  resultStart: 0,
+};
+speechResultCountRef.current = 0;
+diagnosisField.focus();
+
+    setSpeechError("");
+
+    recognition.onresult = (event) => {
       const field = activeVoiceInputRef.current;
       if (!field?.isConnected) {
         speechResultCountRef.current = event.results.length;
@@ -439,2246 +413,1545 @@ export default function PrescriptionUI(props) {
       const value = [speechBaseRef.current.text, spokenText]
         .filter(Boolean)
         .join(" ");
-      const prototype = field instanceof HTMLTextAreaElement
-        ? HTMLTextAreaElement.prototype
-        : HTMLInputElement.prototype;
+      const prototype =
+        field instanceof HTMLTextAreaElement
+          ? HTMLTextAreaElement.prototype
+          : HTMLInputElement.prototype;
 
-      Object.getOwnPropertyDescriptor(prototype, "value")?.set?.call(field, value);
+      Object.getOwnPropertyDescriptor(prototype, "value")?.set?.call(
+        field,
+        value,
+      );
       field.dispatchEvent(new Event("input", { bubbles: true }));
     };
 
-  recognition.onerror = (event) => {
+    recognition.onerror = (event) => {
+      setSpeechError(
+        `Mic error: ${event.error || "Could not recognize speech"}`,
+      );
 
-   setSpeechError(`Mic error: ${event.error || "Could not recognize speech"}`);
+      setIsListening(false);
+    };
 
-   setIsListening(false);
+    recognition.onend = () => setIsListening(false);
 
-  };
+    recognitionRef.current = recognition;
 
-  recognition.onend = () => setIsListening(false);
-
-  recognitionRef.current = recognition;
-
-  setIsListening(true);
-
-  try {
-
-   recognition.start();
-
-  } catch {
-
-   setIsListening(false);
-
-   setSpeechError("Could not start the microphone. Check mic permission and try again.");
-
-  }
-
- };
-
- const stopDiagnosisDictation = () => {
-
-  recognitionRef.current?.stop();
-
-  setIsListening(false);
-
- };
-
- useEffect(
-
-  () => () => recognitionRef.current?.stop(),
-
-  [],
-
- );
-
- const normalizeNumericId = (value) => {
-
-  if (value === null || value === undefined || value === "") return null;
-
-  const numeric = Number(value);
-
-  return Number.isNaN(numeric) ? null : numeric;
-
- };
-
- const getRecordAppointmentId = (record = {}) => {
-
-  const candidates = [
-
-   record.appointmentId,
-
-   record.appointment_id,
-
-   record.appointment?.id,
-
-   record.appointment?.appointment_id,
-
-   record.appointment?.appointmentId,
-
-   record.appointment_id ?? record.appointmentId,
-
-   apiData?.appointment_id,
-
-   apiData?.appointmentId,
-
-   apiData?.appointment?.id,
-
-   apiData?.appointment?.appointment_id,
-
-   apiData?.appointment?.appointmentId,
-
-  ];
-
-  for (const candidate of candidates) {
-
-   const normalized = normalizeNumericId(candidate);
-
-   if (normalized !== null) return normalized;
-
-  }
-
-  return null;
-
- };
-
- const getRecordSection = (record = {}) => {
-
-  const sectionFlag =
-
-   record.is_current ??
-
-   record.isCurrent ??
-
-   record.current ??
-
-   record.currentAppointment ??
-
-   record.is_current_appointment ??
-
-   record.isCurrentAppointment ??
-
-   record.section;
-
-  if (typeof sectionFlag === "boolean") {
-
-   return sectionFlag ? "current" : "old";
-
-  }
-
-  if (typeof sectionFlag === "string") {
-
-   const value = sectionFlag.toLowerCase();
-
-   if (
-
-    [
-
-     "current",
-
-     "current_appointment",
-
-     "active",
-
-     "true",
-
-     "1",
-
-     "yes",
-
-    ].includes(value)
-
-   )
-
-    return "current";
-
-   if (
-
-    [
-
-     "old",
-
-     "previous",
-
-     "past",
-
-     "historic",
-
-     "history",
-
-     "false",
-
-     "0",
-
-     "no",
-
-    ].includes(value)
-
-   )
-
-    return "old";
-
-  }
-
-  return null;
-
- };
-
- const activeAppointmentId = useMemo(() => {
-
-  const value =
-
-   appointmentId ||
-
-   apiData?.appointment_id ||
-
-   apiData?.appointmentId ||
-
-   apiData?.appointment?.id ||
-
-   apiData?.appointment?.appointment_id ||
-
-   apiData?.appointment?.appointmentId;
-
-  return normalizeNumericId(value);
-
- }, [appointmentId, apiData]);
-
- const matchesCurrentAppointment = (record = {}) => {
-
-  const explicitSection = getRecordSection(record);
-
-  if (explicitSection) {
-
-   return explicitSection === "current";
-
-  }
-
-  if (!activeAppointmentId) {
-
-   return true;
-
-  }
-
-  const recordAppointmentId = getRecordAppointmentId(record);
-
-  if (recordAppointmentId === null) {
-
-   return true;
-
-  }
-
-  return Number(recordAppointmentId) === Number(activeAppointmentId);
-
- };
-
- const refreshPatientLabData = async () => {
-
-  if (!patientId || isPatient) return;
-
-  try {
-
-   setReportsLoading(true);
-
-   const currentRequestPromise = activeAppointmentId
-
-    ? api.get("/api/lab-requests/doctor", {
-
-      params: { appointment_id: activeAppointmentId },
-
-     })
-
-    : api.get("/api/lab-requests/doctor");
-
-   const oldRequestPromise = activeAppointmentId
-
-    ? api.get("/api/lab-requests/doctor", {
-
-      params: { exclude_appointment_id: activeAppointmentId },
-
-     })
-
-    : Promise.resolve({ data: { data: [] } });
-
-   const currentReportsPromise = activeAppointmentId
-
-    ? api.get("/api/lab-reports", {
-
-      params: { appointment_id: activeAppointmentId },
-
-     })
-
-    : api.get("/api/lab-reports");
-
-   const oldReportsPromise = activeAppointmentId
-
-    ? api.get("/api/lab-reports", {
-
-      params: { exclude_appointment_id: activeAppointmentId },
-
-     })
-
-    : Promise.resolve({ data: { data: [] } });
-
-   const [
-
-    currentRequestsResponse,
-
-    oldRequestsResponse,
-
-    currentReportsResponse,
-
-    oldReportsResponse,
-
-   ] = await Promise.all([
-
-    currentRequestPromise,
-
-    oldRequestPromise,
-
-    currentReportsPromise,
-
-    oldReportsPromise,
-
-   ]);
-
-   const currentRequests = currentRequestsResponse?.data?.data || [];
-
-   const oldRequests = oldRequestsResponse?.data?.data || [];
-
-   const currentReports = currentReportsResponse?.data?.data || [];
-
-   const oldReports = oldReportsResponse?.data?.data || [];
-
-   const normalizePatientRecords = (items) =>
-
-    items.filter(
-
-     (item) =>
-
-      Number(
-
-       item.patientId ||
-
-        item.patient_id ||
-
-        item.patient_id ||
-
-        item.patientId,
-
-      ) === Number(patientId),
-
-    );
-
-   const nextCurrentRequests = normalizePatientRecords(currentRequests);
-
-   const nextOldRequests = normalizePatientRecords(oldRequests);
-
-   const nextCurrentReports = normalizePatientRecords(currentReports);
-
-   const nextOldReports = normalizePatientRecords(oldReports);
-
-   setCurrentPatientLabRequests(nextCurrentRequests);
-
-   setOldPatientLabRequests(nextOldRequests);
-
-   setCurrentPatientReports(nextCurrentReports);
-
-   setOldPatientReports(nextOldReports);
-
-   setPatientLabRequests([...nextCurrentRequests, ...nextOldRequests]);
-
-   setPatientReports([...nextCurrentReports, ...nextOldReports]);
-
-  } catch (requestError) {
-
-   setSnackbar((current) => ({
-
-    ...current,
-
-    open: true,
-
-    severity: "error",
-
-    message:
-
-     requestError?.response?.data?.message ||
-
-     "Unable to refresh lab reports.",
-
-   }));
-
-  } finally {
-
-   setReportsLoading(false);
-
-  }
-
- };
-
- useEffect(() => {
-
-  if (!patientId || isPatient) return;
-
-  const loadPatientReports = async () => {
-
-   try {
-
-    setReportsLoading(true);
-
-    const currentRequestPromise = activeAppointmentId
-
-     ? api.get("/api/lab-requests/doctor", {
-
-       params: { appointment_id: activeAppointmentId },
-
-      })
-
-     : api.get("/api/lab-requests/doctor");
-
-    const oldRequestPromise = activeAppointmentId
-
-     ? api.get("/api/lab-requests/doctor", {
-
-       params: { exclude_appointment_id: activeAppointmentId },
-
-      })
-
-     : Promise.resolve({ data: { data: [] } });
-
-    const currentReportsPromise = activeAppointmentId
-
-     ? api.get("/api/lab-reports", {
-
-       params: { appointment_id: activeAppointmentId },
-
-      })
-
-     : api.get("/api/lab-reports");
-
-    const oldReportsPromise = activeAppointmentId
-
-     ? api.get("/api/lab-reports", {
-
-       params: { exclude_appointment_id: activeAppointmentId },
-
-      })
-
-     : Promise.resolve({ data: { data: [] } });
-
-    const [
-
-     currentRequestsResponse,
-
-     oldRequestsResponse,
-
-     currentReportsResponse,
-
-     oldReportsResponse,
-
-    ] = await Promise.all([
-
-     currentRequestPromise,
-
-     oldRequestPromise,
-
-     currentReportsPromise,
-
-     oldReportsPromise,
-
-    ]);
-
-    const currentRequests = currentRequestsResponse?.data?.data || [];
-
-    const oldRequests = oldRequestsResponse?.data?.data || [];
-
-    const currentReports = currentReportsResponse?.data?.data || [];
-
-    const oldReports = oldReportsResponse?.data?.data || [];
-
-    const normalizePatientRecords = (items) =>
-
-     items.filter(
-
-      (item) =>
-
-       Number(
-
-        item.patientId ||
-
-         item.patient_id ||
-
-         item.patient_id ||
-
-         item.patientId,
-
-       ) === Number(patientId),
-
-     );
-
-    const nextCurrentRequests = normalizePatientRecords(currentRequests);
-
-    const nextOldRequests = normalizePatientRecords(oldRequests);
-
-    const nextCurrentReports = normalizePatientRecords(currentReports);
-
-    const nextOldReports = normalizePatientRecords(oldReports);
-
-    setCurrentPatientLabRequests(nextCurrentRequests);
-
-    setOldPatientLabRequests(nextOldRequests);
-
-    setCurrentPatientReports(nextCurrentReports);
-
-    setOldPatientReports(nextOldReports);
-
-    setPatientLabRequests([...nextCurrentRequests, ...nextOldRequests]);
-
-    setPatientReports([...nextCurrentReports, ...nextOldReports]);
-
-   } catch {
-
-    setCurrentPatientLabRequests([]);
-
-    setOldPatientLabRequests([]);
-
-    setCurrentPatientReports([]);
-
-    setOldPatientReports([]);
-
-    setPatientLabRequests([]);
-
-    setPatientReports([]);
-
-   } finally {
-
-    setReportsLoading(false);
-
-   }
-
-  };
-
-  loadPatientReports();
-
- }, [isPatient, patientId, activeAppointmentId]);
-
- const getRequestNote = (request = {}) =>
-
-  request.latest_status_note ||
-
-  request.latestStatusNote ||
-
-  request.status_note ||
-
-  request.note ||
-
-  request.reason ||
-
-  request.statusReason ||
-
-  "";
-
- const buildLabReportRows = (requests, reports) =>
-
-  requests.flatMap((request) => {
-
-   let tests = request.requested_tests || "-";
-
-   if (typeof tests === "string") {
+    setIsListening(true);
 
     try {
-
-     const parsed = JSON.parse(tests);
-
-     tests = Array.isArray(parsed) ? parsed : [tests];
-
+      recognition.start();
     } catch {
+      setIsListening(false);
 
-     tests = [tests];
-
+      setSpeechError(
+        "Could not start the microphone. Check mic permission and try again.",
+      );
     }
+  };
 
-   }
+  const stopDiagnosisDictation = () => {
+    recognitionRef.current?.stop();
 
-   if (!Array.isArray(tests)) tests = [String(tests)];
+    setIsListening(false);
+  };
 
-   const matchedReport = reports.find(
+  useEffect(
+    () => () => recognitionRef.current?.stop(),
 
-    (item) =>
-
-     Number(
-
-      item.requestId || item.testRequestId || item.test_request_id,
-
-     ) === Number(request.id),
-
-   );
-
-   return tests.map((test, index) => ({
-
-    id: `${request.id}-${index}`,
-
-    labName: request.lab_name,
-
-    testName: test,
-
-    requestId: request.id,
-
-    orderId: request.order_id || request.orderId || null,
-
-    status: request.status || "PENDING",
-
-    createdAt: request.created_at,
-
-    reportDate:
-
-     request.expected_report_at ||
-
-     request.expectedReportAt ||
-
-     matchedReport?.createdAt ||
-
-     matchedReport?.created_at ||
-
-     matchedReport?.uploadedAt ||
-
-     matchedReport?.uploaded_at ||
-
-     null,
-
-    report: matchedReport,
-
-   }));
-
-  });
-
- const currentLabReportRows = useMemo(() => {
-
-  const rows = buildLabReportRows(
-
-   currentPatientLabRequests,
-
-   currentPatientReports,
-
+    [],
   );
 
-  return [...rows].sort((a, b) => {
+  const normalizeNumericId = (value) => {
+    if (value === null || value === undefined || value === "") return null;
 
-   const firstTime = Date.parse(a.reportDate || a.createdAt || 0) || 0;
+    const numeric = Number(value);
 
-   const secondTime = Date.parse(b.reportDate || b.createdAt || 0) || 0;
+    return Number.isNaN(numeric) ? null : numeric;
+  };
 
-   return secondTime - firstTime;
+  const getRecordAppointmentId = (record = {}) => {
+    const candidates = [
+      record.appointmentId,
 
-  });
+      record.appointment_id,
 
- }, [currentPatientLabRequests, currentPatientReports]);
+      record.appointment?.id,
 
- const oldLabReportRows = useMemo(() => {
+      record.appointment?.appointment_id,
 
-  const rows = buildLabReportRows(oldPatientLabRequests, oldPatientReports);
+      record.appointment?.appointmentId,
 
-  return [...rows].sort((a, b) => {
+      record.appointment_id ?? record.appointmentId,
 
-   const firstTime = Date.parse(a.reportDate || a.createdAt || 0) || 0;
+      apiData?.appointment_id,
 
-   const secondTime = Date.parse(b.reportDate || b.createdAt || 0) || 0;
+      apiData?.appointmentId,
 
-   return secondTime - firstTime;
+      apiData?.appointment?.id,
 
-  });
+      apiData?.appointment?.appointment_id,
 
- }, [oldPatientLabRequests, oldPatientReports]);
+      apiData?.appointment?.appointmentId,
+    ];
 
- const labReportRows = [...currentLabReportRows, ...oldLabReportRows];
+    for (const candidate of candidates) {
+      const normalized = normalizeNumericId(candidate);
 
- const sortedLabReportRows = useMemo(() => {
+      if (normalized !== null) return normalized;
+    }
 
-  return [...labReportRows].sort((a, b) => {
+    return null;
+  };
 
-   const firstTime = Date.parse(a.reportDate || a.createdAt || 0) || 0;
+  const getRecordSection = (record = {}) => {
+    const sectionFlag =
+      record.is_current ??
+      record.isCurrent ??
+      record.current ??
+      record.currentAppointment ??
+      record.is_current_appointment ??
+      record.isCurrentAppointment ??
+      record.section;
 
-   const secondTime = Date.parse(b.reportDate || b.createdAt || 0) || 0;
+    if (typeof sectionFlag === "boolean") {
+      return sectionFlag ? "current" : "old";
+    }
 
-   return secondTime - firstTime;
+    if (typeof sectionFlag === "string") {
+      const value = sectionFlag.toLowerCase();
 
-  });
+      if (
+        [
+          "current",
 
- }, [labReportRows]);
+          "current_appointment",
 
- const cancelPendingRequest = async (requestId, reason = null) => {
+          "active",
 
-  try {
+          "true",
 
-   setCancellingRequestId(requestId);
+          "1",
 
-   await api.patch(`/api/lab-requests/${requestId}/cancel`, {
+          "yes",
+        ].includes(value)
+      )
+        return "current";
 
-    note: reason || null,
+      if (
+        [
+          "old",
 
-   });
+          "previous",
 
-   setPatientLabRequests((current) =>
+          "past",
 
-    current.map((request) =>
+          "historic",
 
-     request.id === requestId
+          "history",
 
-      ? { ...request, status: "CANCELLED" }
+          "false",
 
-      : request,
+          "0",
 
-    ),
+          "no",
+        ].includes(value)
+      )
+        return "old";
+    }
 
-   );
+    return null;
+  };
 
-  } catch (requestError) {
+  const activeAppointmentId = useMemo(() => {
+    const value =
+      appointmentId ||
+      apiData?.appointment_id ||
+      apiData?.appointmentId ||
+      apiData?.appointment?.id ||
+      apiData?.appointment?.appointment_id ||
+      apiData?.appointment?.appointmentId;
 
-   setSnackbar((current) => ({
+    return normalizeNumericId(value);
+  }, [appointmentId, apiData]);
 
-    ...current,
+  const matchesCurrentAppointment = (record = {}) => {
+    const explicitSection = getRecordSection(record);
 
-    open: true,
+    if (explicitSection) {
+      return explicitSection === "current";
+    }
 
-    severity: "error",
+    if (!activeAppointmentId) {
+      return true;
+    }
 
-    message:
+    const recordAppointmentId = getRecordAppointmentId(record);
 
-     requestError?.response?.data?.message ||
+    if (recordAppointmentId === null) {
+      return true;
+    }
 
-     "Unable to cancel lab request.",
+    return Number(recordAppointmentId) === Number(activeAppointmentId);
+  };
 
-   }));
+  const refreshPatientLabData = async () => {
+    if (!patientId || isPatient) return;
 
-  } finally {
+    try {
+      setReportsLoading(true);
 
-   setCancellingRequestId(null);
+      const currentRequestPromise = activeAppointmentId
+        ? api.get("/api/lab-requests/doctor", {
+            params: { appointment_id: activeAppointmentId },
+          })
+        : api.get("/api/lab-requests/doctor");
 
-  }
+      const oldRequestPromise = activeAppointmentId
+        ? api.get("/api/lab-requests/doctor", {
+            params: { exclude_appointment_id: activeAppointmentId },
+          })
+        : Promise.resolve({ data: { data: [] } });
 
- };
+      const currentReportsPromise = activeAppointmentId
+        ? api.get("/api/lab-reports", {
+            params: { appointment_id: activeAppointmentId },
+          })
+        : api.get("/api/lab-reports");
 
- const repeatLabRequest = async () => {
+      const oldReportsPromise = activeAppointmentId
+        ? api.get("/api/lab-reports", {
+            params: { exclude_appointment_id: activeAppointmentId },
+          })
+        : Promise.resolve({ data: { data: [] } });
 
-  if (!repeatRequest) return;
+      const [
+        currentRequestsResponse,
 
-  try {
+        oldRequestsResponse,
 
-   setRepeatingRequestId(repeatRequest.requestId);
+        currentReportsResponse,
 
-   await api.post(`/api/lab-requests/${repeatRequest.requestId}/repeat`, {});
+        oldReportsResponse,
+      ] = await Promise.all([
+        currentRequestPromise,
 
-   setSnackbar((current) => ({
+        oldRequestPromise,
 
-    ...current,
+        currentReportsPromise,
 
-    open: true,
+        oldReportsPromise,
+      ]);
 
-    severity: "success",
+      const currentRequests = currentRequestsResponse?.data?.data || [];
 
-    message: "Repeat lab test request created successfully.",
+      const oldRequests = oldRequestsResponse?.data?.data || [];
 
-   }));
+      const currentReports = currentReportsResponse?.data?.data || [];
 
-   setRepeatRequest(null);
+      const oldReports = oldReportsResponse?.data?.data || [];
 
-   await refreshPatientLabData();
+      const normalizePatientRecords = (items) =>
+        items.filter(
+          (item) =>
+            Number(
+              item.patientId ||
+                item.patient_id ||
+                item.patient_id ||
+                item.patientId,
+            ) === Number(patientId),
+        );
 
-  } catch (requestError) {
+      const nextCurrentRequests = normalizePatientRecords(currentRequests);
 
-   setSnackbar((current) => ({
+      const nextOldRequests = normalizePatientRecords(oldRequests);
 
-    ...current,
+      const nextCurrentReports = normalizePatientRecords(currentReports);
 
-    open: true,
+      const nextOldReports = normalizePatientRecords(oldReports);
 
-    severity: "error",
+      setCurrentPatientLabRequests(nextCurrentRequests);
 
-    message: requestError?.response?.data?.message || "Unable to repeat lab test request.",
+      setOldPatientLabRequests(nextOldRequests);
 
-   }));
+      setCurrentPatientReports(nextCurrentReports);
 
-  } finally {
+      setOldPatientReports(nextOldReports);
 
-   setRepeatingRequestId(null);
+      setPatientLabRequests([...nextCurrentRequests, ...nextOldRequests]);
 
-  }
+      setPatientReports([...nextCurrentReports, ...nextOldReports]);
+    } catch (requestError) {
+      setSnackbar((current) => ({
+        ...current,
 
- };
+        open: true,
 
- 
+        severity: "error",
 
- const printRef = useRef(null);
+        message:
+          requestError?.response?.data?.message ||
+          "Unable to refresh lab reports.",
+      }));
+    } finally {
+      setReportsLoading(false);
+    }
+  };
 
- const handlePrint = useReactToPrint({
+  useEffect(() => {
+    if (!patientId || isPatient) return;
 
-  contentRef: printRef,
+    const loadPatientReports = async () => {
+      try {
+        setReportsLoading(true);
 
-  documentTitle: `Prescription-${patient?.name || "patient"}`,
+        const currentRequestPromise = activeAppointmentId
+          ? api.get("/api/lab-requests/doctor", {
+              params: { appointment_id: activeAppointmentId },
+            })
+          : api.get("/api/lab-requests/doctor");
 
-  pageStyle: PRINT_PAGE_STYLE,
+        const oldRequestPromise = activeAppointmentId
+          ? api.get("/api/lab-requests/doctor", {
+              params: { exclude_appointment_id: activeAppointmentId },
+            })
+          : Promise.resolve({ data: { data: [] } });
 
-  onBeforePrint: () =>
+        const currentReportsPromise = activeAppointmentId
+          ? api.get("/api/lab-reports", {
+              params: { appointment_id: activeAppointmentId },
+            })
+          : api.get("/api/lab-reports");
 
-   waitForPrescriptionImages(printRef.current),
+        const oldReportsPromise = activeAppointmentId
+          ? api.get("/api/lab-reports", {
+              params: { exclude_appointment_id: activeAppointmentId },
+            })
+          : Promise.resolve({ data: { data: [] } });
 
- });
+        const [
+          currentRequestsResponse,
 
- return (
+          oldRequestsResponse,
 
-  <Box
+          currentReportsResponse,
 
-   onFocusCapture={handleVoiceFieldFocus}
+          oldReportsResponse,
+        ] = await Promise.all([
+          currentRequestPromise,
 
-   onKeyDownCapture={handlePrescriptionKeyDown}
+          oldRequestPromise,
 
-   sx={{
+          currentReportsPromise,
 
-    width: "100%",
+          oldReportsPromise,
+        ]);
 
-    maxWidth: "100%",
+        const currentRequests = currentRequestsResponse?.data?.data || [];
 
-    minWidth: 0,
+        const oldRequests = oldRequestsResponse?.data?.data || [];
 
-    p: 2,
+        const currentReports = currentReportsResponse?.data?.data || [];
 
-    mt: 1,
+        const oldReports = oldReportsResponse?.data?.data || [];
 
-    bgcolor: "#F4F7F6",
+        const normalizePatientRecords = (items) =>
+          items.filter(
+            (item) =>
+              Number(
+                item.patientId ||
+                  item.patient_id ||
+                  item.patient_id ||
+                  item.patientId,
+              ) === Number(patientId),
+          );
 
-    boxSizing: "border-box",
+        const nextCurrentRequests = normalizePatientRecords(currentRequests);
 
-    overflowX: "hidden",
+        const nextOldRequests = normalizePatientRecords(oldRequests);
 
-    overflowY: "visible",
+        const nextCurrentReports = normalizePatientRecords(currentReports);
 
-    "& .MuiInputLabel-root.Mui-focused": {
+        const nextOldReports = normalizePatientRecords(oldReports);
 
-     color: PRIMARY_COLOR,
+        setCurrentPatientLabRequests(nextCurrentRequests);
 
-    },
+        setOldPatientLabRequests(nextOldRequests);
 
-    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+        setCurrentPatientReports(nextCurrentReports);
 
-     borderColor: "#07876A",
+        setOldPatientReports(nextOldReports);
 
-     borderWidth: "2px",
+        setPatientLabRequests([...nextCurrentRequests, ...nextOldRequests]);
 
-    },
+        setPatientReports([...nextCurrentReports, ...nextOldReports]);
+      } catch {
+        setCurrentPatientLabRequests([]);
 
-    "& .MuiInput-underline:after": {
+        setOldPatientLabRequests([]);
 
-     borderBottomColor: PRIMARY_COLOR,
+        setCurrentPatientReports([]);
 
-    },
+        setOldPatientReports([]);
 
-    "& .MuiCheckbox-root.Mui-checked": {
+        setPatientLabRequests([]);
 
-     color: PRIMARY_COLOR,
+        setPatientReports([]);
+      } finally {
+        setReportsLoading(false);
+      }
+    };
 
-    },
+    loadPatientReports();
+  }, [isPatient, patientId, activeAppointmentId]);
 
-    "& .MuiRadio-root.Mui-checked": {
+  const getRequestNote = (request = {}) =>
+    request.latest_status_note ||
+    request.latestStatusNote ||
+    request.status_note ||
+    request.note ||
+    request.reason ||
+    request.statusReason ||
+    "";
 
-     color: PRIMARY_COLOR,
+  const buildLabReportRows = (requests, reports) =>
+    requests.flatMap((request) => {
+      let tests = request.requested_tests || "-";
 
-    },
+      if (typeof tests === "string") {
+        try {
+          const parsed = JSON.parse(tests);
 
-    "& .MuiSelect-select:focus": {
-
-     backgroundColor: "transparent",
-
-    },
-
-    "& .MuiMenuItem-root.Mui-selected": {
-
-     backgroundColor: "rgba(7, 135, 106, 0.10)",
-
-     color: PRIMARY_COLOR,
-
-    },
-
-    "& .MuiMenuItem-root.Mui-selected:hover": {
-
-     backgroundColor: "rgba(7, 135, 106, 0.16)",
-
-    },
-
-    "& .MuiChip-colorPrimary": {
-
-     backgroundColor: PRIMARY_COLOR,
-
-    },
-
-   }}
-
-  >
-
-   <Box
-
-    sx={{
-
-     width: "100%",
-
-     minWidth: 0,
-
-     display: "flex",
-
-     justifyContent: "space-between",
-
-     alignItems: "center",
-
-     flexWrap: "wrap",
-
-     gap: { xs: 1, sm: 1.5 },
-
-     mb: { xs: 1.2, sm: 1.5 },
-
-    }}
-
-   >
-
-    <Button
-
-     variant="outlined"
-
-     startIcon={<ArrowBackIcon />}
-
-     onClick={() => router.push("/doctor/pages/patient")}
-
-     sx={{
-
-      minHeight: 34,
-
-      px: { xs: 1.2, sm: 1.5 },
-
-      borderRadius: 1.5,
-
-      fontSize: "12px",
-
-      fontWeight: 600,
-
-      textTransform: "none",
-
-      whiteSpace: "nowrap",
-
-     }}
-
-    >
-
-     Back
-
-    </Button>
-
-    <Box
-
-     sx={{
-
-      display: "flex",
-
-      alignItems: "center",
-
-      justifyContent: { xs: "flex-start", sm: "flex-end" },
-
-      flexWrap: "wrap",
-
-      gap: { xs: 0.7, sm: 1 },
-
-      flex: { xs: "1 1 100%", sm: 1 },
-
-     }}
-
-    >
-
-     {!isPatient && (
-
-      <>
-
-       <MedicalStoreRequestForm
-
-        patientId={patientId}
-
-        appointmentId={
-
-         appointmentId ||
-
-         apiData?.appointment?.id ||
-
-         apiData?.appointment?.appointment_id
-
+          tests = Array.isArray(parsed) ? parsed : [tests];
+        } catch {
+          tests = [tests];
         }
+      }
 
-        isTodayAppointment={isTodayAppointment}
+      if (!Array.isArray(tests)) tests = [String(tests)];
 
-        hasSavedPrescription={Boolean(apiData?.prescription)}
+      const matchedReport = reports.find(
+        (item) =>
+          Number(
+            item.requestId || item.testRequestId || item.test_request_id,
+          ) === Number(request.id),
+      );
 
-        canSend={Boolean(isTodayAppointment && apiData?.prescription)}
+      return tests.map((test, index) => ({
+        id: `${request.id}-${index}`,
 
-       />
+        labName: request.lab_name,
 
-       <LabTestRequestForm
+        testName: test,
 
-        patientId={patientId}
+        requestId: request.id,
 
-        appointmentId={
+        orderId: request.order_id || request.orderId || null,
 
-         appointmentId ||
+        status: request.status || "PENDING",
 
-         apiData?.appointment?.id ||
+        createdAt: request.created_at,
 
-         apiData?.appointment?.appointment_id
+        reportDate:
+          request.expected_report_at ||
+          request.expectedReportAt ||
+          matchedReport?.createdAt ||
+          matchedReport?.created_at ||
+          matchedReport?.uploadedAt ||
+          matchedReport?.uploaded_at ||
+          null,
 
-        }
+        report: matchedReport,
+      }));
+    });
 
-        storageKey={`doctor-lab-test-${patientId || "unknown"}-${
+  const currentLabReportRows = useMemo(() => {
+    const rows = buildLabReportRows(
+      currentPatientLabRequests,
 
-         appointmentId ||
+      currentPatientReports,
+    );
 
-         apiData?.appointment?.id ||
+    return [...rows].sort((a, b) => {
+      const firstTime = Date.parse(a.reportDate || a.createdAt || 0) || 0;
 
-         apiData?.appointment?.appointment_id ||
+      const secondTime = Date.parse(b.reportDate || b.createdAt || 0) || 0;
 
-         "no-appointment"
+      return secondTime - firstTime;
+    });
+  }, [currentPatientLabRequests, currentPatientReports]);
 
-        }`}
+  const oldLabReportRows = useMemo(() => {
+    const rows = buildLabReportRows(oldPatientLabRequests, oldPatientReports);
 
-        resetKey={labTestResetKey}
+    return [...rows].sort((a, b) => {
+      const firstTime = Date.parse(a.reportDate || a.createdAt || 0) || 0;
 
-        onSummaryChange={setLabTestSummary}
+      const secondTime = Date.parse(b.reportDate || b.createdAt || 0) || 0;
 
-       />
+      return secondTime - firstTime;
+    });
+  }, [oldPatientLabRequests, oldPatientReports]);
 
-       <Button
+  const labReportRows = [...currentLabReportRows, ...oldLabReportRows];
 
-        variant="outlined"
+  const sortedLabReportRows = useMemo(() => {
+    return [...labReportRows].sort((a, b) => {
+      const firstTime = Date.parse(a.reportDate || a.createdAt || 0) || 0;
 
-        startIcon={<DescriptionOutlined />}
+      const secondTime = Date.parse(b.reportDate || b.createdAt || 0) || 0;
 
-        onClick={() => {
+      return secondTime - firstTime;
+    });
+  }, [labReportRows]);
 
-         setReportsOpen(true);
+  const cancelPendingRequest = async (requestId, reason = null) => {
+    try {
+      setCancellingRequestId(requestId);
 
-         refreshPatientLabData();
+      await api.patch(`/api/lab-requests/${requestId}/cancel`, {
+        note: reason || null,
+      });
 
-        }}
+      setPatientLabRequests((current) =>
+        current.map((request) =>
+          request.id === requestId
+            ? { ...request, status: "CANCELLED" }
+            : request,
+        ),
+      );
+    } catch (requestError) {
+      setSnackbar((current) => ({
+        ...current,
 
-        sx={{
+        open: true,
 
-         textTransform: "none",
+        severity: "error",
 
-         borderRadius: 1.5,
+        message:
+          requestError?.response?.data?.message ||
+          "Unable to cancel lab request.",
+      }));
+    } finally {
+      setCancellingRequestId(null);
+    }
+  };
 
-         minHeight: 34,
+  const repeatLabRequest = async () => {
+    if (!repeatRequest) return;
 
-         fontSize: "12px",
+    try {
+      setRepeatingRequestId(repeatRequest.requestId);
 
-         px: 1.25,
+      await api.post(`/api/lab-requests/${repeatRequest.requestId}/repeat`, {});
 
-        }}
+      setSnackbar((current) => ({
+        ...current,
 
-       >
+        open: true,
 
-        Lab Reports
+        severity: "success",
 
-        {labReportRows.length ? ` (${labReportRows.length})` : ""}
+        message: "Repeat lab test request created successfully.",
+      }));
 
-       </Button>
+      setRepeatRequest(null);
 
-      </>
+      await refreshPatientLabData();
+    } catch (requestError) {
+      setSnackbar((current) => ({
+        ...current,
 
-     )}
+        open: true,
 
-     {!isPatient && (
+        severity: "error",
 
-      <Button
+        message:
+          requestError?.response?.data?.message ||
+          "Unable to repeat lab test request.",
+      }));
+    } finally {
+      setRepeatingRequestId(null);
+    }
+  };
 
-       onClick={handlePrint}
+  const printRef = useRef(null);
 
-       variant="contained"
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
 
-       disableElevation
+    documentTitle: `Prescription-${patient?.name || "patient"}`,
 
-       sx={actionButtonSx(80)}
+    pageStyle: PRINT_PAGE_STYLE,
 
-      >
+    onBeforePrint: () => waitForPrescriptionImages(printRef.current),
+  });
 
-       Print
-
-      </Button>
-
-     )}
-
-     <Button
-
-      onClick={downloadPdf}
-
-      variant="contained"
-
-      disableElevation
-
-      sx={actionButtonSx(100)}
-
-     >
-
-      <Box
-
-       component="span"
-
-       sx={{ display: { xs: "none", sm: "inline" } }}
-
-      >
-
-       Download PDF
-
-      </Box>
-
-      <Box
-
-       component="span"
-
-       sx={{ display: { xs: "inline", sm: "none" } }}
-
-      >
-
-       PDF
-
-      </Box>
-
-     </Button>
-
-     {(
-
-      <Button
-
-       variant="contained"
-
-       disableElevation
-
-       onClick={handleSavePrescription}
-
-      disabled={!editable || !isTodayAppointment || isSavingPrescription}
-
-       startIcon={
-
-        isSavingPrescription ? (
-
-         <CircularProgress size={16} color="inherit" />
-
-        ) : null
-
-       }
-
-       sx={actionButtonSx(110)}
-
-      >
-
-       <Box
-
-        component="span"
-
-        sx={{ display: { xs: "none", sm: "inline" } }}
-
-       >
-
-        {isSavingPrescription
-
-         ? "Saving..."
-
-         : apiData?.prescription
-
-         ? "Update Prescription"
-
-         : "Save Prescription"}
-
-       </Box>
-
-       <Box
-
-        component="span"
-
-        sx={{ display: { xs: "inline", sm: "none" } }}
-
-       >
-
-        {isSavingPrescription
-
-         ? "Saving"
-
-         : apiData?.prescription
-
-          ? "Update"
-
-          : "Save"}
-
-       </Box>
-
-      </Button>
-
-     )}
-
-    </Box>
-
-   </Box>
-
-   {editable && !isDownloading && (
-
+  return (
     <Box
-
-     sx={{
-
-      position: "fixed",
-
-      top: "50%",
-
-      right: { lg: "max(12px, calc(25vw - 286px))", xs: 12 },
-
-      transform: "translateY(-50%)",
-
-      zIndex: 1300,
-
-      display: "flex",
-
-      flexDirection: "column",
-
-      alignItems: "center",
-
-      gap: 0.5,
-
-     }}
-
-    >
-
-     <Button
-
-      type="button"
-
-      aria-label={isListening ? "Stop voice typing" : "Start voice typing"}
-
-      onClick={isListening ? stopDiagnosisDictation : startDiagnosisDictation}
-
+      onFocusCapture={handleVoiceFieldFocus}
+      onKeyDown={handlePrescriptionKeyDown}
       sx={{
+        width: "100%",
 
-       minWidth: 92,
+        maxWidth: "100%",
 
-       width: 92,
+        minWidth: 0,
 
-       height: 40,
+        p: 2,
 
-       p: 0,
+        mt: 1,
 
-       borderRadius: 1.5,
+        bgcolor: "#F4F7F6",
 
-       display: "flex",
+        boxSizing: "border-box",
 
-       alignItems: "center",
+        overflowX: "hidden",
 
-       justifyContent: "center",
+        overflowY: "visible",
 
-       bgcolor: isListening ? "#D32F2F" : PRIMARY_COLOR,
+        "& .MuiInputLabel-root.Mui-focused": {
+          color: PRIMARY_COLOR,
+        },
 
-       color: "#fff",
+        "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+          {
+            borderColor: "#07876A",
 
-       boxShadow: "0 2px 8px rgba(0,0,0,0.16)",
+            borderWidth: "2px",
+          },
 
-       "&:hover": { bgcolor: isListening ? "#B71C1C" : "#06745B" },
+        "& .MuiInput-underline:after": {
+          borderBottomColor: PRIMARY_COLOR,
+        },
 
-       "& .MuiSvgIcon-root": { display: "block", fontSize: 24, color: "inherit" },
+        "& .MuiCheckbox-root.Mui-checked": {
+          color: PRIMARY_COLOR,
+        },
 
+        "& .MuiRadio-root.Mui-checked": {
+          color: PRIMARY_COLOR,
+        },
+
+        "& .MuiSelect-select:focus": {
+          backgroundColor: "transparent",
+        },
+
+        "& .MuiMenuItem-root.Mui-selected": {
+          backgroundColor: "rgba(7, 135, 106, 0.10)",
+
+          color: PRIMARY_COLOR,
+        },
+
+        "& .MuiMenuItem-root.Mui-selected:hover": {
+          backgroundColor: "rgba(7, 135, 106, 0.16)",
+        },
+
+        "& .MuiChip-colorPrimary": {
+          backgroundColor: PRIMARY_COLOR,
+        },
       }}
-
-     >
-
-      <MicNoneOutlined />
-
-     </Button>
-
-     {isListening && (
-
-      <Typography
-
-       sx={{
-
-        px: 0.75,
-
-        py: 0.25,
-
-        bgcolor: "#fff",
-
-        borderRadius: 1,
-
-        color: "error.main",
-
-        fontSize: 11,
-
-        whiteSpace: "nowrap",
-
-       }}
-
-      >
-
-       Listening…
-
-      </Typography>
-
-     )}
-
-     {speechError && (
-
-      <Typography sx={{ maxWidth: 150, color: "error.main", fontSize: 10, textAlign: "center" }}>
-
-       {speechError}
-
-      </Typography>
-
-     )}
-
-    </Box>
-
-   )}
-
-   <Dialog
-
-    open={reportsOpen}
-
-    onClose={() => setReportsOpen(false)}
-
-    fullWidth
-
-    maxWidth="sm"
-
-    aria-labelledby="lab-reports-dialog-title"
-
-   >
-
-    <DialogTitle id="lab-reports-dialog-title">Lab Reports</DialogTitle>
-
-    <DialogContent dividers>
-
-     {reportsLoading ? (
-
-      <Box display="flex" justifyContent="center" py={3}>
-
-       <CircularProgress size={24} />
-
-      </Box>
-
-     ) : labReportRows.length ? (
-
-      <Box sx={{ display: "grid", gap: 1 }}>
-
-       <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 0.5 }}>
-
-        <Button
-
-         size="small"
-
-         variant={labReportView === "current" ? "contained" : "outlined"}
-
-         onClick={() => setLabReportView("current")}
-
-         sx={{
-
-          textTransform: "none",
-
-          borderRadius: 1.5,
-
-          minHeight: 32,
-
-          fontWeight: 700,
-
-          fontSize: "12px",
-
-          bgcolor: labReportView === "current" ? "#07876A" : "transparent",
-
-          color: labReportView === "current" ? "#fff" : "#0F172A",
-
-          borderColor: "#CBD5E1",
-
-         }}
-
-        >
-
-         Current Appointment Report
-
-        </Button>
-
-        <Button
-
-         size="small"
-
-         variant={labReportView === "old" ? "contained" : "outlined"}
-
-         onClick={() => setLabReportView("old")}
-
-         sx={{
-
-          textTransform: "none",
-
-          borderRadius: 1.5,
-
-          minHeight: 32,
-
-          fontWeight: 700,
-
-          fontSize: "12px",
-
-          bgcolor: labReportView === "old" ? "#07876A" : "transparent",
-
-          color: labReportView === "old" ? "#fff" : "#0F172A",
-
-          borderColor: "#CBD5E1",
-
-         }}
-
-        >
-
-         Old Reports
-
-        </Button>
-
-       </Box>
-
-       {(labReportView === "current" ? currentLabReportRows : oldLabReportRows).map((row) => (
-
-        <Box
-
-         key={row.id}
-
-         sx={{
-
-          display: "flex",
-
-          alignItems: "center",
-
-          justifyContent: "space-between",
-
-          gap: 1,
+    >
+      <Box
+        sx={{
+          width: "100%",
 
           minWidth: 0,
 
-          py: 0.5,
+          display: "flex",
 
-          borderBottom: "1px solid",
+          justifyContent: "space-between",
 
-          borderColor: "divider",
+          alignItems: "center",
 
-         }}
+          flexWrap: "wrap",
 
+          gap: { xs: 1, sm: 1.5 },
+
+          mb: { xs: 1.2, sm: 1.5 },
+        }}
+      >
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => router.push("/doctor/pages/patient")}
+          sx={{
+            minHeight: 34,
+
+            px: { xs: 1.2, sm: 1.5 },
+
+            borderRadius: 1.5,
+
+            fontSize: "12px",
+
+            fontWeight: 600,
+
+            textTransform: "none",
+
+            whiteSpace: "nowrap",
+          }}
         >
+          Back
+        </Button>
 
-         <Box sx={{ minWidth: 0, flex: 1 }}>
-
-          <Typography
-
-           variant="caption"
-
-           sx={{
-
-            fontWeight: 700,
-
-            display: "block",
-
-            overflow: "hidden",
-
-            textOverflow: "ellipsis",
-
-           }}
-
-          >
-
-           {row.labName || "Lab"} - {row.testName}
-
-          </Typography>
-
-          <Typography
-
-           variant="caption"
-
-           color="text.secondary"
-
-           sx={{ fontSize: "11px", display: "block" }}
-
-          >
-
-           Created: {row.createdAt ? new Date(row.createdAt).toLocaleString() : "-"}
-
-          </Typography>
-
-          <Typography
-
-           variant="caption"
-
-           color="text.secondary"
-
-           sx={{ fontSize: "11px", display: "block" }}
-
-          >
-
-           Order ID: {row.orderId || "-"}
-
-          </Typography>
-
-          <Box
-
-           sx={{
-
-            mt: 0.5,
-
+        <Box
+          sx={{
             display: "flex",
 
             alignItems: "center",
 
-            gap: 0.7,
+            justifyContent: { xs: "flex-start", sm: "flex-end" },
 
             flexWrap: "wrap",
 
-           }}
+            gap: { xs: 0.7, sm: 1 },
 
-          >
+            flex: { xs: "1 1 100%", sm: 1 },
+            "& .MuiButton-root:not(.voice-mic-button)": {
+              width: 150,
+              minWidth: 150,
+              height: 35,
+              minHeight: 35,
+              boxSizing: "border-box",
+              flexShrink: 0,
+            },
+          }}
+        >
+          {!isPatient && (
+            <>
+              <MedicalStoreRequestForm
+                patientId={patientId}
+                appointmentId={
+                  appointmentId ||
+                  apiData?.appointment?.id ||
+                  apiData?.appointment?.appointment_id
+                }
+                isTodayAppointment={isTodayAppointment}
+                hasSavedPrescription={Boolean(apiData?.prescription)}
+                canSend={Boolean(isTodayAppointment && apiData?.prescription)}
+              />
 
-           <Box
+              <LabTestRequestForm
+                patientId={patientId}
+                appointmentId={
+                  appointmentId ||
+                  apiData?.appointment?.id ||
+                  apiData?.appointment?.appointment_id
+                }
+                storageKey={`doctor-lab-test-${patientId || "unknown"}-${
+                  appointmentId ||
+                  apiData?.appointment?.id ||
+                  apiData?.appointment?.appointment_id ||
+                  "no-appointment"
+                }`}
+                resetKey={labTestResetKey}
+                onSummaryChange={setLabTestSummary}
+              />
 
-            component="span"
+              <Button
+                variant="outlined"
+                startIcon={<DescriptionOutlined />}
+                onClick={() => {
+                  setReportsOpen(true);
 
-            sx={{
+                  refreshPatientLabData();
+                }}
+                sx={{
+                  textTransform: "none",
 
-             px: 1,
+                  borderRadius: 1.5,
 
-             py: 0.3,
+                  minHeight: 34,
 
-             borderRadius: "6px",
+                  fontSize: "12px",
 
-             fontSize: "10.5px",
-
-             fontWeight: 700,
-
-             lineHeight: 1.4,
-
-             bgcolor:
-
-              row.status === "COMPLETED"
-
-               ? "#E8F5E9"
-
-               : row.status === "REPORT_UPLOADED"
-
-                ? "#E3F2FD"
-
-                : row.status === "PROCESSING"
-
-                 ? "#EDE7F6"
-
-                 : row.status === "SAMPLE_COLLECTED"
-
-                  ? "#E0F7FA"
-
-                  : row.status === "APPROVED"
-
-                   ? "#E8F5E9"
-
-                   : row.status === "CANCELLED"
-
-                    ? "#FFEBEE"
-
-                    : row.status === "REJECTED"
-
-                     ? "#FFF3E0"
-
-                     : "#FFF8E1",
-
-             color:
-
-              row.status === "COMPLETED"
-
-               ? "#2E7D32"
-
-               : row.status === "REPORT_UPLOADED"
-
-                ? "#1565C0"
-
-                : row.status === "PROCESSING"
-
-                 ? "#6A1B9A"
-
-                 : row.status === "SAMPLE_COLLECTED"
-
-                  ? "#00838F"
-
-                  : row.status === "APPROVED"
-
-                   ? "#2E7D32"
-
-                   : row.status === "CANCELLED"
-
-                    ? "#D32F2F"
-
-                    : row.status === "REJECTED"
-
-                     ? "#E65100"
-
-                     : "#F57F17",
-
-            }}
-
-           >
-
-            {row.status?.replaceAll("_", " ")}
-
-           </Box>
-
-           {row.reportDate && (
-
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: "11px" }}>
-
-             Report Date: {new Date(row.reportDate).toLocaleString()}
-
-            </Typography>
-
-           )}
-
-          </Box>
-
-          {(row.status === "REJECTED" || row.status === "CANCELLED") && (
-
-           <Typography
-
-            variant="caption"
-
-            color={row.status === "CANCELLED" ? "error.main" : "warning.main"}
-
-            sx={{ fontSize: "11px", display: "block", fontWeight: 600 }}
-
-           >
-
-            Reason: {getRequestNote(patientLabRequests.find((request) => Number(request.id) === Number(row.requestId))) || "No reason provided."}
-
-           </Typography>
-
+                  px: 1.25,
+                }}
+              >
+                Lab Reports
+                {labReportRows.length ? ` (${labReportRows.length})` : ""}
+              </Button>
+            </>
           )}
 
-         </Box>
+          {!isPatient && (
+            <Button
+              onClick={handlePrint}
+              variant="contained"
+              disableElevation
+              sx={actionButtonSx(80)}
+            >
+              Print
+            </Button>
+          )}
 
-         <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0 }}>
+          <Button
+            onClick={downloadPdf}
+            variant="contained"
+            disableElevation
+            sx={actionButtonSx(100)}
+          >
+            <Box
+              component="span"
+              sx={{ display: { xs: "none", sm: "inline" } }}
+            >
+              Download PDF
+            </Box>
 
-          {row.report?.downloadUrl ? (
+            <Box
+              component="span"
+              sx={{ display: { xs: "inline", sm: "none" } }}
+            >
+              PDF
+            </Box>
+          </Button>
 
+          {
+            <Button
+              variant="contained"
+              disableElevation
+              onClick={handleSavePrescription}
+              disabled={
+                !editable || !isTodayAppointment || isSavingPrescription
+              }
+              startIcon={
+                isSavingPrescription ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : null
+              }
+              sx={actionButtonSx(110)}
+            >
+              <Box
+                component="span"
+                sx={{ display: { xs: "none", sm: "inline" } }}
+              >
+                {isSavingPrescription
+                  ? "Saving..."
+                  : apiData?.prescription
+                    ? "Update Prescription"
+                    : "Save Prescription"}
+              </Box>
+
+              <Box
+                component="span"
+                sx={{ display: { xs: "inline", sm: "none" } }}
+              >
+                {isSavingPrescription
+                  ? "Saving"
+                  : apiData?.prescription
+                    ? "Update"
+                    : "Save"}
+              </Box>
+            </Button>
+          }
+          {editable && !isDownloading && (
            <Button
+  className="voice-mic-button"
+  type="button"
+  variant="outlined"
+  aria-label={isListening ? "Stop voice typing" : "Start voice typing"}
+  onClick={isListening ? stopDiagnosisDictation : startDiagnosisDictation}
+  startIcon={<MicNoneOutlined />}
+  sx={{
+    width: isListening ? 150 : 35,
+    minWidth: isListening ? 150 : 35,
+    height: 35,
+    minHeight: 35,
+    p: 0,
+    borderRadius: isListening ? 1.5 : "50%",
+    borderColor: isListening ? "#D32F2F" : PRIMARY_COLOR,
+    color: isListening ? "#D32F2F" : PRIMARY_COLOR,
+    bgcolor: "transparent",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    transition: "width 600ms ease, min-width 600ms ease, border-radius 600ms ease, color 300ms ease, border-color 300ms ease",
+    "&:hover": {
+      borderColor: isListening ? "#D32F2F" : PRIMARY_COLOR,
+      bgcolor: "transparent",
+    },
+    "& .MuiButton-startIcon": {
+      m: 0,
+      mr: isListening ? 0.7 : 0,
+    },
+    "& .MuiSvgIcon-root": { fontSize: 22 },
+  }}
+>
+  {isListening ? "Listening…" : ""}
+</Button>
+          )}
+        </Box>
+      </Box>
 
+      <Dialog
+        open={reportsOpen}
+        onClose={() => setReportsOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        aria-labelledby="lab-reports-dialog-title"
+      >
+        <DialogTitle id="lab-reports-dialog-title">Lab Reports</DialogTitle>
+
+        <DialogContent dividers>
+          {reportsLoading ? (
+            <Box display="flex" justifyContent="center" py={3}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : labReportRows.length ? (
+            <Box sx={{ display: "grid", gap: 1 }}>
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 0.5 }}>
+                <Button
+                  size="small"
+                  variant={
+                    labReportView === "current" ? "contained" : "outlined"
+                  }
+                  onClick={() => setLabReportView("current")}
+                  sx={{
+                    textTransform: "none",
+
+                    borderRadius: 1.5,
+
+                    minHeight: 32,
+
+                    fontWeight: 700,
+
+                    fontSize: "12px",
+
+                    bgcolor:
+                      labReportView === "current" ? "#07876A" : "transparent",
+
+                    color: labReportView === "current" ? "#fff" : "#0F172A",
+
+                    borderColor: "#CBD5E1",
+                  }}
+                >
+                  Current Appointment Report
+                </Button>
+
+                <Button
+                  size="small"
+                  variant={labReportView === "old" ? "contained" : "outlined"}
+                  onClick={() => setLabReportView("old")}
+                  sx={{
+                    textTransform: "none",
+
+                    borderRadius: 1.5,
+
+                    minHeight: 32,
+
+                    fontWeight: 700,
+
+                    fontSize: "12px",
+
+                    bgcolor:
+                      labReportView === "old" ? "#07876A" : "transparent",
+
+                    color: labReportView === "old" ? "#fff" : "#0F172A",
+
+                    borderColor: "#CBD5E1",
+                  }}
+                >
+                  Old Reports
+                </Button>
+              </Box>
+
+              {(labReportView === "current"
+                ? currentLabReportRows
+                : oldLabReportRows
+              ).map((row) => (
+                <Box
+                  key={row.id}
+                  sx={{
+                    display: "flex",
+
+                    alignItems: "center",
+
+                    justifyContent: "space-between",
+
+                    gap: 1,
+
+                    minWidth: 0,
+
+                    py: 0.5,
+
+                    borderBottom: "1px solid",
+
+                    borderColor: "divider",
+                  }}
+                >
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 700,
+
+                        display: "block",
+
+                        overflow: "hidden",
+
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {row.labName || "Lab"} - {row.testName}
+                    </Typography>
+
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ fontSize: "11px", display: "block" }}
+                    >
+                      Created:{" "}
+                      {row.createdAt
+                        ? new Date(row.createdAt).toLocaleString()
+                        : "-"}
+                    </Typography>
+
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ fontSize: "11px", display: "block" }}
+                    >
+                      Order ID: {row.orderId || "-"}
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        mt: 0.5,
+
+                        display: "flex",
+
+                        alignItems: "center",
+
+                        gap: 0.7,
+
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <Box
+                        component="span"
+                        sx={{
+                          px: 1,
+
+                          py: 0.3,
+
+                          borderRadius: "6px",
+
+                          fontSize: "10.5px",
+
+                          fontWeight: 700,
+
+                          lineHeight: 1.4,
+
+                          bgcolor:
+                            row.status === "COMPLETED"
+                              ? "#E8F5E9"
+                              : row.status === "REPORT_UPLOADED"
+                                ? "#E3F2FD"
+                                : row.status === "PROCESSING"
+                                  ? "#EDE7F6"
+                                  : row.status === "SAMPLE_COLLECTED"
+                                    ? "#E0F7FA"
+                                    : row.status === "APPROVED"
+                                      ? "#E8F5E9"
+                                      : row.status === "CANCELLED"
+                                        ? "#FFEBEE"
+                                        : row.status === "REJECTED"
+                                          ? "#FFF3E0"
+                                          : "#FFF8E1",
+
+                          color:
+                            row.status === "COMPLETED"
+                              ? "#2E7D32"
+                              : row.status === "REPORT_UPLOADED"
+                                ? "#1565C0"
+                                : row.status === "PROCESSING"
+                                  ? "#6A1B9A"
+                                  : row.status === "SAMPLE_COLLECTED"
+                                    ? "#00838F"
+                                    : row.status === "APPROVED"
+                                      ? "#2E7D32"
+                                      : row.status === "CANCELLED"
+                                        ? "#D32F2F"
+                                        : row.status === "REJECTED"
+                                          ? "#E65100"
+                                          : "#F57F17",
+                        }}
+                      >
+                        {row.status?.replaceAll("_", " ")}
+                      </Box>
+
+                      {row.reportDate && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontSize: "11px" }}
+                        >
+                          Report Date:{" "}
+                          {new Date(row.reportDate).toLocaleString()}
+                        </Typography>
+                      )}
+                    </Box>
+
+                    {(row.status === "REJECTED" ||
+                      row.status === "CANCELLED") && (
+                      <Typography
+                        variant="caption"
+                        color={
+                          row.status === "CANCELLED"
+                            ? "error.main"
+                            : "warning.main"
+                        }
+                        sx={{
+                          fontSize: "11px",
+                          display: "block",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Reason:{" "}
+                        {getRequestNote(
+                          patientLabRequests.find(
+                            (request) =>
+                              Number(request.id) === Number(row.requestId),
+                          ),
+                        ) || "No reason provided."}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.75,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {row.report?.downloadUrl ? (
+                      <Button
+                        size="small"
+                        href={row.report.downloadUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        sx={{
+                          textTransform: "none",
+
+                          flexShrink: 0,
+
+                          fontSize: "12px",
+
+                          minHeight: 32,
+
+                          minWidth: 0,
+
+                          px: 1,
+                        }}
+                      >
+                        Open Report
+                      </Button>
+                    ) : null}
+
+                    {["COMPLETED", "REJECTED"].includes(row.status) ? (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => setRepeatRequest(row)}
+                        disabled={repeatingRequestId === row.requestId}
+                        sx={{
+                          textTransform: "none",
+
+                          flexShrink: 0,
+
+                          fontSize: "12px",
+
+                          minHeight: 32,
+
+                          minWidth: 0,
+
+                          px: 1,
+                        }}
+                      >
+                        Repeat Test
+                      </Button>
+                    ) : null}
+
+                    {row.status === "PENDING" ? (
+                      <Button
+                        size="small"
+                        color="error"
+                        onClick={() => setCancelRequest(row)}
+                        disabled={cancellingRequestId === row.requestId}
+                        sx={{
+                          textTransform: "none",
+
+                          flexShrink: 0,
+
+                          fontSize: "12px",
+
+                          minHeight: 32,
+
+                          minWidth: 0,
+
+                          px: 1,
+                        }}
+                      >
+                        {cancellingRequestId === row.requestId
+                          ? "Cancelling..."
+                          : "Cancel"}
+                      </Button>
+                    ) : null}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          ) : (
+            <Typography color="text.secondary" variant="body2">
+              No lab test requests found for this patient.
+            </Typography>
+          )}
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            onClick={() => setReportsOpen(false)}
+            sx={{ textTransform: "none" }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(cancelRequest)}
+        onClose={() => !cancellingRequestId && setCancelRequest(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, pb: 1 }}>
+          Cancel lab test request?
+        </DialogTitle>
+
+        <DialogContent sx={{ display: "grid", gap: 1.25, pt: 1.5, px: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            {cancelRequest?.testName} sent to{" "}
+            {cancelRequest?.labName || "the selected lab"} will be cancelled.
+            The lab will see the cancelled request in its history.
+          </Typography>
+
+          <TextField
+            multiline
+            minRows={2}
             size="small"
+            label="Reason / comment"
+            value={cancelReason}
+            onChange={(event) => setCancelReason(event.target.value)}
+            placeholder="Please tell why this request is being cancelled."
+          />
+        </DialogContent>
 
-            href={row.report.downloadUrl}
+        <DialogActions sx={{ px: 2, pb: 1.5, pt: 1 }}>
+          <Button
+            onClick={() => setCancelRequest(null)}
+            disabled={Boolean(cancellingRequestId)}
+            sx={{ textTransform: "none" }}
+          >
+            Keep Request
+          </Button>
 
-            target="_blank"
-
-            rel="noreferrer"
-
-            sx={{
-
-             textTransform: "none",
-
-             flexShrink: 0,
-
-             fontSize: "12px",
-
-             minHeight: 32,
-
-             minWidth: 0,
-
-             px: 1,
-
-            }}
-
-           >
-
-            Open Report
-
-           </Button>
-
-          ) : null}
-
-          {["COMPLETED", "REJECTED"].includes(row.status) ? (
-
-           <Button
-
-            size="small"
-
-            variant="outlined"
-
-            onClick={() => setRepeatRequest(row)}
-
-            disabled={repeatingRequestId === row.requestId}
-
-            sx={{
-
-             textTransform: "none",
-
-             flexShrink: 0,
-
-             fontSize: "12px",
-
-             minHeight: 32,
-
-             minWidth: 0,
-
-             px: 1,
-
-            }}
-
-           >
-
-            Repeat Test
-
-           </Button>
-
-          ) : null}
-
-          {row.status === "PENDING" ? (
-
-           <Button
-
-            size="small"
-
+          <Button
             color="error"
+            variant="contained"
+            onClick={async () => {
+              if (!cancelRequest) return;
 
-            onClick={() => setCancelRequest(row)}
+              await cancelPendingRequest(
+                cancelRequest.requestId,
+                cancelReason.trim() || null,
+              );
 
-            disabled={cancellingRequestId === row.requestId}
+              setCancelReason("");
 
-            sx={{
-
-             textTransform: "none",
-
-             flexShrink: 0,
-
-             fontSize: "12px",
-
-             minHeight: 32,
-
-             minWidth: 0,
-
-             px: 1,
-
+              setCancelRequest(null);
             }}
+            disabled={Boolean(cancellingRequestId)}
+            sx={{ textTransform: "none" }}
+          >
+            {cancellingRequestId ? "Cancelling..." : "Cancel Request"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-           >
+      <Dialog
+        open={Boolean(repeatRequest)}
+        onClose={() => !repeatingRequestId && setRepeatRequest(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, pb: 1 }}>
+          Repeat lab test?
+        </DialogTitle>
 
-            {cancellingRequestId === row.requestId ? "Cancelling..." : "Cancel"}
+        <DialogContent sx={{ pt: 1.5, px: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            A new request will be created using the previous lab, patient,
+            sample type, and test details.
+          </Typography>
 
-           </Button>
+          <Typography sx={{ mt: 1, fontSize: 12, fontWeight: 700 }}>
+            {repeatRequest?.testName || "Selected lab test"} ·{" "}
+            {repeatRequest?.labName || "Lab"}
+          </Typography>
+        </DialogContent>
 
-          ) : null}
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Button
+            onClick={() => setRepeatRequest(null)}
+            disabled={Boolean(repeatingRequestId)}
+            sx={{ textTransform: "none" }}
+          >
+            Keep Existing
+          </Button>
 
-         </Box>
+          <Button
+            onClick={repeatLabRequest}
+            variant="contained"
+            disabled={Boolean(repeatingRequestId)}
+            sx={{ textTransform: "none" }}
+          >
+            {repeatingRequestId ? "Creating..." : "Create Repeat"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
+      <Paper
+        ref={pdfRef}
+        elevation={0}
+        sx={{
+          width: "100%",
+
+          maxWidth: 960,
+
+          minWidth: 0,
+
+          mx: "auto",
+
+          p: { xs: isDownloading ? 2.5 : 1.5, sm: 3 },
+
+          bgcolor: "#FFFFFF",
+
+          borderRadius: { xs: 1, sm: 1.5 },
+
+          border: isDownloading ? "none" : "1px solid",
+
+          borderColor: "divider",
+
+          boxShadow: isDownloading ? "none" : "0 2px 10px rgba(0,0,0,0.04)",
+
+          display: "flex",
+
+          flexDirection: "column",
+
+          height: "auto",
+
+          minHeight: "auto",
+
+          boxSizing: "border-box",
+
+          overflow: "visible",
+        }}
+      >
+        <Box sx={{ width: "100%", minWidth: 0 }}>
+          <PrescriptionHeader doctor={doctor} />
         </Box>
 
-       ))}
+        <Box sx={{ width: "100%", minWidth: 0 }}>
+          <PatientInfo
+            patient={patient}
+            dateNow={dateNow}
+            isDownloading={isDownloading}
+          />
+        </Box>
+
+        <Box sx={{ width: "100%", minWidth: 0 }}>
+          <DiagnosisSection
+            diagnosis={diagnosis}
+            editable={editable}
+            setDiagnosis={setDiagnosis}
+            isDownloading={isDownloading}
+          />
+
+          {!isDownloading && labTestSummary.tests.length > 0 && (
+            <Box
+              sx={{
+                width: "100%",
+
+                mb: 1.5,
+
+                display: "flex",
+
+                alignItems: "center",
+
+                gap: 1,
+
+                minWidth: 0,
+
+                overflowX: "auto",
 
-      </Box>
-
-     ) : (
-
-      <Typography color="text.secondary" variant="body2">
-
-       No lab test requests found for this patient.
-
-      </Typography>
-
-     )}
-
-    </DialogContent>
-
-    <DialogActions>
-
-     <Button onClick={() => setReportsOpen(false)} sx={{ textTransform: "none" }}>
-
-      Close
-
-     </Button>
-
-    </DialogActions>
-
-   </Dialog>
-
-   <Dialog
-
-    open={Boolean(cancelRequest)}
-
-    onClose={() => !cancellingRequestId && setCancelRequest(null)}
-
-    maxWidth="xs"
-
-    fullWidth
-
-   >
-
-    <DialogTitle sx={{ fontSize: 18, fontWeight: 700, pb: 1 }}>
-
-     Cancel lab test request?
-
-    </DialogTitle>
-
-    <DialogContent sx={{ display: "grid", gap: 1.25, pt: 1.5, px: 2 }}>
-
-     <Typography variant="body2" color="text.secondary">
-
-      {cancelRequest?.testName} sent to {cancelRequest?.labName || "the selected lab"} will be cancelled. The lab will see the cancelled request in its history.
-
-     </Typography>
-
-     <TextField
-
-      multiline
-
-      minRows={2}
-
-      size="small"
-
-      label="Reason / comment"
-
-      value={cancelReason}
-
-      onChange={(event) => setCancelReason(event.target.value)}
-
-      placeholder="Please tell why this request is being cancelled."
-
-     />
-
-    </DialogContent>
-
-    <DialogActions sx={{ px: 2, pb: 1.5, pt: 1 }}>
-
-     <Button onClick={() => setCancelRequest(null)} disabled={Boolean(cancellingRequestId)} sx={{ textTransform: "none" }}>
-
-      Keep Request
-
-     </Button>
-
-     <Button
-
-      color="error"
-
-      variant="contained"
-
-      onClick={async () => {
-
-       if (!cancelRequest) return;
-
-       await cancelPendingRequest(cancelRequest.requestId, cancelReason.trim() || null);
-
-       setCancelReason("");
-
-       setCancelRequest(null);
-
-      }}
-
-      disabled={Boolean(cancellingRequestId)}
-
-      sx={{ textTransform: "none" }}
-
-     >
-
-      {cancellingRequestId ? "Cancelling..." : "Cancel Request"}
-
-     </Button>
-
-    </DialogActions>
-
-   </Dialog>
-
-   <Dialog
-
-    open={Boolean(repeatRequest)}
-
-    onClose={() => !repeatingRequestId && setRepeatRequest(null)}
-
-    maxWidth="xs"
-
-    fullWidth
-
-   >
-
-    <DialogTitle sx={{ fontSize: 18, fontWeight: 700, pb: 1 }}>
-
-     Repeat lab test?
-
-    </DialogTitle>
-
-    <DialogContent sx={{ pt: 1.5, px: 2 }}>
-
-     <Typography variant="body2" color="text.secondary">
-
-      A new request will be created using the previous lab, patient, sample type, and test details.
-
-     </Typography>
-
-     <Typography sx={{ mt: 1, fontSize: 12, fontWeight: 700 }}>
-
-      {repeatRequest?.testName || "Selected lab test"} · {repeatRequest?.labName || "Lab"}
-
-     </Typography>
-
-    </DialogContent>
-
-    <DialogActions sx={{ px: 2, pb: 1.5 }}>
-
-     <Button onClick={() => setRepeatRequest(null)} disabled={Boolean(repeatingRequestId)} sx={{ textTransform: "none" }}>
-
-      Keep Existing
-
-     </Button>
-
-     <Button onClick={repeatLabRequest} variant="contained" disabled={Boolean(repeatingRequestId)} sx={{ textTransform: "none" }}>
-
-      {repeatingRequestId ? "Creating..." : "Create Repeat"}
-
-     </Button>
-
-    </DialogActions>
-
-   </Dialog>
-
-   <Paper
-
-    ref={pdfRef}
-
-    elevation={0}
-
-    sx={{
-
-     width: "100%",
-
-     maxWidth: 960,
-
-     minWidth: 0,
-
-     mx: "auto",
-
-     p: { xs: isDownloading ? 2.5 : 1.5, sm: 3 },
-
-     bgcolor: "#FFFFFF",
-
-     borderRadius: { xs: 1, sm: 1.5 },
-
-     border: isDownloading ? "none" : "1px solid",
-
-     borderColor: "divider",
-
-     boxShadow: isDownloading ? "none" : "0 2px 10px rgba(0,0,0,0.04)",
-
-     display: "flex",
-
-     flexDirection: "column",
-
-     height: "auto",
-
-     minHeight: "auto",
-
-     boxSizing: "border-box",
-
-     overflow: "visible",
-
-    }}
-
-   >
-
-    <Box sx={{ width: "100%", minWidth: 0 }}>
-
-     <PrescriptionHeader doctor={doctor} />
-
-    </Box>
-
-    <Box sx={{ width: "100%", minWidth: 0 }}>
-
-     <PatientInfo
-
-      patient={patient}
-
-      dateNow={dateNow}
-
-      isDownloading={isDownloading}
-
-     />
-
-    </Box>
-
-    <Box sx={{ width: "100%", minWidth: 0 }}>
-
-     <DiagnosisSection
-
-      diagnosis={diagnosis}
-
-      editable={editable}
-
-      setDiagnosis={setDiagnosis}
-
-      isDownloading={isDownloading}
-
-     />
-
-     {!isDownloading && labTestSummary.tests.length > 0 && (
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: "14px",
+
+                  fontWeight: 700,
+
+                  color: "primary.main",
+
+                  flexShrink: 0,
+                }}
+              >
+                Test Name
+              </Typography>
+
+              {labTestSummary.labName && (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ flexShrink: 0 }}
+                >
+                  Lab: {labTestSummary.labName}:-
+                </Typography>
+              )}
+
+              <Typography
+                variant="body2"
+                sx={{ color: "text.primary", flexShrink: 0 }}
+              >
+                {labTestSummary.tests.join(", ")}
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+        <Box
+          sx={{
+            width: "100%",
+
+            minWidth: 0,
+
+            display: "flex",
+
+            flexDirection: "column",
+
+            alignItems: "flex-start",
+
+            breakInside: "avoid",
+
+            pageBreakInside: "avoid",
+          }}
+        >
+          <Box
+            sx={{
+              width: "100%",
+
+              minWidth: 0,
+
+              flexShrink: 0,
+
+              breakInside: "avoid",
+
+              pageBreakInside: "avoid",
+            }}
+          >
+            <MedicineTable
+              rows={rows}
+              editable={editable}
+              isDownloading={isDownloading}
+              addRow={addRow}
+              removeRow={removeRow}
+              setRows={setRows}
+              optionsMap={{
+                unit: unitOptions,
+
+                freq: frequencyOptions,
+
+                dose: doseOptions,
+
+                instr: instructionOptions,
+              }}
+              inputStyle={inputStyle}
+              autocompleteStyle={autocompleteStyle}
+            />
+          </Box>
+        </Box>
+
+        <Box
+          sx={{
+            mt: { xs: 2, sm: 2.5 },
+
+            flexShrink: 0,
+
+            width: "100%",
+
+            breakInside: "avoid",
+
+            pageBreakInside: "avoid",
+          }}
+        >
+          <PrescriptionFooter
+            remark={remark}
+            setRemark={setRemark}
+            followUpDate={followUpDate}
+            setFollowUpDate={setFollowUpDate}
+            editable={editable}
+            isDownloading={isDownloading}
+            dateInputStyle={dateInputStyle}
+            datePickerPopupStyle={datePickerPopupStyle}
+            doctor={doctor}
+            qrImage={qrImage}
+          />
+        </Box>
+      </Paper>
 
       <Box
-
-       sx={{
-
-        width: "100%",
-
-        mb: 1.5,
-
-        display: "flex",
-
-        alignItems: "center",
-
-        gap: 1,
-
-        minWidth: 0,
-
-        overflowX: "auto",
-
-        whiteSpace: "nowrap",
-
-       }}
-
-      >
-
-       <Typography
-
+        aria-hidden="true"
         sx={{
+          position: "absolute",
 
-         fontSize: "14px",
+          left: "-10000px",
 
-         fontWeight: 700,
+          top: 0,
 
-         color: "primary.main",
-
-         flexShrink: 0,
-
+          pointerEvents: "none",
         }}
-
-       >
-
-        Test Name
-
-       </Typography>
-
-       {labTestSummary.labName && (
-
-        <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>
-
-         Lab: {labTestSummary.labName}:-
-
-        </Typography>
-
-       )}
-
-       <Typography variant="body2" sx={{ color: "text.primary", flexShrink: 0 }}>
-
-        {labTestSummary.tests.join(", ")}
-
-       </Typography>
-
+      >
+        <div ref={printRef}>
+          <PrescriptionPdfView
+            doctor={doctor}
+            patient={patient}
+            dateNow={dateNow}
+            diagnosis={diagnosis}
+            medicines={rows}
+            remark={remark}
+            followUpDate={followUpDate}
+            qrImage={qrImage}
+          />
+        </div>
       </Box>
 
-     )}
-
+      <Snackbar
+        open={snackbar?.open || false}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          severity={snackbar?.severity || "success"}
+          variant="filled"
+          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+        >
+          {snackbar?.message || ""}
+        </Alert>
+      </Snackbar>
     </Box>
-
-    <Box
-
-     sx={{
-
-      width: "100%",
-
-      minWidth: 0,
-
-      display: "flex",
-
-      flexDirection: "column",
-
-      alignItems: "flex-start",
-
-      breakInside: "avoid",
-
-      pageBreakInside: "avoid",
-
-     }}
-
-    >
-
-     <Box
-
-      sx={{
-
-       width: "100%",
-
-       minWidth: 0,
-
-       flexShrink: 0,
-
-       breakInside: "avoid",
-
-       pageBreakInside: "avoid",
-
-      }}
-
-     >
-
-      <MedicineTable
-
-       rows={rows}
-
-       editable={editable}
-
-       isDownloading={isDownloading}
-
-       addRow={addRow}
-
-       removeRow={removeRow}
-
-       setRows={setRows}
-
-       optionsMap={{
-
-        unit: unitOptions,
-
-        freq: frequencyOptions,
-
-        dose: doseOptions,
-
-        instr: instructionOptions,
-
-       }}
-
-       inputStyle={inputStyle}
-
-       autocompleteStyle={autocompleteStyle}
-
-      />
-
-     </Box>
-
-    </Box>
-
-    <Box
-
-     sx={{
-
-      mt: { xs: 2, sm: 2.5 },
-
-      flexShrink: 0,
-
-      width: "100%",
-
-      breakInside: "avoid",
-
-      pageBreakInside: "avoid",
-
-     }}
-
-    >
-
-     <PrescriptionFooter
-
-      remark={remark}
-
-      setRemark={setRemark}
-
-      followUpDate={followUpDate}
-
-      setFollowUpDate={setFollowUpDate}
-
-      editable={editable}
-
-      isDownloading={isDownloading}
-
-      dateInputStyle={dateInputStyle}
-
-      datePickerPopupStyle={datePickerPopupStyle}
-
-      doctor={doctor}
-
-      qrImage={qrImage}
-
-     />
-
-    </Box>
-
-   </Paper>
-
-   <Box
-
-    aria-hidden="true"
-
-    sx={{
-
-     position: "absolute",
-
-     left: "-10000px",
-
-     top: 0,
-
-     pointerEvents: "none",
-
-    }}
-
-   >
-
-    <div ref={printRef}>
-
-     <PrescriptionPdfView
-
-      doctor={doctor}
-
-      patient={patient}
-
-      dateNow={dateNow}
-
-      diagnosis={diagnosis}
-
-      medicines={rows}
-
-      remark={remark}
-
-      followUpDate={followUpDate}
-
-      qrImage={qrImage}
-
-     />
-
-    </div>
-
-   </Box>
-
-   <Snackbar
-
-    open={snackbar?.open || false}
-
-    autoHideDuration={4000}
-
-    onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-
-    anchorOrigin={{ vertical: "top", horizontal: "right" }}
-
-   >
-
-    <Alert
-
-     severity={snackbar?.severity || "success"}
-
-     variant="filled"
-
-     onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-
-    >
-
-     {snackbar?.message || ""}
-
-    </Alert>
-
-   </Snackbar>
-
-  </Box>
-
- );
-
+  );
 }
