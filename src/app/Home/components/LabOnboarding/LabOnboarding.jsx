@@ -744,59 +744,64 @@ export default function LabOnboarding() {
     });
   };
 
-  const handleInformationNext = async () => {
-    try {
-      setLoading(true);
-      setSaveError("");
+const handleInformationNext = async () => {
+  try {
+    setLoading(true);
+    setSaveError("");
 
-      const response = await axios.post(
-        `${getApiBaseUrl()}/api/lab-registration/create`,
-        {
-          labInformation: {
-            diagnosticLabName: data.labName.trim(),
-            labType: data.labType,
-            labContactEmail: data.email.trim(),
-            labContactPhone: data.phone,
-            ownerFullName: data.ownerName.trim(),
-            ownerEmail: data.ownerEmail.trim(),
-            ownerPhone: data.ownerPhone,
-            ownerAge: Number(data.ownerAge),
-            ownerGender: data.ownerGender,
-          },
-        }
-      );
+    const payload = {
+      ...(registrationId
+        ? { registrationId: String(registrationId) }
+        : {}),
+      labInformation: {
+        diagnosticLabName: data.labName.trim(),
+        labType: data.labType,
+        labContactEmail: data.email.trim(),
+        labContactPhone: data.phone,
+        ownerFullName: data.ownerName.trim(),
+        ownerEmail: data.ownerEmail.trim(),
+        ownerPhone: data.ownerPhone,
+        ownerAge: Number(data.ownerAge),
+        ownerGender: data.ownerGender,
+      },
+    };
 
-      if (response.data?.success === false) {
-        throw new Error(
-          response.data.message || "Unable to save lab information."
-        );
-      }
+    const response = await axios.post(
+      `${getApiBaseUrl()}/api/lab-registration/create`,
+      payload
+    );
 
-      const id =
-        response.data?.data?.registrationId ||
-        response.data?.data?.id ||
-        response.data?.registrationId ||
-        response.data?.id;
-
-      if (!id) {
-        throw new Error("Registration ID was not returned by the server.");
-      }
-
-      setRegistrationId(String(id));
-      localStorage.setItem("labRegistrationId", String(id));
-      next();
-    } catch (error) {
-      console.error("Lab information save error:", error);
+    if (response.data?.success === false) {
       throw new Error(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Unable to save lab information."
+        response.data.message || "Unable to save lab information."
       );
-    } finally {
-      setLoading(false);
     }
-  };
 
+    const id =
+      response.data?.data?.registrationId ||
+      response.data?.data?.id ||
+      response.data?.registrationId ||
+      response.data?.id ||
+      registrationId;
+
+    if (!id) {
+      throw new Error("Registration ID was not returned by the server.");
+    }
+
+    setRegistrationId(String(id));
+    localStorage.setItem("labRegistrationId", String(id));
+    next();
+  } catch (error) {
+    console.error("Lab information save error:", error);
+    throw new Error(
+      error?.response?.data?.message ||
+        error?.message ||
+        "Unable to save lab information."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
   const handleAddressNext = async () => {
     if (!registrationId) {
       setSaveError(
@@ -944,7 +949,7 @@ export default function LabOnboarding() {
 
     const response = await axios.post(
       `${getApiBaseUrl()}/api/lab-registration/send-email-otp`,
-      { registrationId, email }
+      {  email }
     );
 
     if (response.data?.success === false) {
@@ -970,7 +975,7 @@ export default function LabOnboarding() {
 
     const response = await axios.post(
       `${getApiBaseUrl()}/api/lab-registration/verify-email-otp`,
-      { registrationId, email, otp }
+      {  otp }
     );
 
     if (

@@ -47,60 +47,18 @@ const RegistrationTable = ({
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
-
-  // --------------------------------
-  // NORMALIZE API RESPONSE
-  // --------------------------------
-
-  const rows = registrations.map((item) => {
-    // Supports both nested API objects and already mapped rows.
-    const registrationData = item.registrationData || {};
-    const labInformation = registrationData.labInformation || {};
-    const labAddress = registrationData.labAddress || {};
-
-    return {
-      id: item.id,
-
-      diagnosticLabName:
-        item.diagnosticLabName ||
-        labInformation.diagnosticLabName ||
-        "-",
-
-      labType:
-        item.labType ||
-        labInformation.labType ||
-        "-",
-
-      ownerFullName:
-        item.ownerFullName ||
-        labInformation.ownerFullName ||
-        "-",
-
-      ownerPhone:
-        item.ownerPhone ||
-        labInformation.ownerPhone ||
-        "-",
-
-      cityTown:
-        item.cityTown ||
-        labAddress.cityTown ||
-        "-",
-
-      onboardingStatus:
-        item.onboardingStatus ||
-        item.onboarding_status ||
-        "-",
-
-      createdAt:
-        item.createdAt ||
-        item.created_at ||
-        "-",
-
-      documents: item.documents || {},
-      registrationData,
-      originalData: item,
-    };
-  });
+const rows = registrations.map((item) => ({
+  id: item.id,
+  diagnosticLabName: item.labName || "-",
+  labType: item.labType || "-",
+  ownerFullName: item.ownerName || "-",
+  ownerPhone: item.contact || "-",
+  cityTown: item.city || "-",
+  onboardingStatus: item.status || "-",
+  createdAt: item.createdAt || "-",
+  documents: item.documents || {},
+  originalData: item,
+}));
 
   // --------------------------------
   // THREE-DOT MENU

@@ -13,6 +13,7 @@ import {
   Typography,
   useMediaQuery,
 } from "@mui/material";
+import PersonAddAlt1RoundedIcon from "@mui/icons-material/PersonAddAlt1Rounded";
 import { useTheme } from "@mui/material/styles";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
@@ -139,16 +140,16 @@ export default function LabConnections({
       </Box>
 
       <DataTable
-        columns={[
-          "DOCTOR",
-          "EMAIL",
-          "PHONE",
-          "REQUESTED",
-          "STATUS",
-          "ACTION",
-        ]}
-        loading={loading}
-        emptyMessage="No doctor connections found."
+  columns={["DOCTOR", "EMAIL", "PHONE", "REQUESTED", "STATUS", "ACTION"]}
+  loading={loading}
+  emptyMessage={
+    <Stack alignItems="center" spacing={0.8} sx={{ py: 3 }}>
+      <PersonAddAlt1RoundedIcon sx={{ fontSize: 34, color: "#94A3B8" }} />
+      <Typography sx={{ fontSize: "12px", color: "#64748B" }}>
+        No new connection found
+      </Typography>
+    </Stack>
+  }
         footer={
           safeConnections.length > 0 ? (
             <Stack

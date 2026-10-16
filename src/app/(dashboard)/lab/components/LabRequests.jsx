@@ -556,7 +556,7 @@ export default function LabRequests({
     <Box
       sx={{
         width: "100%",
-
+height:"85vh",
         minWidth: 0,
 
         "& .MuiTypography-root": { overflowWrap: "anywhere" },

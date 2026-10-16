@@ -10,7 +10,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  InputAdornment,
   Pagination,
   Snackbar,
   TableCell,
@@ -24,7 +23,6 @@ import {
   TableFilters,
 } from "../../lab/components/LabUi";
 import LabReports from "../../lab/components/LabReports";
-import { SearchIcon } from "lucide-react";
 const getRows = (response) => response?.data?.data || [];
 const getErrorMessage = (error, fallback) =>
   error.response?.data?.message || error.message || fallback;
@@ -130,7 +128,8 @@ export default function DoctorLabPanel({ section = "connections" }) {
   const [connectingMedicalId, setConnectingMedicalId] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [medicalSearchText, setMedicalSearchText] = useState("");
-  const [connectionSearch, setConnectionSearch] = useState("");
+  const [findProvidersOpen, setFindProvidersOpen] = useState(false);
+  const [providerTab, setProviderTab] = useState("all");
   const [tableFilters, setTableFilters] = useState({
     search: "",
     status: "",
@@ -326,7 +325,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
     tableFilters.date,
     tableFilters.search,
     tableFilters.status,
-    connectionSearch,
   ]);
   const handleFilter = (field) => (value) => {
     setTableFilters((current) => ({
@@ -344,6 +342,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
         targetId: labId,
       });
       setNotice("Lab connection request sent successfully.");
+      setFindProvidersOpen(false);
       setSearchText("");
       setLabs([]);
       await loadConnections();
@@ -366,6 +365,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
       });
       if (response?.status === 200 || response?.status === 201) {
         setNotice("Medical connection request sent successfully.");
+        setFindProvidersOpen(false);
         setMedicalSearchText("");
         setMedicalStores([]);
         await loadConnections();
@@ -435,23 +435,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
     request.reason ||
     request.statusReason ||
     "";
-  const filteredConnections = useMemo(() => {
-    const query = connectionSearch.trim().toLowerCase();
-    if (!query) return connections;
-    return connections.filter((connection) => {
-      const searchableText = [
-        connection.name,
-        connection.code,
-        connection.type,
-        connection.status,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return searchableText.includes(query);
-    });
-  }, [connections, connectionSearch]);
-  const visibleConnections = filteredConnections.slice(
+  const visibleConnections = connections.slice(
     (tablePage - 1) * pageSize,
     tablePage * pageSize,
   );
@@ -620,17 +604,6 @@ export default function DoctorLabPanel({ section = "connections" }) {
       p: 1.75,
       boxShadow: "0 1px 0 rgba(15, 23, 42, 0.02)",
     };
-    const compactButtonSx = {
-      minHeight: 30,
-      px: 1.25,
-      fontSize: "0.72rem",
-      fontWeight: 700,
-      textTransform: "none",
-      boxShadow: "none",
-      "&:hover": {
-        boxShadow: "none",
-      },
-    };
     const compactCellSx = {
       fontSize: "12.5px",
       color: "#1f2937",
@@ -693,299 +666,177 @@ export default function DoctorLabPanel({ section = "connections" }) {
                 status.
               </Typography>
             </Box>
-            <TextField
-              size="small"
-              label="Find Partner"
-              placeholder="Enter a name or code to find a lab or pharmacy"
-              value={connectionSearch}
-              onChange={(event) => setConnectionSearch(event.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon
-                      sx={{
-                        fontSize: 18,
-                        color: "text.secondary",
-                      }}
-                    />
-                  </InputAdornment>
-                ),
+            <Button
+              variant="contained"
+              onClick={() => {
+                setProviderTab("all");
+                setSearchText("");
+                setMedicalSearchText("");
+                setLabs([]);
+                setMedicalStores([]);
+                setFindProvidersOpen(true);
               }}
               sx={{
-                width: {
-                  xs: "100%",
-                  sm: 320,
-                  md: 360,
-                },
+                minHeight: 40,
+                px: 2,
+                borderRadius: 1.5,
+                fontSize: "12.5px",
+                fontWeight: 700,
+                textTransform: "none",
+                boxShadow: "none",
                 flexShrink: 0,
-                "& .MuiOutlinedInput-root": {
-                  height: 40,
-                  fontSize: "12.5px",
-                  bgcolor: "background.paper",
-                  borderRadius: "8px",
-                  "& fieldset": {
-                    borderColor: "#757575",
-                  },
-                  "&:hover fieldset": {
-                    borderColor: "primary.main",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "primary.main",
-                    borderWidth: "1px",
-                  },
-                },
-                "& .MuiInputLabel-root": {
-                  fontSize: "12.5px",
-                },
-                "& .MuiFormHelperText-root": {
-                  mx: 0.5,
-                  mt: 0.5,
-                  fontSize: "10.5px",
-                  color: "text.secondary",
-                },
               }}
-            />
+            >
+              + Add Lab or Pharmacy
+            </Button>
           </Box>
-       <Box
-  sx={{
-    display: "grid",
-    gridTemplateColumns: {
-      xs: "1fr",
-      md: "repeat(2, minmax(0, 1fr))",
-    },
-    gap: 2,
-    mb: 2,
-  }}
->
-  {/* Search Lab */}
-  <Box
-    sx={{
-      border: "1px solid #dfe7e7",
-      borderRadius: 2,
-      p: { xs: 1.5, sm: 2 },
-      bgcolor: "#fff",
-      minWidth: 0,
-    }}
-  >
-    <Typography
-      sx={{
-        fontSize: "13px",
-        fontWeight: 700,
-        color: "#111827",
-        mb: 1.1,
-      }}
-    >
-      Search Lab
-    </Typography>
-    <TextField
-      size="small"
-      fullWidth
-      label="Lab name or code"
-      value={searchText}
-      onChange={(event) => setSearchText(event.target.value)}
-      sx={{
-        mb: 1,
-        "& .MuiOutlinedInput-root": {
-          height: 50,
-          borderRadius: 1.5,
-          fontSize: "13px",
-        },
-        "& .MuiInputLabel-root": {
-          fontSize: "13px",
-        },
-      }}
-    />
-    <Box>
-      {labs.length ? (
-        <Box
-          sx={{
-            display: "grid",
-            gap: 0.8,
-          }}
-        >
-          {labs.slice(0, 4).map((lab) => (
-            <Box
-              key={lab.id}
+          <Dialog
+            open={findProvidersOpen}
+            onClose={() => setFindProvidersOpen(false)}
+            fullWidth
+            maxWidth="sm"
+            PaperProps={{ sx: { borderRadius: 2.5, overflow: "hidden" } }}
+          >
+            <DialogTitle
               sx={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                gap: 1,
-                border: "1px solid #e5e7eb",
-                borderRadius: 1.5,
-                px: 1.2,
-                py: 0.9,
+                px: 2.5,
+                py: 1.7,
+                fontSize: "15px",
+                fontWeight: 700,
+                borderBottom: "1px solid #e6ebf0",
               }}
             >
-              <Box sx={{ minWidth: 0 }}>
-                <Typography
-                  sx={{
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    color: "#111827",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {lab.lab_name || "Lab"}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontSize: "10.5px",
-                    color: "text.secondary",
-                  }}
-                >
-                  {lab.lab_code || "-"}
-                </Typography>
-              </Box>
+              Find Lab or Pharmacy
               <Button
-                size="small"
-                variant="outlined"
-                onClick={() => handleConnectLab(lab.id)}
-                disabled={connectingId === lab.id}
+                onClick={() => setFindProvidersOpen(false)}
+                aria-label="Close"
+                sx={{ minWidth: 28, p: 0, color: "text.secondary", fontSize: 20 }}
+              >
+                ×
+              </Button>
+            </DialogTitle>
+            <DialogContent sx={{ p: 2.5 }}>
+              <Box
                 sx={{
-                  minWidth: 72,
-                  height: 30,
-                  flexShrink: 0,
-                  fontSize: "11px",
-                  textTransform: "none",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  p: 0.4,
+                  mb: 1.5,
+                  border: "1px solid #dbe4ec",
+                  borderRadius: 1.5,
+                  bgcolor: "#f4f7fa",
                 }}
               >
-                {connectingId === lab.id ? "Sending..." : "Connect"}
-              </Button>
-            </Box>
-          ))}
-        </Box>
-      ) : (
-        <Typography
-          sx={{
-            fontSize: "12px",
-            color: "#64748b",
-            lineHeight: 1.4,
-          }}
-        >
-          Search by lab name or code to find available labs.
-        </Typography>
-      )}
-    </Box>
-  </Box>
-  {/* Search Pharmacy */}
-  <Box
-    sx={{
-      border: "1px solid #dfe7e7",
-      borderRadius: 2,
-      p: { xs: 1.5, sm: 2 },
-      bgcolor: "#fff",
-      minWidth: 0,
-    }}
-  >
-    <Typography
-      sx={{
-        fontSize: "13px",
-        fontWeight: 700,
-        color: "#111827",
-        mb: 1.1,
-      }}
-    >
-      Search Pharmacy
-    </Typography>
-    <TextField
-      size="small"
-      fullWidth
-      label="Pharmacy name or code"
-      value={medicalSearchText}
-      onChange={(event) => setMedicalSearchText(event.target.value)}
-      sx={{
-        mb: 1,
-        "& .MuiOutlinedInput-root": {
-          height: 50,
-          borderRadius: 1.5,
-          fontSize: "13px",
-        },
-        "& .MuiInputLabel-root": {
-          fontSize: "13px",
-        },
-      }}
-    />
-    <Box>
-      {medicalStores.length ? (
-        <Box
-          sx={{
-            display: "grid",
-            gap: 0.8,
-          }}
-        >
-          {medicalStores.slice(0, 4).map((store) => (
-            <Box
-              key={store.id}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 1,
-                border: "1px solid #e5e7eb",
-                borderRadius: 1.5,
-                px: 1.2,
-                py: 0.9,
-              }}
-            >
-              <Box sx={{ minWidth: 0 }}>
-                <Typography
-                  sx={{
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    color: "#111827",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
+                {[["all", "All Providers"], ["lab", "Lab"], ["pharmacy", "Pharmacy"]].map(([value, label]) => (
+                  <Button
+                    key={value}
+                    onClick={() => {
+                      setProviderTab(value);
+                      setSearchText("");
+                      setMedicalSearchText("");
+                      setLabs([]);
+                      setMedicalStores([]);
+                    }}
+                    sx={{
+                      minHeight: 32,
+                      borderRadius: 1,
+                      bgcolor: providerTab === value ? "#fff" : "transparent",
+                      color: providerTab === value ? "#172033" : "#64748b",
+                      fontSize: "11px",
+                      fontWeight: providerTab === value ? 700 : 500,
+                      textTransform: "none",
+                      boxShadow: providerTab === value ? "0 1px 3px #00000012" : "none",
+                    }}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </Box>
+              <Box sx={{ display: "flex", gap: 0.8, mb: 1.5 }}>
+                <TextField
+                  autoFocus
+                  fullWidth
+                  size="small"
+                  placeholder="Search by provider name, license, PIN or city..."
+                  value={providerTab === "pharmacy" ? medicalSearchText : searchText}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (providerTab !== "pharmacy") setSearchText(value);
+                    if (providerTab !== "lab") setMedicalSearchText(value);
                   }}
-                >
-                  {store.name || store.store_name || "Pharmacy"}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontSize: "10.5px",
-                    color: "text.secondary",
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      if (providerTab !== "pharmacy") loadLabs();
+                      if (providerTab !== "lab") loadMedicalStores();
+                    }
                   }}
+                  InputProps={{
+                    startAdornment: <Box sx={{ mr: 1, color: "#64748b", fontSize: 16 }}>⌕</Box>,
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": { height: 42, borderRadius: 1.3, fontSize: "11.5px" },
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    if (providerTab !== "pharmacy") loadLabs();
+                    if (providerTab !== "lab") loadMedicalStores();
+                  }}
+                  sx={{ minWidth: 76, backgroundColor:"#07876a", fontSize: "11px", fontWeight: 700, textTransform: "none" }}
                 >
-                  {store.code || store.store_code || "-"}
+                  Search
+                </Button>
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, color: "#64748b" }}>
+                <Typography sx={{ fontSize: "10.5px" }}>Available healthcare partners</Typography>
+                <Typography sx={{ fontSize: "10.5px" }}>
+                  {providerTab === "lab" ? `${labs.length} labs` : providerTab === "pharmacy" ? `${medicalStores.length} pharmacies` : `${labs.length + medicalStores.length} results`}
                 </Typography>
               </Box>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => handleConnectMedicalStore(store.id)}
-                disabled={connectingMedicalId === store.id}
-                sx={{
-                  minWidth: 72,
-                  height: 30,
-                  flexShrink: 0,
-                  fontSize: "11px",
-                  textTransform: "none",
-                }}
-              >
-                {connectingMedicalId === store.id
-                  ? "Sending..."
-                  : "Connect"}
-              </Button>
-            </Box>
-          ))}
-        </Box>
-      ) : (
-        <Typography
-          sx={{
-            fontSize: "12px",
-            color: "#64748b",
-            lineHeight: 1.4,
-          }}
-        >
-          Search by pharmacy name or code to find available stores.
-        </Typography>
-      )}
-    </Box>
-  </Box>
-</Box>
+              <Box sx={{ display: "grid", gap: 0.8, maxHeight: 300, overflowY: "auto" }}>
+                {(providerTab !== "pharmacy" ? labs.slice(0, 4).map((lab) => ({ ...lab, providerType: "lab" })) : [])
+                  .concat(providerTab !== "lab" ? medicalStores.slice(0, 4).map((store) => ({ ...store, providerType: "pharmacy" })) : [])
+                  .map((provider) => {
+                    const isPharmacy = provider.providerType === "pharmacy";
+                    const id = provider.id;
+                    const name = isPharmacy ? provider.name : provider.lab_name;
+                    const code = isPharmacy ? provider.code : provider.lab_code;
+                    const busy = isPharmacy ? connectingMedicalId === id : connectingId === id;
+                    return (
+                      <Box key={`${provider.providerType}-${id}`} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, p: 1, border: "1px solid #e5ebf1", borderRadius: 1.5 }}>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography sx={{ fontSize: "11.5px", fontWeight: 700, color: "#172033", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name || (isPharmacy ? "Pharmacy" : "Lab")}</Typography>
+                          <Typography sx={{ fontSize: "10px", color: "#64748b" }}>{isPharmacy ? "Pharmacy" : "Lab"} · {code || "-"} · {provider.address || provider.city || ""}</Typography>
+                        </Box>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          onClick={() => isPharmacy ? handleConnectMedicalStore(id) : handleConnectLab(id)}
+                          disabled={busy}
+                          sx={{ minWidth: 72,backgroundColor
+                            :"#7f7f7f", height: 30, flexShrink: 0, fontSize: "10.5px", textTransform: "none", boxShadow: "none" }}
+                        >
+                          {busy ? "Sending..." : "Connect"}
+                        </Button>
+                      </Box>
+                    );
+                  })}
+                {!searchText.trim() && !medicalSearchText.trim() && (
+                  <Typography sx={{ py: 2, textAlign: "center", color: "#64748b", fontSize: "11px" }}>
+                    Search by provider name, license, PIN or city to see available results.
+                  </Typography>
+                )}
+                {(providerTab === "lab" ? labs : providerTab === "pharmacy" ? medicalStores : [...labs, ...medicalStores]).length === 0 && (searchText.trim() || medicalSearchText.trim()) && (
+                  <Typography sx={{ py: 2, textAlign: "center", color: "#64748b", fontSize: "11px" }}>No providers found. Try another search.</Typography>
+                )}
+              </Box>
+            </DialogContent>
+         
+          </Dialog>
           <DataTable
            columns={[
   "NAME",
@@ -998,15 +849,13 @@ export default function DoctorLabPanel({ section = "connections" }) {
 ]}
             loading={loading}
             emptyMessage={
-              connectionSearch
-                ? "No matching connections found."
-                : "No lab or pharmacy connections found."
+              "No lab or pharmacy connections found."
             }
             footer={
               <Pagination
                 count={Math.max(
                   1,
-                  Math.ceil(filteredConnections.length / pageSize),
+                  Math.ceil(connections.length / pageSize),
                 )}
                 page={tablePage}
                 onChange={(_, value) => setTablePage(value)}

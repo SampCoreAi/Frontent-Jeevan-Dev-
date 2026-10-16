@@ -268,39 +268,22 @@ setSlots(res.data.data?.slots || []);
     try {
       const token =
         localStorage.getItem("token");
+const payload = {
+  appointment_date: form.appointmentDate,
+  hospital_name: form.hospital,
+  mode: "offline",
+  booking_type: "someone_else",
+  reason_for_visit: form.reason,
+  patient: {
+    name: form.patientName,
+    email: form.email,
+    age: Number(form.age),
+    gender: form.gender,
+    phone: form.phone,
+  },
 
-      const payload = {
-        appointment_date:
-          form.appointmentDate,
-
-        hospital_name:
-          form.hospital,
-
-        mode: "offline",
-
-        booking_type:
-          "someone_else",
-
-        reason_for_visit:
-          form.reason,
-
-        patient: {
-          name:
-            form.patientName,
-
-          email:
-            form.email,
-
-          age:
-            Number(form.age),
-
-          gender:
-            form.gender,
-
-          phone:
-            form.phone,
-        },
-      };
+  ...(form.slotId ? { slot_id: Number(form.slotId) } : {}),
+};
 
       const res =
         await axios.post(

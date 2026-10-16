@@ -1,7 +1,7 @@
 "use client";
 
-import LabPanel from "../../components/LabPanel";
+import LabProfile from "../../components/Profile/LabProfile";
 
 export default function LabProfilePage() {
-  return <LabPanel section="profile" />;
+  return <LabProfile labId={21} />;
 }
