@@ -2,7 +2,7 @@
 
   import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
+import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
   import {
     Box,
     Paper,
@@ -410,24 +410,139 @@ if (/token/i.test(message) && /used|invalid|expired/i.test(message)) {
   );
 }
 if (linkError) {
+  const linkWasUsed = /already (been )?used|already changed/i.test(linkError);
+
   return (
-    <Box sx={{ maxWidth: 440, mx: "auto", mt: 10, p: 3, textAlign: "center" }}>
-      <Typography variant="h5">Reset link unavailable</Typography>
-
-      <Alert severity="warning" sx={{ my: 3 }}>
-        {linkError}
-      </Alert>
-
-      <Button
-        variant="contained"
-        onClick={() => router.replace("/Home/pages/Login")}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "grid",
+        placeItems: "center",
+        px: 2,
+        py: 4,
+        backgroundColor: "#F5FAF8",
+        backgroundImage: `
+          linear-gradient(rgba(7,135,106,0.07) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(7,135,106,0.07) 1px, transparent 1px)
+        `,
+        backgroundSize: "40px 40px",
+      }}
+    >
+      <Paper
+        elevation={0}
+        sx={{
+          width: "100%",
+          maxWidth: 480,
+          p: { xs: 3, sm: 4 },
+          textAlign: "center",
+          borderRadius: "20px",
+          backgroundColor: "rgba(255,255,255,0.97)",
+          border: "1px solid #DDE9E5",
+          boxShadow: "0 20px 60px rgba(23,32,51,0.10)",
+        }}
       >
-        Go to Login
-      </Button>
+        <Box
+          sx={{
+            width: 64,
+            height: 64,
+            mx: "auto",
+            mb: 2,
+            display: "grid",
+            placeItems: "center",
+            borderRadius: "50%",
+            color: linkWasUsed ? "#07876A" : "#D14343",
+            backgroundColor: linkWasUsed
+              ? "rgba(7,135,106,0.09)"
+              : "rgba(209,67,67,0.09)",
+          }}
+        >
+          {linkWasUsed ? (
+            <CheckCircleRoundedIcon sx={{ fontSize: 36 }} />
+          ) : (
+            <ErrorOutlineRoundedIcon sx={{ fontSize: 36 }} />
+          )}
+        </Box>
 
-      <Typography sx={{ mt: 2, fontSize: 13 }}>
-     Go to Login and Request New Link buttons
-      </Typography>
+        <Typography
+          sx={{
+            color: "#172033",
+            fontSize: { xs: 22, sm: 25 },
+            fontWeight: 700,
+          }}
+        >
+          {linkWasUsed ? "Password already changed" : "Reset link unavailable"}
+        </Typography>
+
+        <Typography
+          sx={{
+            mt: 1,
+            color: "#74807B",
+            fontSize: 13,
+            lineHeight: 1.7,
+          }}
+        >
+          {linkWasUsed
+            ? "This reset link has already been used. For your security, it can only be used once."
+            : "This reset link is invalid or expired. Go to login and request a new reset link."}
+        </Typography>
+
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "center",
+            gap: 1.2,
+            mt: 3,
+          }}
+        >
+          <Button
+            variant="contained"
+            onClick={() => router.replace("/Home/pages/Login")}
+            sx={{
+              minHeight: 44,
+              px: 2.5,
+              borderRadius: "10px",
+              backgroundColor: "#07876A",
+              textTransform: "none",
+              fontWeight: 600,
+              boxShadow: "none",
+              "&:hover": {
+                backgroundColor: "#066F58",
+                boxShadow: "none",
+              },
+            }}
+          >
+            {linkWasUsed ? "Go to Login" : "Request a New Link"}
+          </Button>
+
+          {linkWasUsed && (
+            <Button
+              variant="outlined"
+              onClick={() => router.replace("/Home/pages/Login")}
+              sx={{
+                minHeight: 44,
+                px: 2.5,
+                borderRadius: "10px",
+                borderColor: "#DDE9E5",
+                color: "#526174",
+                textTransform: "none",
+                "&:hover": {
+                  borderColor: "#07876A",
+                  color: "#07876A",
+                },
+              }}
+            >
+              Go to Login
+            </Button>
+          )}
+        </Box>
+
+        {!linkWasUsed && (
+          <Typography sx={{ mt: 1.5, color: "#8B9893", fontSize: 12 }}>
+            Login page par “Forgot password?” se naya link mangwa sakte ho.
+          </Typography>
+        )}
+      </Paper>
     </Box>
   );
 }
