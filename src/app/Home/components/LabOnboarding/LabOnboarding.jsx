@@ -962,34 +962,29 @@ const handleInformationNext = async () => {
     return response.data;
   };
 
-  /* =========================================================
-     VERIFY OTP
-  ========================================================= */
-
-  const handleVerifyOtp = async ({ email, otp }) => {
-    if (!registrationId) {
-      throw new Error(
-        "Registration ID not found. Please complete Lab Information first."
-      );
-    }
-
-    const response = await axios.post(
-      `${getApiBaseUrl()}/api/lab-registration/verify-email-otp`,
-      {  otp }
+const handleVerifyOtp = async ({ email, otp }) => {
+  if (!registrationId) {
+    throw new Error(
+      "Registration ID not found. Please complete Lab Information first."
     );
+  }
 
-    if (
-      response.data?.success === false ||
-      response.data?.verified === false
-    ) {
-      throw new Error(
-        response.data.message ||
-          "Email verification failed."
-      );
-    }
+  const response = await axios.post(
+    `${getApiBaseUrl()}/api/lab-registration/verify-email-otp`,
+    { gmail: email, otp }
+  );
 
-    return response.data;
-  };
+  if (
+    response.data?.success === false ||
+    response.data?.verified === false
+  ) {
+    throw new Error(
+      response.data.message || "Email verification failed."
+    );
+  }
+
+  return response.data;
+};
 
   /* =========================================================
      SUBMIT
