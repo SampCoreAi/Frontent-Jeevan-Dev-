@@ -63,8 +63,8 @@ const pageSx = {
 
 const cardSx = {
   width: "100%",
-  maxWidth: 760,
-  p: { xs: 3, sm: 5, md: 6 },
+  maxWidth: 520,
+  p: { xs: 2.5, sm: 4 },
   textAlign: "center",
   borderRadius: 3,
   border: "1px solid rgba(7, 135, 106, 0.16)",
@@ -73,9 +73,10 @@ const cardSx = {
 };
 
 const buttonSx = {
-  minHeight: 48,
+  minHeight: 42,
   borderRadius: 2,
-  px: 3,
+  px: 2.5,
+  fontSize: 13,
   textTransform: "none",
   fontWeight: 700,
 };
@@ -116,15 +117,21 @@ export default function VerifyEmailPage() {
     return (
       <Box sx={pageSx}>
         <Paper sx={cardSx}>
-          <CircularProgress size={56} sx={{ color: primary, mb: 2 }} />
+          <CircularProgress size={48} sx={{ color: primary, mb: 2 }} />
+
           <Typography
             component="h1"
-            variant="h5"
-            sx={{ color: darkText, fontWeight: 700, mb: 1 }}
+            sx={{
+              color: darkText,
+              fontSize: 22,
+              fontWeight: 700,
+              mb: 1,
+            }}
           >
             Verifying Your Email
           </Typography>
-          <Typography sx={{ color: "#64748B" }}>
+
+          <Typography sx={{ color: "#64748B", fontSize: 13 }}>
             Please wait while we verify your email address...
           </Typography>
         </Paper>
@@ -138,24 +145,31 @@ export default function VerifyEmailPage() {
         <Paper sx={cardSx}>
           <Typography
             component="h1"
-            variant="h4"
-            sx={{ color: "#C62828", fontWeight: 700, mb: 2 }}
+            sx={{
+              color: "#C62828",
+              fontSize: 26,
+              fontWeight: 700,
+              mb: 2,
+            }}
           >
             Verification Failed
           </Typography>
 
-          <Alert severity="error" sx={{ mb: 2, textAlign: "left" }}>
+          <Alert
+            severity="error"
+            sx={{ mb: 2, textAlign: "left", fontSize: 13 }}
+          >
             {message}
           </Alert>
 
-          <Typography sx={{ color: "#64748B", mb: 4 }}>
+          <Typography sx={{ color: "#64748B", fontSize: 13, mb: 3 }}>
             The verification link may have expired or is invalid.
           </Typography>
 
           <Box
             sx={{
               display: "flex",
-              gap: 2,
+              gap: 1.5,
               justifyContent: "center",
               flexWrap: "wrap",
             }}
@@ -194,28 +208,16 @@ export default function VerifyEmailPage() {
   return (
     <Box sx={pageSx}>
       <Paper sx={cardSx}>
-        <Typography
-          sx={{
-            textAlign: "left",
-            color: primary,
-            fontWeight: 800,
-            fontSize: 20,
-            mb: { xs: 4, sm: 3 },
-          }}
-        >
-          Jeevan <Box component="span" sx={{ color: darkText }}>Dev</Box>
-        </Typography>
-
         <CheckCircleOutlineIcon
-          sx={{ fontSize: 76, color: primary, mb: 1 }}
+          sx={{ fontSize: 60, color: primary, mb: 1 }}
         />
 
         <Typography
           sx={{
             color: primary,
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: 800,
-            letterSpacing: 3,
+            letterSpacing: 2,
             mb: 1,
           }}
         >
@@ -226,8 +228,8 @@ export default function VerifyEmailPage() {
           component="h1"
           sx={{
             color: darkText,
-            fontSize: { xs: 27, sm: 36 },
-            lineHeight: 1.2,
+            fontSize: { xs: 22, sm: 27 },
+            lineHeight: 1.25,
             fontWeight: 800,
             mb: 1.5,
           }}
@@ -238,8 +240,8 @@ export default function VerifyEmailPage() {
         <Typography
           sx={{
             color: "#526174",
-            fontSize: { xs: 15, sm: 17 },
-            mb: 3,
+            fontSize: 13,
+            mb: 2.5,
           }}
         >
           Your email is verified. Your account is ready to use.
@@ -247,31 +249,33 @@ export default function VerifyEmailPage() {
 
         <Box
           sx={{
-            maxWidth: 500,
+            maxWidth: 400,
             mx: "auto",
-            mb: 4,
-            p: 2,
+            mb: 3,
+            p: 1.5,
             display: "flex",
             alignItems: "center",
-            gap: 2,
+            gap: 1.5,
             textAlign: "left",
             borderRadius: 2,
             backgroundColor: "rgba(7, 135, 106, 0.07)",
           }}
         >
-          <EmailOutlinedIcon sx={{ color: primary, fontSize: 28 }} />
+          <EmailOutlinedIcon sx={{ color: primary, fontSize: 24 }} />
+
           <Box>
             <Typography
               sx={{
                 color: primary,
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: 800,
-                letterSpacing: 1.5,
+                letterSpacing: 1,
               }}
             >
               VERIFICATION STATUS
             </Typography>
-            <Typography sx={{ color: darkText, fontWeight: 600 }}>
+
+            <Typography sx={{ color: darkText, fontSize: 13, fontWeight: 600 }}>
               {message || "Email verified successfully!"}
             </Typography>
           </Box>
@@ -280,7 +284,7 @@ export default function VerifyEmailPage() {
         <Box
           sx={{
             display: "flex",
-            gap: 2,
+            gap: 1.5,
             justifyContent: "center",
             flexWrap: "wrap",
           }}
@@ -308,7 +312,7 @@ export default function VerifyEmailPage() {
             onClick={() => router.push("/Home/pages/Login")}
             sx={{
               ...buttonSx,
-              minWidth: 170,
+              minWidth: 145,
               color: "#fff",
               backgroundColor: primary,
               "&:hover": { backgroundColor: "#066F58" },

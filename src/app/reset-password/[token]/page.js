@@ -1,7 +1,7 @@
   "use client";
 
   import { useParams, useRouter } from "next/navigation";
-  import { useState } from "react";
+import { useEffect, useState } from "react";
 
   import {
     Box,
@@ -44,7 +44,50 @@ const [linkError, setLinkError] = useState("");
       password: "",
       confirmPassword: "",
     });
+const [checkingToken, setCheckingToken] = useState(true);
 
+useEffect(() => {
+  let cancelled = false;
+
+  const verifyToken = async () => {
+    if (!token || !API_URL) {
+      setLinkError(
+        !token
+          ? "Reset link is invalid or missing."
+          : "API URL is not configured."
+      );
+      setCheckingToken(false);
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/auth/verify-reset-token`,
+        { params: { token } }
+      );
+
+      if (!cancelled && response.data?.tokenStatus !== "valid") {
+        setLinkError(
+          response.data?.message || "This reset link is invalid or expired."
+        );
+      }
+    } catch (error) {
+      if (!cancelled) {
+        setLinkError(
+          error.response?.data?.message ||
+            "This reset link is invalid, expired, or already used."
+        );
+      }
+    } finally {
+      if (!cancelled) setCheckingToken(false);
+    }
+  };
+
+  verifyToken();
+  return () => {
+    cancelled = true;
+  };
+}, [token, API_URL]);
     const [snackbar, setSnackbar] = useState({
       open: false,
       message: "",
@@ -352,6 +395,20 @@ if (/token/i.test(message) && /used|invalid|expired/i.test(message)) {
         fontSize: "11px",
       },
     };
+    if (checkingToken) {
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "grid",
+        placeItems: "center",
+        color: "#07876A",
+      }}
+    >
+      <CircularProgress />
+    </Box>
+  );
+}
 if (linkError) {
   return (
     <Box sx={{ maxWidth: 440, mx: "auto", mt: 10, p: 3, textAlign: "center" }}>
