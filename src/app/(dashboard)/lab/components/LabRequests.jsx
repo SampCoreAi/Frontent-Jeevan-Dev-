@@ -32,7 +32,7 @@ import {
 } from "@mui/material";
 
 import { useTheme } from "@mui/material/styles";
-
+import LabBill from "../components/LabBill"
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -2024,6 +2024,7 @@ height:"85vh",
           </Button>
         </DialogActions>
       </Dialog>
+    
     </Box>
   );
 }

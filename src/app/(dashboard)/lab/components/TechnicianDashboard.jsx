@@ -41,11 +41,6 @@ const transitions = {
   SAMPLE_SCHEDULED: ["SAMPLE_COLLECTED"],
 };
 
-const allowedStatuses = (status) => [
-  status,
-  ...(transitions[status] || []),
-];
-
 const statusColors = {
   COMPLETED: ["#15803d", "#dcfce7"],
   CANCELLED: ["#dc2626", "#fee2e2"],
@@ -68,6 +63,22 @@ const formatDate = (value) => {
   return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString();
 };
 
+const formatAddress = (address) => {
+  if (typeof address === "string") return address || "Address unavailable";
+  if (!address || typeof address !== "object") return "Address unavailable";
+
+  return (
+    [
+      address.street,
+      address.city,
+      address.state,
+      address.pincode || address.pinCode,
+    ]
+      .filter(Boolean)
+      .join(", ") || "Address unavailable"
+  );
+};
+
 const wrapText = {
   width: "100%",
   whiteSpace: "normal",
@@ -77,6 +88,23 @@ const wrapText = {
   fontSize: 11,
   color: "#345c55",
   py: 0.75,
+};
+
+const inputSx = {
+  minWidth: 0,
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "11px",
+    backgroundColor: "#ffffffb8",
+    fontSize: "12px",
+    height: "42px",
+    "& fieldset": { borderColor: "#e2efea" },
+    "&:hover fieldset": { borderColor: "#9bcbbb" },
+    "&.Mui-focused fieldset": { borderColor: "#08785b" },
+  },
+  "& .MuiInputBase-input": {
+    color: "#28564c",
+    minWidth: 0,
+  },
 };
 
 function EmptyState() {
@@ -172,7 +200,10 @@ function StatusCell({ value, row, onStatusChange, actionId }) {
           <MenuItem
             key={option}
             value={option}
-            disabled={!allowedStatuses(status).includes(option)}
+            disabled={
+              option !== status &&
+              !(transitions[status] || []).includes(option)
+            }
             sx={{ fontSize: 10, whiteSpace: "normal" }}
           >
             {option.replaceAll("_", " ")}
@@ -206,7 +237,6 @@ export default function TechnicianDashboard() {
   const loadTasks = useCallback(async () => {
     try {
       setLoading(true);
-
       const response = await api.get("/api/lab-technicians/tasks", {
         params: {
           search: filters.search || undefined,
@@ -235,10 +265,7 @@ export default function TechnicianDashboard() {
   }, [loadTasks]);
 
   const updateFilter = (field, value) => {
-    setFilters((current) => ({
-      ...current,
-      [field]: value || "",
-    }));
+    setFilters((current) => ({ ...current, [field]: value || "" }));
     setPage(0);
   };
 
@@ -259,8 +286,7 @@ export default function TechnicianDashboard() {
       await loadTasks();
     } catch (err) {
       setError(
-        err?.response?.data?.message ||
-          "Unable to update task status."
+        err?.response?.data?.message || "Unable to update task status."
       );
     } finally {
       setActionId(null);
@@ -270,7 +296,6 @@ export default function TechnicianDashboard() {
   const createTestRequest = async (requestDetails) => {
     try {
       const created = await createWalkInLabTestRequest(requestDetails);
-
       return {
         success: true,
         patientId: created.patientId,
@@ -294,15 +319,11 @@ export default function TechnicianDashboard() {
       field: "order_id",
       headerName: "ORDER ID",
       flex: 0.8,
-      minWidth: 65,
+      minWidth: 100,
       sortable: true,
       renderCell: ({ value, row }) => (
         <Typography
-          sx={{
-            ...wrapText,
-            color: "#087755",
-            fontWeight: 750,
-          }}
+          sx={{ ...wrapText, color: "#087755", fontWeight: 750 }}
         >
           {value || `#${row.id}`}
         </Typography>
@@ -312,7 +333,7 @@ export default function TechnicianDashboard() {
       field: "created_at",
       headerName: "REQUEST DATE",
       flex: 1,
-      minWidth: 75,
+      minWidth: 140,
       valueFormatter: (value) => formatDate(value),
       renderCell: ({ value }) => <Box sx={wrapText}>{formatDate(value)}</Box>,
     },
@@ -320,14 +341,14 @@ export default function TechnicianDashboard() {
       field: "expected_report_at",
       headerName: "REPORT BY",
       flex: 1,
-      minWidth: 75,
+      minWidth: 140,
       renderCell: ({ value }) => <Box sx={wrapText}>{formatDate(value)}</Box>,
     },
     {
       field: "collection_slot",
       headerName: "COLLECTION SLOT",
       flex: 1,
-      minWidth: 75,
+      minWidth: 145,
       sortable: false,
       valueGetter: (value, row) => value || row.collectionSlot || "",
       renderCell: ({ value }) => (
@@ -340,7 +361,7 @@ export default function TechnicianDashboard() {
       field: "collection_token",
       headerName: "TOKEN",
       flex: 0.65,
-      minWidth: 55,
+      minWidth: 100,
       sortable: false,
       valueGetter: (value, row) => value || row.collectionToken || "",
       renderCell: ({ value }) => (
@@ -351,7 +372,7 @@ export default function TechnicianDashboard() {
       field: "patient_name",
       headerName: "PATIENT DETAILS",
       flex: 1.35,
-      minWidth: 95,
+      minWidth: 230,
       sortable: false,
       renderCell: ({ row }) => (
         <Stack spacing={0.2} sx={{ width: "100%", py: 0.8 }}>
@@ -362,10 +383,12 @@ export default function TechnicianDashboard() {
             {row.patient_age || "Age -"} · {row.patient_gender || "Gender -"}
           </Typography>
           <Typography sx={{ ...wrapText, color: "#78928b", py: 0 }}>
-            {row.patient_phone || row.patient_email || "Contact unavailable"}
+            {row.patient_phone ||
+              row.patient_email ||
+              "Contact unavailable"}
           </Typography>
           <Typography sx={{ ...wrapText, color: "#78928b", py: 0 }}>
-            {row.patient_address || "Address unavailable"}
+            {formatAddress(row.patient_address)}
           </Typography>
         </Stack>
       ),
@@ -374,7 +397,7 @@ export default function TechnicianDashboard() {
       field: "lab_name",
       headerName: "LAB",
       flex: 1,
-      minWidth: 70,
+      minWidth: 160,
       sortable: false,
       renderCell: ({ row }) => (
         <Stack spacing={0.2} sx={{ width: "100%", py: 0.8 }}>
@@ -391,17 +414,15 @@ export default function TechnicianDashboard() {
       field: "sample_type",
       headerName: "SAMPLE",
       flex: 0.7,
-      minWidth: 55,
+      minWidth: 110,
       sortable: false,
-      renderCell: ({ value }) => (
-        <Box sx={wrapText}>{value || "-"}</Box>
-      ),
+      renderCell: ({ value }) => <Box sx={wrapText}>{value || "-"}</Box>,
     },
     {
       field: "requested_tests",
       headerName: "TESTS",
       flex: 1,
-      minWidth: 65,
+      minWidth: 150,
       sortable: false,
       renderCell: ({ value }) => (
         <Box sx={wrapText}>
@@ -413,7 +434,7 @@ export default function TechnicianDashboard() {
       field: "collection_instructions",
       headerName: "INSTRUCTIONS",
       flex: 1,
-      minWidth: 70,
+      minWidth: 170,
       sortable: false,
       valueGetter: (value, row) =>
         value || row.collectionInstructions || "No special instructions",
@@ -423,7 +444,7 @@ export default function TechnicianDashboard() {
       field: "status",
       headerName: "STATUS",
       flex: 1,
-      minWidth: 85,
+      minWidth: 155,
       sortable: false,
       renderCell: ({ value, row }) => (
         <StatusCell
@@ -436,10 +457,7 @@ export default function TechnicianDashboard() {
     },
   ];
 
-  const rows = tasks.map((task) => ({
-    ...task,
-    id: task.id,
-  }));
+  const rows = tasks.map((task) => ({ ...task, id: task.id }));
 
   const totalRows =
     pagination?.totalItems ??
@@ -453,9 +471,8 @@ export default function TechnicianDashboard() {
       sx={{
         minHeight: "100vh",
         boxSizing: "border-box",
-        mt:8,
-        background:
-          "white",
+        mt: 8,
+        bgcolor: "white",
       }}
     >
       <Paper
@@ -472,7 +489,6 @@ export default function TechnicianDashboard() {
           boxShadow: "0 5px 18px rgba(23,104,78,0.08)",
         }}
       >
-        {/* Header */}
         <Stack
           direction={{ xs: "column", sm: "row" }}
           alignItems={{ xs: "stretch", sm: "center" }}
@@ -520,7 +536,6 @@ export default function TechnicianDashboard() {
           />
         </Stack>
 
-        {/* Filters */}
         <Box
           sx={{
             display: "grid",
@@ -614,19 +629,21 @@ export default function TechnicianDashboard() {
           </Alert>
         )}
 
-        {/* Responsive table: no horizontal scrolling */}
+        {/* Mobile par table ko left-right swipe karne ke liye wrapper */}
         <Box
           sx={{
             width: "100%",
             minWidth: 0,
-            overflow: "hidden",
+            overflowX: "auto",
+            overflowY: "visible",
+            WebkitOverflowScrolling: "touch",
+            touchAction: "pan-x",
             border: "1px solid #deeee7",
             borderRadius: "11px",
             bgcolor: "rgba(255,255,255,0.45)",
 
             "& .MuiDataGrid-root": {
               width: "100%",
-              minWidth: 0,
               border: 0,
               color: "#345c55",
               fontSize: 11,
@@ -634,7 +651,6 @@ export default function TechnicianDashboard() {
             },
 
             "& .MuiDataGrid-main": {
-              minWidth: 0,
               overflow: "hidden",
             },
 
@@ -646,7 +662,6 @@ export default function TechnicianDashboard() {
             },
 
             "& .MuiDataGrid-columnHeader": {
-              minWidth: "0 !important",
               padding: "0 3px",
               borderRight: "1px solid #deeee7",
               outline: "none",
@@ -689,7 +704,6 @@ export default function TechnicianDashboard() {
             },
 
             "& .MuiDataGrid-cell": {
-              minWidth: "0 !important",
               padding: "3px 5px",
               borderRight: "1px solid #e5f0ec",
               borderBottom: "1px solid #e5f0ec",
@@ -714,16 +728,8 @@ export default function TechnicianDashboard() {
             },
 
             "& .MuiDataGrid-virtualScroller": {
-              overflowX: "hidden !important",
+              overflowX: "auto !important",
               overflowY: "hidden !important",
-            },
-
-            "& .MuiDataGrid-virtualScrollerContent": {
-              minWidth: "0 !important",
-            },
-
-            "& .MuiDataGrid-virtualScrollerRenderZone": {
-              minWidth: "0 !important",
             },
 
             "& .MuiDataGrid-footerContainer": {
@@ -779,6 +785,7 @@ export default function TechnicianDashboard() {
               ),
             }}
             sx={{
+              minWidth: { xs: 1430, sm: "100%" },
               "& .MuiDataGrid-virtualScroller": {
                 minHeight: tasks.length === 0 ? "230px" : "unset",
               },
@@ -789,20 +796,3 @@ export default function TechnicianDashboard() {
     </Box>
   );
 }
-
-const inputSx = {
-  minWidth: 0,
-  "& .MuiOutlinedInput-root": {
-    borderRadius: "11px",
-    backgroundColor: "#ffffffb8",
-    fontSize: "12px",
-    height: "42px",
-    "& fieldset": { borderColor: "#e2efea" },
-    "&:hover fieldset": { borderColor: "#9bcbbb" },
-    "&.Mui-focused fieldset": { borderColor: "#08785b" },
-  },
-  "& .MuiInputBase-input": {
-    color: "#28564c",
-    minWidth: 0,
-  },
-};

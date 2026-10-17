@@ -36,6 +36,50 @@ const getSearchResultRows = (response) => {
   if (Array.isArray(payload?.rows)) return payload.rows;
   return [];
 };
+const formatAddress = (address) => {
+if (!address) return "-";
+
+let parsedAddress = address;
+
+// Parse JSON string addresses
+if (typeof address === "string") {
+  try {
+    const parsed = JSON.parse(address);
+
+    if (parsed && typeof parsed === "object") {
+      parsedAddress = parsed;
+    } else {
+      return address;
+    }
+  } catch {
+    return address;
+  }
+}
+
+// Format structured addresses
+if (typeof parsedAddress === "object" && !Array.isArray(parsedAddress)) {
+  const parts = [
+    parsedAddress.building,
+    parsedAddress.street,
+    parsedAddress.landmark
+      ? `Near ${parsedAddress.landmark}`
+      : null,
+    parsedAddress.locality,
+    parsedAddress.city,
+    parsedAddress.district,
+    parsedAddress.state,
+    parsedAddress.pinCode
+      ? `PIN: ${parsedAddress.pinCode}`
+      : null,
+  ];
+
+  return [...new Set(parts.filter(
+    (part) => part && String(part).trim()
+  ))].join(", ") || "-";
+}
+
+return String(address);
+};
 const normalizeLab = (lab = {}) => ({
   ...lab,
   id: lab.id || lab.lab_id || lab.labId,
@@ -43,13 +87,9 @@ const normalizeLab = (lab = {}) => ({
   lab_code: lab.lab_code || lab.code || lab.labCode || "-",
   phone_number:
     lab.phone_number || lab.phone || lab.contact_number || lab.mobile || "-",
-  address:
-    lab.address ||
-    lab.location ||
-    lab.city ||
-    lab.area ||
-    lab.address_line ||
-    "-",
+  address: formatAddress(
+    lab.address || lab.location || lab.address_line || lab.city || lab.area
+  ),
 });
 const normalizeMedicalStore = (store = {}) => ({
   ...store,
@@ -76,19 +116,17 @@ const normalizeMedicalStore = (store = {}) => ({
     store.contact_number ||
     store.mobile ||
     "-",
-  address:
-    store.address ||
-    store.location ||
-    store.city ||
-    store.area ||
-    store.address_line ||
-    "-",
+  address: formatAddress(
+    store.address || store.location || store.address_line || store.city || store.area
+  ),
   city: store.city || store.location || store.area || "-",
 });
 const normalizeConnectionRow = (connection = {}) => {
   const rawType = String(connection.type || "").toUpperCase();
   const type =
-    rawType.includes("PHARMACY") || rawType.includes("MEDICAL") || connection.store_code
+    rawType.includes("PHARMACY") ||
+    rawType.includes("MEDICAL") ||
+    connection.store_code
       ? "PHARMACY"
       : "LAB";
   return {
@@ -271,7 +309,9 @@ export default function DoctorLabPanel({ section = "connections" }) {
         setError("This report does not have a valid report ID yet.");
         return false;
       }
-      await api.patch(`/api/lab-reports/${numericReportId}/review`, { comment });
+      await api.patch(`/api/lab-reports/${numericReportId}/review`, {
+        comment,
+      });
       await loadReports();
       setNotice("Lab report marked as reviewed.");
       return true;
@@ -320,12 +360,7 @@ export default function DoctorLabPanel({ section = "connections" }) {
   }, [section, tableFilters.date, tableFilters.search, tableFilters.status]);
   useEffect(() => {
     setTablePage(1);
-  }, [
-    section,
-    tableFilters.date,
-    tableFilters.search,
-    tableFilters.status,
-  ]);
+  }, [section, tableFilters.date, tableFilters.search, tableFilters.status]);
   const handleFilter = (field) => (value) => {
     setTableFilters((current) => ({
       ...current,
@@ -384,7 +419,8 @@ export default function DoctorLabPanel({ section = "connections" }) {
 
   const handleRejectConnection = async () => {
     const reason = rejectionReason.trim();
-    const connectionId = rejectConnection?.connection_id || rejectConnection?.id;
+    const connectionId =
+      rejectConnection?.connection_id || rejectConnection?.id;
     if (!reason) {
       setError("Please enter a rejection note.");
       return;
@@ -481,6 +517,9 @@ export default function DoctorLabPanel({ section = "connections" }) {
         uploadedAt,
       };
     });
+    
+
+
     const pendingRequests = requests
       .filter((request) => !uploadedRequestIds.has(Number(request.id)))
       .map((request) => {
@@ -713,7 +752,12 @@ export default function DoctorLabPanel({ section = "connections" }) {
               <Button
                 onClick={() => setFindProvidersOpen(false)}
                 aria-label="Close"
-                sx={{ minWidth: 28, p: 0, color: "text.secondary", fontSize: 20 }}
+                sx={{
+                  minWidth: 28,
+                  p: 0,
+                  color: "text.secondary",
+                  fontSize: 20,
+                }}
               >
                 ×
               </Button>
@@ -730,7 +774,11 @@ export default function DoctorLabPanel({ section = "connections" }) {
                   bgcolor: "#f4f7fa",
                 }}
               >
-                {[["all", "All Providers"], ["lab", "Lab"], ["pharmacy", "Pharmacy"]].map(([value, label]) => (
+                {[
+                  ["all", "All Providers"],
+                  ["lab", "Lab"],
+                  ["pharmacy", "Pharmacy"],
+                ].map(([value, label]) => (
                   <Button
                     key={value}
                     onClick={() => {
@@ -748,7 +796,8 @@ export default function DoctorLabPanel({ section = "connections" }) {
                       fontSize: "11px",
                       fontWeight: providerTab === value ? 700 : 500,
                       textTransform: "none",
-                      boxShadow: providerTab === value ? "0 1px 3px #00000012" : "none",
+                      boxShadow:
+                        providerTab === value ? "0 1px 3px #00000012" : "none",
                     }}
                   >
                     {label}
@@ -761,7 +810,9 @@ export default function DoctorLabPanel({ section = "connections" }) {
                   fullWidth
                   size="small"
                   placeholder="Search by provider name, license, PIN or city..."
-                  value={providerTab === "pharmacy" ? medicalSearchText : searchText}
+                  value={
+                    providerTab === "pharmacy" ? medicalSearchText : searchText
+                  }
                   onChange={(event) => {
                     const value = event.target.value;
                     if (providerTab !== "pharmacy") setSearchText(value);
@@ -774,10 +825,18 @@ export default function DoctorLabPanel({ section = "connections" }) {
                     }
                   }}
                   InputProps={{
-                    startAdornment: <Box sx={{ mr: 1, color: "#64748b", fontSize: 16 }}>⌕</Box>,
+                    startAdornment: (
+                      <Box sx={{ mr: 1, color: "#64748b", fontSize: 16 }}>
+                        ⌕
+                      </Box>
+                    ),
                   }}
                   sx={{
-                    "& .MuiOutlinedInput-root": { height: 42, borderRadius: 1.3, fontSize: "11.5px" },
+                    "& .MuiOutlinedInput-root": {
+                      height: 42,
+                      borderRadius: 1.3,
+                      fontSize: "11.5px",
+                    },
                   }}
                 />
                 <Button
@@ -786,39 +845,126 @@ export default function DoctorLabPanel({ section = "connections" }) {
                     if (providerTab !== "pharmacy") loadLabs();
                     if (providerTab !== "lab") loadMedicalStores();
                   }}
-                  sx={{ minWidth: 76, backgroundColor:"#07876a", fontSize: "11px", fontWeight: 700, textTransform: "none" }}
+                  sx={{
+                    minWidth: 76,
+                    backgroundColor: "#07876a",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    textTransform: "none",
+                  }}
                 >
                   Search
                 </Button>
               </Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, color: "#64748b" }}>
-                <Typography sx={{ fontSize: "10.5px" }}>Available healthcare partners</Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  mb: 1,
+                  color: "#64748b",
+                }}
+              >
                 <Typography sx={{ fontSize: "10.5px" }}>
-                  {providerTab === "lab" ? `${labs.length} labs` : providerTab === "pharmacy" ? `${medicalStores.length} pharmacies` : `${labs.length + medicalStores.length} results`}
+                  Available healthcare partners
+                </Typography>
+                <Typography sx={{ fontSize: "10.5px" }}>
+                  {providerTab === "lab"
+                    ? `${labs.length} labs`
+                    : providerTab === "pharmacy"
+                      ? `${medicalStores.length} pharmacies`
+                      : `${labs.length + medicalStores.length} results`}
                 </Typography>
               </Box>
-              <Box sx={{ display: "grid", gap: 0.8, maxHeight: 300, overflowY: "auto" }}>
-                {(providerTab !== "pharmacy" ? labs.slice(0, 4).map((lab) => ({ ...lab, providerType: "lab" })) : [])
-                  .concat(providerTab !== "lab" ? medicalStores.slice(0, 4).map((store) => ({ ...store, providerType: "pharmacy" })) : [])
+              <Box
+                sx={{
+                  display: "grid",
+                  gap: 0.8,
+                  maxHeight: 300,
+                  overflowY: "auto",
+                }}
+              >
+                {(providerTab !== "pharmacy"
+                  ? labs
+                      .slice(0, 4)
+                      .map((lab) => ({ ...lab, providerType: "lab" }))
+                  : []
+                )
+                  .concat(
+                    providerTab !== "lab"
+                      ? medicalStores
+                          .slice(0, 4)
+                          .map((store) => ({
+                            ...store,
+                            providerType: "pharmacy",
+                          }))
+                      : [],
+                  )
                   .map((provider) => {
                     const isPharmacy = provider.providerType === "pharmacy";
                     const id = provider.id;
                     const name = isPharmacy ? provider.name : provider.lab_name;
                     const code = isPharmacy ? provider.code : provider.lab_code;
-                    const busy = isPharmacy ? connectingMedicalId === id : connectingId === id;
+                    const busy = isPharmacy
+                      ? connectingMedicalId === id
+                      : connectingId === id;
                     return (
-                      <Box key={`${provider.providerType}-${id}`} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, p: 1, border: "1px solid #e5ebf1", borderRadius: 1.5 }}>
+                      <Box
+                        key={`${provider.providerType}-${id}`}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 1,
+                          p: 1,
+                          border: "1px solid #e5ebf1",
+                          borderRadius: 1.5,
+                        }}
+                      >
                         <Box sx={{ minWidth: 0 }}>
-                          <Typography sx={{ fontSize: "11.5px", fontWeight: 700, color: "#172033", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name || (isPharmacy ? "Pharmacy" : "Lab")}</Typography>
-                          <Typography sx={{ fontSize: "10px", color: "#64748b" }}>{isPharmacy ? "Pharmacy" : "Lab"} · {code || "-"} · {provider.address || provider.city || ""}</Typography>
+                          <Typography
+                            sx={{
+                              fontSize: "11.5px",
+                              fontWeight: 700,
+                              color: "#172033",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {name || (isPharmacy ? "Pharmacy" : "Lab")}
+                          </Typography>
+                         <Typography
+  sx={{
+    fontSize: "11px",
+    color: "#64748b",
+    whiteSpace: "normal",
+    overflowWrap: "anywhere",
+    lineHeight: 1.6,
+  }}
+>
+  {isPharmacy ? "Pharmacy" : "Lab"} · {code || "-"}
+  {" · "}
+  {provider.address || provider.city || "-"}
+</Typography>
                         </Box>
                         <Button
                           size="small"
                           variant="contained"
-                          onClick={() => isPharmacy ? handleConnectMedicalStore(id) : handleConnectLab(id)}
+                          onClick={() =>
+                            isPharmacy
+                              ? handleConnectMedicalStore(id)
+                              : handleConnectLab(id)
+                          }
                           disabled={busy}
-                          sx={{ minWidth: 72,backgroundColor
-                            :"#7f7f7f", height: 30, flexShrink: 0, fontSize: "10.5px", textTransform: "none", boxShadow: "none" }}
+                          sx={{
+                            minWidth: 72,
+                            backgroundColor: "#7f7f7f",
+                            height: 30,
+                            flexShrink: 0,
+                            fontSize: "10.5px",
+                            textTransform: "none",
+                            boxShadow: "none",
+                          }}
                         >
                           {busy ? "Sending..." : "Connect"}
                         </Button>
@@ -826,37 +972,54 @@ export default function DoctorLabPanel({ section = "connections" }) {
                     );
                   })}
                 {!searchText.trim() && !medicalSearchText.trim() && (
-                  <Typography sx={{ py: 2, textAlign: "center", color: "#64748b", fontSize: "11px" }}>
-                    Search by provider name, license, PIN or city to see available results.
+                  <Typography
+                    sx={{
+                      py: 2,
+                      textAlign: "center",
+                      color: "#64748b",
+                      fontSize: "11px",
+                    }}
+                  >
+                    Search by provider name, license, PIN or city to see
+                    available results.
                   </Typography>
                 )}
-                {(providerTab === "lab" ? labs : providerTab === "pharmacy" ? medicalStores : [...labs, ...medicalStores]).length === 0 && (searchText.trim() || medicalSearchText.trim()) && (
-                  <Typography sx={{ py: 2, textAlign: "center", color: "#64748b", fontSize: "11px" }}>No providers found. Try another search.</Typography>
-                )}
+                {(providerTab === "lab"
+                  ? labs
+                  : providerTab === "pharmacy"
+                    ? medicalStores
+                    : [...labs, ...medicalStores]
+                ).length === 0 &&
+                  (searchText.trim() || medicalSearchText.trim()) && (
+                    <Typography
+                      sx={{
+                        py: 2,
+                        textAlign: "center",
+                        color: "#64748b",
+                        fontSize: "11px",
+                      }}
+                    >
+                      No providers found. Try another search.
+                    </Typography>
+                  )}
               </Box>
             </DialogContent>
-         
           </Dialog>
           <DataTable
-           columns={[
-  "NAME",
-  "TYPE",
-  "CODE",
-  "STATUS",
-  "REQUESTED",
-  "APPROVED",
-  "ACTIONS",
-]}
+            columns={[
+              "NAME",
+              "TYPE",
+              "CODE",
+              "STATUS",
+              "REQUESTED",
+              "APPROVED",
+              "ACTIONS",
+            ]}
             loading={loading}
-            emptyMessage={
-              "No lab or pharmacy connections found."
-            }
+            emptyMessage={"No lab or pharmacy connections found."}
             footer={
               <Pagination
-                count={Math.max(
-                  1,
-                  Math.ceil(connections.length / pageSize),
-                )}
+                count={Math.max(1, Math.ceil(connections.length / pageSize))}
                 page={tablePage}
                 onChange={(_, value) => setTablePage(value)}
                 size="small"
@@ -900,7 +1063,13 @@ export default function DoctorLabPanel({ section = "connections" }) {
                       {connection.code || "-"}
                     </TableCell>
                     <TableCell>
-                      <Box sx={{ display: "grid", justifyItems: "start", gap: 0.5 }}>
+                      <Box
+                        sx={{
+                          display: "grid",
+                          justifyItems: "start",
+                          gap: 0.5,
+                        }}
+                      >
                         <Chip
                           size="small"
                           label={connection.status || "PENDING"}
@@ -912,11 +1081,14 @@ export default function DoctorLabPanel({ section = "connections" }) {
                                 : "warning"
                           }
                         />
-                        {connection.status === "REJECTED" && connection.rejection_reason && (
-                          <Typography sx={{ fontSize: "11px", color: "text.secondary" }}>
-                            {connection.rejection_reason}
-                          </Typography>
-                        )}
+                        {connection.status === "REJECTED" &&
+                          connection.rejection_reason && (
+                            <Typography
+                              sx={{ fontSize: "11px", color: "text.secondary" }}
+                            >
+                              {connection.rejection_reason}
+                            </Typography>
+                          )}
                       </Box>
                     </TableCell>
                     <TableCell
@@ -938,7 +1110,9 @@ export default function DoctorLabPanel({ section = "connections" }) {
                         : "-"}
                     </TableCell>
                     <TableCell>
-                      {["LAB", "PHARMACY"].includes(connection.type?.toUpperCase()) &&
+                      {["LAB", "PHARMACY"].includes(
+                        connection.type?.toUpperCase(),
+                      ) &&
                       (connection.status || "").toUpperCase() !== "REJECTED" ? (
                         <Button
                           size="small"
@@ -975,7 +1149,9 @@ export default function DoctorLabPanel({ section = "connections" }) {
         >
           <DialogTitle>Reject connection</DialogTitle>
           <DialogContent>
-            <Typography sx={{ mb: 1, fontSize: "13px", color: "text.secondary" }}>
+            <Typography
+              sx={{ mb: 1, fontSize: "13px", color: "text.secondary" }}
+            >
               Enter a reason for rejecting this connection.
             </Typography>
             <TextField
@@ -990,7 +1166,10 @@ export default function DoctorLabPanel({ section = "connections" }) {
             />
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => setRejectConnection(null)} disabled={Boolean(rejectingId)}>
+            <Button
+              onClick={() => setRejectConnection(null)}
+              disabled={Boolean(rejectingId)}
+            >
               Cancel
             </Button>
             <Button

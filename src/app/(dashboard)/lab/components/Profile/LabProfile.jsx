@@ -1,674 +1,1071 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../../../../utils/axiosInstance";
+
 import {
-  Alert,
   Box,
-  IconButton,
   Button,
-  Checkbox,
   CircularProgress,
-  FormControlLabel,
-  MenuItem,
-  Snackbar,
+  IconButton,
+  Paper,
+  Stack,
   Switch,
   TextField,
   Typography,
+  Alert,
 } from "@mui/material";
-import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
+
+import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import DrawOutlinedIcon from "@mui/icons-material/DrawOutlined";
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
+import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+
 import LabRegistrationPreview from "./LabRegistrationPreview";
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
-const initialHours = DAYS.map((day) => ({
-  day,
-  open: day !== "Sunday",
-  startTime: "09:00",
-  endTime: "19:00",
-}));
+const createDefaultDays = () =>
+  DAYS.map((day) => ({
+    day,
+    enabled: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].includes(
+      day
+    ),
+    openingTime: "09:00",
+    closingTime: "19:00",
+  }));
 
-const cardSx = {
-  p: 2.5,
-  bgcolor: "#fff",
-  border: "1px solid #DDE9E5",
-  borderRadius: 2,
-};
-
-export default function LabProfile({ labId, onSave }) {
-  const [registration, setRegistration] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [useRegistrationAddress, setUseRegistrationAddress] = useState(true);
-  const [sameCollectionHours, setSameCollectionHours] = useState(true);
-  const [logoFile, setLogoFile] = useState(null);
-  const [logoPreview, setLogoPreview] = useState("");
-  const [notice, setNotice] = useState("");
-
-  const [profile, setProfile] = useState({
-    labName: "",
-    labType: "",
-    description: "",
-    phone: "",
-    email: "",
-    address: "",
-  });
-
-  const [hours, setHours] = useState(initialHours);
-  const [services, setServices] = useState({
+const createDefaultForm = () => ({
+  slotDurationMinutes: 30,
+  isOpen: true,
+  days: createDefaultDays(),
+  patientServices: {
     walkIn: true,
     appointmentBooking: true,
-    homeSampleCollection: false,
-  });
-  const [areas, setAreas] = useState([
-    { city: "", locality: "", pinCode: "" },
-  ]);
+    homeSampleCollection: true,
+  },
+  serviceCoverageArea: [
+    { city: "", areaLocality: "", pinCode: "" },
+  ],
+});
+
+const cardSx = {
+  p: { xs: 1.75, sm: 2.25 },
+  border: "1px solid #E3EBE8",
+  borderRadius: "14px",
+  bgcolor: "#fff",
+  boxShadow: "0 3px 12px rgba(25, 60, 50, 0.035)",
+};
+
+const inputSx = {
+  "& .MuiOutlinedInput-root": {
+    minHeight: 40,
+    borderRadius: "8px",
+    bgcolor: "#fff",
+    fontSize: 12,
+    "& fieldset": { borderColor: "#DDE6E3" },
+    "&:hover fieldset": { borderColor: "#A8C7BC" },
+    "&.Mui-focused fieldset": { borderColor: "#07876A" },
+  },
+  "& .MuiInputLabel-root": {
+    fontSize: 12,
+  },
+};
+
+const greenSwitchSx = {
+  "& .MuiSwitch-switchBase.Mui-checked": {
+    color: "#07876A",
+  },
+  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+    bgcolor: "#07876A",
+    opacity: 1,
+  },
+};
+
+function SectionTitle({ icon, title, subtitle, action }) {
+  return (
+    <Stack
+      direction="row"
+      alignItems="flex-start"
+      justifyContent="space-between"
+      spacing={1.5}
+      sx={{ mb: 2 }}
+    >
+      <Stack direction="row" spacing={1.25} alignItems="flex-start">
+        <Box
+          sx={{
+            width: 34,
+            height: 34,
+            flexShrink: 0,
+            display: "grid",
+            placeItems: "center",
+            borderRadius: "9px",
+            color: "#08785E",
+            bgcolor: "#EAF6F1",
+          }}
+        >
+          {icon}
+        </Box>
+
+        <Box>
+          <Typography
+            sx={{
+              fontSize: 14,
+              fontWeight: 750,
+              color: "#172033",
+            }}
+          >
+            {title}
+          </Typography>
+
+          {subtitle && (
+            <Typography
+              sx={{
+                mt: 0.3,
+                fontSize: 11,
+                lineHeight: 1.5,
+                color: "#77847F",
+              }}
+            >
+              {subtitle}
+            </Typography>
+          )}
+        </Box>
+      </Stack>
+
+      {action}
+    </Stack>
+  );
+}
+
+function BrandPlaceholder({ title, icon, description }) {
+  return (
+    <Paper elevation={0} sx={cardSx}>
+      <SectionTitle
+        icon={icon}
+        title={title}
+        subtitle={description}
+      />
+
+      <Box
+        sx={{
+          minHeight: 150,
+          display: "grid",
+          placeItems: "center",
+          border: "1px dashed #C9D8D2",
+          borderRadius: "10px",
+          bgcolor: "#FBFDFC",
+          color: "#A0AEA8",
+          textAlign: "center",
+          p: 2,
+        }}
+      >
+        <Stack alignItems="center" spacing={0.8}>
+          {icon}
+          <Typography sx={{ fontSize: 11, color: "#84918C" }}>
+            Available soon
+          </Typography>
+        </Stack>
+      </Box>
+    </Paper>
+  );
+}
+
+export default function LabProfile() {
+  const [form, setForm] = useState(createDefaultForm);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const [bulkStartTime, setBulkStartTime] = useState("09:00");
+  const [bulkEndTime, setBulkEndTime] = useState("19:00");
+  const [editingDay, setEditingDay] = useState(null);
 
   useEffect(() => {
-    if (!labId) {
-      setError("Lab registration ID missing hai.");
-      setLoading(false);
-      return;
-    }
-
     const controller = new AbortController();
 
-    const loadRegistration = async () => {
+    const loadProfile = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          `${API_BASE_URL}/api/lab-registration/getLabRegistrationById/${labId}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-            signal: controller.signal,
-          }
-        );
+        setLoading(true);
+        setError("");
 
-        if (!response.data?.success) {
+        const response = await api.get("/api/labs/getLabProfile", {
+          signal: controller.signal,
+        });
+
+        if (response.data?.success === false) {
           throw new Error(
-            response.data?.message || "Registration load nahi hui."
+            response.data?.message || "Lab profile could not be loaded."
           );
         }
 
-        const data = response.data.data;
-        const info = data.registrationData?.labInformation || {};
-        const address = data.registrationData?.labAddress || {};
+        const responseData = response.data?.data;
+        const data = responseData?.profile ?? responseData;
 
-        setRegistration(data);
-        setProfile({
-          labName: info.diagnosticLabName || "",
-          labType: info.labType || "",
-          description: "",
-          phone: info.labContactPhone || "",
-          email: info.labContactEmail || "",
-          address: [
-            address.shopUnitNumber,
-            address.buildingComplexName,
-            address.streetRoadName,
-            address.areaLocality,
-            address.landmark,
-            address.cityTown,
-            address.state,
-            address.pinCode,
-          ]
-            .filter(Boolean)
-            .join(", "),
+        if (!data || typeof data !== "object") {
+          throw new Error("Lab profile data was not found.");
+        }
+
+        const workingHours = data.working_hours || {};
+
+        const savedDays = Array.isArray(workingHours.days)
+          ? workingHours.days
+          : [];
+
+        const savedDayMap = new Map(
+          savedDays.map((item) => [item.day, item])
+        );
+
+        const days = DAYS.map((day) => {
+          const saved = savedDayMap.get(day);
+
+          return {
+            day,
+            enabled: Boolean(saved),
+            openingTime: saved?.openingTime || "09:00",
+            closingTime: saved?.closingTime || "19:00",
+          };
         });
 
-        if (address.cityTown || address.areaLocality || address.pinCode) {
-          setAreas([
-            {
-              city: address.cityTown || "",
-              locality: address.areaLocality || "",
-              pinCode: address.pinCode || "",
-            },
-          ]);
-        }
+        const savedAreas = data.serviceCoverageArea ?? data.service_coverage_area;
+        const areas = Array.isArray(savedAreas)
+          ? savedAreas.map((area) => ({
+              city: area.city || "",
+              areaLocality: area.areaLocality || "",
+              pinCode: area.pinCode || "",
+            }))
+          : [];
+
+        setBulkStartTime(
+          days.find((day) => day.enabled)?.openingTime || "09:00"
+        );
+
+        setBulkEndTime(
+          days.find((day) => day.enabled)?.closingTime || "19:00"
+        );
+
+        setForm({
+          slotDurationMinutes:
+            data.slot_duration_minutes ?? 30,
+
+          isOpen: workingHours.isOpen ?? true,
+
+          days,
+
+          patientServices: {
+            walkIn:
+              data.patientServices?.walkIn ??
+              data.patient_service_options?.walkIn ??
+              true,
+
+            appointmentBooking:
+              data.patientServices?.appointmentBooking ??
+              data.patient_service_options?.appointmentBooking ??
+              true,
+
+            homeSampleCollection:
+              data.patientServices?.homeSampleCollection ??
+              data.patient_service_options?.homeSampleCollection ??
+              true,
+          },
+
+          serviceCoverageArea: areas.length
+            ? areas
+            : [{ city: "", areaLocality: "", pinCode: "" }],
+        });
       } catch (err) {
-        if (err.name !== "CanceledError" && err.code !== "ERR_CANCELED") {
+        if (
+          err.name !== "CanceledError" &&
+          err.code !== "ERR_CANCELED"
+        ) {
           setError(
-            err.response?.data?.message ||
+            err?.response?.data?.message ||
               err.message ||
-              "Registration load nahi hui."
+              "Lab profile could not be loaded."
           );
         }
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
-    loadRegistration();
+    loadProfile();
+
     return () => controller.abort();
-  }, [labId]);
+  }, []);
 
-  const updateProfile = (key, value) =>
-    setProfile((current) => ({ ...current, [key]: value }));
+  // Fetch registration data when Preview is clicked.
+  const handlePreview = async () => {
+    try {
+      setPreviewLoading(true);
+      setError("");
 
-  const updateHour = (index, key, value) =>
-    setHours((current) =>
-      current.map((item, i) => (i === index ? { ...item, [key]: value } : item))
-    );
+      const response = await api.get("/api/labs/getLabProfile");
 
-  const updateArea = (index, key, value) =>
-    setAreas((current) =>
-      current.map((area, i) => (i === index ? { ...area, [key]: value } : area))
-    );
+      if (response.data?.success === false) {
+        throw new Error(
+          response.data?.message || "Preview could not be loaded."
+        );
+      }
 
-  const handleLogoChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+      const data = response.data?.data;
 
-    setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
+      if (!data || typeof data !== "object") {
+        throw new Error("Lab registration data was not found.");
+      }
+
+      setPreviewData(data);
+      setPreviewOpen(true);
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          err.message ||
+          "Preview could not be loaded."
+      );
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const updateDay = (index, key, value) => {
+    setForm((current) => ({
+      ...current,
+      days: current.days.map((day, dayIndex) =>
+        dayIndex === index
+          ? { ...day, [key]: value }
+          : day
+      ),
+    }));
+  };
+
+  const applyHoursToAllDays = () => {
+    setForm((current) => ({
+      ...current,
+      days: current.days.map((day) => ({
+        ...day,
+        openingTime: bulkStartTime,
+        closingTime: bulkEndTime,
+      })),
+    }));
+
+    setEditingDay(null);
+  };
+
+  const updateService = (key, value) => {
+    setForm((current) => ({
+      ...current,
+      patientServices: {
+        ...current.patientServices,
+        [key]: value,
+      },
+    }));
+  };
+
+  const updateArea = (index, key, value) => {
+    setForm((current) => ({
+      ...current,
+      serviceCoverageArea: current.serviceCoverageArea.map(
+        (area, areaIndex) =>
+          areaIndex === index
+            ? { ...area, [key]: value }
+            : area
+      ),
+    }));
+  };
+
+  const addArea = () => {
+    setForm((current) => ({
+      ...current,
+      serviceCoverageArea: [
+        ...current.serviceCoverageArea,
+        { city: "", areaLocality: "", pinCode: "" },
+      ],
+    }));
+  };
+
+  const removeArea = (index) => {
+    setForm((current) => ({
+      ...current,
+      serviceCoverageArea: current.serviceCoverageArea.filter(
+        (_, areaIndex) => areaIndex !== index
+      ),
+    }));
   };
 
   const handleSave = async () => {
-    if (!onSave) {
-      setNotice("Profile save API abhi connect nahi hai.");
+    setError("");
+    setSuccess("");
+
+    const slotDurationMinutes = Number(form.slotDurationMinutes);
+
+    if (!slotDurationMinutes || slotDurationMinutes < 1) {
+      setError("Slot duration must be at least 1 minute.");
       return;
     }
 
-    setSaving(true);
-    setError("");
+    for (const day of form.days) {
+      if (!day.enabled) continue;
+
+      if (
+        !day.openingTime ||
+        !day.closingTime ||
+        day.openingTime >= day.closingTime
+      ) {
+        setError(
+          `Please enter valid opening and closing times for ${day.day}.`
+        );
+        return;
+      }
+    }
+
+    const serviceCoverageArea = form.serviceCoverageArea
+      .filter(
+        (area) =>
+          area.city.trim() ||
+          area.areaLocality.trim() ||
+          area.pinCode.trim()
+      )
+      .map((area) => ({
+        city: area.city.trim(),
+        areaLocality: area.areaLocality.trim(),
+        pinCode: area.pinCode.trim(),
+      }));
+
+    const invalidArea = serviceCoverageArea.find(
+      (area) =>
+        !area.city ||
+        !area.areaLocality ||
+        !/^\d{6}$/.test(area.pinCode)
+    );
+
+    if (invalidArea) {
+      setError(
+        "Enter city, locality and a valid 6-digit PIN code for every coverage area."
+      );
+      return;
+    }
+
+    const payload = {
+      slotDurationMinutes,
+
+      workingHours: {
+        isOpen: form.isOpen,
+        days: form.days
+          .filter((day) => day.enabled)
+          .map(({ day, openingTime, closingTime }) => ({
+            day,
+            openingTime,
+            closingTime,
+          })),
+      },
+
+      patientServices: form.patientServices,
+      serviceCoverageArea,
+    };
 
     try {
-      await onSave({
-        registrationId: registration?.id,
-        ...profile,
-        useRegistrationAddress,
-        hours,
-        sameCollectionHours,
-        services,
-        serviceAreas: services.homeSampleCollection ? areas : [],
-        logoFile,
-      });
-      setNotice("Profile save ho gaya.");
+      setSaving(true);
+
+      const response = await api.patch("/api/labs/LabProfileCreate", payload);
+
+      if (response.data?.success === false) {
+        throw new Error(
+          response.data?.message || "Profile could not be saved."
+        );
+      }
+
+      setSuccess(
+        response.data?.message || "Lab profile settings saved successfully."
+      );
     } catch (err) {
-      setError(err.message || "Profile save nahi hua.");
+      setError(
+        err?.response?.data?.message ||
+          err.message ||
+          "Profile could not be saved."
+      );
     } finally {
       setSaving(false);
     }
   };
 
+  const services = [
+    {
+      key: "walkIn",
+      title: "Walk-in patients",
+      description: "Patients can visit the lab without an appointment.",
+    },
+    {
+      key: "appointmentBooking",
+      title: "Appointment booking",
+      description: "Patients can book appointments in advance.",
+    },
+    {
+      key: "homeSampleCollection",
+      title: "Home sample collection",
+      description: "Staff can collect samples from patients' homes.",
+    },
+  ];
+
   if (loading) {
     return (
-      <Box sx={{ minHeight: 300, display: "grid", placeItems: "center" }}>
-        <CircularProgress />
+      <Box sx={{ minHeight: 320, display: "grid", placeItems: "center" }}>
+        <CircularProgress sx={{ color: "#07876A" }} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: { xs: 1.5, md: 3 },mt:8, bgcolor: "white", minHeight: "100vh" }}>
-      <Box
-        sx={{
-          mb: 2.5,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
-          flexDirection: { xs: "column", sm: "row" },
-          gap: 1.5,
-        }}
-      >
-        <Box>
-          <Typography sx={{ fontSize: 21, fontWeight: 700, color: "#172033" }}>
-            Lab Profile
-          </Typography>
-          <Typography sx={{ mt: 0.4, fontSize: 13, color: "#74807B" }}>
-            Patients ko dikhne wali profile details manage karein.
-          </Typography>
-        </Box>
+    <Box
+      sx={{
+        mt: 8,
+        minHeight: "100vh",
+        p: { xs: 1.5, sm: 2.5, lg: 3 },
+        bgcolor: "white",
+      }}
+    >
+      <Box sx={{ maxWidth: 1440, mx: "auto" }}>
+        {error && (
+          <Alert
+            severity="error"
+            onClose={() => setError("")}
+            sx={{ mb: 2 }}
+          >
+            {error}
+          </Alert>
+        )}
 
-        <Button
-          variant="outlined"
-          startIcon={<VisibilityOutlinedIcon />}
-          onClick={() => setPreviewOpen(true)}
-          sx={{ textTransform: "none" }}
+        {success && (
+          <Alert
+            severity="success"
+            onClose={() => setSuccess("")}
+            sx={{ mb: 2 }}
+          >
+            {success}
+          </Alert>
+        )}
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "minmax(0, 1fr)",
+              lg: "minmax(0, 1.7fr) minmax(280px, 0.8fr)",
+            },
+            gap: 2,
+            alignItems: "start",
+          }}
         >
-          Preview profile
-        </Button>
-      </Box>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
-          {error}
-        </Alert>
-      )}
-
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1.7fr) minmax(280px, 1fr)" },
-          gap: 2,
-          alignItems: "start",
-        }}
-      >
-        <Box sx={{ display: "grid", gap: 2 }}>
-          <Box sx={cardSx}>
-            <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 0.5 }}>
-              Public profile
-            </Typography>
-            <Typography sx={{ fontSize: 12, color: "#74807B", mb: 2 }}>
-              Lab name, type aur contact registration se liye gaye hain.
-            </Typography>
-
+          <Stack spacing={2}>
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "1fr", sm: "140px 1fr" },
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, minmax(0, 1fr))",
+                },
                 gap: 2,
               }}
             >
-              <Box>
-                <Box
-                  sx={{
-                    width: 130,
-                    height: 130,
-                    border: "1px dashed #CBD5E1",
-                    borderRadius: 2,
-                    display: "grid",
-                    placeItems: "center",
-                    overflow: "hidden",
-                    bgcolor: "#F4FAF8",
-                  }}
-                >
-                  {logoPreview ? (
-                    <Box
-                      component="img"
-                      src={logoPreview}
-                      alt="Lab logo"
-                      sx={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                  ) : (
-                    <Typography sx={{ fontSize: 12, color: "#74807B" }}>
-                      Lab logo
-                    </Typography>
-                  )}
-                </Box>
+              <BrandPlaceholder
+                title="Lab logo"
+                icon={<ImageOutlinedIcon fontSize="small" />}
+                description="This will appear on reports and documents."
+              />
+
+              <BrandPlaceholder
+                title="Lab signature"
+                icon={<DrawOutlinedIcon fontSize="small" />}
+                description="This will appear on reports and documents."
+              />
+            </Box>
+
+            <Paper elevation={0} sx={cardSx}>
+              <SectionTitle
+                icon={<AccessTimeOutlinedIcon fontSize="small" />}
+                title="Working hours"
+                subtitle={`Lab is ${form.isOpen ? "open" : "closed"}. Set common hours for all days, or edit a day individually.`}
+              />
+
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    sm: "repeat(2, minmax(0, 1fr))",
+                  },
+                  gap: 1.25,
+                  mb: 1.5,
+                }}
+              >
+                <TextField
+                  label="Slot duration (minutes)"
+                  type="number"
+                  size="small"
+                  value={form.slotDurationMinutes}
+                  inputProps={{ min: 1 }}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      slotDurationMinutes: event.target.value,
+                    }))
+                  }
+                  sx={inputSx}
+                />
+
+                <TextField
+                  label="Start time for all days"
+                  type="time"
+                  size="small"
+                  value={bulkStartTime}
+                  onChange={(event) =>
+                    setBulkStartTime(event.target.value)
+                  }
+                  sx={inputSx}
+                />
+
+                <TextField
+                  label="End time for all days"
+                  type="time"
+                  size="small"
+                  value={bulkEndTime}
+                  onChange={(event) =>
+                    setBulkEndTime(event.target.value)
+                  }
+                  sx={inputSx}
+                />
 
                 <Button
-                  component="label"
-                  size="small"
-                  startIcon={<UploadOutlinedIcon />}
-                  sx={{ mt: 1, textTransform: "none" }}
+                  variant="outlined"
+                  onClick={applyHoursToAllDays}
+                  sx={{
+                    minHeight: 40,
+                    borderRadius: "8px",
+                    borderColor: "#07876A",
+                    color: "#07876A",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "none",
+                  }}
                 >
-                  Upload logo
-                  <input hidden type="file" accept="image/*" onChange={handleLogoChange} />
+                  Apply to all days
                 </Button>
               </Box>
 
-              <Box sx={{ display: "grid", gap: 1.5 }}>
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                    gap: 1.5,
-                  }}
-                >
-                  <TextField
-                    label="Lab name"
-                    size="small"
-                    value={profile.labName}
-                    onChange={(e) => updateProfile("labName", e.target.value)}
-                  />
-                  <TextField
-                    select
-                    label="Lab type"
-                    size="small"
-                    value={profile.labType}
-                    onChange={(e) => updateProfile("labType", e.target.value)}
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    sm: "repeat(2, minmax(0, 1fr))",
+                  },
+                  gap: 1,
+                }}
+              >
+                {form.days.map((day, index) => (
+                  <Box
+                    key={day.day}
+                    sx={{
+                      gridColumn: {
+                        xs: "auto",
+                        sm: day.day === "Sunday" ? "1 / -1" : "auto",
+                      },
+                      p: 1.1,
+                      border: "1px solid #E7EEEB",
+                      borderRadius: "9px",
+                    }}
                   >
-                    {["PATHOLOGY", "RADIOLOGY", "DIAGNOSTIC", "OTHER"].map((type) => (
-                      <MenuItem key={type} value={type}>
-                        {type}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Box>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      spacing={1}
+                    >
+                      <Box>
+                        <Typography
+                          sx={{ fontSize: 12, fontWeight: 700 }}
+                        >
+                          {day.day}
+                        </Typography>
 
-                <TextField
-                  label="Short description"
-                  multiline
-                  minRows={2}
-                  inputProps={{ maxLength: 300 }}
-                  value={profile.description}
-                  onChange={(e) => updateProfile("description", e.target.value)}
-                  placeholder="Apne lab ke baare mein chhota sa description likhein"
-                />
+                        <Typography
+                          sx={{ fontSize: 10, color: "#66746F" }}
+                        >
+                          {day.openingTime} – {day.closingTime}
+                        </Typography>
+                      </Box>
 
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                    gap: 1.5,
-                  }}
-                >
-                  <TextField
-                    label="Contact phone"
-                    size="small"
-                    value={profile.phone}
-                    onChange={(e) => updateProfile("phone", e.target.value)}
-                  />
-                  <TextField
-                    label="Contact email"
-                    size="small"
-                    value={profile.email}
-                    onChange={(e) => updateProfile("email", e.target.value)}
-                  />
-                </Box>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={0.25}
+                      >
+                        <Switch
+                          size="small"
+                          checked={day.enabled}
+                          onChange={(event) =>
+                            updateDay(
+                              index,
+                              "enabled",
+                              event.target.checked
+                            )
+                          }
+                          sx={greenSwitchSx}
+                        />
 
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={useRegistrationAddress}
-                      onChange={(e) => setUseRegistrationAddress(e.target.checked)}
-                      size="small"
-                    />
-                  }
-                  label={<Typography sx={{ fontSize: 12 }}>Registration address use karein</Typography>}
-                />
+                        <Typography
+                          sx={{
+                            fontSize: 10,
+                            color: day.enabled ? "#52665F" : "#8A9691",
+                          }}
+                        >
+                          {day.enabled ? "Open" : "Closed"}
+                        </Typography>
 
-                <TextField
-                  label="Lab address"
-                  size="small"
-                  value={profile.address}
-                  disabled={useRegistrationAddress}
-                  onChange={(e) => updateProfile("address", e.target.value)}
-                />
+                        <Button
+                          size="small"
+                          onClick={() =>
+                            setEditingDay((current) =>
+                              current === day.day ? null : day.day
+                            )
+                          }
+                          sx={{
+                            minWidth: 0,
+                            px: 0.75,
+                            fontSize: 10,
+                            textTransform: "none",
+                            color: "#07876A",
+                          }}
+                        >
+                          {editingDay === day.day ? "Done" : "Edit time"}
+                        </Button>
+                      </Stack>
+                    </Stack>
+
+                    {editingDay === day.day && (
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                          gap: 1,
+                          mt: 1,
+                        }}
+                      >
+                        <TextField
+                          label="Start time"
+                          type="time"
+                          size="small"
+                          value={day.openingTime}
+                          disabled={!day.enabled}
+                          onChange={(event) =>
+                            updateDay(
+                              index,
+                              "openingTime",
+                              event.target.value
+                            )
+                          }
+                          sx={inputSx}
+                        />
+
+                        <TextField
+                          label="End time"
+                          type="time"
+                          size="small"
+                          value={day.closingTime}
+                          disabled={!day.enabled}
+                          onChange={(event) =>
+                            updateDay(
+                              index,
+                              "closingTime",
+                              event.target.value
+                            )
+                          }
+                          sx={inputSx}
+                        />
+                      </Box>
+                    )}
+                  </Box>
+                ))}
               </Box>
-            </Box>
-          </Box>
+            </Paper>
+          </Stack>
 
-          <Box sx={cardSx}>
-            <Typography sx={{ fontSize: 16, fontWeight: 700 }}>
-              Working hours
-            </Typography>
-            <Typography sx={{ fontSize: 12, color: "#74807B", mb: 1.5 }}>
-              Har din ke lab opening aur closing hours set karein.
-            </Typography>
+          <Stack spacing={2}>
+            <Paper elevation={0} sx={cardSx}>
+              <SectionTitle
+                icon={<PeopleAltOutlinedIcon fontSize="small" />}
+                title="Patient services"
+                subtitle="Choose which services are available to patients."
+              />
 
-            <Box sx={{ display: "grid", gridTemplateColumns: "110px 100px 1fr 1fr", gap: 1, alignItems: "center" }}>
-              {["Day", "Open", "Opening time", "Closing time"].map((label) => (
-                <Typography key={label} sx={{ fontSize: 11, fontWeight: 700, color: "#74807B" }}>
-                  {label}
-                </Typography>
-              ))}
+              <Stack
+                divider={<Box sx={{ borderBottom: "1px solid #EDF1EF" }} />}
+              >
+                {services.map((service) => (
+                  <Stack
+                    key={service.key}
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    spacing={2}
+                    sx={{ py: 1.2 }}
+                  >
+                    <Box>
+                      <Typography
+                        sx={{ fontSize: 12, fontWeight: 700 }}
+                      >
+                        {service.title}
+                      </Typography>
 
-              {hours.map((item, index) => (
-                <>
-                  <Typography key={`${item.day}-name`} sx={{ fontSize: 12 }}>
-                    {item.day}
-                  </Typography>
-                  <Switch
-                    key={`${item.day}-switch`}
+                      <Typography
+                        sx={{
+                          mt: 0.25,
+                          fontSize: 10,
+                          color: "#7B8782",
+                        }}
+                      >
+                        {service.description}
+                      </Typography>
+                    </Box>
+
+                    <Switch
+                      checked={Boolean(
+                        form.patientServices[service.key]
+                      )}
+                      onChange={(event) =>
+                        updateService(
+                          service.key,
+                          event.target.checked
+                        )
+                      }
+                      sx={greenSwitchSx}
+                    />
+                  </Stack>
+                ))}
+              </Stack>
+            </Paper>
+
+            <Paper elevation={0} sx={cardSx}>
+              <SectionTitle
+                icon={<LocationOnOutlinedIcon fontSize="small" />}
+                title="Service coverage areas"
+                subtitle="Add cities and localities where your lab provides service."
+                action={
+                  <Button
                     size="small"
-                    checked={item.open}
-                    onChange={(e) => updateHour(index, "open", e.target.checked)}
-                  />
-                  <TextField
-                    key={`${item.day}-start`}
-                    size="small"
-                    type="time"
-                    value={item.startTime}
-                    disabled={!item.open}
-                    onChange={(e) => updateHour(index, "startTime", e.target.value)}
-                  />
-                  <TextField
-                    key={`${item.day}-end`}
-                    size="small"
-                    type="time"
-                    value={item.endTime}
-                    disabled={!item.open}
-                    onChange={(e) => updateHour(index, "endTime", e.target.value)}
-                  />
-                </>
-              ))}
-            </Box>
+                    variant="outlined"
+                    startIcon={<AddRoundedIcon />}
+                    onClick={addArea}
+                    sx={{
+                      flexShrink: 0,
+                      borderRadius: "8px",
+                      textTransform: "none",
+                      fontSize: 11,
+                      color: "#08785E",
+                      borderColor: "#B8D8CC",
+                    }}
+                  >
+                    Add area
+                  </Button>
+                }
+              />
 
-       
-          </Box>
+              <Box
+                sx={{
+                  display: { xs: "none", sm: "grid" },
+                  gridTemplateColumns: "1fr 1.3fr 0.8fr 42px",
+                  gap: 1,
+                  px: 1.25,
+                  py: 0.9,
+                  mb: 0.75,
+                  bgcolor: "#F4F7F6",
+                  borderRadius: "8px",
+                }}
+              >
+                {["City", "Area / Locality", "PIN code", ""].map(
+                  (label, index) => (
+                    <Typography
+                      key={`${label}-${index}`}
+                      sx={{
+                        fontSize: 10,
+                        fontWeight: 750,
+                        color: "#66746F",
+                      }}
+                    >
+                      {label}
+                    </Typography>
+                  )
+                )}
+              </Box>
+
+              <Stack spacing={1}>
+                {form.serviceCoverageArea.map((area, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: {
+                        xs: "1fr 1fr 38px",
+                        sm: "1fr 1.3fr 0.8fr 42px",
+                      },
+                      gap: 1,
+                      alignItems: "center",
+                    }}
+                  >
+                    <TextField
+                      placeholder="City"
+                      size="small"
+                      value={area.city}
+                      onChange={(event) =>
+                        updateArea(index, "city", event.target.value)
+                      }
+                      sx={inputSx}
+                    />
+
+                    <TextField
+                      placeholder="Area / Locality"
+                      size="small"
+                      value={area.areaLocality}
+                      onChange={(event) =>
+                        updateArea(
+                          index,
+                          "areaLocality",
+                          event.target.value
+                        )
+                      }
+                      sx={inputSx}
+                    />
+
+                    <TextField
+                      placeholder="PIN code"
+                      size="small"
+                      value={area.pinCode}
+                      inputProps={{
+                        maxLength: 6,
+                        inputMode: "numeric",
+                      }}
+                      onChange={(event) =>
+                        updateArea(
+                          index,
+                          "pinCode",
+                          event.target.value.replace(/\D/g, "").slice(0, 6)
+                        )
+                      }
+                      sx={inputSx}
+                    />
+
+                    <IconButton
+                      aria-label="Remove area"
+                      disabled={form.serviceCoverageArea.length === 1}
+                      onClick={() => removeArea(index)}
+                      sx={{
+                        width: 38,
+                        height: 38,
+                        color: "#9A5B5B",
+                        border: "1px solid #E8DEDE",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <DeleteOutlineRoundedIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ))}
+              </Stack>
+            </Paper>
+          </Stack>
         </Box>
 
-      <Box sx={cardSx}>
-  <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 0.5 }}>
-    Patient services
-  </Typography>
-
-  <Typography sx={{ fontSize: 12, color: "#74807B", mb: 1.5 }}>
-    Patients ko milne wali services select karein.
-  </Typography>
-
-  {[
-    ["walkIn", "Walk-in", "Patients bina appointment aa sakte hain."],
-    ["appointmentBooking", "Appointment booking", "Patients online appointment book kar sakte hain."],
-    ["homeSampleCollection", "Home sample collection", "Patient ke ghar se sample collect karein."],
-  ].map(([key, label, description]) => {
-    const selected = Boolean(services[key]);
-
-    return (
-      <Box
-        key={key}
-        sx={{
-          mb: 1,
-          border: "1px solid",
-          borderColor: selected ? "#A8D8CA" : "#E5ECE9",
-          borderRadius: 1.5,
-          bgcolor: selected ? "#F0FAF7" : "#fff",
-          transition: "0.2s",
-          "&:hover": { borderColor: "#07876A" },
-        }}
-      >
-        <FormControlLabel
-          sx={{ m: 0, p: 1, width: "100%", alignItems: "center" }}
-          control={
-            <Checkbox
-              checked={selected}
-              onChange={(event) =>
-                setServices((current) => ({
-                  ...current,
-                  [key]: event.target.checked,
-                }))
-              }
-              icon={
-                <Box
-                  sx={{
-                    width: 19,
-                    height: 19,
-                    border: "2px solid #94A3A0",
-                    borderRadius: "5px",
-                  }}
-                />
-              }
-              checkedIcon={
-                <Box
-                  sx={{
-                    width: 19,
-                    height: 19,
-                    borderRadius: "5px",
-                    bgcolor: "#07876A",
-                    color: "#fff",
-                    display: "grid",
-                    placeItems: "center",
-                  }}
-                >
-                  <CheckRoundedIcon sx={{ fontSize: 16 }} />
-                </Box>
-              }
-              sx={{ p: 0.75, mr: 1 }}
-            />
-          }
-          label={
-            <Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 600 }}>
-                {label}
-              </Typography>
-              <Typography sx={{ fontSize: 11, color: "#74807B" }}>
-                {description}
-              </Typography>
-            </Box>
-          }
-        />
-      </Box>
-    );
-  })}
-
- {services.homeSampleCollection && (
-  <Box
-    sx={{
-      mt: 1.5,
-      p: 1.5,
-      border: "1px solid #DDE9E5",
-      borderRadius: 1.5,
-      bgcolor: "#FBFDFC",
-      minWidth: 0,
-    }}
-  >
-    <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 0.5 }}>
-      Service coverage area
-    </Typography>
-
-    <Typography sx={{ fontSize: 11, color: "#74807B", mb: 1.5 }}>
-      Jahan home sample collection available hai, woh areas add karein.
-    </Typography>
-
-    {areas.map((area, index) => (
-      <Box
-        key={index}
-        sx={{
-          mb: 1.5,
-          p: 1.2,
-          border: "1px solid #E5ECE9",
-          borderRadius: 1.5,
-          bgcolor: "#fff",
-        }}
-      >
-        <Box
+        <Stack
+          direction="row"
+          justifyContent="flex-end"
+          spacing={1.5}
           sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-            gap: 1,
+            mt: 2,
+            position: { xs: "static", sm: "sticky" },
+            bottom: 0,
+            py: 1.5,
+            bgcolor: "#F7F9F8",
+            zIndex: 1,
           }}
         >
-          <TextField
-            label="City"
-            size="small"
-            fullWidth
-            value={area.city}
-            onChange={(event) =>
-              updateArea(index, "city", event.target.value)
-            }
-          />
-
-          <TextField
-            label="Area / Locality"
-            size="small"
-            fullWidth
-            value={area.locality}
-            onChange={(event) =>
-              updateArea(index, "locality", event.target.value)
-            }
-          />
-        </Box>
-
-        <Box
-          sx={{
-            mt: 1,
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) 40px",
-            gap: 1,
-            alignItems: "center",
-          }}
-        >
-          <TextField
-            label="PIN code"
-            size="small"
-            value={area.pinCode}
-            inputProps={{ maxLength: 6, inputMode: "numeric" }}
-            onChange={(event) =>
-              updateArea(
-                index,
-                "pinCode",
-                event.target.value.replace(/\D/g, "").slice(0, 6)
+          <Button
+            variant="outlined"
+            startIcon={
+              previewLoading ? (
+                <CircularProgress size={16} />
+              ) : (
+                <VisibilityOutlinedIcon />
               )
             }
-          />
+            onClick={handlePreview}
+            disabled={previewLoading}
+            sx={{
+              minWidth: 120,
+              minHeight: 42,
+              borderRadius: "9px",
+              borderColor: "#07876A",
+              color: "#07876A",
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: "none",
+            }}
+          >
+            {previewLoading ? "Loading..." : "Preview"}
+          </Button>
 
-          {areas.length > 1 && (
-            <IconButton
-              color="error"
-              aria-label="Remove area"
-              onClick={() =>
-                setAreas((current) =>
-                  current.filter((_, areaIndex) => areaIndex !== index)
-                )
-              }
-              sx={{
-                width: 38,
-                height: 38,
-                border: "1px solid #F1D5D5",
-                borderRadius: 1.5,
-                bgcolor: "#FFF7F7",
-              }}
-            >
-              <DeleteOutlineRoundedIcon fontSize="small" />
-            </IconButton>
-          )}
-        </Box>
-      </Box>
-    ))}
-
-    <Button
-      variant="outlined"
-      size="small"
-      startIcon={<AddRoundedIcon />}
-      onClick={() =>
-        setAreas((current) => [
-          ...current,
-          { city: "", locality: "", pinCode: "" },
-        ])
-      }
-      sx={{
-        minHeight: 36,
-        px: 1.5,
-        whiteSpace: "nowrap",
-        textTransform: "none",
-        fontSize: 12,
-      }}
-    >
-      Add another area
-    </Button>
-  </Box>
-)}
-</Box>
-      </Box>
-
-      <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end", gap: 1 }}>
-        <Button variant="outlined" onClick={() => window.history.back()} sx={{ textTransform: "none" }}>
-          Cancel
-        </Button>
-        <Button variant="contained" onClick={handleSave} disabled={saving} sx={{ textTransform: "none" }}>
-          {saving ? <CircularProgress size={18} color="inherit" /> : "Save profile"}
-        </Button>
+          <Button
+            variant="contained"
+            onClick={handleSave}
+            disabled={saving}
+            sx={{
+              minWidth: 145,
+              minHeight: 42,
+              borderRadius: "9px",
+              bgcolor: "#07876A",
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: "none",
+              boxShadow: "none",
+              "&:hover": {
+                bgcolor: "#066F58",
+                boxShadow: "none",
+              },
+            }}
+          >
+            {saving ? (
+              <CircularProgress size={19} color="inherit" />
+            ) : (
+              "Save changes"
+            )}
+          </Button>
+        </Stack>
       </Box>
 
       <LabRegistrationPreview
         open={previewOpen}
-        registration={registration}
+        registration={previewData}
         onClose={() => setPreviewOpen(false)}
-      />
-
-      <Snackbar
-        open={Boolean(notice)}
-        autoHideDuration={3000}
-        message={notice}
-        onClose={() => setNotice("")}
       />
     </Box>
   );
