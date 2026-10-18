@@ -329,21 +329,8 @@ export default function TechnicianDashboard() {
         </Typography>
       ),
     },
-    {
-      field: "created_at",
-      headerName: "REQUEST DATE",
-      flex: 1,
-      minWidth: 140,
-      valueFormatter: (value) => formatDate(value),
-      renderCell: ({ value }) => <Box sx={wrapText}>{formatDate(value)}</Box>,
-    },
-    {
-      field: "expected_report_at",
-      headerName: "REPORT BY",
-      flex: 1,
-      minWidth: 140,
-      renderCell: ({ value }) => <Box sx={wrapText}>{formatDate(value)}</Box>,
-    },
+   
+   
     {
       field: "collection_slot",
       headerName: "COLLECTION SLOT",
@@ -393,23 +380,7 @@ export default function TechnicianDashboard() {
         </Stack>
       ),
     },
-    {
-      field: "lab_name",
-      headerName: "LAB",
-      flex: 1,
-      minWidth: 160,
-      sortable: false,
-      renderCell: ({ row }) => (
-        <Stack spacing={0.2} sx={{ width: "100%", py: 0.8 }}>
-          <Typography sx={{ ...wrapText, fontWeight: 700, py: 0 }}>
-            {row.lab_name || "-"}
-          </Typography>
-          <Typography sx={{ ...wrapText, color: "#78928b", py: 0 }}>
-            {row.lab_address || row.lab_phone || "-"}
-          </Typography>
-        </Stack>
-      ),
-    },
+   
     {
       field: "sample_type",
       headerName: "SAMPLE",

@@ -392,6 +392,7 @@ export default function LabReports({
                     </Typography>
                   )}
                 </TableCell>
+
               </TableRow>
             );
           })}

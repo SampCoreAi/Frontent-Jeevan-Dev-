@@ -35,6 +35,7 @@ import {
 import { useTheme } from "@mui/material/styles";
 import LabBill from "../components/LabBill"
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 
@@ -124,6 +125,27 @@ const formatDateInputValue = (value) => {
 
 const isCompleteDateTimeValue = (value) =>
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(String(value || ""));
+
+const getInvoicePdfUrl = (request) => {
+  const value = request?.invoicePdfUrl || request?.invoice_pdf_url;
+  if (typeof value !== "string" || !value.trim()) return "";
+
+  try {
+    const bucketUrl = (process.env.NEXT_PUBLIC_S3_BUCKET_URL || "").replace(
+      /\/+$/,
+      "",
+    );
+    return new URL(value, bucketUrl || window.location.origin).toString();
+  } catch {
+    return "";
+  }
+};
+
+const hasInvoicePdf = (request) =>
+  Boolean(
+    typeof (request?.invoicePdfUrl || request?.invoice_pdf_url) === "string" &&
+      (request.invoicePdfUrl || request.invoice_pdf_url).trim(),
+  );
 
 function RequestField({ label, children }) {
   const control = ["Technician", "Report by", "Status", "Actions"].includes(
@@ -251,8 +273,10 @@ export default function LabRequests({
   const [invoiceError, setInvoiceError] = useState("");
 
   const [invoiceSuccess, setInvoiceSuccess] = useState("");
+  const [invoiceSuccessOpen, setInvoiceSuccessOpen] = useState(false);
 
   const [createdInvoice, setCreatedInvoice] = useState({});
+  const [invoiceUrlsByRequest, setInvoiceUrlsByRequest] = useState({});
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -308,6 +332,8 @@ export default function LabRequests({
     : null;
 
   const openInvoice = (request) => {
+    if (!canCreateInvoice(request)) return;
+
     const testList = Array.isArray(request?.requested_tests)
       ? request.requested_tests
       : [];
@@ -321,6 +347,7 @@ export default function LabRequests({
     });
     setInvoiceError("");
     setInvoiceSuccess("");
+    setInvoiceSuccessOpen(false);
     setCreatedInvoice({});
   };
 
@@ -329,10 +356,16 @@ export default function LabRequests({
     setInvoiceRequest(null);
     setInvoiceError("");
     setInvoiceSuccess("");
+    setInvoiceSuccessOpen(false);
     setCreatedInvoice({});
   };
 
   const handleCreateInvoice = async () => {
+    if (!canCreateInvoice(invoiceRequest)) {
+      setInvoiceError("An invoice can only be created for accepted requests.");
+      return;
+    }
+
     if (!invoiceRequest?.id) {
       setInvoiceError("Lab order ID is missing.");
       return;
@@ -432,8 +465,21 @@ export default function LabRequests({
         throw new Error(response.data?.message || "Invoice could not be created.");
       }
 
-      setCreatedInvoice(response.data?.data || {});
+      const invoiceData = response.data?.data || {};
+      setCreatedInvoice(invoiceData);
+      const pdfUrl =
+        invoiceData.invoicePdfUrl ||
+        invoiceData.invoice_pdf_url ||
+        invoiceData.pdfUrl ||
+        invoiceData.pdf_url;
+      if (typeof pdfUrl === "string" && pdfUrl.trim()) {
+        setInvoiceUrlsByRequest((current) => ({
+          ...current,
+          [invoiceRequest.id]: pdfUrl,
+        }));
+      }
       setInvoiceSuccess(response.data?.message || "Invoice created successfully.");
+      setInvoiceSuccessOpen(true);
     } catch (error) {
       setInvoiceError(
         error.response?.data?.message || error.message || "Invoice could not be created."
@@ -445,6 +491,9 @@ export default function LabRequests({
 
   const isCancelled = (request) =>
     String(request?.status || "").toUpperCase() === "CANCELLED";
+
+  const canCreateInvoice = (request) =>
+    String(request?.status || "").toUpperCase() === "ACCEPTED";
 
   const canAssignTechnician = (request) => {
     if (!request) return false;
@@ -562,6 +611,21 @@ export default function LabRequests({
 
   const closeActions = () => {
     setActionAnchor(null);
+  };
+
+  const openInvoicePdf = (request) => {
+    const requestWithCachedUrl = {
+      ...request,
+      invoicePdfUrl:
+        invoiceUrlsByRequest[request?.id] ||
+        request?.invoicePdfUrl ||
+        request?.invoice_pdf_url,
+    };
+    const url = getInvoicePdfUrl(requestWithCachedUrl);
+    if (!url) return;
+
+    window.open(url, "_blank", "noopener,noreferrer");
+    closeActions();
   };
 
   const openCollectionDetails = () => {
@@ -746,6 +810,23 @@ height:"85vh",
           sx={{ width: "100%", fontSize: 13, borderRadius: 2 }}
         >
           {updateFeedback.message}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={invoiceSuccessOpen}
+        autoHideDuration={4500}
+        onClose={() => setInvoiceSuccessOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        sx={{ zIndex: (theme) => theme.zIndex.modal + 1 }}
+      >
+        <Alert
+          onClose={() => setInvoiceSuccessOpen(false)}
+          severity="success"
+          variant="filled"
+          sx={{ width: "100%", fontSize: 13, borderRadius: 2 }}
+        >
+          {invoiceSuccess}
         </Alert>
       </Snackbar>
 
@@ -1551,7 +1632,12 @@ height:"85vh",
         </MenuItem>
 
         <MenuItem
-          disabled={!uploadRequest || isCancelled(uploadRequest)}
+          disabled={
+            !uploadRequest ||
+            !canCreateInvoice(uploadRequest) ||
+            hasInvoicePdf(uploadRequest) ||
+            Boolean(invoiceUrlsByRequest[uploadRequest?.id])
+          }
           onClick={() => {
             openInvoice(uploadRequest);
             closeActions();
@@ -1561,6 +1647,25 @@ height:"85vh",
             sx={{ mr: 1, fontSize: 17, color: "#14734F" }}
           />
           Create Invoice
+        </MenuItem>
+
+        <MenuItem
+          disabled={
+            !uploadRequest ||
+            !getInvoicePdfUrl({
+              ...uploadRequest,
+              invoicePdfUrl:
+                invoiceUrlsByRequest[uploadRequest?.id] ||
+                uploadRequest?.invoicePdfUrl ||
+                uploadRequest?.invoice_pdf_url,
+            })
+          }
+          onClick={() => openInvoicePdf(uploadRequest)}
+        >
+          <OpenInNewRoundedIcon
+            sx={{ mr: 1, fontSize: 17, color: "#14734F" }}
+          />
+          View invoice
         </MenuItem>
 
         <MenuItem
@@ -1763,14 +1868,12 @@ height:"85vh",
         fullWidth
       >
         <DialogTitle>
-          Invoice â€” {invoiceRequest?.order_id || "â€”"}
+          Invoice - {invoiceRequest?.order_id || "-"}
         </DialogTitle>
         <DialogContent dividers>
           {invoiceRequest && (
             <Stack spacing={2}>
               {invoiceError && <Alert severity="error">{invoiceError}</Alert>}
-              {invoiceSuccess && <Alert severity="success">{invoiceSuccess}</Alert>}
-
               <Box
                 sx={{
                   display: "grid",
@@ -1993,7 +2096,7 @@ height:"85vh",
                 mt: 0.25,
               }}
             >
-              Upload patient's laboratory report in PDF format.
+              Upload patient&apos;s laboratory report in PDF format.
             </Typography>
           </DialogTitle>
 

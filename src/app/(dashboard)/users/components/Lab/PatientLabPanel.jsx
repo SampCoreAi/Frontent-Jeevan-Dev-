@@ -20,6 +20,7 @@ import {
 
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import CloseIcon from "@mui/icons-material/Close";
 
 import api from "../../../../../utils/axiosInstance";
@@ -56,6 +57,32 @@ const getRequestNote = (v = {}) =>
   v.reason ||
   v.statusReason ||
   "";
+
+const getInvoiceUrl = (request) =>
+  request?.invoicePdfUrl ||
+  request?.invoice_pdf_url ||
+  request?.invoiceUrl ||
+  request?.invoice_url ||
+  request?.invoice?.invoicePdfUrl ||
+  request?.invoice?.invoice_pdf_url ||
+  request?.report?.invoicePdfUrl ||
+  request?.report?.invoice_pdf_url ||
+  "";
+
+const resolveInvoiceUrl = (value) => {
+  if (typeof value !== "string" || !value.trim()) return "";
+
+  const bucketUrl = (process.env.NEXT_PUBLIC_S3_BUCKET_URL || "").replace(
+    /\/+$/,
+    "",
+  );
+
+  try {
+    return new URL(value.trim(), bucketUrl || window.location.origin).toString();
+  } catch {
+    return "";
+  }
+};
 
 const formatDateTime = (value) => {
   if (!value) return "-";
@@ -375,6 +402,20 @@ export default function PatientLabPanel() {
           >
             <DescriptionOutlinedIcon sx={{ fontSize: 18 }} />
             View Report
+          </MenuItem>
+        )}
+
+        {getInvoiceUrl(menuRow) && (
+          <MenuItem
+            component="a"
+            href={resolveInvoiceUrl(getInvoiceUrl(menuRow))}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={closeMenu}
+            sx={{ gap: 1, fontSize: 12.5 }}
+          >
+            <OpenInNewRoundedIcon sx={{ fontSize: 18 }} />
+            View Invoice
           </MenuItem>
         )}
       </Menu>

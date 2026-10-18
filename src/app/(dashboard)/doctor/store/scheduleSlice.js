@@ -1062,9 +1062,8 @@ const scheduleSlice =
               state.schedules =
                 state.schedules.filter(
                   (schedule) =>
-                    schedule.id !==
-                    action.payload
-                      .scheduleId
+                    String(schedule.id) !==
+                    String(action.payload.scheduleId)
                 );
             }
 

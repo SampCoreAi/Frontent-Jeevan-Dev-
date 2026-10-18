@@ -1,16 +1,66 @@
 "use client";
 
+import { useState } from "react";
+
+const getBrandingUrl = (value) => {
+  if (typeof value !== "string" || !value.trim()) return "";
+  const bucketUrl = (process.env.NEXT_PUBLIC_S3_BUCKET_URL || "").replace(
+    /\/+$/,
+    "",
+  );
+  const rawValue = value.trim();
+
+  try {
+    const parsed = new URL(rawValue, "https://lab-invoice-image.invalid");
+    if (/^https?:\/\//i.test(rawValue)) return rawValue;
+
+    const key = parsed.pathname.replace(/^\/+/, "");
+    return key && bucketUrl ? `${bucketUrl}/${key}${parsed.search}` : "";
+  } catch {
+    return "";
+  }
+};
+
+const getBrandingValue = (profile, keys) => {
+  for (const key of keys) {
+    const value = profile?.[key];
+    if (typeof value === "string" && value.trim()) return value;
+  }
+  return "";
+};
+
 export default function LabBill({
   order = {},
   invoice = {},
   lab = {},
   billRef,
 }) {
+  const [failedLogoUrl, setFailedLogoUrl] = useState("");
   const profile = lab.profile || lab;
   const registration = lab.registration || {};
   const registrationData = registration.registration_data || {};
   const labInformation = registrationData.labInformation || {};
   const labAddress = registrationData.labAddress || {};
+  const logoUrl = getBrandingUrl(
+    getBrandingValue(profile, [
+      "lab_logo_url",
+      "logo_url",
+      "lab_logo",
+      "lab_logo_path",
+      "logo",
+      "profile_image",
+      "image_url",
+    ]),
+  );
+  const signatureUrl = getBrandingUrl(
+    getBrandingValue(profile, [
+      "lab_signature_url",
+      "signature_url",
+      "lab_signature",
+      "lab_signature_path",
+      "signature",
+    ]),
+  );
   const tests = invoice.test_charges?.length
     ? invoice.test_charges
     : (order.requested_tests || []).map((test) =>
@@ -61,15 +111,25 @@ export default function LabBill({
     <main className="page">
       <article className="bill" ref={billRef}>
         <header className="brand">
-          <svg className="logo" viewBox="0 0 64 64" role="img" aria-label={`${show(labName)} logo`}>
-            <circle cx="32" cy="32" r="29" fill="#e8f1f3" stroke="#253b4a" strokeWidth="3" />
-            <path d="M9 34h12l5-12 8 23 7-16 4 5h10" fill="none" stroke="#168c83" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx="48" cy="18" r="5" fill="#d66b55" />
-          </svg>
+          {logoUrl && failedLogoUrl !== logoUrl ? (
+            <img
+              className="logo"
+              src={logoUrl}
+              alt={`${show(labName)} logo`}
+              crossOrigin="anonymous"
+              onError={() => setFailedLogoUrl(logoUrl)}
+            />
+          ) : (
+            <svg className="logo" viewBox="0 0 64 64" role="img" aria-label={`${show(labName)} logo`}>
+              <circle cx="32" cy="32" r="29" fill="#e8f1f3" stroke="#253b4a" strokeWidth="3" />
+              <path d="M9 34h12l5-12 8 23 7-16 4 5h10" fill="none" stroke="#168c83" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="48" cy="18" r="5" fill="#d66b55" />
+            </svg>
+          )}
 
           <div>
             <h1 className="brand-name">{show(labName)}</h1>
-            <p className="tagline">—</p>
+            <p className="tagline">{show(profile.bio)}</p>
           </div>
 
           <div className="bill-title">
@@ -135,6 +195,17 @@ export default function LabBill({
             <div className="signature-area">
               <p className="thanks">Thank You</p>
               <div className="signature">
+                {signatureUrl && (
+                  <img
+                    className="signature-image"
+                    src={signatureUrl}
+                    alt="Lab signature"
+                    crossOrigin="anonymous"
+                    onError={(event) => {
+                      event.currentTarget.style.display = "none";
+                    }}
+                  />
+                )}
                 <small>Authorized Signature</small>
               </div>
             </div>
@@ -171,13 +242,13 @@ export default function LabBill({
         .bill {
           position: relative;
           width: 210mm;
-                min-height: 271mm;
+          min-height: 271mm;
           margin: auto;
           padding: 13mm 12mm;
-                display: flex;
-                flex-direction: column;
-                background: #fff;
-                box-shadow: 0 3px 18px #00000018;
+          display: flex;
+          flex-direction: column;
+          background: #fff;
+          box-shadow: 0 3px 18px #00000018;
         }
 
         .brand {
@@ -188,7 +259,7 @@ export default function LabBill({
           border-bottom: 2px solid #253b4a;
         }
 
-        .logo { width: 52px; height: 52px; flex: none; }
+        .logo { width: 52px; height: 52px; flex: none; object-fit: contain; }
         .brand-name { margin: 0; color: #253b4a; font-size: 23px; letter-spacing: .3px; }
         .tagline { margin: 3px 0 0; color: #61808c; font-size: 9px; font-weight: bold; letter-spacing: 1.3px; }
 
@@ -330,9 +401,18 @@ export default function LabBill({
         }
 
         .signature {
-          padding-top: 27px;
+          min-height: 80px;
           border-bottom: 1px solid #7d8990;
           text-align: center;
+        }
+
+        .signature-image {
+          display: block;
+          width: 100%;
+          height: 58px;
+          margin: 0 auto;
+          object-fit: contain;
+          object-position: bottom center;
         }
 
         .signature small {

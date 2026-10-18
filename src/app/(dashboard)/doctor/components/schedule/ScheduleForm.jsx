@@ -18,7 +18,9 @@ import {
   Typography,
 } from "@mui/material";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -775,111 +777,170 @@ export default function ScheduleForm({
     ...commonTextFieldSx,
   };
 
-  const dateFieldSx = {
-    ...commonTextFieldSx,
+ const dateFieldSx = {
+  ...commonTextFieldSx,
 
-    "& .MuiIconButton-root": {
-      color: PRIMARY_COLOR,
+  "& .MuiInputAdornment-root": {
+    display: "flex",
+    visibility: "visible",
+    opacity: 1,
+  },
 
-      p: 0.7,
+  "& .MuiIconButton-root": {
+    color: "#008f72",
+    padding: "6px",
+    visibility: "visible",
+    opacity: 1,
+  },
+
+  "& .MuiSvgIcon-root": {
+    color: "#008f72",
+    fontSize: "21px",
+  },
+};
+
+
+const datePickerPopupSx = {
+  "& .MuiPaper-root": {
+    backgroundColor: PAPER_COLOR,
+    borderRadius: "12px",
+    boxShadow: "0px 8px 24px rgba(0,0,0,0.18)",
+    overflow: "hidden",
+  },
+
+  "& .MuiDateCalendar-root": {
+    width: 320,
+    height: "auto",
+    maxHeight: "none",
+    maxWidth: "100%",
+    margin: 0,
+    padding: "8px 10px 12px",
+    boxSizing: "border-box",
+  },
+
+  "& .MuiPickersCalendarHeader-root": {
+    color: TEXT_COLOR,
+    paddingLeft: "12px",
+    paddingRight: "12px",
+    marginTop: "4px",
+    marginBottom: "10px",
+    minHeight: "40px",
+  },
+
+  "& .MuiPickersCalendarHeader-label": {
+    color: TEXT_COLOR,
+    fontWeight: 600,
+    fontSize: "14px",
+  },
+
+  "& .MuiPickersCalendarHeader-switchViewButton": {
+    color: PRIMARY_COLOR,
+  },
+
+ "& .MuiPickersArrowSwitcher-button": {
+  color: `${PRIMARY_COLOR} !important`,
+  visibility: "visible",
+  opacity: 1,
+  width: 32,
+  height: 32,
+  backgroundColor: `${PRIMARY_COLOR}12`,
+  border: `1px solid ${PRIMARY_COLOR}35`,
+
+  "& svg": {
+    color: `${PRIMARY_COLOR} !important`,
+    fontSize: 22,
+    opacity: 1,
+  },
+},
+  "& .MuiDayCalendar-header": {
+    justifyContent: "space-around",
+    marginBottom: "4px",
+  },
+
+  "& .MuiDayCalendar-weekDayLabel": {
+    color: SECONDARY_TEXT,
+    fontSize: "12px",
+    fontWeight: 600,
+    width: 36,
+    height: 36,
+    margin: 0,
+  },
+
+  "& .MuiDayCalendar-weekContainer": {
+    justifyContent: "space-around",
+    margin: "3px 0",
+  },
+
+  "& .MuiPickersDay-root": {
+    color: TEXT_COLOR,
+    fontSize: "12px",
+    width: 36,
+    height: 36,
+    margin: 0,
+    borderRadius: "50%",
+    transition: "all 0.2s ease",
+
+    "&:hover": {
+      backgroundColor: `${PRIMARY_COLOR}15`,
     },
+  },
 
-    "& .MuiSvgIcon-root": {
-      fontSize: "19px",
-    },
-  };
+  "& .MuiPickersDay-root.Mui-selected": {
+    backgroundColor: `${PRIMARY_COLOR} !important`,
+    color: "#fff !important",
+    fontWeight: 600,
+  },
 
-  // ============================================================
+  "& .MuiPickersDay-root.Mui-selected:hover": {
+    backgroundColor: `${PRIMARY_COLOR} !important`,
+    color: "#fff !important",
+  },
 
-  // DATE PICKER POPUP
+  "& .MuiPickersDay-root.MuiPickersDay-today": {
+    border: `1px solid ${PRIMARY_COLOR}`,
+  },
 
-  // ============================================================
+  "& .MuiPickersDay-root.Mui-disabled": {
+    color: `${SECONDARY_TEXT} !important`,
+    opacity: 0.65,
+  },
 
-  const datePickerPopupSx = {
-    "& .MuiPaper-root": {
-      backgroundColor: PAPER_COLOR,
+  "& .MuiPickersLayout-actionBar": {
+    padding: "8px 16px",
+  },
 
-      borderRadius: "10px",
-    },
+  "& .MuiPickersLayout-actionBar button": {
+    color: `${PRIMARY_COLOR} !important`,
+    fontSize: "12px",
+    fontWeight: 600,
+    textTransform: "none",
+  },
 
-    "& .MuiPickersCalendarHeader-root": {
-      color: TEXT_COLOR,
-    },
+  "& .MuiSvgIcon-root": {
+    color: PRIMARY_COLOR,
+  },
 
-    "& .MuiPickersCalendarHeader-label": {
-      color: TEXT_COLOR,
+  "& .MuiPickersMonth-monthButton": {
+    color: TEXT_COLOR,
+    borderRadius: "8px",
+  },
 
-      fontWeight: 600,
+  "& .MuiPickersMonth-monthButton.Mui-selected": {
+    backgroundColor: `${PRIMARY_COLOR} !important`,
+    color: "#fff !important",
+  },
 
-      fontSize: "13px",
-    },
+  "& .MuiPickersYear-yearButton": {
+    color: TEXT_COLOR,
+    borderRadius: "8px",
+  },
 
-    "& .MuiPickersCalendarHeader-switchViewButton": {
-      color: PRIMARY_COLOR,
-    },
+  "& .MuiPickersYear-yearButton.Mui-selected": {
+    backgroundColor: `${PRIMARY_COLOR} !important`,
+    color: "#fff !important",
+  },
+};
 
-    "& .MuiPickersArrowSwitcher-button": {
-      color: PRIMARY_COLOR,
-    },
-
-    "& .MuiDayCalendar-weekDayLabel": {
-      color: SECONDARY_TEXT,
-
-      fontSize: "11px",
-    },
-
-    "& .MuiPickersDay-root": {
-      color: TEXT_COLOR,
-
-      fontSize: "12px",
-    },
-
-    "& .MuiPickersDay-root.Mui-selected": {
-      backgroundColor: `${PRIMARY_COLOR} !important`,
-
-      color: "#fff !important",
-    },
-
-    "& .MuiPickersDay-root.Mui-selected:hover": {
-      backgroundColor: `${PRIMARY_COLOR} !important`,
-
-      color: "#fff !important",
-    },
-
-    "& .MuiPickersDay-root.MuiPickersDay-today": {
-      borderColor: PRIMARY_COLOR,
-    },
-
-    "& .MuiPickersLayout-actionBar button": {
-      color: `${PRIMARY_COLOR} !important`,
-
-      fontSize: "12px",
-    },
-
-    "& .MuiSvgIcon-root": {
-      color: PRIMARY_COLOR,
-    },
-
-    "& .MuiPickersMonth-monthButton": {
-      color: TEXT_COLOR,
-    },
-
-    "& .MuiPickersMonth-monthButton.Mui-selected": {
-      backgroundColor: `${PRIMARY_COLOR} !important`,
-
-      color: "#fff !important",
-    },
-
-    "& .MuiPickersYear-yearButton": {
-      color: TEXT_COLOR,
-    },
-
-    "& .MuiPickersYear-yearButton.Mui-selected": {
-      backgroundColor: `${PRIMARY_COLOR} !important`,
-
-      color: "#fff !important",
-    },
-  };
 
   // ============================================================
 
@@ -1263,6 +1324,9 @@ export default function ScheduleForm({
 
           <Grid size={{ xs: 6, sm: 6, md: 3 }}>
             <DatePicker
+           slots={{
+  openPickerIcon: CalendarMonthRoundedIcon,
+}}
               label="Start Date"
               format="DD-MM-YYYY"
               value={formData?.startDate ? dayjs(formData.startDate) : null}
@@ -1277,6 +1341,7 @@ export default function ScheduleForm({
                 clearError("endDate");
               }}
               slotProps={{
+                
                 textField: {
                   fullWidth: true,
 
@@ -1316,6 +1381,9 @@ export default function ScheduleForm({
 
           <Grid size={{ xs: 6, sm: 6, md: 3 }}>
             <DatePicker
+            slots={{
+  openPickerIcon: CalendarMonthRoundedIcon,
+}}
               label="End Date"
               format="DD-MM-YYYY"
               value={formData?.endDate ? dayjs(formData.endDate) : null}

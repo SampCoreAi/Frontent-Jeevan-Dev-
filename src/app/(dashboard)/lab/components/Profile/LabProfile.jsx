@@ -21,6 +21,7 @@ import {
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import DrawOutlinedIcon from "@mui/icons-material/DrawOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
@@ -51,6 +52,7 @@ const createDefaultDays = () =>
   }));
 
 const createDefaultForm = () => ({
+  bio: "",
   slotDurationMinutes: 30,
   isOpen: true,
   days: createDefaultDays(),
@@ -225,6 +227,16 @@ function SectionTitle({ icon, title, subtitle, action }) {
             borderRadius: "9px",
             color: "#08785E",
             bgcolor: "#EAF6F1",
+            "& > svg": {
+              display: "block",
+              width: 22,
+              height: 22,
+              flexShrink: 0,
+              color: "#08785E",
+            },
+            "& > svg path": {
+              fill: "currentColor",
+            },
           }}
         >
           {icon}
@@ -261,7 +273,7 @@ function SectionTitle({ icon, title, subtitle, action }) {
   );
 }
 
-function LabBrandingCard({ type, imageUrl, onUpload }) {
+function LabBrandingCard({ type, imageUrl, onUpload, editable }) {
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -277,7 +289,7 @@ function LabBrandingCard({ type, imageUrl, onUpload }) {
   const handleSelect = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file || uploading) return;
+    if (!file || uploading || !editable) return;
 
     setError("");
     const validationError = await validateBrandingImage(file, type);
@@ -366,7 +378,7 @@ function LabBrandingCard({ type, imageUrl, onUpload }) {
         />
         <Button
           variant="outlined"
-          disabled={uploading}
+          disabled={uploading || !editable}
           onClick={() => inputRef.current?.click()}
           startIcon={
             uploading ? (
@@ -401,9 +413,11 @@ function LabBrandingCard({ type, imageUrl, onUpload }) {
 export default function LabProfile() {
   const [form, setForm] = useState(createDefaultForm);
   const [branding, setBranding] = useState({ logo: "", signature: "" });
+  const savedValues = useRef(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState(null);
@@ -441,7 +455,7 @@ export default function LabProfile() {
           throw new Error("Lab profile data was not found.");
         }
 
-        setBranding({
+        const loadedBranding = {
           logo: getBrandingUrl(
             findBrandingValue(data, [
               "lab_logo_url",
@@ -460,7 +474,8 @@ export default function LabProfile() {
               "signature",
             ]),
           ),
-        });
+        };
+        setBranding(loadedBranding);
 
         const workingHours = data.working_hours || {};
 
@@ -492,15 +507,12 @@ export default function LabProfile() {
             }))
           : [];
 
-        setBulkStartTime(
-          days.find((day) => day.enabled)?.openingTime || "09:00"
-        );
-
-        setBulkEndTime(
-          days.find((day) => day.enabled)?.closingTime || "19:00"
-        );
-
-        setForm({
+        const loadedBulkStartTime =
+          days.find((day) => day.enabled)?.openingTime || "09:00";
+        const loadedBulkEndTime =
+          days.find((day) => day.enabled)?.closingTime || "19:00";
+        const loadedForm = {
+          bio: data.bio ?? "",
           slotDurationMinutes:
             data.slot_duration_minutes ?? 30,
 
@@ -528,7 +540,17 @@ export default function LabProfile() {
           serviceCoverageArea: areas.length
             ? areas
             : [{ city: "", areaLocality: "", pinCode: "" }],
-        });
+        };
+
+        savedValues.current = {
+          form: loadedForm,
+          branding: loadedBranding,
+          bulkStartTime: loadedBulkStartTime,
+          bulkEndTime: loadedBulkEndTime,
+        };
+        setBulkStartTime(loadedBulkStartTime);
+        setBulkEndTime(loadedBulkEndTime);
+        setForm(loadedForm);
       } catch (err) {
         if (
           err.name !== "CanceledError" &&
@@ -576,10 +598,15 @@ export default function LabProfile() {
       throw new Error("Upload completed, but the server returned no image URL.");
     }
 
-    setBranding((current) => ({
-      ...current,
-      [type]: getBrandingUrl(uploadedPath),
-    }));
+    const uploadedUrl = getBrandingUrl(uploadedPath);
+    const updatedBranding = { ...branding, [type]: uploadedUrl };
+    setBranding(updatedBranding);
+    if (savedValues.current) {
+      savedValues.current = {
+        ...savedValues.current,
+        branding: updatedBranding,
+      };
+    }
     setSuccess(
       `${type === "logo" ? "Lab logo" : "Lab signature"} uploaded successfully.`,
     );
@@ -685,6 +712,8 @@ export default function LabProfile() {
   };
 
   const handleSave = async () => {
+    if (!isEditing) return;
+
     setError("");
     setSuccess("");
 
@@ -738,6 +767,7 @@ export default function LabProfile() {
     }
 
     const payload = {
+      bio: form.bio.trim(),
       slotDurationMinutes,
 
       workingHours: {
@@ -769,6 +799,16 @@ export default function LabProfile() {
       setSuccess(
         response.data?.message || "Lab profile settings saved successfully."
       );
+      const savedForm = { ...form, bio: form.bio.trim() };
+      setForm(savedForm);
+      savedValues.current = {
+        form: savedForm,
+        branding,
+        bulkStartTime,
+        bulkEndTime,
+      };
+      setIsEditing(false);
+      setEditingDay(null);
     } catch (err) {
       setError(
         err?.response?.data?.message ||
@@ -778,6 +818,19 @@ export default function LabProfile() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    const saved = savedValues.current;
+    if (saved) {
+      setForm(saved.form);
+      setBranding(saved.branding);
+      setBulkStartTime(saved.bulkStartTime);
+      setBulkEndTime(saved.bulkEndTime);
+    }
+    setIsEditing(false);
+    setEditingDay(null);
+    setError("");
   };
 
   const services = [
@@ -852,12 +905,14 @@ export default function LabProfile() {
                 type="logo"
                 imageUrl={branding.logo}
                 onUpload={handleBrandingUpload}
+                editable={isEditing}
               />
 
               <LabBrandingCard
                 type="signature"
                 imageUrl={branding.signature}
                 onUpload={handleBrandingUpload}
+                editable={isEditing}
               />
             </Box>
 
@@ -884,6 +939,7 @@ export default function LabProfile() {
                   type="number"
                   size="small"
                   value={form.slotDurationMinutes}
+                  disabled={!isEditing}
                   inputProps={{ min: 1 }}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -899,6 +955,7 @@ export default function LabProfile() {
                   type="time"
                   size="small"
                   value={bulkStartTime}
+                  disabled={!isEditing}
                   onChange={(event) =>
                     setBulkStartTime(event.target.value)
                   }
@@ -910,6 +967,7 @@ export default function LabProfile() {
                   type="time"
                   size="small"
                   value={bulkEndTime}
+                  disabled={!isEditing}
                   onChange={(event) =>
                     setBulkEndTime(event.target.value)
                   }
@@ -919,6 +977,7 @@ export default function LabProfile() {
                 <Button
                   variant="outlined"
                   onClick={applyHoursToAllDays}
+                  disabled={!isEditing}
                   sx={{
                     minHeight: 40,
                     borderRadius: "8px",
@@ -984,6 +1043,7 @@ export default function LabProfile() {
                         <Switch
                           size="small"
                           checked={day.enabled}
+                          disabled={!isEditing}
                           onChange={(event) =>
                             updateDay(
                               index,
@@ -1005,6 +1065,7 @@ export default function LabProfile() {
 
                         <Button
                           size="small"
+                          disabled={!isEditing}
                           onClick={() =>
                             setEditingDay((current) =>
                               current === day.day ? null : day.day
@@ -1037,7 +1098,7 @@ export default function LabProfile() {
                           type="time"
                           size="small"
                           value={day.openingTime}
-                          disabled={!day.enabled}
+                          disabled={!isEditing || !day.enabled}
                           onChange={(event) =>
                             updateDay(
                               index,
@@ -1053,7 +1114,7 @@ export default function LabProfile() {
                           type="time"
                           size="small"
                           value={day.closingTime}
-                          disabled={!day.enabled}
+                          disabled={!isEditing || !day.enabled}
                           onChange={(event) =>
                             updateDay(
                               index,
@@ -1072,6 +1133,30 @@ export default function LabProfile() {
           </Stack>
 
           <Stack spacing={2}>
+            <Paper elevation={0} sx={cardSx}>
+              <SectionTitle
+                icon={<DescriptionOutlinedIcon fontSize="small" />}
+                title="Sub Title"
+                subtitle="Add a short description for your lab."
+              />
+
+              <TextField
+                fullWidth
+                multiline
+                minRows={2}
+                placeholder="Write a short description about your lab"
+                value={form.bio}
+                disabled={!isEditing}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    bio: event.target.value,
+                  }))
+                }
+                sx={inputSx}
+              />
+            </Paper>
+
             <Paper elevation={0} sx={cardSx}>
               <SectionTitle
                 icon={<PeopleAltOutlinedIcon fontSize="small" />}
@@ -1113,6 +1198,7 @@ export default function LabProfile() {
                       checked={Boolean(
                         form.patientServices[service.key]
                       )}
+                      disabled={!isEditing}
                       onChange={(event) =>
                         updateService(
                           service.key,
@@ -1137,6 +1223,7 @@ export default function LabProfile() {
                     variant="outlined"
                     startIcon={<AddRoundedIcon />}
                     onClick={addArea}
+                    disabled={!isEditing}
                     sx={{
                       flexShrink: 0,
                       borderRadius: "8px",
@@ -1197,6 +1284,7 @@ export default function LabProfile() {
                       placeholder="City"
                       size="small"
                       value={area.city}
+                      disabled={!isEditing}
                       onChange={(event) =>
                         updateArea(index, "city", event.target.value)
                       }
@@ -1207,6 +1295,7 @@ export default function LabProfile() {
                       placeholder="Area / Locality"
                       size="small"
                       value={area.areaLocality}
+                      disabled={!isEditing}
                       onChange={(event) =>
                         updateArea(
                           index,
@@ -1221,6 +1310,7 @@ export default function LabProfile() {
                       placeholder="PIN code"
                       size="small"
                       value={area.pinCode}
+                      disabled={!isEditing}
                       inputProps={{
                         maxLength: 6,
                         inputMode: "numeric",
@@ -1237,7 +1327,9 @@ export default function LabProfile() {
 
                     <IconButton
                       aria-label="Remove area"
-                      disabled={form.serviceCoverageArea.length === 1}
+                      disabled={
+                        !isEditing || form.serviceCoverageArea.length === 1
+                      }
                       onClick={() => removeArea(index)}
                       sx={{
                         width: 38,
@@ -1294,31 +1386,77 @@ export default function LabProfile() {
             {previewLoading ? "Loading..." : "Preview"}
           </Button>
 
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            disabled={saving}
-            sx={{
-              minWidth: 145,
-              minHeight: 42,
-              borderRadius: "9px",
-              bgcolor: "#07876A",
-              fontSize: 12,
-              fontWeight: 700,
-              textTransform: "none",
-              boxShadow: "none",
-              "&:hover": {
-                bgcolor: "#066F58",
+          {isEditing ? (
+            <>
+              <Button
+                variant="outlined"
+                onClick={handleCancelEdit}
+                disabled={saving}
+                sx={{
+                  minWidth: 100,
+                  minHeight: 42,
+                  borderRadius: "9px",
+                  borderColor: "#07876A",
+                  color: "#07876A",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  textTransform: "none",
+                }}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                variant="contained"
+                onClick={handleSave}
+                disabled={saving}
+                sx={{
+                  minWidth: 145,
+                  minHeight: 42,
+                  borderRadius: "9px",
+                  bgcolor: "#07876A",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  textTransform: "none",
+                  boxShadow: "none",
+                  "&:hover": {
+                    bgcolor: "#066F58",
+                    boxShadow: "none",
+                  },
+                }}
+              >
+                {saving ? (
+                  <CircularProgress size={19} color="inherit" />
+                ) : (
+                  "Save changes"
+                )}
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="contained"
+              onClick={() => {
+                setError("");
+                setIsEditing(true);
+              }}
+              sx={{
+                minWidth: 120,
+                minHeight: 42,
+                borderRadius: "9px",
+                bgcolor: "#07876A",
+                fontSize: 12,
+                fontWeight: 700,
+                textTransform: "none",
                 boxShadow: "none",
-              },
-            }}
-          >
-            {saving ? (
-              <CircularProgress size={19} color="inherit" />
-            ) : (
-              "Save changes"
-            )}
-          </Button>
+                "&:hover": {
+                  bgcolor: "#066F58",
+                  boxShadow: "none",
+                },
+              }}
+            >
+              Edit
+            </Button>
+          )}
         </Stack>
       </Box>
 
