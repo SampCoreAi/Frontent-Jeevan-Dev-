@@ -508,6 +508,7 @@ useEffect(() => {
       technicians={technicians}
       onAssignTechnician={assignTechnician}
       onCreateRequest={createLabRequest}
+      lab={profile}
       requestOnlyPatient
       onCreateReport={(request) => router.push(`/lab/pages/requests/${request.id}/report`)}
     />

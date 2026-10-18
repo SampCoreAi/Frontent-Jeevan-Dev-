@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Tooltip } from "@mui/material";
+import api from "../../../../utils/axiosInstance";
 
 import {
   Alert,
@@ -206,6 +207,8 @@ export default function LabRequests({
   requestOnlyPatient = false,
 
   onCreateReport,
+
+  lab = {},
 }) {
   const theme = useTheme();
 
@@ -230,6 +233,26 @@ export default function LabRequests({
   const [uploadError, setUploadError] = useState("");
 
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+
+  const [invoiceRequest, setInvoiceRequest] = useState(null);
+
+  const invoiceBillRef = useRef(null);
+
+  const [invoiceDraft, setInvoiceDraft] = useState({
+    rates: {},
+    discountAmount: "",
+    otherCharges: "",
+    paymentMode: "",
+    amountReceived: "",
+  });
+
+  const [invoiceSaving, setInvoiceSaving] = useState(false);
+
+  const [invoiceError, setInvoiceError] = useState("");
+
+  const [invoiceSuccess, setInvoiceSuccess] = useState("");
+
+  const [createdInvoice, setCreatedInvoice] = useState({});
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -283,6 +306,142 @@ export default function LabRequests({
           Number(getReportRequestId(report)) === Number(uploadRequest.id),
       )
     : null;
+
+  const openInvoice = (request) => {
+    const testList = Array.isArray(request?.requested_tests)
+      ? request.requested_tests
+      : [];
+    setInvoiceRequest(request);
+    setInvoiceDraft({
+      rates: Object.fromEntries(testList.map((_, index) => [index, ""])),
+      discountAmount: "",
+      otherCharges: "",
+      paymentMode: "",
+      amountReceived: "",
+    });
+    setInvoiceError("");
+    setInvoiceSuccess("");
+    setCreatedInvoice({});
+  };
+
+  const closeInvoice = () => {
+    if (invoiceSaving) return;
+    setInvoiceRequest(null);
+    setInvoiceError("");
+    setInvoiceSuccess("");
+    setCreatedInvoice({});
+  };
+
+  const handleCreateInvoice = async () => {
+    if (!invoiceRequest?.id) {
+      setInvoiceError("Lab order ID is missing.");
+      return;
+    }
+
+    const requestedTests = Array.isArray(invoiceRequest.requested_tests)
+      ? invoiceRequest.requested_tests
+      : [];
+    if (!requestedTests.length) {
+      setInvoiceError("No requested tests are available for this invoice.");
+      return;
+    }
+    const testCharges = requestedTests.map((test, index) => ({
+      test_code: typeof test === "string" ? test : test.test_code || test.test_name,
+      rate: Number(invoiceDraft.rates[index]),
+    }));
+
+    if (
+      testCharges.some(
+        (test, index) =>
+          !test.test_code ||
+          invoiceDraft.rates[index] === "" ||
+          !Number.isFinite(test.rate) ||
+          test.rate < 0
+      )
+    ) {
+      setInvoiceError("Enter a valid rate for every requested test.");
+      return;
+    }
+
+    const discountAmount = Number(invoiceDraft.discountAmount);
+    const otherCharges = Number(invoiceDraft.otherCharges);
+    const amountReceived = Number(invoiceDraft.amountReceived);
+
+    if (
+      !invoiceDraft.paymentMode.trim() ||
+      invoiceDraft.amountReceived === "" ||
+      invoiceDraft.discountAmount === "" ||
+      invoiceDraft.otherCharges === "" ||
+      !Number.isFinite(discountAmount) ||
+      discountAmount < 0 ||
+      !Number.isFinite(otherCharges) ||
+      otherCharges < 0 ||
+      !Number.isFinite(amountReceived) ||
+      amountReceived < 0
+    ) {
+      setInvoiceError("Enter valid discount, other charges, payment mode and amount received.");
+      return;
+    }
+
+    if (!invoiceBillRef.current) {
+      setInvoiceError("Invoice preview is not ready. Please try again.");
+      return;
+    }
+
+    try {
+      setInvoiceSaving(true);
+      setInvoiceError("");
+      setInvoiceSuccess("");
+
+      const html2pdf = (await import("html2pdf.js")).default;
+      const pdfBlob = await html2pdf()
+        .set({
+          margin: 0,
+          filename: `invoice-${invoiceRequest.order_id || invoiceRequest.id}.pdf`,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#ffffff",
+            scrollX: 0,
+            scrollY: 0,
+          },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          pagebreak: { mode: ["css", "legacy"] },
+        })
+        .from(invoiceBillRef.current)
+        .outputPdf("blob");
+
+      const invoicePdf = new File(
+        [pdfBlob],
+        `invoice-${invoiceRequest.order_id || invoiceRequest.id}.pdf`,
+        { type: "application/pdf" }
+      );
+      const formData = new FormData();
+      formData.append("lab_order_id", String(invoiceRequest.id));
+      formData.append("test_charges", JSON.stringify(testCharges));
+      formData.append("discount_amount", String(discountAmount));
+      formData.append("invoicePdf", invoicePdf);
+      formData.append("payment_mode", invoiceDraft.paymentMode.trim());
+      formData.append("amount_received", String(amountReceived));
+      formData.append("other_charges", String(otherCharges));
+
+      const response = await api.post("/api/labs/invoices", formData);
+
+      if (response.data?.success === false) {
+        throw new Error(response.data?.message || "Invoice could not be created.");
+      }
+
+      setCreatedInvoice(response.data?.data || {});
+      setInvoiceSuccess(response.data?.message || "Invoice created successfully.");
+    } catch (error) {
+      setInvoiceError(
+        error.response?.data?.message || error.message || "Invoice could not be created."
+      );
+    } finally {
+      setInvoiceSaving(false);
+    }
+  };
 
   const isCancelled = (request) =>
     String(request?.status || "").toUpperCase() === "CANCELLED";
@@ -890,7 +1049,7 @@ height:"85vh",
                               7: "Technician",
                             }[Number(request.created_by_role_id)] || "Unknown"}
 
-                            {" · "}
+                            {" Â· "}
 
                             {request.created_by_name || "-"}
                           </Typography>
@@ -1392,6 +1551,19 @@ height:"85vh",
         </MenuItem>
 
         <MenuItem
+          disabled={!uploadRequest || isCancelled(uploadRequest)}
+          onClick={() => {
+            openInvoice(uploadRequest);
+            closeActions();
+          }}
+        >
+          <DescriptionOutlinedIcon
+            sx={{ mr: 1, fontSize: 17, color: "#14734F" }}
+          />
+          Create Invoice
+        </MenuItem>
+
+        <MenuItem
           onClick={openUpload}
           disabled={uploadRequest ? isCancelled(uploadRequest) : false}
         >
@@ -1585,6 +1757,144 @@ height:"85vh",
       </Dialog>
 
       <Dialog
+        open={Boolean(invoiceRequest)}
+        onClose={closeInvoice}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          Invoice â€” {invoiceRequest?.order_id || "â€”"}
+        </DialogTitle>
+        <DialogContent dividers>
+          {invoiceRequest && (
+            <Stack spacing={2}>
+              {invoiceError && <Alert severity="error">{invoiceError}</Alert>}
+              {invoiceSuccess && <Alert severity="success">{invoiceSuccess}</Alert>}
+
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    sm: "repeat(2, minmax(0, 1fr))",
+                  },
+                  gap: 1.5,
+                }}
+              >
+                {(invoiceRequest.requested_tests || []).map((test, index) => {
+                  const testCode =
+                    typeof test === "string"
+                      ? test
+                      : test.test_code || test.test_name || `Test ${index + 1}`;
+                  return (
+                    <TextField
+                      key={`${testCode}-${index}`}
+                      label={`Rate — ${testCode}`}
+                      type="number"
+                      size="small"
+                      value={invoiceDraft.rates[index] ?? ""}
+                      inputProps={{ min: 0, step: "0.01" }}
+                      onChange={(event) =>
+                        setInvoiceDraft((current) => ({
+                          ...current,
+                          rates: {
+                            ...current.rates,
+                            [index]: event.target.value,
+                          },
+                        }))
+                      }
+                    />
+                  );
+                })}
+                <TextField
+                  label="Discount amount"
+                  type="number"
+                  size="small"
+                  value={invoiceDraft.discountAmount}
+                  inputProps={{ min: 0, step: "0.01" }}
+                  onChange={(event) =>
+                    setInvoiceDraft((current) => ({
+                      ...current,
+                      discountAmount: event.target.value,
+                    }))
+                  }
+                />
+                <TextField
+                  label="Other charges"
+                  type="number"
+                  size="small"
+                  value={invoiceDraft.otherCharges}
+                  inputProps={{ min: 0, step: "0.01" }}
+                  onChange={(event) =>
+                    setInvoiceDraft((current) => ({
+                      ...current,
+                      otherCharges: event.target.value,
+                    }))
+                  }
+                />
+                <TextField
+                  label="Payment mode"
+                  size="small"
+                  value={invoiceDraft.paymentMode}
+                  onChange={(event) =>
+                    setInvoiceDraft((current) => ({
+                      ...current,
+                      paymentMode: event.target.value,
+                    }))
+                  }
+                />
+                <TextField
+                  label="Amount received"
+                  type="number"
+                  size="small"
+                  value={invoiceDraft.amountReceived}
+                  inputProps={{ min: 0, step: "0.01" }}
+                  onChange={(event) =>
+                    setInvoiceDraft((current) => ({
+                      ...current,
+                      amountReceived: event.target.value,
+                    }))
+                  }
+                />
+              </Box>
+
+              <LabBill
+                order={invoiceRequest}
+                lab={lab}
+                billRef={invoiceBillRef}
+                invoice={{
+                  test_charges: (invoiceRequest.requested_tests || []).map(
+                    (test, index) => ({
+                      test_code:
+                        typeof test === "string"
+                          ? test
+                          : test.test_code || test.test_name,
+                      rate: invoiceDraft.rates[index],
+                    })
+                  ),
+                  discount_amount: invoiceDraft.discountAmount,
+                  other_charges: invoiceDraft.otherCharges,
+                  payment_mode: invoiceDraft.paymentMode,
+                  amount_received: invoiceDraft.amountReceived,
+                  ...createdInvoice,
+                }}
+              />
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeInvoice} disabled={invoiceSaving}>Close</Button>
+          <Button
+            variant="contained"
+            onClick={handleCreateInvoice}
+            disabled={invoiceSaving || Boolean(invoiceSuccess)}
+          >
+            {invoiceSaving ? <CircularProgress size={20} color="inherit" /> : "Create invoice"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
         open={deleteDialogOpen}
         onClose={() => {
           setDeleteDialogOpen(false);
@@ -1732,7 +2042,7 @@ height:"85vh",
                   mt: 0.3,
                 }}
               >
-                #{uploadRequest?.id} ·{" "}
+                #{uploadRequest?.id} Â·{" "}
                 {uploadRequest?.patient_name || "Patient"}
               </Typography>
             </Box>
@@ -1803,7 +2113,7 @@ height:"85vh",
                 color: "#84959B",
               }}
             >
-              PDF files only · Maximum file size 10 MB
+              PDF files only Â· Maximum file size 10 MB
             </Typography>
           </DialogContent>
 

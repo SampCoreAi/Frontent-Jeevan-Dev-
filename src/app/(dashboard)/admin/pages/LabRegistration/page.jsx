@@ -197,7 +197,7 @@ export default function Registration() {
   open={Boolean(selectedLabId)}
   labId={selectedLabId}
   onClose={() => setSelectedLabId(null)}
-  onActionSuccess={fetchRegistrations}
+  onActionSuccess={() => fetchRegistrations()}
 />
 
       <Snackbar

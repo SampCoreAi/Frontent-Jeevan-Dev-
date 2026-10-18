@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import api from "../../../../../utils/axiosInstance";
 
 import {
@@ -11,6 +11,7 @@ import {
   IconButton,
   Paper,
   Stack,
+  Snackbar,
   Switch,
   TextField,
   Typography,
@@ -25,6 +26,7 @@ import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 
 import LabRegistrationPreview from "./LabRegistrationPreview";
 
@@ -95,6 +97,114 @@ const greenSwitchSx = {
   },
 };
 
+const BRANDING_RULES = {
+  logo: {
+    folder: "lab-logo",
+    title: "Upload clinic logo",
+    types: ["image/png", "image/webp"],
+    accept: "image/png,image/webp",
+    maxSize: 500 * 1024,
+    width: 500,
+    height: 500,
+    details: "PNG or WebP · 500 × 500 px · Max 500 KB",
+  },
+  signature: {
+    folder: "lab-signature",
+    title: "Upload your signature",
+    types: ["image/png"],
+    accept: "image/png",
+    maxSize: 200 * 1024,
+    width: 600,
+    height: 200,
+    details: "Transparent PNG · 600 × 200 px · Max 200 KB",
+  },
+};
+
+const getBrandingUrl = (value) => {
+  if (typeof value !== "string" || !value.trim()) return "";
+  const bucketUrl = (process.env.NEXT_PUBLIC_S3_BUCKET_URL || "").replace(
+    /\/+$/,
+    "",
+  );
+  const rawValue = value.trim();
+  let objectPath;
+  let query = "";
+
+  try {
+    const parsed = new URL(rawValue, "https://lab-profile-image.invalid");
+    objectPath = parsed.pathname;
+    query = parsed.search;
+  } catch {
+    return "";
+  }
+
+  const key = objectPath.replace(/^\/+/, "");
+  return key && bucketUrl ? `${bucketUrl}/${key}${query}` : "";
+};
+
+const findBrandingValue = (profile, keys) => {
+  for (const key of keys) {
+    const value = profile?.[key];
+    if (typeof value === "string" && value.trim()) return value;
+  }
+  return "";
+};
+
+async function validateBrandingImage(file, type) {
+  const rule = BRANDING_RULES[type];
+  if (!rule.types.includes(file.type)) {
+    return type === "logo"
+      ? "Choose a PNG or WebP image for the logo."
+      : "Choose a PNG image for the signature.";
+  }
+
+  if (file.size > rule.maxSize) {
+    return `Image must be ${type === "logo" ? "500 KB" : "200 KB"} or smaller.`;
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = () => reject(new Error("Image could not be opened."));
+      image.src = objectUrl;
+    });
+
+    if (image.width !== rule.width || image.height !== rule.height) {
+      return `Image dimensions must be ${rule.width} × ${rule.height} px.`;
+    }
+
+    if (type === "signature") {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) return "Could not validate the signature image.";
+
+      context.drawImage(image, 0, 0);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+      const alphaAt = (x, y) =>
+        pixels.data[(y * canvas.width + x) * 4 + 3];
+      const corners = [
+        alphaAt(0, 0),
+        alphaAt(canvas.width - 1, 0),
+        alphaAt(0, canvas.height - 1),
+        alphaAt(canvas.width - 1, canvas.height - 1),
+      ];
+      if (corners.some((alpha) => alpha !== 0)) {
+        return "Signature must have a transparent background.";
+      }
+    }
+  } catch {
+    return "Could not verify this image. Choose another file.";
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+
+  return "";
+}
+
 function SectionTitle({ icon, title, subtitle, action }) {
   return (
     <Stack
@@ -151,41 +261,146 @@ function SectionTitle({ icon, title, subtitle, action }) {
   );
 }
 
-function BrandPlaceholder({ title, icon, description }) {
+function LabBrandingCard({ type, imageUrl, onUpload }) {
+  const inputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const [imageFailed, setImageFailed] = useState(false);
+  const rule = BRANDING_RULES[type];
+  const title = type === "logo" ? "Lab logo" : "Lab signature";
+  const previewUrl = imageFailed ? "" : imageUrl;
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [imageUrl]);
+
+  const handleSelect = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || uploading) return;
+
+    setError("");
+    const validationError = await validateBrandingImage(file, type);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setUploading(true);
+    try {
+      await onUpload(type, file);
+    } catch (uploadError) {
+      setError(
+        uploadError.message || `Unable to upload ${title.toLowerCase()}.`,
+      );
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <Paper elevation={0} sx={cardSx}>
       <SectionTitle
-        icon={icon}
+        icon={
+          type === "logo" ? (
+            <ImageOutlinedIcon fontSize="small" />
+          ) : (
+            <DrawOutlinedIcon fontSize="small" />
+          )
+        }
         title={title}
-        subtitle={description}
+        subtitle="This will appear on reports and documents."
       />
 
       <Box
         sx={{
           minHeight: 150,
-          display: "grid",
-          placeItems: "center",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 0.75,
           border: "1px dashed #C9D8D2",
           borderRadius: "10px",
           bgcolor: "#FBFDFC",
-          color: "#A0AEA8",
           textAlign: "center",
           p: 2,
         }}
       >
-        <Stack alignItems="center" spacing={0.8}>
-          {icon}
-          <Typography sx={{ fontSize: 11, color: "#84918C" }}>
-            Available soon
-          </Typography>
-        </Stack>
+        {previewUrl ? (
+          <Box
+            component="img"
+            src={previewUrl}
+            alt={title}
+            sx={{
+              maxWidth: "100%",
+              width: type === "logo" ? 120 : 240,
+              height: type === "logo" ? 100 : 80,
+              objectFit: "contain",
+            }}
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <>
+            <CloudUploadOutlinedIcon sx={{ fontSize: 40, color: "#64748B" }} />
+            <Typography sx={{ fontSize: 13, fontWeight: 700 }}>
+              {rule.title}
+            </Typography>
+            <Typography sx={{ fontSize: 12, color: "#64748B" }}>
+              {rule.details}
+            </Typography>
+            <Typography sx={{ fontSize: 11, color: "#64748B" }}>
+              {type === "logo"
+                ? "Transparent background preferred"
+                : "Use a clear signature on transparent background"}
+            </Typography>
+          </>
+        )}
+
+        <input
+          ref={inputRef}
+          type="file"
+          accept={rule.accept}
+          hidden
+          onChange={handleSelect}
+        />
+        <Button
+          variant="outlined"
+          disabled={uploading}
+          onClick={() => inputRef.current?.click()}
+          startIcon={
+            uploading ? (
+              <CircularProgress size={16} />
+            ) : (
+              <CloudUploadOutlinedIcon />
+            )
+          }
+          sx={{
+            mt: previewUrl ? 0 : 0.5,
+            color: "#07876A",
+            borderColor: "#07876A",
+            borderRadius: 1.5,
+            textTransform: "none",
+            fontWeight: 600,
+          }}
+        >
+          {uploading
+            ? "Uploading..."
+            : `${previewUrl ? "Change" : "Choose"} Image`}
+        </Button>
       </Box>
+      {error && (
+        <Alert severity="error" sx={{ mt: 1, py: 0 }}>
+          {error}
+        </Alert>
+      )}
     </Paper>
   );
 }
 
 export default function LabProfile() {
   const [form, setForm] = useState(createDefaultForm);
+  const [branding, setBranding] = useState({ logo: "", signature: "" });
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -225,6 +440,27 @@ export default function LabProfile() {
         if (!data || typeof data !== "object") {
           throw new Error("Lab profile data was not found.");
         }
+
+        setBranding({
+          logo: getBrandingUrl(
+            findBrandingValue(data, [
+              "lab_logo_url",
+              "logo_url",
+              "lab_logo",
+              "lab_logo_path",
+              "logo",
+            ]),
+          ),
+          signature: getBrandingUrl(
+            findBrandingValue(data, [
+              "lab_signature_url",
+              "signature_url",
+              "lab_signature",
+              "lab_signature_path",
+              "signature",
+            ]),
+          ),
+        });
 
         const workingHours = data.working_hours || {};
 
@@ -315,6 +551,40 @@ export default function LabProfile() {
 
     return () => controller.abort();
   }, []);
+
+  const handleBrandingUpload = async (type, file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await api.post(
+      `/api/licenseFile/imageUpload?folder=${BRANDING_RULES[type].folder}`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    if (response.data?.success === false) {
+      throw new Error(response.data?.message || "Image upload failed.");
+    }
+
+    const uploaded = response.data?.data ?? response.data;
+    const uploadedPath =
+      uploaded?.fileUrl ||
+      uploaded?.url ||
+      uploaded?.path ||
+      uploaded?.key ||
+      (typeof uploaded === "string" ? uploaded : "");
+    if (!uploadedPath) {
+      throw new Error("Upload completed, but the server returned no image URL.");
+    }
+
+    setBranding((current) => ({
+      ...current,
+      [type]: getBrandingUrl(uploadedPath),
+    }));
+    setSuccess(
+      `${type === "logo" ? "Lab logo" : "Lab signature"} uploaded successfully.`,
+    );
+    setError("");
+  };
 
   // Fetch registration data when Preview is clicked.
   const handlePreview = async () => {
@@ -556,16 +826,6 @@ export default function LabProfile() {
           </Alert>
         )}
 
-        {success && (
-          <Alert
-            severity="success"
-            onClose={() => setSuccess("")}
-            sx={{ mb: 2 }}
-          >
-            {success}
-          </Alert>
-        )}
-
         <Box
           sx={{
             display: "grid",
@@ -588,16 +848,16 @@ export default function LabProfile() {
                 gap: 2,
               }}
             >
-              <BrandPlaceholder
-                title="Lab logo"
-                icon={<ImageOutlinedIcon fontSize="small" />}
-                description="This will appear on reports and documents."
+              <LabBrandingCard
+                type="logo"
+                imageUrl={branding.logo}
+                onUpload={handleBrandingUpload}
               />
 
-              <BrandPlaceholder
-                title="Lab signature"
-                icon={<DrawOutlinedIcon fontSize="small" />}
-                description="This will appear on reports and documents."
+              <LabBrandingCard
+                type="signature"
+                imageUrl={branding.signature}
+                onUpload={handleBrandingUpload}
               />
             </Box>
 
@@ -1067,6 +1327,22 @@ export default function LabProfile() {
         registration={previewData}
         onClose={() => setPreviewOpen(false)}
       />
+
+      <Snackbar
+        open={Boolean(success)}
+        autoHideDuration={3500}
+        onClose={() => setSuccess("")}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity="success"
+          variant="filled"
+          onClose={() => setSuccess("")}
+          sx={{ width: "100%" }}
+        >
+          {success}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

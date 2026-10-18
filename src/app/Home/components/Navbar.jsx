@@ -455,19 +455,27 @@ export default function Navbar() {
                 xs: "flex",
                 md: "none",
               },
-              width: 38,
-              height: 38,
+              width: 42,
+              height: 42,
               borderRadius: 2,
-              bgcolor: "secondary.light",
-              color: "primary.main",
+              bgcolor: "#EAF7F3",
+              color: "#07876A",
               border: "1px solid",
-              borderColor: "divider",
+              borderColor: "#DDE9E5",
               "&:hover": {
-                bgcolor: "secondary.light",
+                bgcolor: "#DDF2EB",
               },
             }}
           >
-            <MenuRoundedIcon />
+            <MenuRoundedIcon
+              sx={{
+                display: "block",
+                width: 24,
+                height: 24,
+                color: "#07876A",
+                flexShrink: 0,
+              }}
+            />
           </IconButton>
         </Toolbar>
       </AppBar>

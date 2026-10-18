@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { keyframes } from "@mui/system";
@@ -27,6 +27,162 @@ const pulse = keyframes`
     box-shadow: 0 0 0 0 rgba(18, 184, 145, 0);
   }
 `;
+
+const morphIn = keyframes`
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateX(-50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateX(-50%) scale(1);
+  }
+`;
+
+const morphOut = keyframes`
+  from {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateX(-50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateX(-50%) scale(1.08);
+  }
+`;
+
+const MEDICAL_WORDS = [
+  "doctor",
+  "specialist",
+  "dentist",
+  "cardiologist",
+  "pediatrician",
+  "dermatologist",
+  "physician",
+  "therapist",
+];
+
+/**
+ * Text morph: ek word se dusre word me blur-fade hota hai,
+ * aur width smoothly change hoti hai (center preserve rehta hai).
+ */
+function MorphWord({ words = MEDICAL_WORDS, interval = 2600 }) {
+  const [index, setIndex] = useState(0);
+  const [prevIndex, setPrevIndex] = useState(null);
+  const [width, setWidth] = useState(0);
+  const measureRefs = useRef([]);
+
+  // Word cycle
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((current) => {
+        setPrevIndex(current);
+        return (current + 1) % words.length;
+      });
+    }, interval);
+
+    return () => clearInterval(timer);
+  }, [words.length, interval]);
+
+  // Purana word hatao animation ke baad
+  useEffect(() => {
+    if (prevIndex === null) return;
+    const t = setTimeout(() => setPrevIndex(null), 600);
+    return () => clearTimeout(t);
+  }, [prevIndex]);
+
+  // Width measure (current word ke hisaab se)
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = measureRefs.current[index];
+      if (el) setWidth(el.offsetWidth);
+    };
+
+    measure();
+    window.addEventListener("resize", measure);
+
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(measure);
+    }
+
+    return () => window.removeEventListener("resize", measure);
+  }, [index, words]);
+
+ const layerSx = {
+  position: "absolute",
+  top: 0,
+  left: "50%",
+  whiteSpace: "nowrap",
+  lineHeight: "inherit",   // ← ye add karo
+  willChange: "transform, opacity, filter",
+};
+
+  return (
+    <Box
+  component="span"
+  aria-live="polite"
+  sx={{
+    position: "relative",
+    display: "inline-block",
+    verticalAlign: "top",          // bottom → top
+    height: "1.03em",              // h1 ke lineHeight ke barabar
+    lineHeight: "inherit",         // h1 ka lineHeight inherit ho
+    width: width ? `${width}px` : "auto",
+    transition: "width 0.55s cubic-bezier(0.22, 1, 0.36, 1)",
+    whiteSpace: "nowrap",
+  }}
+>
+      {/* Hidden spans: width measure karne ke liye */}
+      {words.map((word, i) => (
+        <Box
+          key={word}
+          component="span"
+          ref={(el) => (measureRefs.current[i] = el)}
+          aria-hidden="true"
+        sx={{
+  position: "absolute",
+  visibility: "hidden",
+  pointerEvents: "none",
+  whiteSpace: "nowrap",
+  lineHeight: "inherit",
+}}
+        >
+          {word}
+        </Box>
+      ))}
+
+      {/* Purana word (bahar jaata hua) */}
+      {prevIndex !== null && (
+        <Box
+          key={`out-${prevIndex}-${index}`}
+          component="span"
+          aria-hidden="true"
+          sx={{
+            ...layerSx,
+            animation: `${morphOut} 0.5s ease forwards`,
+          }}
+        >
+          {words[prevIndex]}
+        </Box>
+      )}
+
+      {/* Naya word (andar aata hua) */}
+      <Box
+        key={`in-${index}`}
+        component="span"
+        sx={{
+          ...layerSx,
+          animation: `${morphIn} 0.55s ease forwards`,
+        }}
+      >
+        {words[index]}
+      </Box>
+    </Box>
+  );
+}
 
 export default function HeroContent() {
   return (
@@ -127,6 +283,7 @@ export default function HeroContent() {
           />
         </Box>
       </Box>
+
       <Typography
         component="h1"
         sx={{
@@ -185,11 +342,10 @@ export default function HeroContent() {
               zIndex: 1,
               userSelect: "none",
               WebkitUserSelect: "none",
-
-             
+              whiteSpace: "nowrap",
             }}
           >
-            right doctor.
+            right <MorphWord />.
           </Box>
         </Box>
       </Typography>
@@ -242,7 +398,7 @@ export default function HeroContent() {
         }}
       >
         Discover verified doctors and specialists near you. Search, compare and
-        book the right care in
+        book the right care in{" "}
         <Box
           component="span"
           sx={{

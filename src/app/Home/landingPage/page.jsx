@@ -5,7 +5,7 @@ import SearchBar from "../components/landing/SearchBar";
 import HeroContent from "../components/landing/HeroContent";
 import JeevanShowcase from "../components/MobileUi/JeevanShowcase";
 import LabBill from "../../(dashboard)/lab/components/LabBill";
-
+import HealthcareSplitRegister from "../components/feature/HealthcareSplitRegister"
 import {
   Box,
   Container,
@@ -492,8 +492,16 @@ export default function Landing() {
       <JeevanShowcase />
       <ElasticLine />
       {/* <AppSvg /> */}
-<LabBill />
+{/* <LabBill /> */}
       <Main />
+      {/* <HealthcareSplitRegister
+  imageSrc="/img/healthcare-team.jpg"
+  hrefs={{
+    doctor: "/doctor-registration",
+    lab: "/lab-registration",
+    pharmacy: "/pharmacy-registration",
+  }}
+/> */}
 <FeedbackCTA />
       <JeevanDevLogo />
 

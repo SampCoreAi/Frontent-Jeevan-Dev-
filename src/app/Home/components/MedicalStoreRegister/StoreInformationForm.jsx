@@ -91,6 +91,7 @@ function Label({ children, optional = false }) {
 
 export default function StoreInformationForm({
   data = {},
+  registrationId,
   onChange,
   onNext,
   loading = false,
@@ -227,6 +228,9 @@ export default function StoreInformationForm({
       }
 
       const payload = {
+        ...(registrationId
+          ? { registrationId: String(registrationId) }
+          : {}),
         licensedTradeName: data.licensedTradeName.trim(),
         legalEntityName: data.legalEntityName.trim(),
         entityType: data.entityType,
@@ -240,21 +244,21 @@ export default function StoreInformationForm({
           state: data.state.trim(),
           pinCode: data.pinCode,
         },
-        signatoryDetails: {
-          fullName: (data.signatoryFullName || "").trim(),
-          designation: (data.signatoryDesignation || "").trim(),
-          email: (data.signatoryEmail || "").trim(),
-          phone: data.signatoryPhone || "",
-         entityPan:
-  data.entityType === "Proprietorship"
-    ? data.personalPan.trim().toUpperCase()
-    : data.entityPan.trim().toUpperCase(),
+      signatoryDetails: {
+  fullName: (data.signatoryFullName || "").trim(),
+  designation: (data.signatoryDesignation || "").trim(),
+  email: (data.signatoryEmail || "").trim(),
+  phone: data.signatoryPhone || "",
 
-personalPan:
+ entityPan:
   data.entityType === "Proprietorship"
-    ? data.personalPan.trim().toUpperCase()
-    : null,
-        },
+    ? (data.personalPan || "").trim().toUpperCase()
+    : (data.entityPan || "").trim().toUpperCase(),
+
+  personalPan: ["Proprietorship", "Partnership"].includes(data.entityType)
+    ? (data.personalPan || "").trim().toUpperCase()
+    : "",
+},
       };
 
       const response = await fetch(
@@ -636,16 +640,14 @@ personalPan:
               numeric: true,
               maxLength: 10,
             })}
-            {data.entityType === "Proprietorship" &&
-              renderTextField({
-                field: "personalPan",
-                label: "Personal PAN",
-                placeholder: "ABCDE1234F",
-                type: "password",
-                helperText: "Optional; provide only if required for verification",
-                optional: true,
-                maxLength: 10,
-              })}
+          {["Proprietorship", "Partnership"].includes(data.entityType) &&
+  renderTextField({
+    field: "personalPan",
+    label: "Personal PAN",
+    placeholder: "Signatory/partner ka PAN",
+    optional: true,
+    maxLength: 10,
+  })}
             {data.entityType &&
               data.entityType !== "Proprietorship" &&
               renderTextField({

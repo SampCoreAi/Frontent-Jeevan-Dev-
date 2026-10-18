@@ -19,7 +19,6 @@ import AccountBalanceOutlinedIcon from "@mui/icons-material/AccountBalanceOutlin
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
-import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import {
   isPharmacyDocumentRequired,
   PHARMACY_DOCUMENTS,
@@ -77,8 +76,24 @@ function formatFileSize(size) {
     : `${(size / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function UploadCard({ document, file, onFileChange, onRemove, error }) {
+function UploadCard({
+  document,
+  file,
+  uploadedDocument,
+  uploading,
+  onFileChange,
+  error,
+}) {
   const inputId = React.useId();
+  const fileName =
+    typeof file === "string"
+      ? file.split(/[\\/]/).pop()
+      : file?.name ||
+        (typeof uploadedDocument === "string"
+          ? uploadedDocument.split(/[\\/]/).pop()
+          : uploadedDocument
+            ? "Uploaded"
+            : "");
 
   return (
     <Box
@@ -153,12 +168,13 @@ function UploadCard({ document, file, onFileChange, onRemove, error }) {
           },
         }}
       >
-        {file?.name ? "Change File" : "Choose File"}
+        {fileName ? "Change File" : "Choose File"}
 
         <input
           id={inputId}
           hidden
           type="file"
+          disabled={uploading}
           accept=".pdf,.jpg,.jpeg,.png"
           onChange={(event) => {
             const selectedFile = event.target.files?.[0];
@@ -168,10 +184,10 @@ function UploadCard({ document, file, onFileChange, onRemove, error }) {
         />
       </Button>
 
-      {file?.name && (
+      {fileName && (
         <Box sx={{ width: "100%", minWidth: 0 }}>
           <Typography
-            title={file.name}
+            title={fileName}
             sx={{
               width: "100%",
               fontSize: "10px",
@@ -181,7 +197,10 @@ function UploadCard({ document, file, onFileChange, onRemove, error }) {
               whiteSpace: "nowrap",
             }}
           >
-            {file.name} · {formatFileSize(file.size)}
+            {fileName}
+            {typeof File !== "undefined" && file instanceof File
+              ? ` · ${formatFileSize(file.size)}`
+              : ""}
           </Typography>
           <Stack
             direction="row"
@@ -189,25 +208,9 @@ function UploadCard({ document, file, onFileChange, onRemove, error }) {
             alignItems="center"
             spacing={0.5}
           >
-            <Typography sx={{ fontSize: "9px", color: C.muted }}>
-              Selected; verification pending
+            <Typography sx={{ fontSize: "9px", color: uploading ? C.muted : C.primary }}>
+              {uploading ? "Uploading..." : "Uploaded successfully"}
             </Typography>
-            <Button
-              size="small"
-              onClick={() => onRemove(document.field)}
-              aria-label={`Remove ${document.label}`}
-              startIcon={<DeleteOutlineRoundedIcon />}
-              sx={{
-                minWidth: 0,
-                p: 0.2,
-                color: C.error,
-                textTransform: "none",
-                fontSize: "9px",
-                "& .MuiButton-startIcon": { mr: 0.25 },
-              }}
-            >
-              Remove
-            </Button>
           </Stack>
         </Box>
       )}
@@ -226,17 +229,20 @@ export default function TaxBankUploadsForm({
   onChange,
   onBack,
   onNext,
+  onUploadDocument,
+  uploadedDocuments = {},
   loading = false,
 }) {
   const [errors, setErrors] = React.useState({});
   const [localFiles, setLocalFiles] = React.useState({});
+  const [uploadingFiles, setUploadingFiles] = React.useState({});
 
   const setField = (field, value) => {
     onChange?.({ [field]: value });
     setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  const handleFileChange = (field, file) => {
+  const handleFileChange = async (field, file) => {
     const duplicate = Object.entries({
       ...data,
       ...localFiles,
@@ -279,17 +285,27 @@ export default function TaxBankUploadsForm({
       return;
     }
 
-    setLocalFiles((prev) => ({ ...prev, [field]: file }));
-    setField(field, file);
-  };
+    if (typeof onUploadDocument !== "function") {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: "Document upload is not available. Please try again.",
+      }));
+      return;
+    }
 
-  const handleRemoveFile = (field) => {
-    setLocalFiles((previous) => {
-      const next = { ...previous };
-      delete next[field];
-      return next;
-    });
-    setField(field, null);
+    setUploadingFiles((previous) => ({ ...previous, [field]: true }));
+    setErrors((previous) => ({ ...previous, [field]: "" }));
+    try {
+      await onUploadDocument(field, file);
+      setLocalFiles((previous) => ({ ...previous, [field]: file }));
+    } catch (error) {
+      setErrors((previous) => ({
+        ...previous,
+        [field]: error.message || "Unable to upload this document.",
+      }));
+    } finally {
+      setUploadingFiles((previous) => ({ ...previous, [field]: false }));
+    }
   };
 
   const requiredDocuments = PHARMACY_DOCUMENTS.map((document) => ({
@@ -301,7 +317,10 @@ export default function TaxBankUploadsForm({
     const nextErrors = {};
 
     requiredDocuments.forEach(({ field, required }) => {
-      if (required && !(localFiles[field] || data[field])) {
+      if (
+        required &&
+        !(localFiles[field] || data[field] || uploadedDocuments[field])
+      ) {
         nextErrors[field] = "Required";
       }
     });
@@ -320,9 +339,9 @@ export default function TaxBankUploadsForm({
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (loading || !validate()) return;
-    onNext?.();
+    await onNext?.();
   };
 
   return (
@@ -559,9 +578,10 @@ export default function TaxBankUploadsForm({
                 <UploadCard
                   document={document}
                   file={localFiles[document.field] || data[document.field]}
+                  uploadedDocument={uploadedDocuments[document.field]}
+                  uploading={Boolean(uploadingFiles[document.field])}
                   error={errors[document.field]}
                   onFileChange={handleFileChange}
-                  onRemove={handleRemoveFile}
                 />
               </Grid>
             ))}

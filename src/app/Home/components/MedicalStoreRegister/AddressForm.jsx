@@ -198,9 +198,9 @@ export default function DrugLicencePharmacistForm({
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (loading || !validate()) return;
-    onNext?.();
+    await onNext?.();
   };
 
   const icon = (Icon) => (

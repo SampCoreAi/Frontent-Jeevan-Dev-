@@ -177,9 +177,9 @@ export default function LicenseBusinessForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (loading || !validate()) return;
-    onNext?.();
+    await onNext?.();
   };
 
   const icon = (Icon) => (

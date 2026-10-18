@@ -192,8 +192,8 @@ const LabsTable = ({
           width: "100%",
 
           maxHeight: {
-            xs: "calc(100vh - 390px)",
-            md: "calc(100vh - 360px)",
+            xs: "calc(100vh - 370px)",
+            md: "calc(100vh - 255px)",
           },
 
           overflowX: "auto",
