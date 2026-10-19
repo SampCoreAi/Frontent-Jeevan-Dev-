@@ -40,9 +40,43 @@ import LabReportPage, {
 
 const ACTIVE_TEMPLATE_PREFIX = "lab-active-report-template-v1";
 
+const normalizeLabProfile = (data = {}) => {
+  const registrationData = data.registration?.registration_data || {};
+  const info = registrationData.labInformation || {};
+  const license = registrationData.licenseBusiness || {};
+  const labAddress = registrationData.labAddress || {};
+  const profile = data.profile || {};
+
+  const address = [
+    labAddress.shopUnitNumber,
+    labAddress.buildingComplexName,
+    labAddress.streetRoadName,
+    labAddress.areaLocality,
+    labAddress.landmark,
+    labAddress.cityTown,
+    labAddress.state,
+    labAddress.pinCode,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return {
+    ...profile,
+    ...data,
+    lab_name: info.diagnosticLabName || profile.lab_name || "",
+    registration_number:
+      license.registrationLicenseNumber || profile.registration_number || "",
+    phone_number: info.labContactPhone || profile.phone_number || "",
+    address: profile.address || address,
+    logo: profile.logo || "",
+    signature: profile.signature || "",
+    bio: profile.bio || "",
+  };
+};
 const normalizeTemplateDetail = (detail, labProfile) => {
   const layout = detail?.layout || {};
   const commonLayout = detail?.commonLayout || layout.commonLayout || {};
+
   return {
     ...detail,
     ...layout,
@@ -53,6 +87,7 @@ const normalizeTemplateDetail = (detail, labProfile) => {
         labProfile?.registration_number || commonLayout.registrationNumber,
       phoneNumber: labProfile?.phone_number || commonLayout.phoneNumber,
       address: labProfile?.address || commonLayout.address,
+      bio: labProfile?.bio || commonLayout.bio,
     },
   };
 };
@@ -94,13 +129,15 @@ const templateMatches = (template, testName) => {
 };
 
 const clonePages = (pages) => structuredClone(pages || []);
-const resolveLogoUrl = (logo) => {
-  if (typeof logo !== "string" || !logo.trim()) return "";
-  try {
-    return new URL(logo, api.defaults.baseURL).toString();
-  } catch {
-    return logo;
-  }
+const S3_BUCKET_URL = (
+  process.env.NEXT_PUBLIC_S3_BUCKET_URL || ""
+).replace(/\/+$/, "");
+
+const resolveLogoUrl = (path) => {
+  if (!path?.trim()) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+
+  return `${S3_BUCKET_URL}/${path.replace(/^\/+/, "")}`;
 };
 
 export default function LabReportComposer({ requestId }) {
@@ -137,7 +174,7 @@ export default function LabReportComposer({ requestId }) {
         ]);
         const profileResponse = await api.get("/api/labs/getLabProfile");
         const requestData = requestResponse.data?.data || {};
-        const labProfile = profileResponse.data?.data || {};
+        const labProfile = normalizeLabProfile(profileResponse.data?.data || {});
         const summaries = templatesResponse.data?.data || [];
         const testName =
           getTests(
@@ -630,6 +667,9 @@ export default function LabReportComposer({ requestId }) {
     common.logo ||
     "";
   const labLogo = resolveLogoUrl(labLogoPath);
+  const labSignature = resolveLogoUrl(
+  labProfile?.signature || common.signature || common.brandSignature || "",
+);
   const tests = getTests(request?.requested_tests || request?.requestedTests);
   const reportPages = draftPages.length ? draftPages : template?.pages || [];
   const renderablePages = reportPages.flatMap((page, sourcePageIndex) =>
@@ -644,157 +684,124 @@ export default function LabReportComposer({ requestId }) {
 
   return (
     <Box sx={{ bgcolor: "white", mt: 8, p: 2 }}>
-      <Box sx={{bgcolor: "#f4f7f6",p:2}}>
-      <Stack
-  direction={{ xs: "column", md: "row" }}
-  alignItems={{ xs: "stretch", md: "center" }}
-  justifyContent="space-between"
-  gap={1.5}
-  sx={{
-    mb: 0.5,
-    p: 1.5,
-    bgcolor: "#fff",
-    border: "1px solid #DDE9E5",
-    borderRadius: "10px",
-    boxShadow: "0 2px 10px #17203305",
-    "& .MuiButton-root": {
-      minHeight: 36,
-      px: 1.5,
-      borderRadius: "7px",
-      fontSize: 12,
-      fontWeight: 600,
-      textTransform: "none",
-      whiteSpace: "nowrap",
-      boxShadow: "none",
-    },
-    "& .MuiButton-startIcon > *": { fontSize: 18 },
-    "& .MuiButton-outlined": {
-      color: "#475569",
-      borderColor: "#DDE5E1",
-      "&:hover": {
-        bgcolor: "#F8FAF9",
-        borderColor: "#AEC5BB",
-      },
-    },
-    "& .MuiButton-contained": {
-      bgcolor: "#07876A",
-      "&:hover": { bgcolor: "#066D56", boxShadow: "none" },
-      "&.Mui-disabled": { bgcolor: "#E8EEEB", color: "#94A39C" },
-    },
-  }}
->
-  <Button
-    startIcon={<ArrowBackOutlined />}
-    onClick={() => router.back()}
-    sx={{
-      alignSelf: "flex-start",
-      color: "#64748B",
-      "&:hover": { bgcolor: "#F4F8F6", color: "#07876A" },
-    }}
-  >
-    Back to test requests
-  </Button>
-
-  <Stack
-    direction="row"
-    useFlexGap
-    flexWrap="wrap"
-    gap={1}
-    justifyContent={{ xs: "flex-start", md: "flex-end" }}
-  >
-    {layoutEditing ? (
-      <>
-        <Button
-          startIcon={<AddOutlined />}
-          onClick={addReportPage}
-          variant="outlined"
+      <Box sx={{ bgcolor: "#f4f7f6", p: 2 }}>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          alignItems={{ xs: "stretch", md: "center" }}
+          justifyContent="space-between"
+          gap={1.5}
+          sx={{
+            mb: 0.5,
+            p: 1.5,
+            bgcolor: "#fff",
+            border: "1px solid #DDE9E5",
+            borderRadius: "10px",
+            boxShadow: "0 2px 10px #17203305",
+            "& .MuiButton-root": {
+              minHeight: 36,
+              px: 1.5,
+              borderRadius: "7px",
+              fontSize: 12,
+              fontWeight: 600,
+              textTransform: "none",
+              whiteSpace: "nowrap",
+              boxShadow: "none",
+            },
+            "& .MuiButton-startIcon > *": { fontSize: 18 },
+            "& .MuiButton-outlined": {
+              color: "#475569",
+              borderColor: "#DDE5E1",
+              "&:hover": {
+                bgcolor: "#F8FAF9",
+                borderColor: "#AEC5BB",
+              },
+            },
+            "& .MuiButton-contained": {
+              bgcolor: "#07876A",
+              "&:hover": { bgcolor: "#066D56", boxShadow: "none" },
+              "&.Mui-disabled": { bgcolor: "#E8EEEB", color: "#94A39C" },
+            },
+          }}
         >
-          Add page
-        </Button>
+          <Button
+            startIcon={<ArrowBackOutlined />}
+            onClick={() => router.back()}
+            sx={{
+              alignSelf: "flex-start",
+              color: "#64748B",
+              "&:hover": { bgcolor: "#F4F8F6", color: "#07876A" },
+            }}
+          >
+            Back to test requests
+          </Button>
 
-        <Button
-          startIcon={<CloseOutlined />}
-          onClick={cancelLayoutEditing}
-          variant="outlined"
-        >
-          Cancel layout
-        </Button>
+          <Stack
+            direction="row"
+            useFlexGap
+            flexWrap="wrap"
+            gap={1}
+            justifyContent={{ xs: "flex-start", md: "flex-end" }}
+          >
+         
+            <Button
+              startIcon={<PictureAsPdfOutlined />}
+              onClick={submitReport}
+              disabled={submitting || !template}
+              variant="contained"
+            >
+              {submitting ? "Submitting..." : "Submit report"}
+            </Button>
+          </Stack>
+        </Stack>
+        {layoutEditing ? (
+          <Stack
+            direction="row"
+            alignItems="center"
+            gap={1.2}
+            sx={{
+              mb: 1.5,
+              px: 1.5,
+              py: 0.8,
+              width: "fit-content",
+              maxWidth: "100%",
+              boxSizing: "border-box",
+              bgcolor: "#fff",
+              border: "1px solid #DDE9E5",
+              borderRadius: "8px",
+            }}
+          >
+            <Typography
+              sx={{ fontSize: 12, fontWeight: 600, color: "#475569" }}
+            >
+              Out-of-range color
+            </Typography>
 
-        <Button
-          startIcon={<SaveOutlined />}
-          onClick={() => setLayoutEditing(false)}
-          variant="contained"
-        >
-          Done editing
-        </Button>
-      </>
-    ) : (
-      <Button
-        startIcon={<EditOutlined />}
-        onClick={startLayoutEditing}
-        disabled={!template || submitting}
-        variant="outlined"
-      >
-        Edit report layout
-      </Button>
-    )}
-
-    <Button
-      startIcon={<PictureAsPdfOutlined />}
-      onClick={submitReport}
-      disabled={submitting || !template}
-      variant="contained"
-    >
-      {submitting ? "Submitting..." : "Submit report"}
-    </Button>
-  </Stack>
-</Stack>
-       {layoutEditing ? (
-  <Stack
-    direction="row"
-    alignItems="center"
-    gap={1.2}
-    sx={{
-      mb: 1.5,
-      px: 1.5,
-      py: 0.8,
-      width: "fit-content",
-      maxWidth: "100%",
-      boxSizing: "border-box",
-      bgcolor: "#fff",
-      border: "1px solid #DDE9E5",
-      borderRadius: "8px",
-    }}
-  >
-    <Typography
-      sx={{ fontSize: 12, fontWeight: 600, color: "#475569" }}
-    >
-      Out-of-range color
-    </Typography>
-
-    <Box
-      component="input"
-      aria-label="Report out-of-range color"
-      type="color"
-      value={draftOutOfRangeColor}
-      onChange={(event) => setDraftOutOfRangeColor(event.target.value)}
-      sx={{
-        width: 32,
-        height: 30,
-        flexShrink: 0,
-        p: "3px",
-        bgcolor: "#F8FAF9",
-        border: "1px solid #DDE9E5",
-        borderRadius: "6px",
-        cursor: "pointer",
-        "&::-webkit-color-swatch-wrapper": { p: 0 },
-        "&::-webkit-color-swatch": { border: 0, borderRadius: "3px" },
-        "&::-moz-color-swatch": { border: 0, borderRadius: "3px" },
-        "&:focus-visible": { outline: "2px solid #07876A", outlineOffset: 2 },
-      }}
-    />
-  </Stack>
-) : null}
+            <Box
+              component="input"
+              aria-label="Report out-of-range color"
+              type="color"
+              value={draftOutOfRangeColor}
+              onChange={(event) => setDraftOutOfRangeColor(event.target.value)}
+              sx={{
+                width: 32,
+                height: 30,
+                flexShrink: 0,
+                p: "3px",
+                bgcolor: "#F8FAF9",
+                border: "1px solid #DDE9E5",
+                borderRadius: "6px",
+                cursor: "pointer",
+                "&::-webkit-color-swatch-wrapper": { p: 0 },
+                "&::-webkit-color-swatch": { border: 0, borderRadius: "3px" },
+                "&::-moz-color-swatch": { border: 0, borderRadius: "3px" },
+                "&:focus-visible": {
+                  outline: "2px solid #07876A",
+                  outlineOffset: 2,
+                },
+              }}
+            />
+          </Stack>
+        ) : null}
         {error ? (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
             {error}
@@ -876,6 +883,7 @@ export default function LabReportComposer({ requestId }) {
                     commonLayout={common}
                     brandLogo={labLogo}
                     showLabLogo
+                    brandSignature={labSignature}
                     patientFields={[
                       {
                         label: "Name",
@@ -885,10 +893,7 @@ export default function LabReportComposer({ requestId }) {
                           request?.patient_id ||
                           "-",
                       },
-                      {
-                        label: "Reg. No.",
-                        value: request?.order_id || request?.orderId || "-",
-                      },
+                     
                       {
                         label: "Age & Sex",
                         value: getPatientAgeAndSex(request),
@@ -1024,22 +1029,7 @@ export default function LabReportComposer({ requestId }) {
           onClose={() => setTableDialogOpen(false)}
           onInsert={addTableBlock}
         />
-        <Button
-          startIcon={<PictureAsPdfOutlined />}
-          onClick={submitReport}
-          disabled={submitting || !template}
-          variant="contained"
-          sx={{
-            display: "flex",
-            ml: "auto",
-            mr: 0,
-            mt: 2,
-            textTransform: "none",
-            bgcolor: "#07876A",
-          }}
-        >
-          {submitting ? "Submitting..." : "Submit report"}
-        </Button>
+       
         <style jsx global>{`
           .lab-composer-shell {
             min-height: 100vh;

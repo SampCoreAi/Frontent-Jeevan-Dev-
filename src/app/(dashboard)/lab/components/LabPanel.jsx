@@ -44,11 +44,12 @@ export default function LabPanel({ section = "dashboard" }) {
     } catch {
       loggedInUser = {};
     }
-    setProfile({
-      ...(response.data?.data || {}),
-      full_name: loggedInUser.full_name,
-      email: loggedInUser.email,
-    });
+   setProfile({
+  ...(response.data?.data || {}),
+  id: response.data?.data?.registration?.id,
+  full_name: loggedInUser.full_name,
+  email: loggedInUser.email,
+});
   };
 
   const loadConnections = async () => {
@@ -419,7 +420,10 @@ useEffect(() => {
   const createLabRequest = async (requestDetails) => {
     try {
       if (!profile?.id) throw new Error("Lab profile is not loaded yet.");
-      const created = await createLabWalkInTestRequest({ ...requestDetails, labId: Number(profile.id) });
+     const created = await createLabWalkInTestRequest({
+  ...requestDetails,
+  labId: Number(profile.id),
+});
       await loadRequests();
       setNotice(`${requestDetails.requestType === "INDEPENDENT" ? "Independent" : "Walk-in"} test request created. Request ID: ${created.orderId || created.order_id || created.requestId}.`);
       return {
@@ -472,6 +476,17 @@ useEffect(() => {
     }
   };
 
+  const deleteInvoice = async (requestId) => {
+    try {
+      await api.delete(`/api/labs/invoices/${requestId}`);
+      setNotice("Invoice deleted successfully.");
+      await loadRequests();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, "Unable to delete invoice."));
+      throw requestError;
+    }
+  };
+
   const filterProps = {
     search: tableFilters.search,
     status: tableFilters.status,
@@ -511,6 +526,7 @@ useEffect(() => {
       lab={profile}
       requestOnlyPatient
       onCreateReport={(request) => router.push(`/lab/pages/requests/${request.id}/report`)}
+      onDeleteInvoice={deleteInvoice}
     />
   ) : section === "reports" ? (
     <LabReports reports={reports} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} pagination={reportPagination} />

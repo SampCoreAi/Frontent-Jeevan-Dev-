@@ -45,7 +45,16 @@ const ProfilePage = () => {
       pinCode: "",
     },
   });
+const S3_BUCKET_URL = (
+  process.env.NEXT_PUBLIC_S3_BUCKET_URL || ""
+).replace(/\/+$/, "");
 
+const getS3ImageUrl = (url) => {
+  if (!url) return "/img/IconDoctor.png";
+  if (/^https?:\/\//i.test(url)) return url;
+
+  return `${S3_BUCKET_URL}/${url.replace(/^\/+/, "")}`;
+};
   // Fetch profile data
   const getProfile = async () => {
     try {
@@ -59,7 +68,7 @@ const ProfilePage = () => {
         const data = result.data;
 
         if (data.image?.url) {
-          setProfileImage(data.image.url);
+         setProfileImage(getS3ImageUrl(data.image?.url));
         } else {
           setProfileImage("/img/IconDoctor.png");
         }
@@ -144,7 +153,7 @@ const ProfilePage = () => {
     );
 
     const imagePath = response.data.data.path;
-    setProfileImage(`${process.env.NEXT_PUBLIC_S3_BUCKET_URL}/${imagePath}`);
+    setProfileImage(getS3ImageUrl(imagePath));
     setProfileData((prev) => ({
       ...prev,
       profile_image: imagePath,

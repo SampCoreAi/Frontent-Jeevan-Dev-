@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import "goey-toast/styles.css";
 
 import {
   Box,
   Typography,
   Button,
+  CircularProgress,
   Stack,
   Dialog,
   DialogTitle,
@@ -21,6 +23,7 @@ import {
 import { alpha, useTheme } from "@mui/material/styles";
 
 import axios from "axios";
+import { GooeyToaster, gooeyToast } from "goey-toast";
 
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -31,21 +34,16 @@ import { formatTimeForDisplay } from "../../utils/index";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-const CalendarHeader = ({
-  onExport,
-  onAdd,
-  onAppointmentCreated,
-}) => {
+const CalendarHeader = ({ onExport, onAdd, onAppointmentCreated }) => {
   const theme = useTheme();
 
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [slots, setSlots] = useState([]);
-  const [slotsLoading, setSlotsLoading] =
-    useState(false);
+  const [slotsLoading, setSlotsLoading] = useState(false);
 
-  const [hospitals, setHospitals] =
-    useState([]);
+  const [hospitals, setHospitals] = useState([]);
 
   const [form, setForm] = useState({
     patientName: "",
@@ -55,9 +53,7 @@ const CalendarHeader = ({
     phone: "",
     reason: "",
 
-    appointmentDate: new Date()
-      .toISOString()
-      .split("T")[0],
+    appointmentDate: new Date().toISOString().split("T")[0],
 
     hospital: "",
     slotId: "",
@@ -113,24 +109,22 @@ const CalendarHeader = ({
   // GET SLOTS
   // ============================================================
 
- const getSlots = async () => {
-  const selectedHospital = hospitals.find(
-    (item) => item.hospitalName === form.hospital
-  );
+  const getSlots = async () => {
+    const selectedHospital = hospitals.find(
+      (item) => item.hospitalName === form.hospital,
+    );
 
-  if (!selectedHospital?.clinicId || !form.appointmentDate) {
-    setSlots([]);
-    return;
-  }
+    if (!selectedHospital?.clinicId || !form.appointmentDate) {
+      setSlots([]);
+      return;
+    }
 
-  try {
-    setSlotsLoading(true);
+    try {
+      setSlotsLoading(true);
 
-    const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token");
 
-    const res = await axios.get(
-      `${API_URL}/api/appointments/doctor-slots`,
-      {
+      const res = await axios.get(`${API_URL}/api/appointments/doctor-slots`, {
         params: {
           hospitalName: selectedHospital.hospitalName,
           clinicId: selectedHospital.clinicId,
@@ -139,16 +133,15 @@ const CalendarHeader = ({
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      }
-    );
-setSlots(res.data.data?.slots || []);
-  } catch (error) {
-    console.log("Slot API Error:", error);
-    setSlots([]);
-  } finally {
-    setSlotsLoading(false);
-  }
-};
+      });
+      setSlots(res.data.data?.slots || []);
+    } catch (error) {
+      console.log("Slot API Error:", error);
+      setSlots([]);
+    } finally {
+      setSlotsLoading(false);
+    }
+  };
 
   // ============================================================
   // GET HOSPITALS
@@ -156,34 +149,23 @@ setSlots(res.data.data?.slots || []);
 
   const getHospitals = async () => {
     try {
-      const token =
-        localStorage.getItem("token");
+      const token = localStorage.getItem("token");
 
-      const res = await axios.get(
-        `${API_URL}/api/schedules/getHospitalsName`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await axios.get(`${API_URL}/api/schedules/getHospitalsName`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (res.data.success) {
-        const hospitalList =
-          res.data.data || [];
+        const hospitalList = res.data.data || [];
 
-        setHospitals(
-          hospitalList
-        );
+        setHospitals(hospitalList);
 
         setForm((prev) => ({
           ...prev,
 
-          hospital:
-            hospitalList.length > 0
-              ? hospitalList[0]
-                  .hospitalName
-              : "",
+          hospital: hospitalList.length > 0 ? hospitalList[0].hospitalName : "",
         }));
       }
     } catch (err) {
@@ -200,23 +182,18 @@ setSlots(res.data.data?.slots || []);
   }, []);
 
   useEffect(() => {
-    if (
-      hospitals.length > 0 &&
-      !form.hospital
-    ) {
+    if (hospitals.length > 0 && !form.hospital) {
       setForm((prev) => ({
         ...prev,
 
-        hospital:
-          hospitals[0]
-            .hospitalName,
+        hospital: hospitals[0].hospitalName,
       }));
     }
   }, [hospitals]);
 
- useEffect(() => {
-  getSlots();
-}, [form.hospital, form.appointmentDate, hospitals]);
+  useEffect(() => {
+    getSlots();
+  }, [form.hospital, form.appointmentDate, hospitals]);
 
   // ============================================================
   // USER
@@ -226,10 +203,7 @@ setSlots(res.data.data?.slots || []);
 
   if (typeof window !== "undefined") {
     try {
-      user = JSON.parse(
-        localStorage.getItem("user") ||
-          "{}"
-      );
+      user = JSON.parse(localStorage.getItem("user") || "{}");
     } catch {
       user = {};
     }
@@ -242,21 +216,15 @@ setSlots(res.data.data?.slots || []);
   // ============================================================
 
   const handleChange = (e) => {
-    const { name, value } =
-      e.target;
+    const { name } = e.target;
+    const value = name === "phone"
+      ? e.target.value.replace(/\D/g, "").slice(0, 10)
+      : e.target.value;
 
     setForm((prev) => ({
       ...prev,
-
       [name]: value,
-
-      ...(name === "hospital" ||
-      name ===
-        "appointmentDate"
-        ? {
-            slotId: "",
-          }
-        : {}),
+      ...(name === "hospital" || name === "appointmentDate" ? { slotId: "" } : {}),
     }));
   };
 
@@ -265,38 +233,53 @@ setSlots(res.data.data?.slots || []);
   // ============================================================
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
+    const phone = form.phone.trim();
+    const email = form.email.trim();
+
+    if (phone && !/^\d{10}$/.test(phone)) {
+      gooeyToast.error("Phone number must be exactly 10 digits");
+      return;
+    }
+
+    if (email && !/^[^\s@]+@gmail\.com$/i.test(email)) {
+      gooeyToast.error("Enter a valid Gmail address");
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      const token =
-        localStorage.getItem("token");
-const payload = {
-  appointment_date: form.appointmentDate,
-  hospital_name: form.hospital,
-  mode: "offline",
-  booking_type: "someone_else",
-  reason_for_visit: form.reason,
-  patient: {
-    name: form.patientName,
-    email: form.email,
-    age: Number(form.age),
-    gender: form.gender,
-    phone: form.phone,
-  },
+      const token = localStorage.getItem("token");
+      const payload = {
+        appointment_date: form.appointmentDate,
+        hospital_name: form.hospital,
+        mode: "offline",
+        booking_type: "someone_else",
+        reason_for_visit: form.reason,
+        patient: {
+          name: form.patientName,
+          ...(email ? { email } : {}),
+          age: Number(form.age),
+          gender: form.gender,
+          ...(phone ? { phone } : {}),
+        },
 
-  ...(form.slotId ? { slot_id: Number(form.slotId) } : {}),
-};
+        ...(form.slotId ? { slot_id: Number(form.slotId) } : {}),
+      };
 
-      const res =
-        await axios.post(
-          `${API_URL}/api/appointments/bookAppointmentByAssistant`,
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+      const res = await axios.post(
+        `${API_URL}/api/appointments/bookAppointmentByAssistant`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
 
       if (res.data.success) {
+        gooeyToast.success("Appointment booked successfully");
         onAppointmentCreated?.();
 
         setOpen(false);
@@ -309,22 +292,19 @@ const payload = {
           phone: "",
           reason: "",
 
-          appointmentDate:
-            new Date()
-              .toISOString()
-              .split("T")[0],
+          appointmentDate: new Date().toISOString().split("T")[0],
 
-          hospital:
-            hospitals.length > 0
-              ? hospitals[0]
-                  .hospitalName
-              : "",
+          hospital: hospitals.length > 0 ? hospitals[0].hospitalName : "",
 
           slotId: "",
         });
+      } else {
+        gooeyToast.error(res.data.message || "Could not book appointment");
       }
     } catch (err) {
-      console.log(err);
+      gooeyToast.error(err.response?.data?.message || "Could not book appointment");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -334,6 +314,7 @@ const payload = {
 
   return (
     <>
+      <GooeyToaster position="top-center" showTimestamp={false} />
       {/* ========================================================
           HEADER
       ======================================================== */}
@@ -344,8 +325,7 @@ const payload = {
 
           display: "flex",
           alignItems: "center",
-          justifyContent:
-            "space-between",
+          justifyContent: "space-between",
 
           gap: {
             xs: "8px",
@@ -367,19 +347,14 @@ const payload = {
             sm: "64px",
           },
 
-          bgcolor:
-            "background.paper",
+          bgcolor: "background.paper",
 
           border: "1px solid",
           borderColor: "divider",
 
           borderRadius: "10px",
 
-          boxShadow: `0 2px 10px ${alpha(
-            theme.palette.text
-              .primary,
-            0.04
-          )}`,
+          boxShadow: `0 2px 10px ${alpha(theme.palette.text.primary, 0.04)}`,
         }}
       >
         {/* ====================================================
@@ -413,23 +388,17 @@ const payload = {
 
               display: "flex",
               alignItems: "center",
-              justifyContent:
-                "center",
+              justifyContent: "center",
 
               borderRadius: "9px",
 
-              bgcolor:
-                "secondary.light",
+              bgcolor: "secondary.light",
 
               color: "primary.main",
 
               border: "1px solid",
 
-              borderColor: alpha(
-                theme.palette.primary
-                  .main,
-                0.1
-              ),
+              borderColor: alpha(theme.palette.primary.main, 0.1),
             }}
           >
             <CalendarMonthOutlinedIcon
@@ -460,16 +429,13 @@ const payload = {
 
                 fontWeight: 700,
 
-                color:
-                  "text.primary",
+                color: "text.primary",
 
-                whiteSpace:
-                  "nowrap",
+                whiteSpace: "nowrap",
 
                 overflow: "hidden",
 
-                textOverflow:
-                  "ellipsis",
+                textOverflow: "ellipsis",
               }}
             >
               Medical Calendar
@@ -484,17 +450,14 @@ const payload = {
 
                 mt: "2px",
 
-                fontSize:
-                  "12.5px",
+                fontSize: "12.5px",
 
                 lineHeight: 1.3,
 
-                color:
-                  "text.secondary",
+                color: "text.secondary",
               }}
             >
-              Manage appointments
-              and schedules
+              Manage appointments and schedules
             </Typography>
           </Box>
         </Stack>
@@ -517,9 +480,7 @@ const payload = {
           <Button
             variant="outlined"
             onClick={onExport}
-            startIcon={
-              <DownloadOutlinedIcon />
-            }
+            startIcon={<DownloadOutlinedIcon />}
             sx={{
               height: "36px",
 
@@ -535,14 +496,11 @@ const payload = {
 
               borderRadius: "8px",
 
-              borderColor:
-                "divider",
+              borderColor: "divider",
 
-              color:
-                "text.secondary",
+              color: "text.secondary",
 
-              bgcolor:
-                "background.paper",
+              bgcolor: "background.paper",
 
               fontSize: "12.5px",
 
@@ -552,28 +510,23 @@ const payload = {
 
               boxShadow: "none",
 
-              "& .MuiButton-startIcon":
-                {
-                  m: {
-                    xs: 0,
-                    sm: "0 6px 0 0",
-                  },
-
-                  "& svg": {
-                    fontSize:
-                      "17px",
-                  },
+              "& .MuiButton-startIcon": {
+                m: {
+                  xs: 0,
+                  sm: "0 6px 0 0",
                 },
 
+                "& svg": {
+                  fontSize: "17px",
+                },
+              },
+
               "&:hover": {
-                borderColor:
-                  "primary.light",
+                borderColor: "primary.light",
 
-                color:
-                  "primary.main",
+                color: "primary.main",
 
-                bgcolor:
-                  "secondary.light",
+                bgcolor: "secondary.light",
               },
             }}
           >
@@ -595,12 +548,8 @@ const payload = {
           {roleId === 3 && (
             <Button
               variant="contained"
-              onClick={() =>
-                setOpen(true)
-              }
-              startIcon={
-                <AddRoundedIcon />
-              }
+              onClick={() => setOpen(true)}
+              startIcon={<AddRoundedIcon />}
               sx={{
                 height: "36px",
 
@@ -614,44 +563,35 @@ const payload = {
                   sm: "14px",
                 },
 
-                borderRadius:
-                  "8px",
+                borderRadius: "8px",
 
-                bgcolor:
-                  "primary.main",
+                bgcolor: "primary.main",
 
-                color:
-                  "primary.contrastText",
+                color: "primary.contrastText",
 
-                fontSize:
-                  "12.5px",
+                fontSize: "12.5px",
 
                 fontWeight: 650,
 
-                textTransform:
-                  "none",
+                textTransform: "none",
 
                 boxShadow: "none",
 
-                "& .MuiButton-startIcon":
-                  {
-                    m: {
-                      xs: 0,
-                      sm: "0 6px 0 0",
-                    },
-
-                    "& svg": {
-                      fontSize:
-                        "18px",
-                    },
+                "& .MuiButton-startIcon": {
+                  m: {
+                    xs: 0,
+                    sm: "0 6px 0 0",
                   },
 
-                "&:hover": {
-                  bgcolor:
-                    "primary.dark",
+                  "& svg": {
+                    fontSize: "18px",
+                  },
+                },
 
-                  boxShadow:
-                    "none",
+                "&:hover": {
+                  bgcolor: "primary.dark",
+
+                  boxShadow: "none",
                 },
               }}
             >
@@ -677,34 +617,27 @@ const payload = {
 
       <Dialog
         open={open}
-        onClose={() =>
-          setOpen(false)
-        }
+        onClose={() => setOpen(false)}
         fullWidth
         maxWidth="md"
         PaperProps={{
           sx: {
             width: "760px",
 
-            maxWidth:
-              "calc(100vw - 24px)",
+            maxWidth: "calc(100vw - 24px)",
 
             m: {
               xs: "12px",
               sm: "24px",
             },
 
-            borderRadius:
-              "12px",
+            borderRadius: "12px",
 
-            border:
-              "1px solid",
+            border: "1px solid",
 
-            borderColor:
-              "divider",
+            borderColor: "divider",
 
-            boxShadow:
-              "0 16px 45px rgba(15, 23, 42, 0.12)",
+            boxShadow: "0 16px 45px rgba(15, 23, 42, 0.12)",
 
             overflow: "hidden",
           },
@@ -728,11 +661,9 @@ const payload = {
 
             gap: "10px",
 
-            borderBottom:
-              "1px solid",
+            borderBottom: "1px solid",
 
-            borderColor:
-              "divider",
+            borderColor: "divider",
           }}
         >
           <Box
@@ -742,18 +673,15 @@ const payload = {
 
               display: "flex",
               alignItems: "center",
-              justifyContent:
-                "center",
+              justifyContent: "center",
 
               flexShrink: 0,
 
               borderRadius: "8px",
 
-              bgcolor:
-                "secondary.light",
+              bgcolor: "secondary.light",
 
-              color:
-                "primary.main",
+              color: "primary.main",
             }}
           >
             <CalendarMonthOutlinedIcon
@@ -776,8 +704,7 @@ const payload = {
 
                 fontWeight: 700,
 
-                color:
-                  "text.primary",
+                color: "text.primary",
               }}
             >
               New Appointment
@@ -787,36 +714,28 @@ const payload = {
               sx={{
                 mt: "2px",
 
-                fontSize:
-                  "11.5px",
+                fontSize: "11.5px",
 
-                color:
-                  "text.secondary",
+                color: "text.secondary",
               }}
             >
-              Add an offline
-              appointment
+              Add an offline appointment
             </Typography>
           </Box>
 
           <IconButton
             size="small"
-            onClick={() =>
-              setOpen(false)
-            }
+            onClick={() => setOpen(false)}
             sx={{
               width: "30px",
               height: "30px",
 
-              color:
-                "text.secondary",
+              color: "text.secondary",
 
               "&:hover": {
-                bgcolor:
-                  "background.default",
+                bgcolor: "background.default",
 
-                color:
-                  "text.primary",
+                color: "text.primary",
               },
             }}
           >
@@ -841,8 +760,7 @@ const payload = {
 
             py: "16px !important",
 
-            bgcolor:
-              "background.paper",
+            bgcolor: "background.paper",
           }}
         >
           {/* APPOINTMENT */}
@@ -856,22 +774,17 @@ const payload = {
               sx={{
                 mb: "8px",
 
-                fontSize:
-                  "12.5px",
+                fontSize: "12.5px",
 
                 fontWeight: 700,
 
-                color:
-                  "text.primary",
+                color: "text.primary",
               }}
             >
               Appointment Details
             </Typography>
 
-            <Grid
-              container
-              spacing={1.25}
-            >
+            <Grid container spacing={1.25}>
               {/* HOSPITAL */}
 
               <Grid
@@ -886,34 +799,21 @@ const payload = {
                   size="small"
                   label="Hospital"
                   name="hospital"
-                  value={
-                    form.hospital
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={form.hospital}
+                  onChange={handleChange}
                   sx={fieldSx}
                 >
-                  {hospitals.map(
-                    (item) => (
-                      <MenuItem
-                        key={
-                          item.hospitalName
-                        }
-                        value={
-                          item.hospitalName
-                        }
-                        sx={{
-                          fontSize:
-                            "12.5px",
-                        }}
-                      >
-                        {
-                          item.hospitalName
-                        }
-                      </MenuItem>
-                    )
-                  )}
+                  {hospitals.map((item) => (
+                    <MenuItem
+                      key={item.hospitalName}
+                      value={item.hospitalName}
+                      sx={{
+                        fontSize: "12.5px",
+                      }}
+                    >
+                      {item.hospitalName}
+                    </MenuItem>
+                  ))}
                 </TextField>
               </Grid>
 
@@ -931,12 +831,8 @@ const payload = {
                   type="date"
                   label="Appointment Date"
                   name="appointmentDate"
-                  value={
-                    form.appointmentDate
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={form.appointmentDate}
+                  onChange={handleChange}
                   InputLabelProps={{
                     shrink: true,
                   }}
@@ -958,22 +854,15 @@ const payload = {
                   size="small"
                   label="Select Slot"
                   name="slotId"
-                  value={
-                    form.slotId
-                  }
-                  onChange={
-                    handleChange
-                  }
-                  disabled={
-                    slotsLoading
-                  }
+                  value={form.slotId}
+                  onChange={handleChange}
+                  disabled={slotsLoading}
                   sx={fieldSx}
                   SelectProps={{
                     MenuProps: {
                       PaperProps: {
                         sx: {
-                          maxHeight:
-                            280,
+                          maxHeight: 280,
                         },
                       },
                     },
@@ -983,59 +872,38 @@ const payload = {
                     <MenuItem
                       disabled
                       sx={{
-                        fontSize:
-                          "12.5px",
+                        fontSize: "12.5px",
                       }}
                     >
                       Loading slots...
                     </MenuItem>
                   )}
 
-                  {!slotsLoading &&
-                    slots.length ===
-                      0 && (
-                      <MenuItem
-                        disabled
-                        sx={{
-                          fontSize:
-                            "12.5px",
-                        }}
-                      >
-                        No slots
-                        available
-                      </MenuItem>
-                    )}
-
-                  {slots.map(
-                    (slot) => (
-                      <MenuItem
-                        key={
-                          slot.slotId
-                        }
-                        value={
-                          slot.slotId
-                        }
-                      disabled={slot.status?.toLowerCase() !== "active"}
-                        sx={{
-                          fontSize:
-                            "12.5px",
-                        }}
-                      >
-                        Token{" "}
-                        {
-                          slot.tokenNumber
-                        }{" "}
-                        -{" "}
-                        {formatTimeForDisplay(
-                          slot.startTime
-                        )}{" "}
-                        to{" "}
-                        {formatTimeForDisplay(
-                          slot.endTime
-                        )}
-                      </MenuItem>
-                    )
+                  {!slotsLoading && slots.length === 0 && (
+                    <MenuItem
+                      disabled
+                      sx={{
+                        fontSize: "12.5px",
+                      }}
+                    >
+                      No slots available
+                    </MenuItem>
                   )}
+
+                  {slots.map((slot) => (
+                    <MenuItem
+                      key={slot.slotId}
+                      value={slot.slotId}
+                      disabled={slot.status?.toLowerCase() !== "active"}
+                      sx={{
+                        fontSize: "12.5px",
+                      }}
+                    >
+                      Token {slot.tokenNumber} -{" "}
+                      {formatTimeForDisplay(slot.startTime)} to{" "}
+                      {formatTimeForDisplay(slot.endTime)}
+                    </MenuItem>
+                  ))}
                 </TextField>
               </Grid>
 
@@ -1052,12 +920,8 @@ const payload = {
                   size="small"
                   label="Reason for Visit"
                   name="reason"
-                  value={
-                    form.reason
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={form.reason}
+                  onChange={handleChange}
                   sx={fieldSx}
                 />
               </Grid>
@@ -1077,22 +941,17 @@ const payload = {
               sx={{
                 mb: "8px",
 
-                fontSize:
-                  "12.5px",
+                fontSize: "12.5px",
 
                 fontWeight: 700,
 
-                color:
-                  "text.primary",
+                color: "text.primary",
               }}
             >
               Patient Information
             </Typography>
 
-            <Grid
-              container
-              spacing={1.25}
-            >
+            <Grid container spacing={1.25}>
               <Grid
                 size={{
                   xs: 12,
@@ -1104,12 +963,8 @@ const payload = {
                   size="small"
                   label="Patient Name"
                   name="patientName"
-                  value={
-                    form.patientName
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={form.patientName}
+                  onChange={handleChange}
                   sx={fieldSx}
                 />
               </Grid>
@@ -1125,10 +980,9 @@ const payload = {
                   size="small"
                   label="Email"
                   name="email"
+                  type="email"
                   value={form.email}
-                  onChange={
-                    handleChange
-                  }
+                  onChange={handleChange}
                   sx={fieldSx}
                 />
               </Grid>
@@ -1144,10 +998,10 @@ const payload = {
                   size="small"
                   label="Phone"
                   name="phone"
+                  type="tel"
                   value={form.phone}
-                  onChange={
-                    handleChange
-                  }
+                  onChange={handleChange}
+                  slotProps={{ htmlInput: { maxLength: 10, inputMode: "numeric" } }}
                   sx={fieldSx}
                 />
               </Grid>
@@ -1165,9 +1019,7 @@ const payload = {
                   label="Age"
                   name="age"
                   value={form.age}
-                  onChange={
-                    handleChange
-                  }
+                  onChange={handleChange}
                   sx={fieldSx}
                 />
               </Grid>
@@ -1184,19 +1036,14 @@ const payload = {
                   size="small"
                   label="Gender"
                   name="gender"
-                  value={
-                    form.gender
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={form.gender}
+                  onChange={handleChange}
                   sx={fieldSx}
                 >
                   <MenuItem
                     value="Male"
                     sx={{
-                      fontSize:
-                        "12.5px",
+                      fontSize: "12.5px",
                     }}
                   >
                     Male
@@ -1205,8 +1052,7 @@ const payload = {
                   <MenuItem
                     value="Female"
                     sx={{
-                      fontSize:
-                        "12.5px",
+                      fontSize: "12.5px",
                     }}
                   >
                     Female
@@ -1215,8 +1061,7 @@ const payload = {
                   <MenuItem
                     value="Other"
                     sx={{
-                      fontSize:
-                        "12.5px",
+                      fontSize: "12.5px",
                     }}
                   >
                     Other
@@ -1242,21 +1087,16 @@ const payload = {
 
             gap: "6px",
 
-            borderTop:
-              "1px solid",
+            borderTop: "1px solid",
 
-            borderColor:
-              "divider",
+            borderColor: "divider",
 
-            bgcolor:
-              "background.default",
+            bgcolor: "background.default",
           }}
         >
           <Button
             variant="outlined"
-            onClick={() =>
-              setOpen(false)
-            }
+            onClick={() => setOpen(false)}
             sx={{
               height: "36px",
 
@@ -1264,26 +1104,20 @@ const payload = {
 
               borderRadius: "8px",
 
-              borderColor:
-                "divider",
+              borderColor: "divider",
 
-              color:
-                "text.secondary",
+              color: "text.secondary",
 
-              fontSize:
-                "12.5px",
+              fontSize: "12.5px",
 
               fontWeight: 600,
 
-              textTransform:
-                "none",
+              textTransform: "none",
 
               "&:hover": {
-                borderColor:
-                  "primary.light",
+                borderColor: "primary.light",
 
-                bgcolor:
-                  "background.paper",
+                bgcolor: "background.paper",
               },
             }}
           >
@@ -1293,6 +1127,8 @@ const payload = {
           <Button
             variant="contained"
             onClick={handleSubmit}
+            disabled={isSubmitting}
+            startIcon={isSubmitting ? <CircularProgress size={15} color="inherit" /> : null}
             sx={{
               height: "36px",
 
@@ -1300,28 +1136,24 @@ const payload = {
 
               borderRadius: "8px",
 
-              bgcolor:
-                "primary.main",
+              bgcolor: "primary.main",
 
-              fontSize:
-                "12.5px",
+              fontSize: "12.5px",
 
               fontWeight: 650,
 
-              textTransform:
-                "none",
+              textTransform: "none",
 
               boxShadow: "none",
 
               "&:hover": {
-                bgcolor:
-                  "primary.dark",
+                bgcolor: "primary.dark",
 
                 boxShadow: "none",
               },
             }}
           >
-            Book Appointment
+            {isSubmitting ? "Booking..." : "Book Appointment"}
           </Button>
         </DialogActions>
       </Dialog>

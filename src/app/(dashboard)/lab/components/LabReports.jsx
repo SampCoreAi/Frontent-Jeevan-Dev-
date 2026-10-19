@@ -18,6 +18,36 @@ import {
 } from "@mui/material";
 import { DataTable, TableFilters } from "./LabUi";
 
+const resolveReportDownloadUrl = (value) => {
+  if (typeof value !== "string" || !value.trim()) return "";
+
+  const bucketUrl = process.env.NEXT_PUBLIC_S3_BUCKET_URL;
+  const isLocalHost = (hostname) =>
+    ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(
+      hostname.toLowerCase(),
+    );
+
+  try {
+    const sourceUrl = new URL(value);
+    if (!isLocalHost(sourceUrl.hostname) || !bucketUrl) {
+      return sourceUrl.toString();
+    }
+
+    return new URL(
+      `${sourceUrl.pathname}${sourceUrl.search}${sourceUrl.hash}`,
+      `${bucketUrl.replace(/\/+$/, "")}/`,
+    ).toString();
+  } catch {
+    if (!bucketUrl) return value;
+
+    try {
+      return new URL(value, `${bucketUrl.replace(/\/+$/, "")}/`).toString();
+    } catch {
+      return value;
+    }
+  }
+};
+
 export default function LabReports({
   reports = [],
   loading = false,
@@ -231,6 +261,7 @@ export default function LabReports({
           }
         >
           {visible.map((report, index) => {
+            const downloadUrl = resolveReportDownloadUrl(report.downloadUrl);
             const status =
               report.status ||
               report.request_status ||
@@ -330,7 +361,7 @@ export default function LabReports({
                       label={String(report.reviewStatus || report.review_status || "AWAITING_REVIEW").replaceAll("_", " ")}
                       sx={{ height: 23, fontSize: "9.5px", fontWeight: 700, bgcolor: "transparent", border: 0, color: (report.reviewStatus || report.review_status) === "REVIEWED" ? "#15803D" : "#B45309" }}
                     />
-                    {onReview && report.downloadUrl && Number.isInteger(Number(report.id)) ? (
+                    {onReview && downloadUrl && Number.isInteger(Number(report.id)) ? (
                       <Button
                         size="small"
                         onClick={() => {
@@ -361,10 +392,10 @@ export default function LabReports({
                 </TableCell>
 
                 <TableCell sx={cellSx}>
-                  {report.downloadUrl ? (
+                  {downloadUrl ? (
                     <Button
                       size="small"
-                      href={report.downloadUrl}
+                      href={downloadUrl}
                       target="_blank"
                       rel="noreferrer"
                       sx={{

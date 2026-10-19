@@ -89,30 +89,36 @@ export default function Prescription({
   }, [apiData]);
 
 
-  useEffect(() => {
-    if (!appointmentId) return;
 
-    const fetchPrescription = async () => {
-      try {
-        setLoading(true);
+useEffect(() => {
+  if (!appointmentId) return;
 
-        const res =
-          await appointmentService.getPrescriptionByAppointmentId(
-            appointmentId
-          );
+  const fetchPrescription = async () => {
+    try {
+      setLoading(true);
 
-        console.log("API DATA:", res);
+      const res =
+        await appointmentService.getPrescriptionByAppointmentId(
+          appointmentId
+        );
 
-        setApiData(res.data.data);
-      } catch (err) {
-        console.log("Error:", err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+      console.log("API RESPONSE:", res);
 
-    fetchPrescription();
-  }, [appointmentId]);
+      const responseData = res?.data?.data ?? res?.data;
+
+      console.log("PRESCRIPTION DATA:", responseData);
+
+      setApiData(responseData || null);
+    } catch (err) {
+      console.log("Error:", err.message);
+      setApiData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchPrescription();
+}, [appointmentId]);
 
 
   useEffect(() => {

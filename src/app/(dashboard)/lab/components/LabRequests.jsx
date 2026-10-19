@@ -33,7 +33,7 @@ import {
 } from "@mui/material";
 
 import { useTheme } from "@mui/material/styles";
-import LabBill from "../components/LabBill"
+import LabBill from "../components/LabBill";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 
@@ -144,7 +144,7 @@ const getInvoicePdfUrl = (request) => {
 const hasInvoicePdf = (request) =>
   Boolean(
     typeof (request?.invoicePdfUrl || request?.invoice_pdf_url) === "string" &&
-      (request.invoicePdfUrl || request.invoice_pdf_url).trim(),
+    (request.invoicePdfUrl || request.invoice_pdf_url).trim(),
   );
 
 function RequestField({ label, children }) {
@@ -230,6 +230,8 @@ export default function LabRequests({
 
   onCreateReport,
 
+  onDeleteInvoice,
+
   lab = {},
 }) {
   const theme = useTheme();
@@ -277,10 +279,14 @@ export default function LabRequests({
 
   const [createdInvoice, setCreatedInvoice] = useState({});
   const [invoiceUrlsByRequest, setInvoiceUrlsByRequest] = useState({});
+  const [createdInvoicesByRequest, setCreatedInvoicesByRequest] = useState({});
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const [deleteError, setDeleteError] = useState("");
+  const [invoiceDeleteRequest, setInvoiceDeleteRequest] = useState(null);
+  const [invoiceDeleteError, setInvoiceDeleteError] = useState("");
+  const [deletingInvoice, setDeletingInvoice] = useState(false);
 
   const [reasonDialog, setReasonDialog] = useState({
     open: false,
@@ -379,7 +385,8 @@ export default function LabRequests({
       return;
     }
     const testCharges = requestedTests.map((test, index) => ({
-      test_code: typeof test === "string" ? test : test.test_code || test.test_name,
+      test_code:
+        typeof test === "string" ? test : test.test_code || test.test_name,
       rate: Number(invoiceDraft.rates[index]),
     }));
 
@@ -389,7 +396,7 @@ export default function LabRequests({
           !test.test_code ||
           invoiceDraft.rates[index] === "" ||
           !Number.isFinite(test.rate) ||
-          test.rate < 0
+          test.rate < 0,
       )
     ) {
       setInvoiceError("Enter a valid rate for every requested test.");
@@ -412,7 +419,9 @@ export default function LabRequests({
       !Number.isFinite(amountReceived) ||
       amountReceived < 0
     ) {
-      setInvoiceError("Enter valid discount, other charges, payment mode and amount received.");
+      setInvoiceError(
+        "Enter valid discount, other charges, payment mode and amount received.",
+      );
       return;
     }
 
@@ -448,7 +457,7 @@ export default function LabRequests({
       const invoicePdf = new File(
         [pdfBlob],
         `invoice-${invoiceRequest.order_id || invoiceRequest.id}.pdf`,
-        { type: "application/pdf" }
+        { type: "application/pdf" },
       );
       const formData = new FormData();
       formData.append("lab_order_id", String(invoiceRequest.id));
@@ -462,11 +471,17 @@ export default function LabRequests({
       const response = await api.post("/api/labs/invoices", formData);
 
       if (response.data?.success === false) {
-        throw new Error(response.data?.message || "Invoice could not be created.");
+        throw new Error(
+          response.data?.message || "Invoice could not be created.",
+        );
       }
 
       const invoiceData = response.data?.data || {};
       setCreatedInvoice(invoiceData);
+      setCreatedInvoicesByRequest((current) => ({
+        ...current,
+        [invoiceRequest.id]: invoiceData,
+      }));
       const pdfUrl =
         invoiceData.invoicePdfUrl ||
         invoiceData.invoice_pdf_url ||
@@ -478,11 +493,15 @@ export default function LabRequests({
           [invoiceRequest.id]: pdfUrl,
         }));
       }
-      setInvoiceSuccess(response.data?.message || "Invoice created successfully.");
+      setInvoiceSuccess(
+        response.data?.message || "Invoice created successfully.",
+      );
       setInvoiceSuccessOpen(true);
     } catch (error) {
       setInvoiceError(
-        error.response?.data?.message || error.message || "Invoice could not be created."
+        error.response?.data?.message ||
+          error.message ||
+          "Invoice could not be created.",
       );
     } finally {
       setInvoiceSaving(false);
@@ -493,7 +512,33 @@ export default function LabRequests({
     String(request?.status || "").toUpperCase() === "CANCELLED";
 
   const canCreateInvoice = (request) =>
-    String(request?.status || "").toUpperCase() === "ACCEPTED";
+    [
+      "APPROVED",
+      "ACCEPTED",
+      "SAMPLE_SCHEDULED",
+      "SAMPLE_COLLECTED",
+      "RECOLLECTION_REQUIRED",
+      "PROCESSING",
+      "REPORT_READY",
+      "REPORT_UPLOADED",
+    ].includes(String(request?.status || "").toUpperCase());
+
+  const isCompleted = (request) =>
+    String(request?.status || "").toUpperCase() === "COMPLETED";
+
+  const canCreateReport = (request) =>
+    String(request?.status || "").toUpperCase() === "REPORT_READY";
+
+  const hasInvoice = (request) =>
+    hasInvoicePdf(request) ||
+    Boolean(invoiceUrlsByRequest[request?.id]) ||
+    Boolean(createdInvoicesByRequest[request?.id]) ||
+    Boolean(
+      request?.invoice_id ||
+      request?.invoiceId ||
+      request?.invoice_no ||
+      request?.invoice_number,
+    );
 
   const canAssignTechnician = (request) => {
     if (!request) return false;
@@ -666,7 +711,12 @@ export default function LabRequests({
   };
 
   const openDeleteConfirmation = () => {
-    if (!selectedReport || !selectedReport.canDelete) return;
+    if (
+      !selectedReport ||
+      !selectedReport.canDelete ||
+      isCompleted(uploadRequest)
+    )
+      return;
 
     closeActions();
 
@@ -676,7 +726,12 @@ export default function LabRequests({
   };
 
   const deleteReport = async () => {
-    if (!selectedReport || !selectedReport.canDelete) return;
+    if (
+      !selectedReport ||
+      !selectedReport.canDelete ||
+      isCompleted(uploadRequest)
+    )
+      return;
 
     try {
       await onDeleteReport(selectedReport.id);
@@ -690,6 +745,44 @@ export default function LabRequests({
           requestError?.message ||
           "Unable to delete report.",
       );
+    }
+  };
+
+  const confirmDeleteInvoice = async () => {
+    if (
+      !invoiceDeleteRequest ||
+      !hasInvoice(invoiceDeleteRequest) ||
+      isCompleted(invoiceDeleteRequest)
+    ) {
+      return;
+    }
+
+    try {
+      setDeletingInvoice(true);
+      setInvoiceDeleteError("");
+      if (typeof onDeleteInvoice !== "function") {
+        throw new Error("Invoice deletion is not available.");
+      }
+      await onDeleteInvoice(invoiceDeleteRequest.id);
+      setInvoiceUrlsByRequest((current) => {
+        const next = { ...current };
+        delete next[invoiceDeleteRequest.id];
+        return next;
+      });
+      setCreatedInvoicesByRequest((current) => {
+        const next = { ...current };
+        delete next[invoiceDeleteRequest.id];
+        return next;
+      });
+      setInvoiceDeleteRequest(null);
+    } catch (requestError) {
+      setInvoiceDeleteError(
+        requestError?.response?.data?.message ||
+          requestError?.message ||
+          "Unable to delete invoice.",
+      );
+    } finally {
+      setDeletingInvoice(false);
     }
   };
 
@@ -779,7 +872,7 @@ export default function LabRequests({
     <Box
       sx={{
         width: "100%",
-height:"85vh",
+        height: "85vh",
         minWidth: 0,
 
         "& .MuiTypography-root": { overflowWrap: "anywhere" },
@@ -795,23 +888,6 @@ height:"85vh",
           />
         }
       />
-
-      <Snackbar
-        open={feedbackOpen && Boolean(updateFeedback?.message)}
-        autoHideDuration={4500}
-        onClose={closeFeedback}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        sx={{ zIndex: (theme) => theme.zIndex.modal + 1 }}
-      >
-        <Alert
-          onClose={closeFeedback}
-          severity={updateFeedback.type || "info"}
-          variant="filled"
-          sx={{ width: "100%", fontSize: 13, borderRadius: 2 }}
-        >
-          {updateFeedback.message}
-        </Alert>
-      </Snackbar>
 
       <Snackbar
         open={invoiceSuccessOpen}
@@ -1623,7 +1699,7 @@ height:"85vh",
 
             onCreateReport?.(uploadRequest);
           }}
-          disabled={!uploadRequest || isCancelled(uploadRequest)}
+          disabled={!canCreateReport(uploadRequest)}
         >
           <DescriptionOutlinedIcon
             sx={{ mr: 1, fontSize: 17, color: "#0B5C8E" }}
@@ -1635,8 +1711,8 @@ height:"85vh",
           disabled={
             !uploadRequest ||
             !canCreateInvoice(uploadRequest) ||
-            hasInvoicePdf(uploadRequest) ||
-            Boolean(invoiceUrlsByRequest[uploadRequest?.id])
+            isCompleted(uploadRequest) ||
+            hasInvoice(uploadRequest)
           }
           onClick={() => {
             openInvoice(uploadRequest);
@@ -1669,8 +1745,34 @@ height:"85vh",
         </MenuItem>
 
         <MenuItem
+          disabled={
+            !uploadRequest ||
+            !hasInvoice(uploadRequest) ||
+            isCompleted(uploadRequest)
+          }
+          onClick={() => {
+            setInvoiceDeleteError("");
+            setInvoiceDeleteRequest(uploadRequest);
+            closeActions();
+          }}
+          sx={{
+            color:
+              hasInvoice(uploadRequest) && !isCompleted(uploadRequest)
+                ? "#DC2626"
+                : "#94A3B8",
+          }}
+        >
+          <DeleteOutlineIcon sx={{ mr: 1, fontSize: 17 }} />
+          Delete invoice
+        </MenuItem>
+
+        <MenuItem
           onClick={openUpload}
-          disabled={uploadRequest ? isCancelled(uploadRequest) : false}
+          disabled={
+            uploadRequest
+              ? isCancelled(uploadRequest) || isCompleted(uploadRequest)
+              : false
+          }
         >
           <UploadFileIcon
             sx={{
@@ -1686,7 +1788,11 @@ height:"85vh",
 
         <MenuItem
           onClick={openCollectionDetails}
-          disabled={uploadRequest ? isCancelled(uploadRequest) : false}
+          disabled={
+            uploadRequest
+              ? isCancelled(uploadRequest) || isCompleted(uploadRequest)
+              : false
+          }
         >
           <CalendarMonthOutlinedIcon
             sx={{ mr: 1, fontSize: 17, color: "#0B5C8E" }}
@@ -1718,9 +1824,12 @@ height:"85vh",
         {selectedReport ? (
           <MenuItem
             onClick={openDeleteConfirmation}
-            disabled={!selectedReport.canDelete}
+            disabled={!selectedReport.canDelete || isCompleted(uploadRequest)}
             sx={{
-              color: selectedReport.canDelete ? "#DC2626" : "#94A3B8",
+              color:
+                selectedReport.canDelete && !isCompleted(uploadRequest)
+                  ? "#DC2626"
+                  : "#94A3B8",
             }}
           >
             <DeleteOutlineIcon
@@ -1731,7 +1840,7 @@ height:"85vh",
               }}
             />
 
-            {selectedReport.canDelete
+            {selectedReport.canDelete && !isCompleted(uploadRequest)
               ? "Delete uploaded PDF"
               : "Delete unavailable"}
           </MenuItem>
@@ -1867,9 +1976,7 @@ height:"85vh",
         maxWidth="lg"
         fullWidth
       >
-        <DialogTitle>
-          Invoice - {invoiceRequest?.order_id || "-"}
-        </DialogTitle>
+        <DialogTitle>Invoice - {invoiceRequest?.order_id || "-"}</DialogTitle>
         <DialogContent dividers>
           {invoiceRequest && (
             <Stack spacing={2}>
@@ -1973,7 +2080,7 @@ height:"85vh",
                           ? test
                           : test.test_code || test.test_name,
                       rate: invoiceDraft.rates[index],
-                    })
+                    }),
                   ),
                   discount_amount: invoiceDraft.discountAmount,
                   other_charges: invoiceDraft.otherCharges,
@@ -1986,13 +2093,19 @@ height:"85vh",
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeInvoice} disabled={invoiceSaving}>Close</Button>
+          <Button onClick={closeInvoice} disabled={invoiceSaving}>
+            Close
+          </Button>
           <Button
             variant="contained"
             onClick={handleCreateInvoice}
             disabled={invoiceSaving || Boolean(invoiceSuccess)}
           >
-            {invoiceSaving ? <CircularProgress size={20} color="inherit" /> : "Create invoice"}
+            {invoiceSaving ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              "Create invoice"
+            )}
           </Button>
         </DialogActions>
       </Dialog>
@@ -2050,6 +2163,54 @@ height:"85vh",
             sx={{ textTransform: "none" }}
           >
             Delete report
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(invoiceDeleteRequest)}
+        onClose={() => {
+          if (!deletingInvoice) {
+            setInvoiceDeleteRequest(null);
+            setInvoiceDeleteError("");
+          }
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Delete invoice?</DialogTitle>
+        <DialogContent>
+          {invoiceDeleteError ? (
+            <Alert severity="error" sx={{ mb: 1.5 }}>
+              {invoiceDeleteError}
+            </Alert>
+          ) : null}
+          <Typography sx={{ color: "#52646B" }}>
+            This will remove the invoice for order{" "}
+            {invoiceDeleteRequest?.order_id || invoiceDeleteRequest?.id || "-"}.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setInvoiceDeleteRequest(null);
+              setInvoiceDeleteError("");
+            }}
+            disabled={deletingInvoice}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={confirmDeleteInvoice}
+            disabled={deletingInvoice}
+          >
+            {deletingInvoice ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              "Delete invoice"
+            )}
           </Button>
         </DialogActions>
       </Dialog>
@@ -2437,7 +2598,6 @@ height:"85vh",
           </Button>
         </DialogActions>
       </Dialog>
-    
     </Box>
   );
 }

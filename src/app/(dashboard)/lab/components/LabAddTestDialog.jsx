@@ -18,69 +18,102 @@ import {
 } from "@mui/material";
 
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+
 import CloseIcon from "@mui/icons-material/Close";
 
 const SAMPLE_TYPES = [
   "BLOOD",
+
   "URINE",
+
   "SERUM",
+
   "PLASMA",
+
   "SWAB",
+
   "STOOL",
+
   "SPUTUM",
+
   "OTHER",
 ];
 
 export default function LabAddTestDialog({
   onCreateRequest,
+
   successMessage,
+
   requestOnlyPatient = false,
 }) {
   const [open, setOpen] = useState(false);
+
   const [successOpen, setSuccessOpen] = useState(false);
+
   const [successDetails, setSuccessDetails] = useState(null);
 
   const [patientName, setPatientName] = useState("");
+
   const [patientEmail, setPatientEmail] = useState("");
+
   const [patientPhone, setPatientPhone] = useState("");
+
   const [patientAge, setPatientAge] = useState("");
-  const [patientGender, setPatientGender] = useState("UNSPECIFIED");
+
+  const [patientGender, setPatientGender] = useState("MALE");
+
   const [patientAddress, setPatientAddress] = useState("");
 
   const [doctorName, setDoctorName] = useState("");
+
   const [doctorPhone, setDoctorPhone] = useState("");
 
   const [testsInput, setTestsInput] = useState("");
+
   const [sampleType, setSampleType] = useState("BLOOD");
+
   const [priority, setPriority] = useState("NORMAL");
 
   const [error, setError] = useState("");
+
   const [saving, setSaving] = useState(false);
 
   /* =========================
+
      RESET FORM
+
   ========================= */
 
   const resetForm = () => {
     setPatientName("");
+
     setPatientEmail("");
+
     setPatientPhone("");
+
     setPatientAge("");
-    setPatientGender("UNSPECIFIED");
+
+    setPatientGender("MALE");
+
     setPatientAddress("");
 
     setDoctorName("");
+
     setDoctorPhone("");
 
     setTestsInput("");
+
     setSampleType("BLOOD");
+
     setPriority("NORMAL");
 
     setError("");
   };
 
   /* =========================
+
      SUBMIT
+
   ========================= */
 
   const submit = async (event) => {
@@ -89,27 +122,33 @@ export default function LabAddTestDialog({
     const tests = [
       ...new Set(
         testsInput
+
           .split(/[\n,]+/)
+
           .map((test) => test.trim())
-          .filter(Boolean)
+
+          .filter(Boolean),
       ),
     ];
 
     if (patientName.trim().length < 3) {
       setError("Enter the patient's full name.");
+
       return;
     }
 
     if (
       patientEmail.trim() &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patientEmail.trim())
+      !/^[^\s@]+@gmail\.com$/i.test(patientEmail.trim())
     ) {
-      setError("Enter a valid patient email address.");
+      setError("Enter a valid Gmail address.");
+
       return;
     }
 
-    if (!/^[6-9]\d{9}$/.test(patientPhone.trim())) {
+    if (patientPhone.trim() && !/^\d{10}$/.test(patientPhone.trim())) {
       setError("Enter a valid 10-digit mobile number.");
+
       return;
     }
 
@@ -118,14 +157,13 @@ export default function LabAddTestDialog({
       (!/^\d{1,3}$/.test(patientAge) || Number(patientAge) > 130)
     ) {
       setError("Enter the patient's age between 0 and 130 years.");
+
       return;
     }
 
-    if (
-      doctorPhone.trim() &&
-      !/^[6-9]\d{9}$/.test(doctorPhone.trim())
-    ) {
+    if (doctorPhone.trim() && !/^\d{10}$/.test(doctorPhone.trim())) {
       setError("Enter a valid 10-digit referring doctor mobile number.");
+
       return;
     }
 
@@ -134,34 +172,43 @@ export default function LabAddTestDialog({
       tests.length > 20 ||
       tests.some((test) => test.length < 2 || test.length > 150)
     ) {
-      setError(
-        "Enter 1 to 20 test names, each between 2 and 150 characters."
-      );
+      setError("Enter 1 to 20 test names, each between 2 and 150 characters.");
+
       return;
     }
 
     try {
       setSaving(true);
+
       setError("");
 
       const result = await onCreateRequest?.({
         fullName: patientName.trim(),
-        email: patientEmail.trim().toLowerCase(),
-        phoneNumber: patientPhone.trim(),
+
+        ...(patientEmail.trim()
+          ? { email: patientEmail.trim().toLowerCase() }
+          : {}),
+
+        ...(patientPhone.trim() ? { phoneNumber: patientPhone.trim() } : {}),
 
         ...(requestOnlyPatient
           ? {
               age: Number(patientAge),
+
               gender: patientGender,
+
               address: patientAddress.trim(),
             }
           : {}),
 
         referringDoctorName: doctorName.trim(),
+
         referringDoctorPhone: doctorPhone.trim(),
 
         tests,
+
         sampleType,
+
         priority,
 
         requestType: "WALK_IN",
@@ -170,8 +217,9 @@ export default function LabAddTestDialog({
       if (!result?.success) {
         setError(
           result?.message ||
-            "Unable to create test request. Check the details and try again."
+            "Unable to create test request. Check the details and try again.",
         );
+
         return;
       }
 
@@ -194,12 +242,13 @@ export default function LabAddTestDialog({
       });
 
       setSuccessOpen(true);
+
       resetForm();
     } catch (requestError) {
       setError(
         requestError?.response?.data?.message ||
           requestError?.message ||
-          "Unable to create test request."
+          "Unable to create test request.",
       );
     } finally {
       setSaving(false);
@@ -207,12 +256,15 @@ export default function LabAddTestDialog({
   };
 
   /* =========================
+
      COMMON UI
+
   ========================= */
 
   const compactFieldSx = {
     "& .MuiInputLabel-root": {
       fontSize: "10.5px",
+
       color: "#64748B",
     },
 
@@ -222,8 +274,11 @@ export default function LabAddTestDialog({
 
     "& .MuiOutlinedInput-root": {
       minHeight: 36,
+
       borderRadius: "7px",
+
       bgcolor: "#FFFFFF",
+
       fontSize: "11.5px",
 
       "& fieldset": {
@@ -236,49 +291,68 @@ export default function LabAddTestDialog({
 
       "&.Mui-focused fieldset": {
         borderColor: "#07876A",
+
         borderWidth: "1px",
       },
     },
 
     "& .MuiOutlinedInput-input": {
       fontSize: "11.5px",
+
       padding: "8px 10px",
     },
 
     "& .MuiSelect-select": {
       fontSize: "11.5px",
+
       paddingTop: "8px",
+
       paddingBottom: "8px",
     },
 
     "& .MuiFormHelperText-root": {
       mt: 0.35,
+
       ml: 0.25,
+
       fontSize: "9px",
+
       lineHeight: 1.2,
+
       color: "#94A3B8",
     },
   };
 
   const sectionBoxSx = {
     p: { xs: 1.3, sm: 1.5 },
+
     bgcolor: "#FFFFFF",
+
     border: "1px solid #E3E9ED",
+
     borderRadius: "9px",
   };
 
   const sectionTitleSx = {
     mb: 1.1,
+
     fontSize: "9.5px",
+
     lineHeight: 1,
+
     fontWeight: 750,
+
     color: "#07876A",
+
     textTransform: "uppercase",
+
     letterSpacing: "0.065em",
   };
 
   /* =========================
+
      JSX
+
   ========================= */
 
   return (
@@ -296,25 +370,37 @@ export default function LabAddTestDialog({
         }
         onClick={() => {
           setError("");
+
           setOpen(true);
         }}
         sx={{
           height: 38,
+
           minHeight: 38,
+
           width: {
             xs: "100%",
+
             sm: "auto",
           },
+
           px: 1.8,
+
           borderRadius: "7px",
+
           bgcolor: "#07876A",
+
           fontSize: "11.5px",
+
           fontWeight: 700,
+
           textTransform: "none",
+
           boxShadow: "none",
 
           "&:hover": {
             bgcolor: "#066F58",
+
             boxShadow: "none",
           },
         }}
@@ -323,7 +409,9 @@ export default function LabAddTestDialog({
       </Button>
 
       {/* =========================
+
           MAIN DIALOG
+
       ========================= */}
 
       <Dialog
@@ -334,34 +422,42 @@ export default function LabAddTestDialog({
         PaperProps={{
           sx: {
             width: "100%",
+
             maxWidth: "920px",
+
             borderRadius: "12px",
+
             overflow: "hidden",
+
             boxShadow: "0 20px 50px rgba(15, 23, 42, 0.14)",
           },
         }}
       >
-        <Box
-          component="form"
-          onSubmit={submit}
-        >
+        <Box component="form" onSubmit={submit}>
           {/* =========================
+
               HEADER
+
           ========================= */}
 
           <DialogTitle
             sx={{
               px: {
                 xs: 1.8,
+
                 sm: 2.5,
               },
+
               py: 1.4,
 
               display: "flex",
+
               alignItems: "center",
+
               justifyContent: "space-between",
 
               borderBottom: "1px solid #E8EEF2",
+
               bgcolor: "#FFFFFF",
             }}
           >
@@ -369,8 +465,11 @@ export default function LabAddTestDialog({
               <Typography
                 sx={{
                   fontSize: "14.5px",
+
                   fontWeight: 750,
+
                   color: "#172033",
+
                   lineHeight: 1.2,
                 }}
               >
@@ -380,7 +479,9 @@ export default function LabAddTestDialog({
               <Typography
                 sx={{
                   mt: 0.2,
+
                   fontSize: "10px",
+
                   color: "#7B8992",
                 }}
               >
@@ -394,9 +495,13 @@ export default function LabAddTestDialog({
               onClick={() => setOpen(false)}
               sx={{
                 width: 29,
+
                 height: 29,
+
                 border: "1px solid #E2E8F0",
+
                 borderRadius: "7px",
+
                 color: "#64748B",
 
                 "&:hover": {
@@ -413,13 +518,16 @@ export default function LabAddTestDialog({
           </DialogTitle>
 
           {/* =========================
+
               CONTENT
+
           ========================= */}
 
           <DialogContent
             sx={{
               px: {
                 xs: 1.8,
+
                 sm: 2.5,
               },
 
@@ -428,35 +536,17 @@ export default function LabAddTestDialog({
               bgcolor: "#F8FAF9",
             }}
           >
-            {/* ERROR */}
-
-            {error ? (
-              <Alert
-                severity="error"
-                sx={{
-                  mb: 1.3,
-                  py: 0.2,
-                  borderRadius: "7px",
-                  fontSize: "10.5px",
-
-                  "& .MuiAlert-icon": {
-                    fontSize: 17,
-                  },
-                }}
-              >
-                {error}
-              </Alert>
-            ) : null}
+          
 
             <Stack spacing={1.25}>
               {/* =========================
+
                   PATIENT DETAILS
+
               ========================= */}
 
               <Box sx={sectionBoxSx}>
-                <Typography sx={sectionTitleSx}>
-                  Patient details
-                </Typography>
+                <Typography sx={sectionTitleSx}>Patient details</Typography>
 
                 <Box
                   sx={{
@@ -482,9 +572,7 @@ export default function LabAddTestDialog({
                     size="small"
                     label="Patient full name"
                     value={patientName}
-                    onChange={(event) =>
-                      setPatientName(event.target.value)
-                    }
+                    onChange={(event) => setPatientName(event.target.value)}
                     sx={compactFieldSx}
                   />
 
@@ -495,28 +583,28 @@ export default function LabAddTestDialog({
                     type="email"
                     label="Patient email (optional)"
                     value={patientEmail}
-                    onChange={(event) =>
-                      setPatientEmail(event.target.value)
-                    }
+                    onChange={(event) => setPatientEmail(event.target.value)}
                     sx={compactFieldSx}
                   />
 
                   {/* MOBILE */}
 
                   <TextField
-                    required
                     size="small"
-                    label="Mobile number"
+                    label="Mobile number (optional)"
                     value={patientPhone}
                     onChange={(event) =>
                       setPatientPhone(
                         event.target.value
+
                           .replace(/\D/g, "")
-                          .slice(0, 10)
+
+                          .slice(0, 10),
                       )
                     }
                     inputProps={{
                       inputMode: "numeric",
+
                       maxLength: 10,
                     }}
                     sx={compactFieldSx}
@@ -534,11 +622,10 @@ export default function LabAddTestDialog({
                         type="number"
                         label="Age"
                         value={patientAge}
-                        onChange={(event) =>
-                          setPatientAge(event.target.value)
-                        }
+                        onChange={(event) => setPatientAge(event.target.value)}
                         inputProps={{
                           min: 0,
+
                           max: 130,
                         }}
                         sx={compactFieldSx}
@@ -550,40 +637,16 @@ export default function LabAddTestDialog({
                         select
                         required
                         size="small"
-                        label="Sex"
+                        label="Gender"
                         value={patientGender}
                         onChange={(event) =>
                           setPatientGender(event.target.value)
                         }
                         sx={compactFieldSx}
                       >
-                        <MenuItem
-                          value="UNSPECIFIED"
-                          sx={{ fontSize: "11.5px" }}
-                        >
-                          Unspecified
-                        </MenuItem>
-
-                        <MenuItem
-                          value="FEMALE"
-                          sx={{ fontSize: "11.5px" }}
-                        >
-                          Female
-                        </MenuItem>
-
-                        <MenuItem
-                          value="MALE"
-                          sx={{ fontSize: "11.5px" }}
-                        >
-                          Male
-                        </MenuItem>
-
-                        <MenuItem
-                          value="OTHER"
-                          sx={{ fontSize: "11.5px" }}
-                        >
-                          Other
-                        </MenuItem>
+                        <MenuItem value="MALE">Male</MenuItem>
+                        <MenuItem value="FEMALE">Female</MenuItem>
+                        <MenuItem value="OTHER">Other</MenuItem>
                       </TextField>
 
                       {/* ADDRESS */}
@@ -600,7 +663,9 @@ export default function LabAddTestDialog({
 
                           gridColumn: {
                             xs: "auto",
+
                             sm: "span 2",
+
                             md: "1 / -1",
                           },
                         }}
@@ -611,7 +676,9 @@ export default function LabAddTestDialog({
               </Box>
 
               {/* =========================
+
                   TEST + DOCTOR ROW
+
               ========================= */}
 
               <Box
@@ -620,6 +687,7 @@ export default function LabAddTestDialog({
 
                   gridTemplateColumns: {
                     xs: "1fr",
+
                     md: "1.5fr 0.85fr",
                   },
 
@@ -629,13 +697,13 @@ export default function LabAddTestDialog({
                 }}
               >
                 {/* =========================
+
                     TEST DETAILS
+
                 ========================= */}
 
                 <Box sx={sectionBoxSx}>
-                  <Typography sx={sectionTitleSx}>
-                    Test details
-                  </Typography>
+                  <Typography sx={sectionTitleSx}>Test details</Typography>
 
                   <Box
                     sx={{
@@ -643,10 +711,12 @@ export default function LabAddTestDialog({
 
                       gridTemplateColumns: {
                         xs: "1fr",
+
                         sm: "2fr 1fr 0.9fr",
                       },
 
                       gap: 1,
+
                       alignItems: "start",
                     }}
                   >
@@ -658,9 +728,7 @@ export default function LabAddTestDialog({
                       label="Tests"
                       placeholder="Example: CBC, Blood sugar"
                       value={testsInput}
-                      onChange={(event) =>
-                        setTestsInput(event.target.value)
-                      }
+                      onChange={(event) => setTestsInput(event.target.value)}
                       helperText="Separate test names with commas."
                       sx={compactFieldSx}
                     />
@@ -672,9 +740,7 @@ export default function LabAddTestDialog({
                       size="small"
                       label="Sample type"
                       value={sampleType}
-                      onChange={(event) =>
-                        setSampleType(event.target.value)
-                      }
+                      onChange={(event) => setSampleType(event.target.value)}
                       sx={compactFieldSx}
                     >
                       {SAMPLE_TYPES.map((item) => (
@@ -697,9 +763,7 @@ export default function LabAddTestDialog({
                       size="small"
                       label="Priority"
                       value={priority}
-                      onChange={(event) =>
-                        setPriority(event.target.value)
-                      }
+                      onChange={(event) => setPriority(event.target.value)}
                       sx={compactFieldSx}
                     >
                       <MenuItem
@@ -724,21 +788,27 @@ export default function LabAddTestDialog({
                 </Box>
 
                 {/* =========================
+
                     REFERRING DOCTOR
+
                 ========================= */}
 
                 <Box sx={sectionBoxSx}>
                   <Typography sx={sectionTitleSx}>
                     Referring doctor
-
                     <Box
                       component="span"
                       sx={{
                         ml: 0.5,
+
                         color: "#94A3B8",
+
                         fontSize: "9px",
+
                         fontWeight: 500,
+
                         textTransform: "none",
+
                         letterSpacing: 0,
                       }}
                     >
@@ -752,7 +822,9 @@ export default function LabAddTestDialog({
 
                       gridTemplateColumns: {
                         xs: "1fr",
+
                         sm: "repeat(2, minmax(0, 1fr))",
+
                         md: "1fr",
                       },
 
@@ -765,9 +837,7 @@ export default function LabAddTestDialog({
                       size="small"
                       label="Doctor name"
                       value={doctorName}
-                      onChange={(event) =>
-                        setDoctorName(event.target.value)
-                      }
+                      onChange={(event) => setDoctorName(event.target.value)}
                       sx={compactFieldSx}
                     />
 
@@ -780,12 +850,15 @@ export default function LabAddTestDialog({
                       onChange={(event) =>
                         setDoctorPhone(
                           event.target.value
+
                             .replace(/\D/g, "")
-                            .slice(0, 10)
+
+                            .slice(0, 10),
                         )
                       }
                       inputProps={{
                         inputMode: "numeric",
+
                         maxLength: 10,
                       }}
                       sx={compactFieldSx}
@@ -797,13 +870,16 @@ export default function LabAddTestDialog({
           </DialogContent>
 
           {/* =========================
+
               FOOTER
+
           ========================= */}
 
           <DialogActions
             sx={{
               px: {
                 xs: 1.8,
+
                 sm: 2.5,
               },
 
@@ -823,6 +899,7 @@ export default function LabAddTestDialog({
               disabled={saving}
               sx={{
                 height: 34,
+
                 px: 1.6,
 
                 borderRadius: "7px",
@@ -830,6 +907,7 @@ export default function LabAddTestDialog({
                 color: "#64748B",
 
                 fontSize: "10.5px",
+
                 fontWeight: 650,
 
                 textTransform: "none",
@@ -858,6 +936,7 @@ export default function LabAddTestDialog({
                 bgcolor: "#07876A",
 
                 fontSize: "10.5px",
+
                 fontWeight: 700,
 
                 textTransform: "none",
@@ -866,6 +945,7 @@ export default function LabAddTestDialog({
 
                 "&:hover": {
                   bgcolor: "#066F58",
+
                   boxShadow: "none",
                 },
               }}
@@ -877,7 +957,9 @@ export default function LabAddTestDialog({
       </Dialog>
 
       {/* =========================
+
           SUCCESS DIALOG
+
       ========================= */}
 
       <Dialog
@@ -894,20 +976,23 @@ export default function LabAddTestDialog({
         <DialogTitle
           sx={{
             px: 2,
+
             py: 1.4,
 
             display: "flex",
+
             alignItems: "center",
+
             justifyContent: "space-between",
 
             fontSize: "14px",
+
             fontWeight: 700,
 
             color: "#172033",
           }}
         >
           Request created
-
           <IconButton
             aria-label="Close confirmation"
             onClick={() => setSuccessOpen(false)}
@@ -924,9 +1009,11 @@ export default function LabAddTestDialog({
         <DialogContent
           sx={{
             px: 2,
+
             pb: 2,
 
             display: "grid",
+
             gap: 1,
 
             pt: "6px !important",
@@ -936,6 +1023,7 @@ export default function LabAddTestDialog({
             severity="success"
             sx={{
               py: 0.3,
+
               fontSize: "10.5px",
 
               "& .MuiAlert-icon": {
@@ -950,12 +1038,11 @@ export default function LabAddTestDialog({
           <Typography
             sx={{
               fontSize: "11.5px",
+
               color: "#475569",
             }}
           >
-            {successDetails?.requestOnlyPatient
-              ? "Patient data"
-              : "Patient ID"}
+            {successDetails?.requestOnlyPatient ? "Patient data" : "Patient ID"}
             :{" "}
             <Box
               component="strong"
@@ -970,6 +1057,7 @@ export default function LabAddTestDialog({
           <Typography
             sx={{
               fontSize: "11.5px",
+
               color: "#475569",
             }}
           >

@@ -134,7 +134,7 @@ export default function LabBill({
 
           <div className="bill-title">
             LABORATORY BILL
-            <small>Bill No: {show(invoice.invoice_no || order.order_id)}</small>
+            <small>Bill No: {invoice.invoice_no }</small>
           </div>
         </header>
 
