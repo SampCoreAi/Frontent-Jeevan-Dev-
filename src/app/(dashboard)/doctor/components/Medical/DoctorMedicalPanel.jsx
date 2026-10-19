@@ -24,10 +24,7 @@ import MedicalRequestInvoiceDialog from "../../../users/components/Medical/Medic
 import { DataTable, SectionTitle } from "../../../lab/components/LabUi";
 
 const getRows = (response) =>
-  response?.data?.data ||
-  response?.data?.results ||
-  response?.data ||
-  [];
+  response?.data?.data || response?.data?.results || response?.data || [];
 
 const getErrorMessage = (error, fallback) =>
   error?.response?.data?.message || error?.message || fallback;
@@ -138,7 +135,6 @@ const formatCurrency = (value) =>
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
 
-
 export default function DoctorMedicalPanel() {
   const [invoiceRows, setInvoiceRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -168,10 +164,7 @@ export default function DoctorMedicalPanel() {
         setInvoiceRows(rows);
       } catch (requestError) {
         setError(
-          getErrorMessage(
-            requestError,
-            "Unable to load medical requests."
-          )
+          getErrorMessage(requestError, "Unable to load medical requests."),
         );
 
         setInvoiceRows([]);
@@ -185,7 +178,7 @@ export default function DoctorMedicalPanel() {
 
   const medicalStoreOptions = useMemo(
     () => [...new Set(invoiceRows.map((row) => row.medicalStore))],
-    [invoiceRows]
+    [invoiceRows],
   );
 
   const filteredRows = useMemo(() => {
@@ -210,32 +203,24 @@ export default function DoctorMedicalPanel() {
         row.medicalStore === tableFilters.medicalStore;
 
       const matchesStatus =
-        !tableFilters.status ||
-        row.status === tableFilters.status;
+        !tableFilters.status || row.status === tableFilters.status;
 
       const matchesDate =
         !tableFilters.date ||
         String(row.invoiceDate).startsWith(tableFilters.date);
 
-      return (
-        matchesSearch &&
-        matchesStore &&
-        matchesStatus &&
-        matchesDate
-      );
+      return matchesSearch && matchesStore && matchesStatus && matchesDate;
     });
   }, [invoiceRows, tableFilters]);
 
   const visibleRows = filteredRows.slice(
     (tablePage - 1) * pageSize,
-    tablePage * pageSize
+    tablePage * pageSize,
   );
 
   const handleFilter = (field) => (value) => {
     const nextValue =
-      value &&
-      typeof value === "object" &&
-      "target" in value
+      value && typeof value === "object" && "target" in value
         ? value.target.value
         : value;
 
@@ -294,8 +279,6 @@ export default function DoctorMedicalPanel() {
           boxSizing: "border-box",
         }}
       >
-        
-
         <Box
           sx={{
             display: "grid",
@@ -316,9 +299,7 @@ export default function DoctorMedicalPanel() {
             size="small"
             label="Search records"
             value={tableFilters.search}
-            onChange={(event) =>
-              handleFilter("search")(event.target.value)
-            }
+            onChange={(event) => handleFilter("search")(event.target.value)}
             sx={{
               minWidth: 0,
               "& .MuiOutlinedInput-root": {
@@ -392,9 +373,7 @@ export default function DoctorMedicalPanel() {
             size="small"
             label="Status"
             value={tableFilters.status}
-            onChange={(event) =>
-              handleFilter("status")(event.target.value)
-            }
+            onChange={(event) => handleFilter("status")(event.target.value)}
             sx={{
               minWidth: 0,
               "& .MuiOutlinedInput-root": {
@@ -417,9 +396,7 @@ export default function DoctorMedicalPanel() {
             <MenuItem value="PENDING">PENDING</MenuItem>
             <MenuItem value="APPROVED">APPROVED</MenuItem>
             <MenuItem value="PROCESSING">PROCESSING</MenuItem>
-            <MenuItem value="READY_FOR_PICKUP">
-              READY FOR PICKUP
-            </MenuItem>
+            <MenuItem value="READY_FOR_PICKUP">READY FOR PICKUP</MenuItem>
             <MenuItem value="IN_PROGRESS">IN PROGRESS</MenuItem>
             <MenuItem value="COMPLETED">COMPLETED</MenuItem>
             <MenuItem value="REJECTED">REJECTED</MenuItem>
@@ -432,9 +409,7 @@ export default function DoctorMedicalPanel() {
             type="date"
             label="Date"
             value={tableFilters.date}
-            onChange={(event) =>
-              handleFilter("date")(event.target.value)
-            }
+            onChange={(event) => handleFilter("date")(event.target.value)}
             InputLabelProps={{
               shrink: true,
             }}
@@ -508,10 +483,7 @@ export default function DoctorMedicalPanel() {
           emptyMessage="No medical requests found."
           footer={
             <Pagination
-              count={Math.max(
-                1,
-                Math.ceil(filteredRows.length / pageSize)
-              )}
+              count={Math.max(1, Math.ceil(filteredRows.length / pageSize))}
               page={tablePage - 1}
               onChange={(_, value) => setTablePage(value + 1)}
               size="small"
@@ -527,10 +499,7 @@ export default function DoctorMedicalPanel() {
         >
           {visibleRows.length
             ? visibleRows.map((row, index) => (
-                <TableRow
-                  key={row.id}
-                  hover
-                >
+                <TableRow key={row.id} hover>
                   <TableCell
                     sx={{
                       color: "#1f2937 !important",
@@ -623,11 +592,23 @@ export default function DoctorMedicalPanel() {
                     {row.status === "COMPLETED" ? (
                       <IconButton
                         size="small"
-                        color="primary"
                         onClick={() => setSelectedInvoice(row)}
                         aria-label={`View invoice for ${row.patientName}`}
+                        sx={{
+                          color: "#1e6658",
+                          width: 32,
+                          height: 32,
+                          opacity: 1,
+                          visibility: "visible",
+                          "& svg": {
+                            fontSize: 20,
+                          },
+                          "&:hover": {
+                            backgroundColor: "#edf7f2",
+                          },
+                        }}
                       >
-                        <VisibilityOutlinedIcon fontSize="small" />
+                        <VisibilityOutlinedIcon />
                       </IconButton>
                     ) : null}
                   </TableCell>
@@ -648,10 +629,7 @@ export default function DoctorMedicalPanel() {
         autoHideDuration={5000}
         onClose={() => setError("")}
       >
-        <Alert
-          severity="error"
-          onClose={() => setError("")}
-        >
+        <Alert severity="error" onClose={() => setError("")}>
           {error}
         </Alert>
       </Snackbar>

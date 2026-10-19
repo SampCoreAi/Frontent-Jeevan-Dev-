@@ -1,64 +1,150 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Box, Button, CircularProgress, Typography } from "@mui/material";
+import { useRef, useState } from "react";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Typography,
+} from "@mui/material";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 
-const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+const RULES = {
+  Logo: {
+    types: ["image/png", "image/webp"],
+    accept: "image/png,image/webp",
+    size: 500 * 1024,
+    width: 500,
+    height: 500,
+    details: "PNG or WebP • 500 × 500 px • Max 500 KB",
+  },
+  Signature: {
+    types: ["image/png"],
+    accept: "image/png",
+    size: 200 * 1024,
+    width: 600,
+    height: 200,
+    details: "Transparent PNG • 600 × 200 px • Max 200 KB",
+  },
+};
 
-function BrandingItem({ title, imageUrl, isEditing, uploading, onUpload }) {
+function readImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => {
+      resolve({ image, url });
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Image could not be opened."));
+    };
+
+    image.src = url;
+  });
+}
+
+async function validateImage(file, title) {
+  const rule = RULES[title];
+
+  if (!rule.types.includes(file.type)) {
+    return title === "Logo"
+      ? "Please select a PNG or WebP image."
+      : "Please select a PNG image.";
+  }
+
+  if (file.size > rule.size) {
+    return `File size must be under ${title === "Logo" ? "500 KB" : "200 KB"}.`;
+  }
+
+  try {
+    const { image, url } = await readImage(file);
+    const dimensionsMatch =
+      image.width === rule.width && image.height === rule.height;
+
+    if (!dimensionsMatch) {
+      URL.revokeObjectURL(url);
+      return `Image dimensions must be ${rule.width} × ${rule.height} px.`;
+    }
+
+    if (title === "Signature") {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.width;
+      canvas.height = image.height;
+
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(image, 0, 0);
+
+      const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+      const corners = [
+        3,
+        (canvas.width - 1) * 4 + 3,
+        ((canvas.height - 1) * canvas.width) * 4 + 3,
+        (canvas.width * canvas.height - 1) * 4 + 3,
+      ];
+
+      const hasTransparentBackground = corners.every(
+        (index) => data[index] === 0,
+      );
+
+      URL.revokeObjectURL(url);
+
+      if (!hasTransparentBackground) {
+        return "Signature must have a transparent background.";
+      }
+    } else {
+      URL.revokeObjectURL(url);
+    }
+  } catch {
+    return "Could not verify this image. Please choose another file.";
+  }
+
+  return "";
+}
+
+function BrandingItem({
+  title,
+  imageUrl,
+  isEditing,
+  uploading,
+  onUpload,
+}) {
   const inputRef = useRef(null);
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState("");
-  const [failedUrl, setFailedUrl] = useState("");
+  const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const loading = busy || uploading;
+  const rule = RULES[title];
 
-  useEffect(() => {
-    setFile(null);
-    setFailedUrl("");
-    setError("");
-  }, [imageUrl, isEditing]);
-
-  useEffect(() => {
-    if (!file) {
-      setPreview("");
-      return;
-    }
-
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
-
-  const handleUpload = async (event) => {
-    const selected = event.target.files?.[0];
+  const handleFileChange = async (event) => {
+    const file = event.target.files?.[0];
     event.target.value = "";
 
-    if (!selected || busy || uploading) return;
+    if (!file || loading) return;
 
-    if (!IMAGE_TYPES.includes(selected.type)) {
-      setError("Please select a PNG, JPG or WebP image.");
+    setError("");
+    const validationError = await validateImage(file, title);
+
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    setError("");
-    setFailedUrl("");
-    setFile(selected);
     setBusy(true);
 
     try {
-      await onUpload(selected);
+      await onUpload(file);
+      setOpen(false);
     } catch {
-      setFile(null);
       setError("Upload failed. Please try again.");
     } finally {
       setBusy(false);
     }
   };
-
-  const url = preview || imageUrl;
-  const loading = busy || uploading;
 
   return (
     <Box
@@ -77,7 +163,6 @@ function BrandingItem({ title, imageUrl, isEditing, uploading, onUpload }) {
       <Box
         sx={{
           height: 110,
-          width: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -87,71 +172,127 @@ function BrandingItem({ title, imageUrl, isEditing, uploading, onUpload }) {
           overflow: "hidden",
         }}
       >
-        {url && failedUrl !== url ? (
+        {imageUrl ? (
           <Box
             component="img"
-            src={url}
+            src={imageUrl}
             alt={`Doctor ${title.toLowerCase()}`}
-            onError={() => setFailedUrl(url)}
-            sx={{
-              display: "block",
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-              boxSizing: "border-box",
-              p: 1.5,
-            }}
+            sx={{ width: "100%", height: "100%", objectFit: "contain", p: 1.5 }}
           />
         ) : (
           <Typography sx={{ fontSize: 12, color: "#64748B" }}>
-            {url ? "Preview unavailable" : `No ${title.toLowerCase()} uploaded`}
+            No {title.toLowerCase()} uploaded
           </Typography>
         )}
       </Box>
 
       {isEditing && (
         <>
-          <input
-            ref={inputRef}
-            type="file"
-            accept={IMAGE_TYPES.join(",")}
-            hidden
-            onChange={handleUpload}
-          />
-
           <Button
             variant="outlined"
             disabled={loading}
-            onClick={() => inputRef.current?.click()}
-            startIcon={
-              loading ? (
-                <CircularProgress size={15} color="inherit" />
-              ) : (
-                <CloudUploadOutlinedIcon />
-              )
-            }
+            onClick={() => {
+              setError("");
+              setOpen(true);
+            }}
             sx={{
               mt: 1.25,
-              px: 1.5,
               minHeight: 34,
               color: "#07876A",
               borderColor: "#07876A",
               borderRadius: 1.5,
               textTransform: "none",
-              whiteSpace: "nowrap",
             }}
           >
-            <Typography component="span" sx={{ fontSize: 12, fontWeight: 600 }}>
-              {loading ? "Uploading..." : `${url ? "Change" : "Upload"} ${title}`}
-            </Typography>
+            {loading ? "Uploading..." : `${imageUrl ? "Change" : "Upload"} ${title}`}
           </Button>
-        </>
-      )}
 
-      {error && (
-        <Typography role="alert" sx={{ mt: 1, fontSize: 12, color: "error.main" }}>
-          {error}
-        </Typography>
+          <Dialog
+            open={open}
+            onClose={() => !loading && setOpen(false)}
+            fullWidth
+            maxWidth="xs"
+          >
+            <DialogTitle sx={{ fontSize: 17, fontWeight: 700 }}>
+              {title === "Logo" ? "Clinic Logo" : "Doctor Signature"}
+            </DialogTitle>
+
+            <DialogContent>
+              <Box
+                sx={{
+                  minHeight: 220,
+                  p: 2.5,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  border: "1px dashed #CBD5E1",
+                  borderRadius: 2,
+                  bgcolor: "#fff",
+                }}
+              >
+                <CloudUploadOutlinedIcon
+                  sx={{ fontSize: 48, color: "#64748B", mb: 1 }}
+                />
+
+                <Typography sx={{ fontWeight: 700 }}>
+                  {title === "Logo" ? "Upload clinic logo" : "Upload your signature"}
+                </Typography>
+
+                <Typography sx={{ mt: 0.5, fontSize: 13, color: "#64748B" }}>
+                  {rule.details}
+                </Typography>
+
+                <Typography sx={{ fontSize: 13, color: "#64748B" }}>
+                  {title === "Logo"
+                    ? "Transparent background preferred"
+                    : "Use a clear signature on transparent background"}
+                </Typography>
+
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept={rule.accept}
+                  hidden
+                  onChange={handleFileChange}
+                />
+
+                <Button
+                  variant="outlined"
+                  disabled={loading}
+                  onClick={() => inputRef.current?.click()}
+                  startIcon={
+                    loading ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      <CloudUploadOutlinedIcon />
+                    )
+                  }
+                  sx={{
+                    mt: 1.5,
+                    color: "#07876A",
+                    borderColor: "#07876A",
+                    borderRadius: 1.5,
+                    textTransform: "none",
+                    fontWeight: 600,
+                  }}
+                >
+                  {loading ? "Uploading..." : "Choose Image"}
+                </Button>
+              </Box>
+
+              {error && (
+                <Typography
+                  role="alert"
+                  sx={{ mt: 1.25, fontSize: 12, color: "error.main" }}
+                >
+                  {error}
+                </Typography>
+              )}
+            </DialogContent>
+          </Dialog>
+        </>
       )}
     </Box>
   );
@@ -186,6 +327,7 @@ export default function DoctorBranding({
           uploading={logoUploading}
           onUpload={onLogoUpload}
         />
+
         <BrandingItem
           title="Signature"
           imageUrl={signatureUrl}

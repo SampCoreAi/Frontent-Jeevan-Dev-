@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -8,6 +9,8 @@ import {
   Button,
   Divider,
   IconButton,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
 
 import {
@@ -15,20 +18,87 @@ import {
   LocalHospitalOutlined,
   WorkOutline,
   StarOutline,
-  AccessTime,
-  VideoCallOutlined,
   CurrencyRupee,
   PersonOutline,
   Check,
   Tune,
 } from "@mui/icons-material";
+import api from "../../../../utils/axiosInstance";
+import {
+  getDoctorFilterOptionsCacheKey,
+  readDoctorFilterOptionsCache,
+  writeDoctorFilterOptionsCache,
+} from "../../../../utils/doctorFilterOptionsCache";
 
 export default function FiltersSidebar({
   selectedFilters,
   setSelectedFilters,
   onClose,
   onApply,
+  open,
 }) {
+  const [filterOptions, setFilterOptions] = useState(null);
+  const [optionsLoading, setOptionsLoading] = useState(false);
+  const [optionsError, setOptionsError] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
+
+  useEffect(() => {
+    if (open === false) return undefined;
+
+    let isActive = true;
+    const cacheKey = getDoctorFilterOptionsCacheKey();
+    const cachedOptions = readDoctorFilterOptionsCache(cacheKey);
+
+    if (cachedOptions) {
+      setFilterOptions(cachedOptions);
+      setOptionsError("");
+      setOptionsLoading(false);
+      return undefined;
+    }
+
+    const fetchFilterOptions = async () => {
+      setOptionsLoading(true);
+      setOptionsError("");
+
+      try {
+        const response = await api.get("/api/doctors/filter-options");
+        const payload = response?.data;
+
+        if (
+          payload?.success !== true ||
+          !payload.data ||
+          typeof payload.data !== "object" ||
+          Array.isArray(payload.data)
+        ) {
+          throw new Error("The filter options response is invalid.");
+        }
+
+        if (!isActive) return;
+
+        setFilterOptions(payload.data);
+        writeDoctorFilterOptionsCache(cacheKey, payload.data);
+      } catch (error) {
+        if (!isActive) return;
+
+        console.error(
+          "Unable to load doctor filter options:",
+          error?.response?.data || error
+        );
+        setOptionsError(
+          "We couldn't load filters. Please try again."
+        );
+      } finally {
+        if (isActive) setOptionsLoading(false);
+      }
+    };
+
+    fetchFilterOptions();
+
+    return () => {
+      isActive = false;
+    };
+  }, [open, retryCount]);
+
   // ============================================
   // COLORS
   // ============================================
@@ -98,102 +168,65 @@ export default function FiltersSidebar({
   // FILTER DATA
   // ============================================
 
-  const filterSections = [
+  const sectionConfig = [
     {
+      apiKey: "specialization",
       id: "specialization",
       title: "Specialization",
       icon: LocalHospitalOutlined,
-      options: [
-        "Cardiology",
-        "Dermatology",
-        "Neurology",
-        "Orthopedics",
-        "Pediatrics",
-        "Gynecologist",
-        "Ophthalmology",
-        "Psychiatry",
-        "Oncology",
-      ],
     },
-
     {
+      apiKey: "experience",
       id: "experience",
       title: "Experience",
       icon: WorkOutline,
-      options: [
-        "0-5 years",
-        "5-10 years",
-        "10-15 years",
-        "15+ years",
-      ],
     },
-
     {
+      apiKey: "rating",
       id: "rating",
       title: "Rating",
       icon: StarOutline,
-      options: [
-        {
-          label: "4+ Stars",
-          value: "4",
-        },
-        {
-          label: "3+ Stars",
-          value: "3",
-        },
-        {
-          label: "2+ Stars",
-          value: "2",
-        },
-      ],
     },
-
     {
-      id: "availability",
-      title: "Availability",
-      icon: AccessTime,
-      options: [
-        "Available Today",
-        "Available Tomorrow",
-        "This Week",
-      ],
-    },
-
-    {
-      id: "consultationType",
-      title: "Consultation Type",
-      icon: VideoCallOutlined,
-      options: [
-        "In-Person",
-        "Video Consult",
-        "Chat",
-      ],
-    },
-
-    {
+      apiKey: "consultationFee",
       id: "feeRange",
       title: "Consultation Fee",
       icon: CurrencyRupee,
       prefix: "₹",
-      options: [
-        "0-500",
-        "500-1000",
-        "1000-2000",
-        "2000+",
-      ],
     },
-
     {
+      apiKey: "gender",
       id: "gender",
       title: "Gender",
       icon: PersonOutline,
-      options: [
-        "Male",
-        "Female",
-        "Other",
-      ],
     },
   ];
+
+  const filterSections = sectionConfig
+    .filter(({ apiKey }) => Array.isArray(filterOptions?.[apiKey]))
+    .map((section) => ({
+      ...section,
+      options: filterOptions[section.apiKey]
+        .filter(
+          (option) =>
+            typeof option === "string" || typeof option === "number"
+        )
+        .map((option) => {
+          const value = String(option);
+          let label = value;
+
+          if (section.id === "experience") label = `${value} years`;
+          if (section.id === "rating") label = `${value}+ Stars`;
+          if (section.id === "gender") {
+            label = value.charAt(0) + value.slice(1).toLowerCase();
+          }
+
+          return { label, value };
+        }),
+    }))
+    .filter((section) => section.options.length > 0);
+  const isLoadingOptions =
+    optionsLoading || (open !== false && !filterOptions && !optionsError);
 
   // ============================================
   // FILTER SECTION
@@ -571,19 +604,56 @@ export default function FiltersSidebar({
           },
         }}
       >
-        {filterSections.map((section, index) => (
-          <Box key={section.id}>
-            <FilterSection section={section} />
+        {isLoadingOptions ? (
+          <Stack
+            alignItems="center"
+            justifyContent="center"
+            spacing={1.5}
+            sx={{ minHeight: 180 }}
+          >
+            <CircularProgress size={28} sx={{ color: colors.primary }} />
+            <Typography sx={{ fontSize: "13px", color: colors.textSecondary }}>
+              Loading filters...
+            </Typography>
+          </Stack>
+        ) : optionsError ? (
+          <Stack spacing={1.5} sx={{ pt: 2 }}>
+            <Alert
+              severity="error"
+              action={
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => setRetryCount((count) => count + 1)}
+                >
+                  Retry
+                </Button>
+              }
+            >
+              {optionsError}
+            </Alert>
+          </Stack>
+        ) : filterSections.length > 0 ? (
+          filterSections.map((section, index) => (
+            <Box key={section.id}>
+              <FilterSection section={section} />
 
-            {index !== filterSections.length - 1 && (
-              <Divider
-                sx={{
-                  borderColor: "#EEF2F5",
-                }}
-              />
-            )}
-          </Box>
-        ))}
+              {index !== filterSections.length - 1 && (
+                <Divider sx={{ borderColor: "#EEF2F5" }} />
+              )}
+            </Box>
+          ))
+        ) : (
+          <Typography
+            sx={{
+              py: 3,
+              fontSize: "13px",
+              color: colors.textSecondary,
+            }}
+          >
+            No filters are available right now.
+          </Typography>
+        )}
 
         <Box sx={{ height: 20 }} />
       </Box>
@@ -636,7 +706,7 @@ export default function FiltersSidebar({
             fullWidth
             variant="outlined"
             onClick={clearAllFilters}
-            disabled={activeFilterCount === 0}
+            disabled={activeFilterCount === 0 || isLoadingOptions}
             sx={{
               height: 44,
 
@@ -671,6 +741,7 @@ export default function FiltersSidebar({
   fullWidth
   variant="contained"
   onClick={onApply}
+  disabled={isLoadingOptions}
   disableElevation
   sx={{
     height: 44,

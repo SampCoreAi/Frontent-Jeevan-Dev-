@@ -14,6 +14,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogContentText,
+  TextField,
+  Alert,
   DialogActions,
   Button,
 } from "@mui/material";
@@ -28,7 +30,6 @@ import { ImageViewerModal } from "../../components/Document/ImageViewerModal";
 import { EmptyState } from "../../components/Document/EmptyState";
 import { Header } from "../../components/Document/Header";
 import { FileView } from "../../components/Document/FileView";
-
 import {
   getFileIcon,
   getSmallFileIcon,
@@ -46,6 +47,8 @@ export default function DocumentPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [storage, setStorage] = useState(null);
+const [storageError, setStorageError] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState("");
   const [folders, setFolders] = useState([
     {
@@ -57,7 +60,107 @@ export default function DocumentPage() {
   ]);
 
   const [allFiles, setAllFiles] = useState([]);
+  const [renameFolder, setRenameFolder] = useState(null);
+  const [renameName, setRenameName] = useState("");
+  const [renameError, setRenameError] = useState("");
+  const [renaming, setRenaming] = useState(false);
 
+  const openRenameFolder = (folder) => {
+    setRenameFolder(folder);
+    setRenameName(folder.name);
+    setRenameError("");
+  };
+
+  const closeRenameFolder = () => {
+    if (renaming) return;
+    setRenameFolder(null);
+    setRenameError("");
+  };
+
+
+const fetchStorage = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  try {
+    const { data } = await axios.get(`${API_BASE_URL}/storage/usage`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!data?.success) {
+      throw new Error(data?.message || "Storage usage unavailable.");
+    }
+
+    setStorage(data.data);
+    setStorageError("");
+  } catch {
+    setStorageError("Storage usage unavailable.");
+  }
+};
+
+  const saveFolderRename = async () => {
+    if (renaming || !renameFolder) return;
+
+    const name = renameName.trim();
+
+    if (!name || /[/\\]/.test(name)) {
+      setRenameError("Enter a folder name without / or \\.");
+      return;
+    }
+
+    if (name === renameFolder.name) {
+      closeRenameFolder();
+      return;
+    }
+
+    const dbId = renameFolder.dbId;
+    if (!dbId) {
+      setRenameError(
+        "Backend folder ID missing. Folder data mein dbId chahiye.",
+      );
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setRenameError("Please log in again.");
+      return;
+    }
+
+    setRenaming(true);
+    setRenameError("");
+
+    try {
+      const { data } = await axios.patch(
+        `${API_BASE_URL}/folders/${encodeURIComponent(dbId)}`,
+        { name },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      if (!data?.success) {
+        throw new Error(data?.message || "Folder rename failed.");
+      }
+
+      // Frontend IDs stable rakho, taaki selection aur file links na tootein.
+      const updateTree = (nodes) =>
+        nodes.map((node) => ({
+          ...node,
+          ...(node.id === renameFolder.id ? { name } : {}),
+          ...(node.children ? { children: updateTree(node.children) } : {}),
+        }));
+
+      setFolders(updateTree);
+      setRenameFolder(null);
+    } catch (error) {
+      setRenameError(
+        error.response?.data?.message ||
+          error.message ||
+          "Folder rename failed.",
+      );
+    } finally {
+      setRenaming(false);
+    }
+  };
   const [selectedFolder, setSelectedFolder] = useState("root");
 
   const [openUpload, setOpenUpload] = useState(false);
@@ -68,7 +171,8 @@ export default function DocumentPage() {
   const [openPdfViewer, setOpenPdfViewer] = useState(false);
   const [openImageViewer, setOpenImageViewer] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState({});
-
+  const [folderToDelete, setFolderToDelete] = useState(null);
+  const [folderDeleteError, setFolderDeleteError] = useState("");
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [parentForNewFolder, setParentForNewFolder] = useState(null);
@@ -108,9 +212,7 @@ export default function DocumentPage() {
           root: rootFolder,
         };
 
-        // Helper to find or create a folder in the tree
-        // pathParts: ["Adi Hospital", "Reports"]
-        // parentId: "root"
+       
         const findOrCreatePath = (pathParts, parentId) => {
           let currentParentId = parentId;
 
@@ -156,6 +258,9 @@ export default function DocumentPage() {
           }
 
           const targetFolderId = findOrCreatePath(parts, "root");
+          if (targetFolderId !== "root" && foldersMap[targetFolderId]) {
+            foldersMap[targetFolderId].dbId ??= file.id;
+          }
           const fileKey = file.fileUrl?.split("?")[0];
 
           const extension = fileKey?.split(".").pop()?.toLowerCase();
@@ -200,6 +305,7 @@ export default function DocumentPage() {
 
         setFolders([rootFolder]);
         setAllFiles(mappedFiles);
+        return [rootFolder];
       } else {
         console.warn("Response success was false:", response.data);
       }
@@ -208,9 +314,10 @@ export default function DocumentPage() {
     }
   };
 
-  useEffect(() => {
-    fetchFiles();
-  }, []);
+useEffect(() => {
+  fetchFiles();
+  fetchStorage();
+}, []);
 
   // ================= HANDLERS =================
   const toggleDrawer = (open) => (event) => {
@@ -334,77 +441,62 @@ export default function DocumentPage() {
   };
 
   const removeFolder = () => {
-    if (!selectedFolder) {
-      alert("No folder selected");
-      return;
-    }
+    if (selectedFolder === "root") return;
 
-    if (selectedFolder === "root" || selectedFolder === "Document") {
-      alert("Cannot delete the root folder!");
-      return;
-    }
-
-    if (
-      !window.confirm(
-        `Are you sure you want to delete this folder and all its contents?`,
-      )
-    ) {
-      return;
-    }
-
-    const getAllFileIdsInFolder = (folderId) => {
-      const fileIds = [];
-      const traverse = (nodes) => {
-        for (const node of nodes) {
-          if (node.id === folderId) {
-            if (node.children) {
-              node.children.forEach((child) => {
-                if (child.type === "file") {
-                  fileIds.push(child.id);
-                }
-                if (child.type === "folder" && child.children) {
-                  traverse([child]);
-                }
-              });
-            }
-          } else if (node.children) {
-            traverse(node.children);
-          }
-        }
-      };
-      traverse(folders);
-      return fileIds;
+    const findFolder = (nodes) => {
+      for (const node of nodes) {
+        if (node.type !== "folder") continue;
+        if (node.id === selectedFolder) return node;
+        const found = findFolder(node.children || []);
+        if (found) return found;
+      }
     };
 
-    const fileIdsToDelete = getAllFileIdsInFolder(selectedFolder);
-    setAllFiles((prev) =>
-      prev.filter((file) => !fileIdsToDelete.includes(file.id)),
-    );
+    const folder = findFolder(folders);
+    if (!folder) return;
 
-    setFolders((prev) => {
-      const removeFromTree = (nodes) => {
-        return nodes
-          .filter((node) => node.id !== selectedFolder)
-          .map((node) => {
-            if (node.children) {
-              return {
-                ...node,
-                children: removeFromTree(node.children),
-              };
-            }
-            return node;
-          });
-      };
-      return removeFromTree(prev);
-    });
+    setFolderDeleteError("");
+    setFolderToDelete(folder);
+  };
 
-    setExpandedFolders((prev) => {
-      const newExpanded = { ...prev };
-      delete newExpanded[selectedFolder];
-      return newExpanded;
-    });
+  const confirmDeleteFolder = async () => {
+    if (deleting || !folderToDelete) return;
 
-    setSelectedFolder("root");
+    if (!folderToDelete.dbId) {
+      setFolderDeleteError("Folder reference ID missing.");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setFolderDeleteError("Please log in again.");
+      return;
+    }
+
+    setDeleting(true);
+    setFolderDeleteError("");
+
+    try {
+      const { data } = await axios.delete(
+        `${API_BASE_URL}/folders/${folderToDelete.dbId}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      if (!data?.success) {
+        throw new Error(data?.message || "Folder delete failed.");
+      }
+
+      setSelectedFolder("root");
+      setSelectedFile(null);
+      setOpenPdfViewer(false);
+      setOpenImageViewer(false);
+      setFolderToDelete(null);
+      await fetchFiles();
+    } catch (error) {
+      setFolderDeleteError(error.response?.data?.message || error.message);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const ALLOWED_FILES = {
@@ -420,14 +512,12 @@ export default function DocumentPage() {
       [".pptx"],
   };
 
-  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
   const validateFile = (file) => {
-    // File size
-    if (file.size > MAX_FILE_SIZE) {
-      return `${file.name} is larger than 20 MB.`;
-    }
-
+   if (file.size > MAX_FILE_SIZE) {
+  return `${file.name} is larger than 5 MB.`;
+}
     // Extension
     const extension = `.${file.name.split(".").pop()?.toLowerCase()}`;
 
@@ -450,96 +540,123 @@ export default function DocumentPage() {
     return null;
   };
 
-  const processFiles = async (files) => {
-    if (!files || files.length === 0) return;
+const processFiles = async (files) => {
+  if (!files?.length || uploading) return;
 
-    // ==============================
-    // FRONTEND FILE VALIDATION
-    // ==============================
+  for (const file of files) {
+    const error = validateFile(file);
+    if (error) return alert(error);
+  }
 
-    for (const file of files) {
-      const validationError = validateFile(file);
+  const token = localStorage.getItem("token");
+  if (!token) return alert("Please log in again.");
 
-      if (validationError) {
-        alert(validationError);
-        return;
-      }
-    }
+  // Upload start par destination capture karo.
+  const folderPath = getFolderPath(selectedFolder);
+  const parts = folderPath.split("/").filter(Boolean);
+  if (parts[0]?.toLowerCase() === "document") parts.shift();
 
-    // Existing code yahan se
-    const token = localStorage.getItem("token");
+  const folderIds = ["root"];
+  for (const part of parts) {
+    folderIds.push(`${folderIds.at(-1)}/${part}`);
+  }
+  const destinationId = folderIds.at(-1);
 
-    if (!token) {
-      alert("Authentication token missing. Please log in.");
-      return;
-    }
+  setUploading(true);
+  setUploadProgress(0);
+  setUploadSuccess("");
 
-    // Jis folder me abhi user hai
-    const uploadFolderId = selectedFolder;
+  let uploaded = 0;
 
-    try {
-      setUploading(true);
-      setUploadProgress(0);
-      setUploadSuccess("");
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const formData = new FormData();
+      formData.append("file", files[i]);
 
-      const folderNameParam = getFolderPath(uploadFolderId);
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-
-        const formData = new FormData();
-        formData.append("file", file);
-
-        await axios.post(
-          `${API_BASE_URL}/licenseFile/upload?folder=${folderNameParam}`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-
-            onUploadProgress: (progressEvent) => {
-              if (!progressEvent.total) return;
-
-              const fileProgress = progressEvent.loaded / progressEvent.total;
-
-              const overallProgress = Math.round(
-                ((i + fileProgress) / files.length) * 100,
+      const { data } = await axios.post(
+        `${API_BASE_URL}/licenseFile/upload`,
+        formData,
+        {
+          params: { folder: folderPath },
+          headers: { Authorization: `Bearer ${token}` },
+          onUploadProgress: ({ loaded, total }) => {
+            if (total) {
+              setUploadProgress(
+                Math.round(((i + loaded / total) / files.length) * 100),
               );
-
-              setUploadProgress(overallProgress);
-            },
+            }
           },
-        );
+        },
+      );
+
+      if (data?.success === false) {
+        throw new Error(data.message || "Upload failed.");
       }
 
-      setUploadProgress(100);
+      uploaded++;
 
-      // Fresh data
-      await fetchFiles();
-
-      // SAME FOLDER SELECT RAHEGA
-      setSelectedFolder(uploadFolderId);
-
-      setUploading(false);
-
-      setUploadSuccess(
-        files.length === 1
-          ? "File uploaded successfully!"
-          : `${files.length} files uploaded successfully!`,
-      );
-    } catch (error) {
-      console.error("Upload error:", error);
-
-      setUploading(false);
-      setUploadProgress(0);
-
-      alert(
-        error.response?.data?.message ||
-          "File upload failed. Please try again.",
-      );
+      // Har file successfully save hote hi actual storage update.
+      await fetchStorage();
     }
-  };
+
+    setUploadProgress(100);
+    setUploadSuccess(
+      `${uploaded} file${uploaded === 1 ? "" : "s"} uploaded successfully!`,
+    );
+  } catch (error) {
+    alert(error.response?.data?.message || error.message || "Upload failed.");
+  } finally {
+  const [freshFolders] = await Promise.all([
+    fetchFiles(),
+    fetchStorage(),
+  ]);
+
+  if (uploaded > 0 && freshFolders) {
+    const findByPath = (nodes, parentPath = "") => {
+      for (const node of nodes) {
+        if (node.type !== "folder") continue;
+
+        const path = parentPath
+          ? `${parentPath}/${node.name}`
+          : node.name;
+
+        if (path === folderPath) return node;
+
+        const found = findByPath(node.children || [], path);
+        if (found) return found;
+      }
+    };
+
+    const destination = findByPath(freshFolders);
+
+    if (destination) {
+      setSearchQuery("");
+      setSelectedFolder(destination.id);
+
+      const expandParents = (nodes, parents = []) => {
+        for (const node of nodes) {
+          if (node.type !== "folder") continue;
+          const path = [...parents, node.id];
+
+          if (node.id === destination.id) return path;
+
+          const found = expandParents(node.children || [], path);
+          if (found) return found;
+        }
+      };
+
+      const ids = expandParents(freshFolders) || [];
+      setExpandedFolders((prev) => ({
+        ...prev,
+        ...Object.fromEntries(ids.map((id) => [id, true])),
+      }));
+    }
+  }
+
+  setUploading(false);
+}
+};
+
   const [highlightedFileId, setHighlightedFileId] = useState(null);
 
   const openFileFolder = (file) => {
@@ -729,15 +846,15 @@ export default function DocumentPage() {
           height: "100%",
           overflow: "hidden",
         }}
-        >
+      >
         <Paper
           elevation={0}
           sx={{
             width: "100%",
             height: "100%",
             display: "flex",
-            px:2,
-            py:0.5,
+            px: 2,
+            py: 0.5,
             borderRadius: 0,
 
             overflow: "hidden",
@@ -753,6 +870,9 @@ export default function DocumentPage() {
               setSelectedFolder={setSelectedFolder}
               setDrawerOpen={setDrawerOpen}
               isMobile={isMobile}
+              storage={storage}
+storageError={storageError}
+              onRenameFolder={openRenameFolder}
               creatingFolder={creatingFolder}
               parentForNewFolder={parentForNewFolder}
               newFolderName={newFolderName}
@@ -808,12 +928,13 @@ export default function DocumentPage() {
                 newFolderName={newFolderName}
                 setNewFolderName={setNewFolderName}
                 saveNewFolder={saveNewFolder}
+                removeFolder={removeFolder}
+                deleting={deleting}
                 setCreatingFolder={setCreatingFolder}
                 folderNameError={folderNameError}
-setFolderNameError={setFolderNameError}
+                setFolderNameError={setFolderNameError}
                 setParentForNewFolder={setParentForNewFolder}
                 createFolder={createFolder}
-                removeFolder={removeFolder}
               />
             </Drawer>
           )}
@@ -993,6 +1114,102 @@ setFolderNameError={setFolderNameError}
               }}
             >
               {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog
+  open={Boolean(folderToDelete)}
+  onClose={() => !deleting && setFolderToDelete(null)}
+  fullWidth
+  maxWidth="xs"
+  PaperProps={{ sx: { borderRadius: 3, p: 0.5 } }}
+>
+  <DialogTitle sx={{ fontSize: 16, fontWeight: 600 }}>
+    Delete folder?
+  </DialogTitle>
+
+  <DialogContent>
+    <DialogContentText sx={{ fontSize: 13, lineHeight: 1.7 }}>
+      “{folderToDelete?.name}” and all files and subfolders inside it
+      will be permanently deleted. This cannot be undone.
+      Are you sure?
+    </DialogContentText>
+
+    {folderDeleteError && (
+      <Typography color="error" sx={{ mt: 1.5, fontSize: 13 }}>
+        {folderDeleteError}
+      </Typography>
+    )}
+  </DialogContent>
+
+  <DialogActions sx={{ px: 3, pb: 2, gap: 0.5 }}>
+    <Button
+      disabled={deleting}
+      onClick={() => setFolderToDelete(null)}
+      sx={{ textTransform: "none", color: "text.secondary" }}
+    >
+      Cancel
+    </Button>
+
+    <Button
+      variant="contained"
+      color="error"
+      disabled={deleting}
+      onClick={confirmDeleteFolder}
+      sx={{ textTransform: "none", borderRadius: 2, boxShadow: "none" }}
+    >
+      {deleting ? "Deleting..." : "Yes, delete"}
+    </Button>
+  </DialogActions>
+</Dialog>
+        <Dialog
+          open={Boolean(renameFolder)}
+          onClose={closeRenameFolder}
+          fullWidth
+          maxWidth="xs"
+        >
+          <DialogTitle sx={{ fontSize: 16, fontWeight: 600 }}>
+            Rename folder
+          </DialogTitle>
+
+          <DialogContent>
+            <TextField
+              autoFocus
+              fullWidth
+              size="small"
+              label="Folder name"
+              value={renameName}
+              disabled={renaming}
+              sx={{ mt: 1 }}
+              onChange={(e) => {
+                setRenameName(e.target.value);
+                setRenameError("");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  saveFolderRename();
+                }
+              }}
+            />
+
+            {renameError && (
+              <Alert severity="error" sx={{ mt: 1.5 }}>
+                {renameError}
+              </Alert>
+            )}
+          </DialogContent>
+
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button disabled={renaming} onClick={closeRenameFolder}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              disabled={renaming || !renameName.trim()}
+              onClick={saveFolderRename}
+            >
+              {renaming ? "Saving..." : "Save"}
             </Button>
           </DialogActions>
         </Dialog>

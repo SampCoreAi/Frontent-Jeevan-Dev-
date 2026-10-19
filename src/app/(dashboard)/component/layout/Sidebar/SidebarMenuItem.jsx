@@ -14,6 +14,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 const SidebarMenuItem = ({
   item,
+  itemId,
   isActive,
   showLabel,
   onNavigate,
@@ -28,7 +29,7 @@ const SidebarMenuItem = ({
     transition,
     isDragging,
   } = useSortable({
-    id: item.route || item.label,
+    id: itemId,
     disabled: !dragEnabled,
   });
 

@@ -5,6 +5,7 @@ import React, { useRef, useState } from "react";
 import {
   Box,
   Button,
+  CircularProgress,
   Grid,
   Paper,
   Stack,
@@ -88,9 +89,7 @@ function UploadBox({
 
       <Paper
         elevation={0}
-        onClick={() =>
-          inputRef.current?.click()
-        }
+        onClick={() => inputRef.current?.click()}
         sx={{
           minHeight: 115,
 
@@ -209,6 +208,7 @@ export default function LabDocumentsForm({
   onChange,
   onBack,
   onNext,
+  loading = false,
 }) {
   const [errors, setErrors] =
     useState({});
@@ -419,8 +419,13 @@ export default function LabDocumentsForm({
         <Button
           variant="contained"
           onClick={next}
+          disabled={loading}
           endIcon={
-            <ArrowForwardRoundedIcon />
+            loading ? (
+              <CircularProgress size={15} color="inherit" />
+            ) : (
+              <ArrowForwardRoundedIcon />
+            )
           }
           sx={{
             height: 42,
@@ -436,7 +441,7 @@ export default function LabDocumentsForm({
             },
           }}
         >
-          Next: Verification
+          {loading ? "Uploading..." : "Next: Verification"}
         </Button>
       </Stack>
     </Box>

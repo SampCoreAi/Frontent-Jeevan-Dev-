@@ -80,155 +80,62 @@ const getErrorMessage = (
 };
 
 const parseMedicineItems = (value) => {
-  if (Array.isArray(value)) {
-    return value;
-  }
-
-  if (!value) {
-    return [];
-  }
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
 
   try {
     const parsed = JSON.parse(value);
-
-    return Array.isArray(parsed)
-      ? parsed
-      : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
 };
 
-const normalizeInvoice = (
-  row = {},
-  index = 0
-) => {
-  const id =
-    row.id ||
-    row.connection_id ||
-    row.invoice_id ||
-    row.medical_request_id ||
-    `medical-request-${index}`;
-
-  const medicineItems =
-    parseMedicineItems(
-      row.medicine_items
-    );
-
-  const firstMedicine =
-    medicineItems?.[0] || {};
+const normalizeInvoice = (row = {}) => {
+  const medicineItems = parseMedicineItems(
+    row.medicine_items ?? row.medicineItems
+  );
+  const firstMedicine = medicineItems[0] || {};
 
   return {
-    id,
-
-    patientName:
-      row.patient_name ||
-      row.patientName ||
-      row.full_name ||
-      row.user_name ||
-      "Patient",
-
-    age: Number(
-      row.age ||
-        row.patient_age ||
-        0
-    ),
-
-    gender:
-      row.gender ||
-      row.patient_gender ||
-      "Not specified",
-
-    doctorName:
-      row.doctor_name ||
-      row.doctorName ||
-      "Doctor",
-
+    ...row,
+    id: row.id ?? row.connection_id ?? row.invoice_id ?? row.medical_request_id ?? null,
+    patientName: row.patient_name ?? row.patientName ?? row.full_name ?? row.user_name ?? null,
+    doctorName: row.doctor_name ?? row.doctorName ?? null,
     medicineName:
-      row.medicine_name ||
-      row.medicineName ||
-      row.item_name ||
-      row.test_name ||
-      firstMedicine.medicine_name ||
-      firstMedicine.name ||
-      "Medication",
-
+      row.medicine_name ??
+      row.medicineName ??
+      firstMedicine.medicine_name ??
+      null,
     medicalStore:
-      row.store_name ||
-      row.medical_store_name ||
-      row.medicalStore ||
-      row.name ||
-      "Medical Store",
-
-    quantity: Number(
-      row.quantity ||
-        row.qty ||
-        firstMedicine.quantity ||
-        1
-    ),
-
-    batchNumber:
-      row.batch_number ||
-      row.batchNumber ||
-      "-",
-
-    expiryDate:
-      row.expiry_date ||
-      row.expiryDate ||
-      "-",
-
-    unitPrice: Number(
-      row.unit_price ||
-        row.unitPrice ||
-        0
-    ),
-
-    gstRate: Number(
-      row.gst_rate ||
-        row.gstRate ||
-        0
-    ),
-
-    note:
-      row.note ||
-      row.notes ||
-      row.doctor_note ||
-      "",
-
+      row.store_name ??
+      row.medical_store_name ??
+      row.medicalStore ??
+      null,
+    quantity: row.quantity ?? row.qty ?? firstMedicine.quantity ?? null,
+    batchNumber: row.batch_number ?? row.batchNumber ?? null,
+    expiryDate: row.expiry_date ?? row.expiryDate ?? null,
+    unitPrice: row.unit_price ?? row.unitPrice ?? null,
+    gstRate: row.gst_rate ?? row.gstRate ?? null,
+    note: row.note ?? row.notes ?? row.doctor_note ?? null,
     medicineItems,
-
-    amount: Number(
-      row.amount ||
-        row.total_amount ||
-        row.price ||
-        0
-    ),
-
-    status: String(
-      row.status ||
-        row.invoice_status ||
-        "PENDING"
-    ).toUpperCase(),
-
+    amount: row.amount ?? row.total_amount ?? row.price ?? null,
+    totalAmount: row.total_amount ?? row.amount ?? null,
+    status: row.status ?? row.invoice_status ?? null,
     invoiceDate:
-      row.invoice_date ||
-      row.requested_at ||
-      row.created_at ||
-      row.date ||
-      new Date().toISOString(),
-
-    paymentMode:
-      row.payment_mode ||
-      row.paymentMode ||
-      "Pending",
-
+      row.created_at ??
+      row.invoice_date ??
+      row.requested_at ??
+      row.date ??
+      null,
     invoiceNumber:
-      row.invoice_number ||
-      row.invoiceNo ||
-      row.reference_no ||
-      `MED-${id}`,
+      row.invoice_number ??
+      row.invoiceNo ??
+      row.reference_no ??
+      null,
   };
 };
+
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat(

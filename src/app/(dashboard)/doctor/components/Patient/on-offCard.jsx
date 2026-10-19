@@ -13,7 +13,7 @@ import api from "../../../../../utils/axiosInstance";
 import AppointmentHeader from "./AppointmentHeader";
 import AppointmentTable from "./AppointmentTable";
 import PatientDetailsDialog from "./PatientDetailsDialog";
-import MedicalDetailsDialog from "./MedicalDetailsDialog";
+import MedicalDetailsDialog from "../../../users/components/Medical/MedicalRequestInvoiceDialog";
 import TokenVerificationDialog from "./TokenVerificationDialog";
 import PastDetailsDialog from "./PastDetailsDialog";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -27,7 +27,7 @@ export default function OnOffCard({
   const theme = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
-
+const [medicalInvoice, setMedicalInvoice] = useState(null);
   const appointmentIdFromDashboard =
     searchParams.get("appointment_id");
 
@@ -538,9 +538,8 @@ const handlePastDateChange = async (selectedDate) => {
             request.status,
         })
       );
-
-      setMedicalDetailRows(rows);
-      setMedicalDetailsOpen(true);
+setMedicalInvoice(patientRequests[0]);
+setMedicalDetailsOpen(true);
     } catch (requestError) {
       setError(
         requestError?.response?.data?.message ||
@@ -698,17 +697,14 @@ const handlePastDateChange = async (selectedDate) => {
         onClose={handleViewClose}
       />
 
-      <MedicalDetailsDialog
-        open={medicalDetailsOpen}
-        onClose={() => {
-          setMedicalDetailsOpen(false);
-          setMedicalDetailRows([]);
-          setMedicalDetailsPatient(null);
-        }}
-        patient={medicalDetailsPatient}
-        stores={approvedMedicalStores}
-        rows={medicalDetailRows}
-      />
+    <MedicalDetailsDialog
+  open={medicalDetailsOpen}
+  onClose={() => {
+    setMedicalDetailsOpen(false);
+    setMedicalInvoice(null);
+  }}
+  invoice={medicalInvoice}
+/>
 
 <PastDetailsDialog
   open={pastOpen}

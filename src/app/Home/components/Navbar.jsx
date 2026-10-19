@@ -307,37 +307,43 @@ export default function Navbar() {
             />
 
             <Box>
-              <Typography
-                sx={{
-                  fontSize: {
-                    xs: "16px",
-                    sm: "18px",
-                  },
-                  lineHeight: 1.1,
-                  fontWeight: 800,
-                  color: "primary.main",
-                  letterSpacing: "-0.3px",
-                }}
-              >
-                Jeevan Dev
-              </Typography>
+             <Box>
+  <Typography
+    sx={{
+      fontSize: {
+        xs: "16px",
+        sm: "18px",
+      },
+      lineHeight: 1.1,
+      fontWeight: 800,
+      letterSpacing: "-0.3px",
+    }}
+  >
+    <Box component="span" sx={{ color: "#006AA0" }}>
+      Jeevan
+    </Box>{" "}
+    <Box component="span" sx={{ color: "primary.main" }}>
+      Dev
+    </Box>
+  </Typography>
 
-              <Typography
-                sx={{
-                  display: {
-                    xs: "none",
-                    sm: "block",
-                  },
-                  mt: 0.2,
-                  fontSize: "9.5px",
-                  lineHeight: 1,
-                  fontWeight: 500,
-                  color: "text.secondary",
-                  letterSpacing: "0.5px",
-                }}
-              >
-                HEALTHCARE PLATFORM
-              </Typography>
+  <Typography
+    sx={{
+      display: {
+        xs: "none",
+        sm: "block",
+      },
+      mt: 0.2,
+      fontSize: "9.5px",
+      lineHeight: 1,
+      fontWeight: 500,
+      color: "text.secondary",
+      letterSpacing: "0.5px",
+    }}
+  >
+    HEALTHCARE PLATFORM
+  </Typography>
+</Box>
             </Box>
           </Box>
 
@@ -449,19 +455,27 @@ export default function Navbar() {
                 xs: "flex",
                 md: "none",
               },
-              width: 38,
-              height: 38,
+              width: 42,
+              height: 42,
               borderRadius: 2,
-              bgcolor: "secondary.light",
-              color: "primary.main",
+              bgcolor: "#EAF7F3",
+              color: "#07876A",
               border: "1px solid",
-              borderColor: "divider",
+              borderColor: "#DDE9E5",
               "&:hover": {
-                bgcolor: "secondary.light",
+                bgcolor: "#DDF2EB",
               },
             }}
           >
-            <MenuRoundedIcon />
+            <MenuRoundedIcon
+              sx={{
+                display: "block",
+                width: 24,
+                height: 24,
+                color: "#07876A",
+                flexShrink: 0,
+              }}
+            />
           </IconButton>
         </Toolbar>
       </AppBar>

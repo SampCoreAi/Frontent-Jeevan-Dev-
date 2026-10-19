@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "../../../../utils/axiosInstance";
 import { Alert, Box, CircularProgress, Snackbar } from "@mui/material";
-import LabDashboard from "./LabDashboard";
+import LabDashboard from "../components/Dashbaord/LabDashboard";
 import LabProfile from "./LabProfile";
 import LabConnections from "./LabConnections";
 import LabRequests from "./LabRequests";
@@ -508,6 +508,7 @@ useEffect(() => {
       technicians={technicians}
       onAssignTechnician={assignTechnician}
       onCreateRequest={createLabRequest}
+      lab={profile}
       requestOnlyPatient
       onCreateReport={(request) => router.push(`/lab/pages/requests/${request.id}/report`)}
     />

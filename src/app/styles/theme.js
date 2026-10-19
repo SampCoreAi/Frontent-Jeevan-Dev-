@@ -848,6 +848,30 @@ typography: {
         },
       },
 
+      MuiSnackbar: {
+        defaultProps: {
+          anchorOrigin: {
+            vertical: "top",
+            horizontal: "center",
+          },
+        },
+
+        styleOverrides: {
+          root: {
+            top: "8px !important",
+            bottom: "auto !important",
+            left: "50% !important",
+            right: "auto !important",
+            transform: "translateX(-50%) !important",
+            justifyContent: "center !important",
+
+            "@media (min-width: 600px)": {
+              top: "24px !important",
+            },
+          },
+        },
+      },
+
       MuiSnackbarContent: {
         styleOverrides: {
           root: {

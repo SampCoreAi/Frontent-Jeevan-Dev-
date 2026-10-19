@@ -20,6 +20,7 @@ export default function MedicineTable({
   const [medicineSearchOpen, setMedicineSearchOpen] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
   const [draftRowIndex, setDraftRowIndex] = useState(null);
+  const [showDurationChoices, setShowDurationChoices] = useState(false);
 
   // ============================================================
   // OPTIONS
@@ -207,6 +208,53 @@ const downloadRows = rows.filter(
     }
   };
 
+  const focusMedicineField = (field) => {
+    [...document.querySelectorAll(`[data-prescription-field="${field}"]`)]
+      .find((element) => element.getClientRects().length > 0)
+      ?.focus();
+  };
+
+  const finishMedicineEntry = () => {
+    setShowDurationChoices(false);
+    document
+      .querySelector(
+        'textarea[placeholder="Add remark for patient"], input[placeholder="Add remark for patient"]',
+      )
+      ?.focus();
+  };
+
+  const handleMedicineFieldKeyDown = (event, field) => {
+    if (event.key !== "Enter" || event.defaultPrevented) return;
+
+    if (field === "duration") {
+      event.preventDefault();
+      if (event.ctrlKey) finishMedicineEntry();
+      else {
+        setShowDurationChoices(false);
+        handleAddMedicine();
+      }
+      return;
+    }
+
+    const nextField = {
+      name: "dose",
+      dose: "unit",
+      unit: "freq",
+      freq: "instr",
+      instr: "duration",
+    }[field];
+
+    if (!nextField) return;
+
+    if (["unit", "freq", "instr"].includes(field)) {
+      setTimeout(() => focusMedicineField(nextField), 0);
+      return;
+    }
+
+    event.preventDefault();
+    focusMedicineField(nextField);
+  };
+
   // ============================================================
   // ADD MEDICINE
   // ============================================================
@@ -321,6 +369,7 @@ const downloadRows = rows.filter(
 
         <input
           type="text"
+          data-prescription-field={field}
           value={value || ""}
           onChange={(event) =>
             updateRow(
@@ -330,6 +379,10 @@ const downloadRows = rows.filter(
             )
           }
           placeholder={placeholder}
+          onFocus={() => {
+            if (field === "duration") setShowDurationChoices(true);
+          }}
+          onKeyDown={(event) => handleMedicineFieldKeyDown(event, field)}
           disabled={!editable}
           autoComplete="off"
           className="
@@ -385,6 +438,8 @@ const downloadRows = rows.filter(
           <input
             ref={medicineInputRef}
             type="text"
+            data-prescription-field="name"
+             autoFocus={currentRowIndex >= 0}
             value={currentRow?.name || ""}
             onChange={(event) => {
               updateRow(
@@ -403,9 +458,10 @@ const downloadRows = rows.filter(
                 setMedicineSearchOpen(true);
               }
             }}
-            onKeyDown={
-              handleMedicineKeyDown
-            }
+            onKeyDown={(event) => {
+              handleMedicineKeyDown(event);
+              handleMedicineFieldKeyDown(event, "name");
+            }}
             onBlur={() => {
               // Small delay allows mouse click
               // on a suggestion before closing.
@@ -614,6 +670,7 @@ const downloadRows = rows.filter(
 
         <div className="relative">
           <select
+            data-prescription-field={field}
             value={value || ""}
             onChange={(event) =>
               updateRow(
@@ -623,6 +680,7 @@ const downloadRows = rows.filter(
               )
             }
             disabled={!editable}
+            onKeyDown={(event) => handleMedicineFieldKeyDown(event, field)}
             className={`
               h-[40px]
               w-full
@@ -1184,6 +1242,35 @@ const downloadRows = rows.filter(
           </div>
         </div>
       ) : null}
+
+      {editable && currentRow && showDurationChoices && (
+        <div
+          role="group"
+          aria-label="Add another medicine"
+          className="mt-3 flex items-center justify-end gap-2"
+        >
+          <span className="mr-1 text-[12px] text-gray-600">
+            Add another medicine?
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setShowDurationChoices(false);
+              handleAddMedicine();
+            }}
+            className="rounded-md bg-[#07876A] px-3 py-1.5 text-[12px] font-semibold text-white"
+          >
+            Yes
+          </button>
+          <button
+            type="button"
+            onClick={finishMedicineEntry}
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-[12px] font-semibold text-gray-700"
+          >
+            No
+          </button>
+        </div>
+      )}
 
       {/* ======================================================
           ADD MEDICINE BUTTON

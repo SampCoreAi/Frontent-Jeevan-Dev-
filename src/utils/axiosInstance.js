@@ -1,5 +1,6 @@
 
 import axios from "axios";
+import { DOCTOR_FILTER_OPTIONS_CACHE_PREFIX } from "./doctorFilterOptionsCache";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -25,6 +26,9 @@ const clearAuth = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("refreshToken");
   localStorage.removeItem("user");
+  Object.keys(localStorage)
+    .filter((key) => key.startsWith(DOCTOR_FILTER_OPTIONS_CACHE_PREFIX))
+    .forEach((key) => localStorage.removeItem(key));
 
   delete api.defaults.headers.common.Authorization;
 };

@@ -1,127 +1,174 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import Grid from "@mui/material/Grid";
 import dayjs from "dayjs";
+import Grid from "@mui/material/Grid";
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Divider,
+  IconButton,
+  InputAdornment,
+  MenuItem,
+  Popover,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
-import {
-  TextField,
-  Button,
-  Typography,
-  Stack,
-  Divider,
-  MenuItem,
-  Box,
-  Alert,
-  CircularProgress,
-} from "@mui/material";
-
 import { useTheme } from "@mui/material/styles";
 
-const daysOfWeek = [
-  "Sun",
-  "Mon",
-  "Tue",
-  "Wed",
-  "Thu",
-  "Fri",
-  "Sat",
-];
+const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const dayMap = {
   Sunday: "Sun",
+
   Monday: "Mon",
+
   Tuesday: "Tue",
+
   Wednesday: "Wed",
+
   Thursday: "Thu",
+
   Friday: "Fri",
+
   Saturday: "Sat",
 };
 
 const EMPTY_FORM = {
-   clinicId: null,
+  clinicId: null,
+
   startTime: "",
+
   endTime: "",
+
   slotDuration: "",
+
   breakDuration: "",
+
   startDate: "",
+
   endDate: "",
+
   activeDays: [],
+
   note: "",
+
   address: null,
 };
 
 export default function ScheduleForm({
   onSave,
+
   formData,
+
   setFormData,
+
   editIndex,
+
   setEditIndex,
+
   hospitals = [],
+
   availability = [],
+
   loading = false,
 }) {
   const muiTheme = useTheme();
 
   const PRIMARY_COLOR = muiTheme.palette.primary.main;
+
   const TEXT_COLOR = muiTheme.palette.text.primary;
+
   const SECONDARY_TEXT = muiTheme.palette.text.secondary;
+
   const PAPER_COLOR = muiTheme.palette.background.paper;
+
   const BACKGROUND_COLOR = muiTheme.palette.background.default;
+
   const DIVIDER_COLOR = muiTheme.palette.divider;
+
   const ERROR_COLOR = muiTheme.palette.error.main;
 
   const [errors, setErrors] = useState({});
+
   const [submitError, setSubmitError] = useState("");
 
   const slotDurationRef = useRef(null);
+
   const breakDurationRef = useRef(null);
+
   const startDateRef = useRef(null);
+
   const endDateRef = useRef(null);
 
+  const [timeInfoAnchor, setTimeInfoAnchor] = useState(null);
+
   // ============================================================
+
   // HELPERS
+
   // ============================================================
 
-const getClinicId = (hospital) =>
-  hospital?.clinicId ??
-  hospital?.clinic_id ??
-  hospital?.location_id ??
-  hospital?.id ??
-  null;
-
+  const getClinicId = (hospital) =>
+    hospital?.clinicId ??
+    hospital?.clinic_id ??
+    hospital?.location_id ??
+    hospital?.id ??
+    null;
 
   const getHospitalAddress = (hospital) => {
     if (!hospital) return null;
 
     return {
       hospitalName: hospital?.hospitalName || "",
+
       landmark: hospital?.landmark || "",
+
       areaLocality: hospital?.areaLocality || "",
+
       city: hospital?.city || "",
+
       state: hospital?.state || "",
     };
   };
+
+  const startTimeRef = useRef(null);
+
+  const endTimeRef = useRef(null);
 
   const getHospitalAvailableDays = (hospital) => {
     if (!hospital) return [];
 
     /*
+
      * Preferred:
+
      * hospital.availability
+
      *
+
      * Fallback:
+
      * top-level availability prop
+
      *
+
      * This fallback keeps compatibility with the older API structure.
+
      */
+
     const sourceAvailability =
-      Array.isArray(hospital?.availability) &&
-      hospital.availability.length > 0
+      Array.isArray(hospital?.availability) && hospital.availability.length > 0
         ? hospital.availability
         : Array.isArray(availability)
           ? availability
@@ -129,30 +176,33 @@ const getClinicId = (hospital) =>
 
     return [
       ...new Set(
-        sourceAvailability
-          .map((item) => dayMap[item?.day])
-          .filter(Boolean)
+        sourceAvailability.map((item) => dayMap[item?.day]).filter(Boolean),
       ),
     ];
   };
 
   // ============================================================
+
   // SELECTED HOSPITAL
+
   // ============================================================
 
   const selectedHospital = hospitals.find(
-    (hospital) =>
-      hospital?.hospitalName === formData?.location
+    (hospital) => hospital?.hospitalName === formData?.location,
   );
 
   // API me jo days hain, sirf wahi available rahenge.
-  const availableDays =
-    getHospitalAvailableDays(selectedHospital);
+
+  const availableDays = getHospitalAvailableDays(selectedHospital);
 
   // ============================================================
+
   // DEFAULT HOSPITAL
+
   // First hospital automatically select hoga.
+
   // Uske available days bhi automatically select honge.
+
   // ============================================================
 
   useEffect(() => {
@@ -161,6 +211,7 @@ const getClinicId = (hospital) =>
     }
 
     // Already selected hospital ko overwrite mat karo.
+
     if (formData?.location) {
       return;
     }
@@ -171,31 +222,43 @@ const getClinicId = (hospital) =>
       return;
     }
 
-    const daysFromApi =
-      getHospitalAvailableDays(firstHospital);
+    const daysFromApi = getHospitalAvailableDays(firstHospital);
 
-   setFormData({
-  ...formData,
-  location: firstHospital.hospitalName,
-  clinicId: getClinicId(firstHospital),
-  address: getHospitalAddress(firstHospital),
-  activeDays: daysFromApi,
-});
+    setFormData({
+      ...formData,
 
+      location: firstHospital.hospitalName,
+
+      clinicId: getClinicId(firstHospital),
+
+      address: getHospitalAddress(firstHospital),
+
+      activeDays: daysFromApi,
+    });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hospitals]);
 
   // ============================================================
+
   // EDIT / EXISTING HOSPITAL SAFETY
+
   //
+
   // Agar selected hospital aa gaya lekin activeDays empty hain,
+
   // to API ke available days automatically select karo.
+
   //
+
   // IMPORTANT:
+
   // User manually sab days unselect kare to ye effect unko
+
   // turant wapas select nahi karega, kyunki ye hospital/load
+
   // changes par hi run hota hai.
+
   // ============================================================
 
   useEffect(() => {
@@ -204,8 +267,7 @@ const getClinicId = (hospital) =>
     }
 
     const hospital = hospitals.find(
-      (item) =>
-        item?.hospitalName === formData.location
+      (item) => item?.hospitalName === formData.location,
     );
 
     if (!hospital) {
@@ -213,10 +275,15 @@ const getClinicId = (hospital) =>
     }
 
     /*
+
      * Edit mode me existing saved activeDays ko preserve karo.
+
      * Create mode me hospital selection handler/default effect
+
      * available days set karega.
+
      */
+
     if (
       editIndex !== null &&
       Array.isArray(formData?.activeDays) &&
@@ -226,33 +293,34 @@ const getClinicId = (hospital) =>
     }
 
     // Agar already active days hain to unnecessary overwrite nahi.
-    if (
-      Array.isArray(formData?.activeDays) &&
-      formData.activeDays.length > 0
-    ) {
+
+    if (Array.isArray(formData?.activeDays) && formData.activeDays.length > 0) {
       return;
     }
 
-    const daysFromApi =
-      getHospitalAvailableDays(hospital);
+    const daysFromApi = getHospitalAvailableDays(hospital);
 
     if (daysFromApi.length === 0) {
       return;
     }
 
-  setFormData({
-  ...formData,
-  clinicId: getClinicId(hospital),
-  address: getHospitalAddress(hospital),
-  activeDays: daysFromApi,
-});
+    setFormData({
+      ...formData,
 
+      clinicId: getClinicId(hospital),
+
+      address: getHospitalAddress(hospital),
+
+      activeDays: daysFromApi,
+    });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData?.location, hospitals]);
 
   // ============================================================
+
   // CLEAR ERROR
+
   // ============================================================
 
   const clearError = (field) => {
@@ -262,6 +330,7 @@ const getClinicId = (hospital) =>
       }
 
       const updatedErrors = { ...prev };
+
       delete updatedErrors[field];
 
       return updatedErrors;
@@ -271,12 +340,15 @@ const getClinicId = (hospital) =>
   };
 
   // ============================================================
+
   // UPDATE FIELD
+
   // ============================================================
 
   const updateField = (field, value) => {
     setFormData({
       ...formData,
+
       [field]: value,
     });
 
@@ -284,123 +356,135 @@ const getClinicId = (hospital) =>
   };
 
   // ============================================================
+
   // ENTER KEY
+
   // ============================================================
 
   const handleEnter = (e, nextRef) => {
     if (e.key === "Enter") {
       e.preventDefault();
+
       nextRef?.current?.focus?.();
     }
   };
 
   // ============================================================
+
   // HOSPITAL CHANGE
+
   // ============================================================
 
   const handleLocationChange = (selectedHospitalName) => {
     const hospital = hospitals.find(
-      (item) =>
-        item?.hospitalName === selectedHospitalName
+      (item) => item?.hospitalName === selectedHospitalName,
     );
 
-   if (!hospital) {
-  setFormData({
-    ...formData,
-    location: "",
-    clinicId: null,
-    address: null,
-    activeDays: [],
-  });
+    if (!hospital) {
+      setFormData({
+        ...formData,
 
-  return;
-}
+        location: "",
 
+        clinicId: null,
 
-    const daysFromApi =
-      getHospitalAvailableDays(hospital);
+        address: null,
+
+        activeDays: [],
+      });
+
+      return;
+    }
+
+    const daysFromApi = getHospitalAvailableDays(hospital);
 
     setFormData({
-  ...formData,
+      ...formData,
 
-  location: selectedHospitalName,
+      location: selectedHospitalName,
 
-  clinicId: getClinicId(hospital),
+      clinicId: getClinicId(hospital),
 
-  address: getHospitalAddress(hospital),
+      address: getHospitalAddress(hospital),
 
-  activeDays: daysFromApi,
-});
-
+      activeDays: daysFromApi,
+    });
 
     clearError("location");
+
     clearError("activeDays");
   };
 
   // ============================================================
+
   // VALIDATION
+
   // ============================================================
 
   const validateForm = () => {
     const newErrors = {};
 
     // Hospital
+
     if (!formData?.location?.trim()) {
       newErrors.location = "Hospital is required.";
     }
 
     // Slot duration
+
     if (
       formData?.slotDuration === "" ||
       formData?.slotDuration === null ||
       formData?.slotDuration === undefined
     ) {
-      newErrors.slotDuration =
-        "Slot duration is required.";
+      newErrors.slotDuration = "Slot duration is required.";
     } else {
       const slot = Number(formData.slotDuration);
 
       if (!Number.isFinite(slot) || slot <= 0) {
-        newErrors.slotDuration =
-          "Slot duration must be greater than 0.";
+        newErrors.slotDuration = "Slot duration must be greater than 0.";
       } else if (!Number.isInteger(slot)) {
-        newErrors.slotDuration =
-          "Slot duration must be a whole number.";
+        newErrors.slotDuration = "Slot duration must be a whole number.";
       }
     }
 
     // Break duration
+
     if (
       formData?.breakDuration !== "" &&
       formData?.breakDuration !== null &&
       formData?.breakDuration !== undefined
     ) {
-      const breakDuration = Number(
-        formData.breakDuration
-      );
+      const breakDuration = Number(formData.breakDuration);
 
-      if (
-        !Number.isFinite(breakDuration) ||
-        breakDuration < 0
-      ) {
-        newErrors.breakDuration =
-          "Break duration cannot be negative.";
+      if (!Number.isFinite(breakDuration) || breakDuration < 0) {
+        newErrors.breakDuration = "Break duration cannot be negative.";
       } else if (!Number.isInteger(breakDuration)) {
-        newErrors.breakDuration =
-          "Break duration must be a whole number.";
+        newErrors.breakDuration = "Break duration must be a whole number.";
       }
     }
 
+    // Custom hours are optional, but must be entered as a pair.
+    const startTime = formData?.startTime || "";
+    const endTime = formData?.endTime || "";
+    if (startTime && !endTime) {
+      newErrors.endTime = "Enter an end time or clear the start time.";
+    } else if (!startTime && endTime) {
+      newErrors.startTime = "Enter a start time or clear the end time.";
+    } else if (startTime && endTime && endTime <= startTime) {
+      newErrors.endTime = "End time must be after start time.";
+    }
+
     // Start date
+
     if (!formData?.startDate) {
-      newErrors.startDate =
-        "Start date is required.";
+      newErrors.startDate = "Start date is required.";
     }
 
     // End date
+
     if (!formData?.endDate) {
-      newErrors.endDate =
-        "End date is required.";
+      newErrors.endDate = "End date is required.";
     }
 
     const startDate = formData?.startDate
@@ -414,23 +498,21 @@ const getClinicId = (hospital) =>
     const today = dayjs().startOf("day");
 
     if (startDate && !startDate.isValid()) {
-      newErrors.startDate =
-        "Invalid start date.";
+      newErrors.startDate = "Invalid start date.";
     }
 
     if (endDate && !endDate.isValid()) {
-      newErrors.endDate =
-        "Invalid end date.";
+      newErrors.endDate = "Invalid end date.";
     }
 
     // Create mode me past date allow nahi.
+
     if (
       editIndex === null &&
       startDate?.isValid() &&
       startDate.isBefore(today)
     ) {
-      newErrors.startDate =
-        "Start date cannot be in the past.";
+      newErrors.startDate = "Start date cannot be in the past.";
     }
 
     if (
@@ -438,32 +520,32 @@ const getClinicId = (hospital) =>
       endDate?.isValid() &&
       endDate.isBefore(startDate)
     ) {
-      newErrors.endDate =
-        "End date cannot be before start date.";
+      newErrors.endDate = "End date cannot be before start date.";
     }
 
     // Active Days
+
     if (
       !Array.isArray(formData?.activeDays) ||
       formData.activeDays.length === 0
     ) {
-      newErrors.activeDays =
-        "Select at least one active day.";
+      newErrors.activeDays = "Select at least one active day.";
     }
 
     /*
+
      * Safety validation:
+
      * selected active day selected hospital ke
+
      * working hours me hona chahiye.
+
      */
-    if (
-      Array.isArray(formData?.activeDays) &&
-      formData.activeDays.length > 0
-    ) {
-      const invalidDays =
-        formData.activeDays.filter(
-          (day) => !availableDays.includes(day)
-        );
+
+    if (Array.isArray(formData?.activeDays) && formData.activeDays.length > 0) {
+      const invalidDays = formData.activeDays.filter(
+        (day) => !availableDays.includes(day),
+      );
 
       if (invalidDays.length > 0) {
         newErrors.activeDays =
@@ -477,7 +559,9 @@ const getClinicId = (hospital) =>
   };
 
   // ============================================================
+
   // SAVE
+
   // ============================================================
 
   const handleSave = async () => {
@@ -486,19 +570,18 @@ const getClinicId = (hospital) =>
     const valid = validateForm();
 
     if (!valid) {
-      setSubmitError(
-        "Please correct the highlighted fields before saving."
-      );
+      setSubmitError("Please correct the highlighted fields before saving.");
+
       return;
     }
 
     try {
       const payload = {
         ...formData,
+        startTime: formData.startTime || null,
+        endTime: formData.endTime || null,
 
-        slotDuration: Number(
-          formData.slotDuration
-        ),
+        slotDuration: Number(formData.slotDuration),
 
         breakDuration:
           formData.breakDuration === "" ||
@@ -508,46 +591,49 @@ const getClinicId = (hospital) =>
             : Number(formData.breakDuration),
       };
 
-      const success = await onSave(
-        payload,
-        editIndex
-      );
+      const success = await onSave(payload, editIndex);
 
       if (!success) {
         return;
       }
 
       setErrors({});
+
       setSubmitError("");
+
       setEditIndex(null);
+
       setFormData(EMPTY_FORM);
     } catch (error) {
-      console.error(
-        "Schedule save error:",
-        error
-      );
+      console.error("Schedule save error:", error);
 
-      setSubmitError(
-        "Unable to save schedule. Please try again."
-      );
+      setSubmitError("Unable to save schedule. Please try again.");
     }
   };
 
   // ============================================================
+
   // FIELD STYLES
+
   // ============================================================
 
   const commonTextFieldSx = {
     "& .MuiOutlinedInput-root": {
       height: 48,
+
       minHeight: 48,
+
       borderRadius: "7px",
+
       backgroundColor: PAPER_COLOR,
+
       display: "flex",
+
       alignItems: "center",
 
       "& fieldset": {
         borderColor: DIVIDER_COLOR,
+
         borderWidth: "1px",
       },
 
@@ -557,6 +643,7 @@ const getClinicId = (hospital) =>
 
       "&.Mui-focused fieldset": {
         borderColor: PRIMARY_COLOR,
+
         borderWidth: "1px",
       },
 
@@ -567,72 +654,103 @@ const getClinicId = (hospital) =>
 
     "& .MuiInputBase-input": {
       height: "48px",
+
       boxSizing: "border-box",
+
       padding: "0 14px !important",
+
       display: "flex",
+
       alignItems: "center",
+
       fontSize: "12.5px",
+
       lineHeight: "48px",
+
       color: TEXT_COLOR,
     },
 
     "& .MuiPickersInputBase-root": {
       height: 48,
+
       minHeight: 48,
+
       display: "flex",
+
       alignItems: "center",
+
       borderRadius: "7px",
+
       backgroundColor: PAPER_COLOR,
     },
 
     "& .MuiPickersSectionList-root": {
       height: "48px",
+
       minHeight: "48px",
+
       boxSizing: "border-box",
+
       padding: "0 14px !important",
+
       display: "flex",
+
       alignItems: "center",
     },
 
     "& .MuiPickersInputBase-sectionsContainer": {
       height: "48px",
+
       display: "flex",
+
       alignItems: "center",
     },
 
     "& .MuiSelect-select": {
       height: "48px !important",
+
       minHeight: "48px !important",
+
       boxSizing: "border-box",
+
       paddingTop: "0 !important",
+
       paddingBottom: "0 !important",
+
       display: "flex",
+
       alignItems: "center",
+
       fontSize: "12.5px",
     },
 
     "& .MuiInputAdornment-root": {
       height: "48px",
+
       maxHeight: "48px",
+
       display: "flex",
+
       alignItems: "center",
     },
 
     "& .MuiInputLabel-root:not(.MuiInputLabel-shrink)": {
       top: "50%",
-      transform:
-        "translate(14px, -50%) scale(1)",
+
+      transform: "translate(14px, -50%) scale(1)",
+
       transformOrigin: "top left",
     },
 
     "& .MuiInputLabel-root.MuiInputLabel-shrink": {
       top: 0,
-      transform:
-        "translate(14px, -9px) scale(0.75)",
+
+      transform: "translate(14px, -9px) scale(0.75)",
     },
 
     "& .MuiInputLabel-root": {
       fontSize: "12.5px",
+
       color: SECONDARY_TEXT,
     },
 
@@ -642,8 +760,11 @@ const getClinicId = (hospital) =>
 
     "& .MuiFormHelperText-root": {
       marginLeft: "3px",
+
       mt: "3px",
+
       fontSize: "10.5px",
+
       lineHeight: 1.2,
     },
   };
@@ -656,101 +777,175 @@ const getClinicId = (hospital) =>
     ...commonTextFieldSx,
   };
 
-  const dateFieldSx = {
-    ...commonTextFieldSx,
+ const dateFieldSx = {
+  ...commonTextFieldSx,
 
-    "& .MuiIconButton-root": {
-      color: PRIMARY_COLOR,
-      p: 0.7,
-    },
+  "& .MuiInputAdornment-root": {
+    display: "flex",
+    visibility: "visible",
+    opacity: 1,
+  },
 
-    "& .MuiSvgIcon-root": {
-      fontSize: "19px",
+  "& .MuiIconButton-root": {
+    color: "#008f72",
+    padding: "6px",
+    visibility: "visible",
+    opacity: 1,
+  },
+
+  "& .MuiSvgIcon-root": {
+    color: "#008f72",
+    fontSize: "21px",
+  },
+};
+
+
+const datePickerPopupSx = {
+  "& .MuiPaper-root": {
+    backgroundColor: PAPER_COLOR,
+    borderRadius: "12px",
+    boxShadow: "0px 8px 24px rgba(0,0,0,0.18)",
+    overflow: "hidden",
+  },
+
+  "& .MuiDateCalendar-root": {
+    width: 320,
+    height: "auto",
+    maxHeight: "none",
+    maxWidth: "100%",
+    margin: 0,
+    padding: "8px 10px 12px",
+    boxSizing: "border-box",
+  },
+
+  "& .MuiPickersCalendarHeader-root": {
+    color: TEXT_COLOR,
+    paddingLeft: "12px",
+    paddingRight: "12px",
+    marginTop: "4px",
+    marginBottom: "10px",
+    minHeight: "40px",
+  },
+
+  "& .MuiPickersCalendarHeader-label": {
+    color: TEXT_COLOR,
+    fontWeight: 600,
+    fontSize: "14px",
+  },
+
+  "& .MuiPickersCalendarHeader-switchViewButton": {
+    color: PRIMARY_COLOR,
+  },
+
+ "& .MuiPickersArrowSwitcher-button": {
+  color: `${PRIMARY_COLOR} !important`,
+  visibility: "visible",
+  opacity: 1,
+  width: 32,
+  height: 32,
+  backgroundColor: `${PRIMARY_COLOR}12`,
+  border: `1px solid ${PRIMARY_COLOR}35`,
+
+  "& svg": {
+    color: `${PRIMARY_COLOR} !important`,
+    fontSize: 22,
+    opacity: 1,
+  },
+},
+  "& .MuiDayCalendar-header": {
+    justifyContent: "space-around",
+    marginBottom: "4px",
+  },
+
+  "& .MuiDayCalendar-weekDayLabel": {
+    color: SECONDARY_TEXT,
+    fontSize: "12px",
+    fontWeight: 600,
+    width: 36,
+    height: 36,
+    margin: 0,
+  },
+
+  "& .MuiDayCalendar-weekContainer": {
+    justifyContent: "space-around",
+    margin: "3px 0",
+  },
+
+  "& .MuiPickersDay-root": {
+    color: TEXT_COLOR,
+    fontSize: "12px",
+    width: 36,
+    height: 36,
+    margin: 0,
+    borderRadius: "50%",
+    transition: "all 0.2s ease",
+
+    "&:hover": {
+      backgroundColor: `${PRIMARY_COLOR}15`,
     },
-  };
+  },
+
+  "& .MuiPickersDay-root.Mui-selected": {
+    backgroundColor: `${PRIMARY_COLOR} !important`,
+    color: "#fff !important",
+    fontWeight: 600,
+  },
+
+  "& .MuiPickersDay-root.Mui-selected:hover": {
+    backgroundColor: `${PRIMARY_COLOR} !important`,
+    color: "#fff !important",
+  },
+
+  "& .MuiPickersDay-root.MuiPickersDay-today": {
+    border: `1px solid ${PRIMARY_COLOR}`,
+  },
+
+  "& .MuiPickersDay-root.Mui-disabled": {
+    color: `${SECONDARY_TEXT} !important`,
+    opacity: 0.65,
+  },
+
+  "& .MuiPickersLayout-actionBar": {
+    padding: "8px 16px",
+  },
+
+  "& .MuiPickersLayout-actionBar button": {
+    color: `${PRIMARY_COLOR} !important`,
+    fontSize: "12px",
+    fontWeight: 600,
+    textTransform: "none",
+  },
+
+  "& .MuiSvgIcon-root": {
+    color: PRIMARY_COLOR,
+  },
+
+  "& .MuiPickersMonth-monthButton": {
+    color: TEXT_COLOR,
+    borderRadius: "8px",
+  },
+
+  "& .MuiPickersMonth-monthButton.Mui-selected": {
+    backgroundColor: `${PRIMARY_COLOR} !important`,
+    color: "#fff !important",
+  },
+
+  "& .MuiPickersYear-yearButton": {
+    color: TEXT_COLOR,
+    borderRadius: "8px",
+  },
+
+  "& .MuiPickersYear-yearButton.Mui-selected": {
+    backgroundColor: `${PRIMARY_COLOR} !important`,
+    color: "#fff !important",
+  },
+};
+
 
   // ============================================================
-  // DATE PICKER POPUP
-  // ============================================================
 
-  const datePickerPopupSx = {
-    "& .MuiPaper-root": {
-      backgroundColor: PAPER_COLOR,
-      borderRadius: "10px",
-    },
-
-    "& .MuiPickersCalendarHeader-root": {
-      color: TEXT_COLOR,
-    },
-
-    "& .MuiPickersCalendarHeader-label": {
-      color: TEXT_COLOR,
-      fontWeight: 600,
-      fontSize: "13px",
-    },
-
-    "& .MuiPickersCalendarHeader-switchViewButton": {
-      color: PRIMARY_COLOR,
-    },
-
-    "& .MuiPickersArrowSwitcher-button": {
-      color: PRIMARY_COLOR,
-    },
-
-    "& .MuiDayCalendar-weekDayLabel": {
-      color: SECONDARY_TEXT,
-      fontSize: "11px",
-    },
-
-    "& .MuiPickersDay-root": {
-      color: TEXT_COLOR,
-      fontSize: "12px",
-    },
-
-    "& .MuiPickersDay-root.Mui-selected": {
-      backgroundColor: `${PRIMARY_COLOR} !important`,
-      color: "#fff !important",
-    },
-
-    "& .MuiPickersDay-root.Mui-selected:hover": {
-      backgroundColor: `${PRIMARY_COLOR} !important`,
-      color: "#fff !important",
-    },
-
-    "& .MuiPickersDay-root.MuiPickersDay-today": {
-      borderColor: PRIMARY_COLOR,
-    },
-
-    "& .MuiPickersLayout-actionBar button": {
-      color: `${PRIMARY_COLOR} !important`,
-      fontSize: "12px",
-    },
-
-    "& .MuiSvgIcon-root": {
-      color: PRIMARY_COLOR,
-    },
-
-    "& .MuiPickersMonth-monthButton": {
-      color: TEXT_COLOR,
-    },
-
-    "& .MuiPickersMonth-monthButton.Mui-selected": {
-      backgroundColor: `${PRIMARY_COLOR} !important`,
-      color: "#fff !important",
-    },
-
-    "& .MuiPickersYear-yearButton": {
-      color: TEXT_COLOR,
-    },
-
-    "& .MuiPickersYear-yearButton.Mui-selected": {
-      backgroundColor: `${PRIMARY_COLOR} !important`,
-      color: "#fff !important",
-    },
-  };
-
-  // ============================================================
   // RENDER
+
   // ============================================================
 
   return (
@@ -758,15 +953,20 @@ const getClinicId = (hospital) =>
       <Box
         sx={{
           width: "100%",
+
           backgroundColor: PAPER_COLOR,
+
           border: `1px solid ${DIVIDER_COLOR}`,
+
           borderRadius: "10px",
+
           p: {
             xs: 1.5,
+
             sm: 2,
           },
-          boxShadow:
-            "0 2px 8px rgba(0,0,0,0.04)",
+
+          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
         }}
       >
         {/* HEADER */}
@@ -774,9 +974,13 @@ const getClinicId = (hospital) =>
         <Box
           sx={{
             display: "flex",
+
             alignItems: "center",
+
             justifyContent: "space-between",
+
             gap: 2,
+
             mb: 1.6,
           }}
         >
@@ -784,81 +988,121 @@ const getClinicId = (hospital) =>
             <Typography
               sx={{
                 fontSize: "14px",
+
                 fontWeight: 600,
+
                 color: TEXT_COLOR,
               }}
             >
-              {editIndex !== null
-                ? "Update Schedule"
-                : "Create Schedule"}
+              {editIndex !== null ? "Update Schedule" : "Create Schedule"}
             </Typography>
 
             <Typography
               sx={{
                 fontSize: "11.5px",
+
                 color: SECONDARY_TEXT,
+
                 mt: 0.3,
               }}
             >
-              Set hospital, consultation time and active
-              days.
+              Set hospital, consultation time and active days.
             </Typography>
           </Box>
 
-          <Button
-            onClick={handleSave}
-            variant="contained"
-            disabled={loading}
-            startIcon={
-              loading ? (
-                <CircularProgress
-                  size={15}
-                  thickness={5}
-                  sx={{ color: "inherit" }}
-                />
-              ) : null
-            }
+          <Box
             sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.75,
               flexShrink: 0,
-              height: 36,
-              minWidth: {
-                xs: 105,
-                sm: 135,
-              },
-              px: {
-                xs: 1.5,
-                sm: 2.5,
-              },
-              borderRadius: "7px",
-              backgroundColor: PRIMARY_COLOR,
-              color: "#fff",
-              textTransform: "none",
-              fontSize: "12px",
-              fontWeight: 600,
-              boxShadow: "none",
-
-              "&:hover": {
-                backgroundColor: PRIMARY_COLOR,
-                boxShadow: "none",
-                opacity: 0.92,
-              },
-
-              "&.Mui-disabled": {
-                backgroundColor: PRIMARY_COLOR,
-                color: "#fff",
-                opacity: 0.7,
-              },
             }}
           >
-            {loading
-              ? editIndex !== null
-                ? "Updating..."
-                : "Saving..."
-              : editIndex !== null
-                ? "Update Schedule"
-                : "Save Schedule"}
-          </Button>
+            <IconButton
+              aria-label="Time information"
+              onClick={(e) => setTimeInfoAnchor(e.currentTarget)}
+              sx={{ color: SECONDARY_TEXT, p: 0.75 }}
+            >
+              <InfoOutlinedIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+
+            <Button
+              onClick={handleSave}
+              variant="contained"
+              disabled={loading}
+              startIcon={
+                loading ? (
+                  <CircularProgress
+                    size={15}
+                    thickness={5}
+                    sx={{ color: "inherit" }}
+                  />
+                ) : null
+              }
+              sx={{
+                height: 36,
+
+                minWidth: { xs: 105, sm: 135 },
+
+                px: { xs: 1.5, sm: 2.5 },
+
+                borderRadius: "7px",
+
+                backgroundColor: PRIMARY_COLOR,
+
+                color: "#fff",
+
+                textTransform: "none",
+
+                fontSize: "12px",
+
+                fontWeight: 600,
+
+                boxShadow: "none",
+
+                "&:hover": {
+                  backgroundColor: PRIMARY_COLOR,
+                  boxShadow: "none",
+                  opacity: 0.92,
+                },
+
+                "&.Mui-disabled": {
+                  backgroundColor: PRIMARY_COLOR,
+                  color: "#fff",
+                  opacity: 0.7,
+                },
+              }}
+            >
+              {loading
+                ? editIndex !== null
+                  ? "Updating..."
+                  : "Saving..."
+                : editIndex !== null
+                  ? "Update Schedule"
+                  : "Save Schedule"}
+            </Button>
+          </Box>
         </Box>
+
+        <Popover
+          open={Boolean(timeInfoAnchor)}
+          anchorEl={timeInfoAnchor}
+          onClose={() => setTimeInfoAnchor(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+          <Box sx={{ p: 1.5, maxWidth: 300 }}>
+            <Typography sx={{ fontSize: "12px", fontWeight: 600, mb: 0.5 }}>
+              Consultation time
+            </Typography>
+
+            <Typography sx={{ fontSize: "11.5px", color: SECONDARY_TEXT }}>
+              Leave Start Time and End Time blank to use the selected clinic’s
+              profile working hours. If you enter custom times, those times will
+              be used for this schedule.
+            </Typography>
+          </Box>
+        </Popover>
 
         <Divider sx={{ mb: 2 }} />
 
@@ -874,9 +1118,7 @@ const getClinicId = (hospital) =>
               size="small"
               label="Hospital Name"
               value={formData?.location || ""}
-              onChange={(e) =>
-                handleLocationChange(e.target.value)
-              }
+              onChange={(e) => handleLocationChange(e.target.value)}
               error={Boolean(errors.location)}
               helperText={errors.location}
               sx={hospitalFieldSx}
@@ -885,11 +1127,14 @@ const getClinicId = (hospital) =>
                   PaperProps: {
                     sx: {
                       mt: 0.5,
+
                       maxHeight: 300,
+
                       borderRadius: "8px",
+
                       border: `1px solid ${DIVIDER_COLOR}`,
-                      boxShadow:
-                        "0 6px 20px rgba(0,0,0,0.08)",
+
+                      boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
                     },
                   },
                 },
@@ -900,6 +1145,7 @@ const getClinicId = (hospital) =>
                   disabled
                   sx={{
                     fontSize: "12.5px",
+
                     color: SECONDARY_TEXT,
                   }}
                 >
@@ -907,15 +1153,16 @@ const getClinicId = (hospital) =>
                 </MenuItem>
               ) : (
                 hospitals.map((hospital, index) => {
-                  const hospitalName =
-                    hospital?.hospitalName ||
-                    "Hospital";
+                  const hospitalName = hospital?.hospitalName || "Hospital";
 
                   const addressDetails = [
                     hospital?.landmark,
+
                     hospital?.areaLocality,
                   ]
+
                     .filter(Boolean)
+
                     .join(", ");
 
                   return (
@@ -929,31 +1176,34 @@ const getClinicId = (hospital) =>
                       value={hospitalName}
                       sx={{
                         minHeight: "42px",
+
                         px: 1.5,
+
                         py: 0.8,
 
                         "&:hover": {
-                          backgroundColor:
-                            `${PRIMARY_COLOR}0A`,
+                          backgroundColor: `${PRIMARY_COLOR}0A`,
                         },
 
                         "&.Mui-selected": {
-                          backgroundColor:
-                            `${PRIMARY_COLOR}0D`,
+                          backgroundColor: `${PRIMARY_COLOR}0D`,
                         },
 
                         "&.Mui-selected:hover": {
-                          backgroundColor:
-                            `${PRIMARY_COLOR}14`,
+                          backgroundColor: `${PRIMARY_COLOR}14`,
                         },
                       }}
                     >
                       <Box
                         sx={{
                           display: "flex",
+
                           alignItems: "center",
+
                           width: "100%",
+
                           minWidth: 0,
+
                           gap: 0.6,
                         }}
                       >
@@ -961,9 +1211,13 @@ const getClinicId = (hospital) =>
                           component="span"
                           sx={{
                             flexShrink: 0,
+
                             fontSize: "12.5px",
+
                             fontWeight: 600,
+
                             color: TEXT_COLOR,
+
                             lineHeight: 1.4,
                           }}
                         >
@@ -975,14 +1229,19 @@ const getClinicId = (hospital) =>
                             component="span"
                             sx={{
                               minWidth: 0,
+
                               overflow: "hidden",
-                              textOverflow:
-                                "ellipsis",
+
+                              textOverflow: "ellipsis",
+
                               whiteSpace: "nowrap",
+
                               fontSize: "11.5px",
+
                               fontWeight: 400,
-                              color:
-                                SECONDARY_TEXT,
+
+                              color: SECONDARY_TEXT,
+
                               lineHeight: 1.4,
                             }}
                           >
@@ -1005,36 +1264,24 @@ const getClinicId = (hospital) =>
               fullWidth
               size="small"
               label="Slot Duration (min)"
-              value={
-                formData?.slotDuration ?? ""
-              }
+              value={formData?.slotDuration ?? ""}
               onChange={(e) => {
                 const value = e.target.value;
 
                 if (
                   value === "" ||
-                  (/^\d+$/.test(value) &&
-                    Number(value) >= 0)
+                  (/^\d+$/.test(value) && Number(value) >= 0)
                 ) {
-                  updateField(
-                    "slotDuration",
-                    value
-                  );
+                  updateField("slotDuration", value);
                 }
               }}
-              error={Boolean(
-                errors.slotDuration
-              )}
+              error={Boolean(errors.slotDuration)}
               helperText={errors.slotDuration}
               inputRef={slotDurationRef}
-              onKeyDown={(e) =>
-                handleEnter(
-                  e,
-                  breakDurationRef
-                )
-              }
+              onKeyDown={(e) => handleEnter(e, breakDurationRef)}
               inputProps={{
                 min: 1,
+
                 step: 1,
               }}
               sx={normalFieldSx}
@@ -1049,36 +1296,24 @@ const getClinicId = (hospital) =>
               fullWidth
               size="small"
               label="Break Duration (min)"
-              value={
-                formData?.breakDuration ?? ""
-              }
+              value={formData?.breakDuration ?? ""}
               onChange={(e) => {
                 const value = e.target.value;
 
                 if (
                   value === "" ||
-                  (/^\d+$/.test(value) &&
-                    Number(value) >= 0)
+                  (/^\d+$/.test(value) && Number(value) >= 0)
                 ) {
-                  updateField(
-                    "breakDuration",
-                    value
-                  );
+                  updateField("breakDuration", value);
                 }
               }}
-              error={Boolean(
-                errors.breakDuration
-              )}
+              error={Boolean(errors.breakDuration)}
               helperText={errors.breakDuration}
               inputRef={breakDurationRef}
-              onKeyDown={(e) =>
-                handleEnter(
-                  e,
-                  startDateRef
-                )
-              }
+              onKeyDown={(e) => handleEnter(e, startDateRef)}
               inputProps={{
                 min: 0,
+
                 step: 1,
               }}
               sx={normalFieldSx}
@@ -1089,45 +1324,37 @@ const getClinicId = (hospital) =>
 
           <Grid size={{ xs: 6, sm: 6, md: 3 }}>
             <DatePicker
+           slots={{
+  openPickerIcon: CalendarMonthRoundedIcon,
+}}
               label="Start Date"
               format="DD-MM-YYYY"
-              value={
-                formData?.startDate
-                  ? dayjs(formData.startDate)
-                  : null
-              }
-              minDate={
-                editIndex === null
-                  ? dayjs().startOf("day")
-                  : undefined
-              }
+              value={formData?.startDate ? dayjs(formData.startDate) : null}
+              minDate={editIndex === null ? dayjs().startOf("day") : undefined}
               onChange={(newValue) => {
                 updateField(
                   "startDate",
-                  newValue?.isValid()
-                    ? newValue.format(
-                        "YYYY-MM-DD"
-                      )
-                    : ""
+
+                  newValue?.isValid() ? newValue.format("YYYY-MM-DD") : "",
                 );
 
                 clearError("endDate");
               }}
               slotProps={{
+                
                 textField: {
                   fullWidth: true,
+
                   size: "small",
+
                   inputRef: startDateRef,
-                  error: Boolean(
-                    errors.startDate
-                  ),
-                  helperText:
-                    errors.startDate,
-                  onKeyDown: (e) =>
-                    handleEnter(
-                      e,
-                      endDateRef
-                    ),
+
+                  error: Boolean(errors.startDate),
+
+                  helperText: errors.startDate,
+
+                  onKeyDown: (e) => handleEnter(e, endDateRef),
+
                   sx: dateFieldSx,
                 },
 
@@ -1154,13 +1381,12 @@ const getClinicId = (hospital) =>
 
           <Grid size={{ xs: 6, sm: 6, md: 3 }}>
             <DatePicker
+            slots={{
+  openPickerIcon: CalendarMonthRoundedIcon,
+}}
               label="End Date"
               format="DD-MM-YYYY"
-              value={
-                formData?.endDate
-                  ? dayjs(formData.endDate)
-                  : null
-              }
+              value={formData?.endDate ? dayjs(formData.endDate) : null}
               minDate={
                 formData?.startDate
                   ? dayjs(formData.startDate)
@@ -1169,23 +1395,22 @@ const getClinicId = (hospital) =>
               onChange={(newValue) => {
                 updateField(
                   "endDate",
-                  newValue?.isValid()
-                    ? newValue.format(
-                        "YYYY-MM-DD"
-                      )
-                    : ""
+
+                  newValue?.isValid() ? newValue.format("YYYY-MM-DD") : "",
                 );
               }}
               slotProps={{
                 textField: {
                   fullWidth: true,
+
                   size: "small",
+
                   inputRef: endDateRef,
-                  error: Boolean(
-                    errors.endDate
-                  ),
-                  helperText:
-                    errors.endDate,
+
+                  error: Boolean(errors.endDate),
+
+                  helperText: errors.endDate,
+
                   sx: dateFieldSx,
                 },
 
@@ -1207,6 +1432,104 @@ const getClinicId = (hospital) =>
               }}
             />
           </Grid>
+<Grid size={{ xs: 12, sm: 12, md: 6 }}>
+          <Grid container spacing={1.5}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                type="time"
+                fullWidth
+                size="small"
+                label="Start Time"
+                value={formData?.startTime || ""}
+                inputRef={startTimeRef}
+                onChange={(e) => updateField("startTime", e.target.value)}
+                error={Boolean(errors.startTime)}
+                helperText={errors.startTime}
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end" sx={{ mr: 0.5 }}>
+                        <IconButton
+                          aria-label="Choose start time"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => startTimeRef.current?.showPicker?.()}
+                          sx={{
+                            width: 36,
+                            height: 36,
+                            minWidth: 36,
+                            p: 0,
+                            color: PRIMARY_COLOR,
+                            flexShrink: 0,
+                          }}
+                        >
+                          <AccessTimeRoundedIcon sx={{ fontSize: 21 }} />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={{
+                  ...normalFieldSx,
+                  "& input[type='time']::-webkit-calendar-picker-indicator": {
+                    display: "none",
+                  },
+                  "& .MuiInputBase-input": {
+                    ...normalFieldSx["& .MuiInputBase-input"],
+                    paddingRight: "4px !important",
+                  },
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                type="time"
+                fullWidth
+                size="small"
+                label="End Time"
+                value={formData?.endTime || ""}
+                inputRef={endTimeRef}
+                onChange={(e) => updateField("endTime", e.target.value)}
+                error={Boolean(errors.endTime)}
+                helperText={errors.endTime}
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end" sx={{ mr: 0.5 }}>
+                        <IconButton
+                          aria-label="Choose end time"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => endTimeRef.current?.showPicker?.()}
+                          sx={{
+                            width: 36,
+                            height: 36,
+                            minWidth: 36,
+                            p: 0,
+                            color: PRIMARY_COLOR,
+                            flexShrink: 0,
+                          }}
+                        >
+                          <AccessTimeRoundedIcon sx={{ fontSize: 21 }} />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={{
+                  ...normalFieldSx,
+                  "& input[type='time']::-webkit-calendar-picker-indicator": {
+                    display: "none",
+                  },
+                  "& .MuiInputBase-input": {
+                    ...normalFieldSx["& .MuiInputBase-input"],
+                    paddingRight: "4px !important",
+                  },
+                }}
+              />
+            </Grid>
+            </Grid>
+          </Grid>
 
           {/* ACTIVE DAYS */}
 
@@ -1214,25 +1537,25 @@ const getClinicId = (hospital) =>
             <Box
               sx={{
                 mt: 0.4,
+
                 p: 1.5,
+
                 borderRadius: "8px",
-                backgroundColor:
-                  BACKGROUND_COLOR,
+
+                backgroundColor: BACKGROUND_COLOR,
 
                 border: `1px solid ${
-                  errors.activeDays
-                    ? ERROR_COLOR
-                    : DIVIDER_COLOR
+                  errors.activeDays ? ERROR_COLOR : DIVIDER_COLOR
                 }`,
               }}
             >
               <Typography
                 sx={{
                   fontSize: "12.5px",
+
                   fontWeight: 600,
-                  color: errors.activeDays
-                    ? ERROR_COLOR
-                    : TEXT_COLOR,
+
+                  color: errors.activeDays ? ERROR_COLOR : TEXT_COLOR,
                 }}
               >
                 Active Days
@@ -1241,126 +1564,96 @@ const getClinicId = (hospital) =>
               <Typography
                 sx={{
                   fontSize: "10.5px",
+
                   color: SECONDARY_TEXT,
+
                   mt: 0.2,
                 }}
               >
-                Available days are based on this
-                hospital&apos;s Working Hours. You can
-                unselect days you do not want to create
-                slots for.
+                Available days are based on this hospital&apos;s Working Hours.
+                You can unselect days you do not want to create slots for.
               </Typography>
 
-              <Stack
-                direction="row"
-                gap={0.8}
-                flexWrap="wrap"
-                mt={1.2}
-              >
+              <Stack direction="row" gap={0.8} flexWrap="wrap" mt={1.2}>
                 {daysOfWeek.map((day) => {
-                  const currentDays =
-                    Array.isArray(
-                      formData?.activeDays
-                    )
-                      ? formData.activeDays
-                      : [];
+                  const currentDays = Array.isArray(formData?.activeDays)
+                    ? formData.activeDays
+                    : [];
 
-                  const isSelected =
-                    currentDays.includes(day);
+                  const isSelected = currentDays.includes(day);
 
-                  const isAvailable =
-                    availableDays.includes(day);
+                  const isAvailable = availableDays.includes(day);
 
                   return (
                     <Button
                       key={day}
-
                       // API me day nahi -> disabled
+
                       disabled={!isAvailable}
-
-                      variant={
-                        isSelected
-                          ? "contained"
-                          : "outlined"
-                      }
-
+                      variant={isSelected ? "contained" : "outlined"}
                       onClick={() => {
                         if (!isAvailable) {
                           return;
                         }
 
                         /*
+
                          * Selected -> click -> unselect
+
                          * Unselected -> click -> select
+
                          */
-                        const updatedDays =
-                          isSelected
-                            ? currentDays.filter(
-                                (
-                                  selectedDay
-                                ) =>
-                                  selectedDay !==
-                                  day
-                              )
-                            : [
-                                ...currentDays,
-                                day,
-                              ];
 
-                        updateField(
-                          "activeDays",
-                          updatedDays
-                        );
+                        const updatedDays = isSelected
+                          ? currentDays.filter(
+                              (selectedDay) => selectedDay !== day,
+                            )
+                          : [...currentDays, day];
+
+                        updateField("activeDays", updatedDays);
                       }}
-
                       sx={{
                         minWidth: 55,
+
                         height: 30,
+
                         px: 1.3,
+
                         borderRadius: "6px",
 
                         textTransform: "none",
+
                         fontSize: "11.5px",
+
                         fontWeight: 500,
 
-                        color: isSelected
-                          ? "#fff"
-                          : PRIMARY_COLOR,
+                        color: isSelected ? "#fff" : PRIMARY_COLOR,
 
-                        borderColor:
-                          PRIMARY_COLOR,
+                        borderColor: PRIMARY_COLOR,
 
-                        backgroundColor:
-                          isSelected
-                            ? PRIMARY_COLOR
-                            : "transparent",
+                        backgroundColor: isSelected
+                          ? PRIMARY_COLOR
+                          : "transparent",
 
                         boxShadow: "none",
 
                         "&:hover": {
-                          backgroundColor:
-                            isSelected
-                              ? PRIMARY_COLOR
-                              : `${PRIMARY_COLOR}0D`,
+                          backgroundColor: isSelected
+                            ? PRIMARY_COLOR
+                            : `${PRIMARY_COLOR}0D`,
 
-                          borderColor:
-                            PRIMARY_COLOR,
+                          borderColor: PRIMARY_COLOR,
 
                           boxShadow: "none",
                         },
 
                         "&.Mui-disabled": {
-                          color:
-                            muiTheme.palette
-                              .text.disabled,
+                          color: muiTheme.palette.text.disabled,
 
-                          borderColor:
-                            DIVIDER_COLOR,
+                          borderColor: DIVIDER_COLOR,
 
                           backgroundColor:
-                            muiTheme.palette
-                              .action
-                              .disabledBackground,
+                            muiTheme.palette.action.disabledBackground,
                         },
                       }}
                     >
@@ -1374,7 +1667,9 @@ const getClinicId = (hospital) =>
                 <Typography
                   sx={{
                     color: ERROR_COLOR,
+
                     fontSize: "10.5px",
+
                     mt: 0.8,
                   }}
                 >

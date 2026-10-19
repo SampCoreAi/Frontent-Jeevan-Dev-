@@ -58,7 +58,7 @@ export default function Prescription({
   }, []);
 
   const isPatient = roleId === 1;
-  const editable = !isPatient && isEditable;
+  const editable = roleId === 2 && isEditable;
 
   const appointmentId =
     propAppointmentId || searchParams.get("appointment_id");
@@ -177,6 +177,7 @@ const isTodayAppointment = appointmentDate
 const qrImage = doctor?.qr_url || null;
 
   const handleSavePrescription = async () => {
+     if (roleId !== 2) return;
     const validMedicines = rows.filter((row) => {
         if (row.name && row.name.trim() !== "") {
           return true;

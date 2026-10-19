@@ -112,6 +112,13 @@ const RegistrationTable = ({
   // =========================
 
   const columns = [
+    {
+      field: "created_at",
+      headerName: "Created At",
+      sortable: false,
+      filterable: false,
+      disableColumnMenu: true,
+    },
     // SERIAL NUMBER
     {
       field: "serialNumber",
@@ -486,6 +493,7 @@ const handleSortModelChange = useCallback(
         <DataGrid
           rows={registrations}
           columns={columns}
+          columnVisibilityModel={{ created_at: false }}
 
           loading={loading}
 

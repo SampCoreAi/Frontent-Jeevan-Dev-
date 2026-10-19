@@ -1,11 +1,12 @@
-
 "use client";
 
 import * as React from "react";
 
 import {
+  Alert,
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Divider,
   Grid,
@@ -20,40 +21,29 @@ import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
-import LocalPharmacyOutlinedIcon from "@mui/icons-material/LocalPharmacyOutlined";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 
-/* =========================================================
-   COLORS
-========================================================= */
-
 const C = {
   primary: "#07876A",
   primaryHover: "#066F58",
   primaryLight: "#EAF7F3",
-
-  text: "#172033",
+  text: "#263445",
   muted: "#74807B",
-
-  border: "#DDE9E5",
-  inputBorder: "#CBD5E1",
-
+  border: "#E3E8EC",
+  inputBorder: "#D9DDE3",
   error: "#E5484D",
   white: "#FFFFFF",
 };
 
-/* =========================================================
-   INPUT STYLE
-========================================================= */
-
 const inputSx = {
   "& .MuiOutlinedInput-root": {
-    minHeight: "46px",
-    borderRadius: "8px",
+    minHeight: 39,
+    borderRadius: "7px",
     backgroundColor: C.white,
+    fontSize: "12px",
 
     "& fieldset": {
       borderColor: C.inputBorder,
@@ -75,25 +65,27 @@ const inputSx = {
 
   "& .MuiInputBase-input": {
     fontSize: "12px",
-    py: 1.2,
+    py: 1,
+    px: 1.4,
+  },
+
+  "& .MuiInputAdornment-root .MuiSvgIcon-root": {
+    fontSize: 17,
   },
 
   "& .MuiFormHelperText-root": {
     fontSize: "10px",
-    ml: 0.5,
-    mt: 0.5,
+    lineHeight: 1.4,
+    mx: 0,
+    mt: 0.4,
   },
 };
-
-/* =========================================================
-   LABEL
-========================================================= */
 
 function FieldLabel({ children, optional = false }) {
   return (
     <Typography
       sx={{
-        mb: 0.6,
+        mb: 0.55,
         fontSize: "12px",
         fontWeight: 600,
         color: C.text,
@@ -104,32 +96,18 @@ function FieldLabel({ children, optional = false }) {
       {optional ? (
         <Box
           component="span"
-          sx={{
-            color: C.muted,
-            fontWeight: 400,
-          }}
+          sx={{ color: C.muted, fontWeight: 400 }}
         >
-          {" "}
-          (Optional)
+          {" "}(Optional)
         </Box>
       ) : (
-        <Box
-          component="span"
-          sx={{
-            color: C.error,
-          }}
-        >
-          {" "}
-          *
+        <Box component="span" sx={{ color: C.error }}>
+          {" "}*
         </Box>
       )}
     </Typography>
   );
 }
-
-/* =========================================================
-   COMPONENT
-========================================================= */
 
 export default function LicenseBusinessForm({
   data = {},
@@ -140,26 +118,14 @@ export default function LicenseBusinessForm({
 }) {
   const [errors, setErrors] = React.useState({});
 
-  /* =======================================================
-     CHANGE FIELD
-  ======================================================= */
-
   const setField = (field, value) => {
-    onChange?.({
-      [field]: value,
-    });
+    onChange?.({ [field]: value });
 
-    if (errors[field]) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: "",
-      }));
-    }
+    setErrors((prev) => ({
+      ...prev,
+      [field]: "",
+    }));
   };
-
-  /* =======================================================
-     VALIDATION
-  ======================================================= */
 
   const validate = () => {
     const newErrors = {};
@@ -167,16 +133,10 @@ export default function LicenseBusinessForm({
     const drugLicenseNumber =
       data.drugLicenseNumber?.trim() || "";
 
-    const expiry =
-      data.licenseExpiryDate || "";
-
-    const pharmacistRegistrationNumber =
-      data.pharmacistRegistrationNumber?.trim() || "";
+    const expiry = data.licenseExpiryDate || "";
 
     const gstin =
       data.gstin?.trim().toUpperCase() || "";
-
-    /* ================= DRUG LICENSE ================= */
 
     if (!drugLicenseNumber) {
       newErrors.drugLicenseNumber =
@@ -186,15 +146,12 @@ export default function LicenseBusinessForm({
         "Enter a valid drug license number";
     }
 
-    /* ================= EXPIRY DATE ================= */
-
     if (!expiry) {
       newErrors.licenseExpiryDate =
         "License expiry date is required";
     } else {
       const selectedDate = new Date(expiry);
       const today = new Date();
-
       today.setHours(0, 0, 0, 0);
 
       if (selectedDate < today) {
@@ -203,19 +160,10 @@ export default function LicenseBusinessForm({
       }
     }
 
-    /* ================= PHARMACIST ================= */
-
-    if (!pharmacistRegistrationNumber) {
-      newErrors.pharmacistRegistrationNumber =
-        "Pharmacist registration number is required";
-    } else if (pharmacistRegistrationNumber.length < 4) {
-      newErrors.pharmacistRegistrationNumber =
-        "Enter a valid pharmacist registration number";
-    }
-
-    /* ================= GSTIN OPTIONAL ================= */
-
-    if (gstin) {
+    if (data.collectPayments && !gstin) {
+      newErrors.gstin =
+        "GSTIN is required when the platform collects payments";
+    } else if (gstin) {
       const gstRegex =
         /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
@@ -226,488 +174,324 @@ export default function LicenseBusinessForm({
     }
 
     setErrors(newErrors);
-
     return Object.keys(newErrors).length === 0;
   };
 
-  /* =======================================================
-     NEXT
-  ======================================================= */
-
-  const handleNext = () => {
-    if (!validate()) {
-      return;
-    }
-
-    onNext?.();
+  const handleNext = async () => {
+    if (loading || !validate()) return;
+    await onNext?.();
   };
-
-  /* =======================================================
-     ICON
-  ======================================================= */
 
   const icon = (Icon) => (
     <InputAdornment position="start">
-      <Icon
-        sx={{
-          fontSize: 17,
-          color: C.muted,
-        }}
-      />
+      <Icon sx={{ fontSize: 16, color: C.muted }} />
     </InputAdornment>
   );
-
-  /* =======================================================
-     COMPLETION
-  ======================================================= */
 
   const licenseComplete =
     Boolean(data.drugLicenseNumber) &&
     Boolean(data.licenseExpiryDate);
 
-  const pharmacistComplete =
-    Boolean(data.pharmacistRegistrationNumber);
+  const renderTextField = ({
+    field,
+    label,
+    placeholder,
+    helperText,
+    Icon,
+    optional = false,
+    type = "text",
+    maxLength,
+    numeric = false,
+  }) => (
+    <Grid size={{ xs: 12, sm: 6 }}>
+      <FieldLabel optional={optional}>{label}</FieldLabel>
 
-  /* =======================================================
-     UI
-  ======================================================= */
+      <TextField
+        fullWidth
+        type={type}
+        placeholder={placeholder}
+        value={data[field] || ""}
+        onChange={(e) => {
+          let value = e.target.value;
+
+          if (numeric) value = value.replace(/\D/g, "");
+          if (field === "gstin" || field === "drugLicenseNumber") {
+            value = value.toUpperCase();
+          }
+          if (maxLength) value = value.slice(0, maxLength);
+
+          setField(field, value);
+        }}
+        error={Boolean(errors[field])}
+        helperText={errors[field] || helperText || ""}
+        sx={inputSx}
+        slotProps={{
+          htmlInput: {
+            ...(maxLength ? { maxLength } : {}),
+            ...(numeric ? { inputMode: "numeric" } : {}),
+            ...(type === "date"
+              ? { min: new Date().toISOString().split("T")[0] }
+              : {}),
+          },
+          input: {
+            ...(Icon ? { startAdornment: icon(Icon) } : {}),
+          },
+        }}
+      />
+    </Grid>
+  );
 
   return (
-    <Box>
-      {/* ===================================================
-          MAIN CARD
-      =================================================== */}
-
+    <Box sx={{ width: "100%", minWidth: 0 }}>
+      {/* MAIN FORM CARD */}
       <Paper
         elevation={0}
         sx={{
-          p: {
-            xs: 2,
-            sm: 2.5,
-            md: 3,
-          },
-
+          p: { xs: 2, sm: 2.5, md: 3 },
           border: `1px solid ${C.border}`,
           borderRadius: "12px",
           bgcolor: C.white,
         }}
       >
-        {/* ================= HEADER ================= */}
+    {/* HEADER + TOP RIGHT BUTTONS */}
+<Stack
+  direction="row"
+  alignItems="center"
+  justifyContent="space-between"
+  flexWrap="wrap"
+  gap={1.5}
+  sx={{ mb: 2 }}
+>
+  <Stack
+    direction="row"
+    alignItems="center"
+    spacing={1.2}
+  >
+    <BadgeOutlinedIcon
+      sx={{ color: C.text, fontSize: 22 }}
+    />
 
+    <Typography
+      sx={{
+        fontSize: { xs: "16px", sm: "19px" },
+        fontWeight: 750,
+        color: C.text,
+        lineHeight: 1.4,
+      }}
+    >
+      B. Authorised Signatory / Owner
+    </Typography>
+  </Stack>
+
+  {/* TOP RIGHT ACTIONS */}
+  <Stack direction="row" spacing={1}>
+    <Button
+      onClick={onBack}
+      startIcon={<ArrowBackRoundedIcon />}
+      sx={{
+        minHeight: 36,
+        px: 1.8,
+        border: `1px solid ${C.border}`,
+        borderRadius: "7px",
+        color: C.text,
+        textTransform: "none",
+        fontSize: "12px",
+        fontWeight: 600,
+        whiteSpace: "nowrap",
+        "&:hover": {
+          bgcolor: "#F8FAF9",
+        },
+      }}
+    >
+      Back
+    </Button>
+
+    <Button
+      variant="contained"
+      onClick={handleNext}
+      disabled={loading}
+      endIcon={
+        loading ? (
+          <CircularProgress size={14} color="inherit" />
+        ) : (
+          <ArrowForwardRoundedIcon />
+        )
+      }
+      sx={{
+        minHeight: 36,
+        px: 1.8,
+        borderRadius: "7px",
+        bgcolor: C.primary,
+        color: "#FFFFFF",
+        boxShadow: "none",
+        textTransform: "none",
+        fontSize: "12px",
+        fontWeight: 700,
+        whiteSpace: "nowrap",
+        "&:hover": {
+          bgcolor: C.primaryHover,
+        },
+        "&.Mui-disabled": {
+          bgcolor: "#A9BDB6",
+          color: "#FFFFFF",
+        },
+      }}
+    >
+      {loading ? "Saving..." : "Next"}
+    </Button>
+  </Stack>
+</Stack>
+
+        {/* INFORMATION BOX */}
+        <Alert
+          severity="warning"
+          icon={false}
+          sx={{
+            mb: 2.2,
+            py: 0.5,
+            px: 1.8,
+            bgcolor: "#FFFBEB",
+            color: "#92501D",
+            border: "1px solid #FDE68A",
+            borderRadius: "9px",
+            "& .MuiAlert-message": {
+              p: 0,
+              fontSize: "12px",
+              lineHeight: 1.7,
+            },
+          }}
+        >
+          <Box component="span" sx={{ fontWeight: 700 }}>
+            Data Minimisation Note:
+          </Box>{" "}
+          As per DPDP Act guidelines, do not enter unnecessary
+          personal details. Only the information required for
+          business verification should be provided.
+        </Alert>
+
+        {/* LICENSE DETAILS */}
         <Stack
           direction="row"
           alignItems="center"
           spacing={1}
+          sx={{ mb: 1.6 }}
         >
-          <Box
+          <DescriptionOutlinedIcon
+            sx={{ color: C.primary, fontSize: 18 }}
+          />
+
+          <Typography
             sx={{
-              width: 38,
-              height: 38,
-
-              borderRadius: "9px",
-
-              bgcolor: C.primaryLight,
-              color: C.primary,
-
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-
-              flexShrink: 0,
+              fontSize: "13px",
+              fontWeight: 700,
+              color: C.text,
             }}
           >
-            <BadgeOutlinedIcon
-              sx={{
-                fontSize: 21,
-              }}
+            Drug License Information
+          </Typography>
+
+          {licenseComplete && (
+            <CheckCircleRoundedIcon
+              sx={{ ml: "auto !important", color: C.primary, fontSize: 17 }}
             />
-          </Box>
-
-          <Box>
-            <Typography
-              sx={{
-                fontSize: "15px",
-                fontWeight: 750,
-                color: C.text,
-                lineHeight: 1.3,
-              }}
-            >
-              License & Business Details
-            </Typography>
-
-            <Typography
-              sx={{
-                mt: 0.2,
-                fontSize: "10.5px",
-                color: C.muted,
-                lineHeight: 1.4,
-              }}
-            >
-              Enter the legal license details of your pharmacy.
-            </Typography>
-          </Box>
+          )}
         </Stack>
 
-        <Divider
-          sx={{
-            my: 2,
-            borderColor: C.border,
-          }}
-        />
+        <Grid container spacing={{ xs: 1.7, md: 2 }}>
+          {renderTextField({
+            field: "drugLicenseNumber",
+            label: "Drug License Number",
+            placeholder: "Enter drug license number",
+            helperText: "As printed on your drug license",
+            Icon: BadgeOutlinedIcon,
+            maxLength: 40,
+          })}
 
-        {/* ===================================================
-            DRUG LICENSE INFORMATION
-        =================================================== */}
+          {renderTextField({
+            field: "licenseExpiryDate",
+            label: "License Expiry Date",
+            placeholder: "",
+            helperText: "Expiry date mentioned on license",
+            Icon: CalendarMonthOutlinedIcon,
+            type: "date",
+          })}
+        </Grid>
 
-        <Box>
-          <Stack
-            direction="row"
-            spacing={0.8}
-            alignItems="center"
+        <Divider sx={{ my: 2.2, borderColor: C.border }} />
+
+        {/* BUSINESS DETAILS */}
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={1}
+          sx={{ mb: 1.6 }}
+        >
+          <BusinessOutlinedIcon
+            sx={{ color: C.primary, fontSize: 18 }}
+          />
+
+          <Typography
             sx={{
-              mb: 1.7,
+              fontSize: "13px",
+              fontWeight: 700,
+              color: C.text,
             }}
           >
-            <DescriptionOutlinedIcon
-              sx={{
-                fontSize: 18,
-                color: C.primary,
-              }}
+            Business Information
+          </Typography>
+        </Stack>
+
+        <Box
+          sx={{
+            mb: 1,
+            p: 1,
+            border: `1px solid ${C.border}`,
+            borderRadius: "9px",
+            bgcolor: "#F8FAFC",
+          }}
+        >
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <Checkbox
+              size="small"
+              checked={Boolean(data.gstinApplicable || data.collectPayments)}
+              disabled={Boolean(data.collectPayments)}
+              onChange={(event) =>
+                setField("gstinApplicable", event.target.checked)
+              }
+              inputProps={{ "aria-label": "GSTIN applies to this business" }}
+              sx={{ color: C.primary, "&.Mui-checked": { color: C.primary } }}
             />
-
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  color: C.text,
-                }}
-              >
-                Drug License Information
-              </Typography>
-
-              <Typography
-                sx={{
-                  mt: 0.15,
-                  fontSize: "10px",
-                  color: C.muted,
-                }}
-              >
-                Enter the details exactly as printed on your
-                drug license.
-              </Typography>
-            </Box>
-
-            {licenseComplete && (
-              <CheckCircleRoundedIcon
-                sx={{
-                  ml: "auto !important",
-                  fontSize: 17,
-                  color: C.primary,
-                }}
-              />
-            )}
+            <Typography sx={{ fontSize: "11px", color: C.text }}>
+              GSTIN applies to this business or is needed for this workflow
+              {data.collectPayments ? " (required for payment collection)" : ""}
+            </Typography>
           </Stack>
-
-          <Grid
-            container
-            spacing={{
-              xs: 2,
-              md: 2.2,
-            }}
-          >
-            {/* LICENSE NUMBER */}
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <FieldLabel>
-                Drug License Number
-              </FieldLabel>
-
-              <TextField
-                fullWidth
-                placeholder="Enter drug license number"
-                value={
-                  data.drugLicenseNumber || ""
-                }
-                onChange={(e) => {
-                  const value =
-                    e.target.value
-                      .toUpperCase()
-                      .slice(0, 40);
-
-                  setField(
-                    "drugLicenseNumber",
-                    value
-                  );
-                }}
-                error={Boolean(
-                  errors.drugLicenseNumber
-                )}
-                helperText={
-                  errors.drugLicenseNumber ||
-                  "As printed on your drug license"
-                }
-                sx={inputSx}
-                InputProps={{
-                  startAdornment: icon(
-                    BadgeOutlinedIcon
-                  ),
-                }}
-              />
-            </Grid>
-
-            {/* LICENSE EXPIRY */}
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <FieldLabel>
-                License Expiry Date
-              </FieldLabel>
-
-              <TextField
-                fullWidth
-                type="date"
-                value={
-                  data.licenseExpiryDate || ""
-                }
-                onChange={(e) =>
-                  setField(
-                    "licenseExpiryDate",
-                    e.target.value
-                  )
-                }
-                error={Boolean(
-                  errors.licenseExpiryDate
-                )}
-                helperText={
-                  errors.licenseExpiryDate ||
-                  "Expiry date mentioned on license"
-                }
-                sx={inputSx}
-                inputProps={{
-                  min: new Date()
-                    .toISOString()
-                    .split("T")[0],
-                }}
-                InputProps={{
-                  startAdornment: icon(
-                    CalendarMonthOutlinedIcon
-                  ),
-                }}
-              />
-            </Grid>
-          </Grid>
         </Box>
 
-        {/* ===================================================
-            PHARMACIST INFORMATION
-        =================================================== */}
-
-        <Divider
-          sx={{
-            my: 2.5,
-            borderColor: C.border,
-          }}
-        />
-
-        <Box>
-          <Stack
-            direction="row"
-            spacing={0.8}
-            alignItems="center"
-            sx={{
-              mb: 1.7,
-            }}
-          >
-            <LocalPharmacyOutlinedIcon
-              sx={{
-                fontSize: 18,
-                color: C.primary,
-              }}
-            />
-
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  color: C.text,
-                }}
-              >
-                Pharmacist Information
-              </Typography>
-
-              <Typography
-                sx={{
-                  mt: 0.15,
-                  fontSize: "10px",
-                  color: C.muted,
-                }}
-              >
-                Enter the registered pharmacist details.
-              </Typography>
-            </Box>
-
-            {pharmacistComplete && (
-              <CheckCircleRoundedIcon
-                sx={{
-                  ml: "auto !important",
-                  fontSize: 17,
-                  color: C.primary,
-                }}
-              />
-            )}
-          </Stack>
-
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <FieldLabel>
-                Pharmacist Registration Number
-              </FieldLabel>
-
-              <TextField
-                fullWidth
-                placeholder="Enter registration number"
-                value={
-                  data.pharmacistRegistrationNumber ||
-                  ""
-                }
-                onChange={(e) => {
-                  const value =
-                    e.target.value
-                      .replace(/\s/g, "")
-                      .toUpperCase()
-                      .slice(0, 40);
-
-                  setField(
-                    "pharmacistRegistrationNumber",
-                    value
-                  );
-                }}
-                error={Boolean(
-                  errors.pharmacistRegistrationNumber
-                )}
-                helperText={
-                  errors.pharmacistRegistrationNumber ||
-                  "As printed on the pharmacist registration certificate"
-                }
-                sx={inputSx}
-                InputProps={{
-                  startAdornment: icon(
-                    LocalPharmacyOutlinedIcon
-                  ),
-                }}
-              />
-            </Grid>
+        {(data.gstinApplicable || data.collectPayments) && (
+          <Grid container spacing={{ xs: 1.7, md: 2 }}>
+            {renderTextField({
+              field: "gstin",
+              label: "GSTIN",
+              placeholder: "e.g. 23ABCDE1234F1Z5",
+              helperText: "Enter only if applicable to this business",
+              Icon: BusinessOutlinedIcon,
+              optional: !data.collectPayments,
+              maxLength: 15,
+            })}
           </Grid>
-        </Box>
+        )}
 
-        {/* ===================================================
-            BUSINESS INFORMATION
-        =================================================== */}
-
-        <Divider
-          sx={{
-            my: 2.5,
-            borderColor: C.border,
-          }}
-        />
-
-        <Box>
-          <Stack
-            direction="row"
-            spacing={0.8}
-            alignItems="center"
-            sx={{
-              mb: 1.7,
-            }}
-          >
-            <BusinessOutlinedIcon
-              sx={{
-                fontSize: 18,
-                color: C.primary,
-              }}
-            />
-
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  color: C.text,
-                }}
-              >
-                Business Information
-              </Typography>
-
-              <Typography
-                sx={{
-                  mt: 0.15,
-                  fontSize: "10px",
-                  color: C.muted,
-                }}
-              >
-                Tax information for your pharmacy.
-              </Typography>
-            </Box>
-          </Stack>
-
-          <Grid container spacing={2}>
-            {/* GSTIN */}
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <FieldLabel optional>
-                GSTIN
-              </FieldLabel>
-
-              <TextField
-                fullWidth
-                placeholder="e.g. 23ABCDE1234F1Z5"
-                value={data.gstin || ""}
-                onChange={(e) => {
-                  const value =
-                    e.target.value
-                      .replace(/\s/g, "")
-                      .toUpperCase()
-                      .slice(0, 15);
-
-                  setField("gstin", value);
-                }}
-                error={Boolean(errors.gstin)}
-                helperText={
-                  errors.gstin ||
-                  "15-character GST Identification Number"
-                }
-                sx={inputSx}
-                inputProps={{
-                  maxLength: 15,
-                }}
-                InputProps={{
-                  startAdornment: icon(
-                    BusinessOutlinedIcon
-                  ),
-                }}
-              />
-            </Grid>
-          </Grid>
-        </Box>
-
-        {/* ===================================================
-            INFO BOX
-        =================================================== */}
-
+        {/* NOTE */}
         <Stack
           direction="row"
           spacing={1}
           alignItems="flex-start"
           sx={{
-            mt: 2.5,
+            mt: 2.2,
             p: 1.4,
-
             bgcolor: "#F4FAF7",
-
-            border:
-              "1px solid rgba(7,135,106,0.12)",
-
+            border: "1px solid rgba(7,135,106,0.12)",
             borderRadius: "9px",
           }}
         >
@@ -735,138 +519,31 @@ export default function LicenseBusinessForm({
               sx={{
                 mt: 0.25,
                 fontSize: "10px",
-                lineHeight: 1.5,
+                lineHeight: 1.6,
                 color: C.muted,
               }}
             >
               Your drug license and pharmacist registration
-              details will be verified before your medical
-              store is approved on Jeevan Dev.
+              details will be verified before your medical store
+              is approved on Jeevan Dev.
             </Typography>
           </Box>
         </Stack>
+
+        {Object.values(errors).some(Boolean) && (
+          <Typography
+            sx={{
+              mt: 1.5,
+              fontSize: "11px",
+              color: C.error,
+            }}
+          >
+            Please correct the highlighted fields before continuing.
+          </Typography>
+        )}
       </Paper>
 
-      {/* ===================================================
-          ACTIONS
-      =================================================== */}
-
-      <Paper
-        elevation={0}
-        sx={{
-          mt: 2,
-
-          px: {
-            xs: 2,
-            md: 2.5,
-          },
-
-          py: 1.4,
-
-          border: `1px solid ${C.border}`,
-          borderRadius: "11px",
-
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-
-          gap: 2,
-        }}
-      >
-        {/* BACK */}
-
-        <Button
-          onClick={onBack}
-          startIcon={
-            <ArrowBackRoundedIcon
-              sx={{
-                fontSize: "17px !important",
-              }}
-            />
-          }
-          sx={{
-            height: 40,
-
-            px: 2,
-
-            border: `1px solid ${C.border}`,
-            borderRadius: "8px",
-
-            color: C.text,
-
-            textTransform: "none",
-
-            fontSize: "11.5px",
-            fontWeight: 600,
-
-            "&:hover": {
-              bgcolor: "#F8FAF9",
-              borderColor: "#C8D8D2",
-            },
-          }}
-        >
-          Back
-        </Button>
-
-        {/* NEXT */}
-
-        <Button
-          variant="contained"
-          onClick={handleNext}
-          disabled={loading}
-          endIcon={
-            loading ? (
-              <CircularProgress
-                size={14}
-                color="inherit"
-              />
-            ) : (
-              <ArrowForwardRoundedIcon
-                sx={{
-                  fontSize: "17px !important",
-                }}
-              />
-            )
-          }
-          sx={{
-            minWidth: {
-              xs: 130,
-              sm: 200,
-            },
-
-            height: 40,
-
-            px: 2.5,
-
-            borderRadius: "8px",
-
-            bgcolor: C.primary,
-            color: "#fff",
-
-            boxShadow: "none",
-
-            textTransform: "none",
-
-            fontSize: "11.5px",
-            fontWeight: 700,
-
-            "&:hover": {
-              bgcolor: C.primaryHover,
-              boxShadow:
-                "0 4px 12px rgba(7,135,106,0.16)",
-            },
-
-            "&.Mui-disabled": {
-              bgcolor: "#A9BDB6",
-              color: "#fff",
-            },
-          }}
-        >
-          {loading
-            ? "Saving..."
-            : "Next: Store Operations"}
-        </Button>
-      </Paper>
+ 
     </Box>
   );
 }

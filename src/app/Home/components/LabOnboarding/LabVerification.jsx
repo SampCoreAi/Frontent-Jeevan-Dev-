@@ -6,6 +6,7 @@ import React, {
 } from "react";
 
 import {
+  Alert,
   Box,
   Button,
   Checkbox,
@@ -80,6 +81,9 @@ export default function LabVerification({
 
   const [error, setError] =
     useState("");
+
+  const [submitted, setSubmitted] =
+    useState(false);
 
   const otpRefs = useRef([]);
 
@@ -268,7 +272,7 @@ export default function LabVerification({
      SUBMIT
   ============================================ */
 
-  const submit = () => {
+  const submit = async () => {
     if (!emailVerified) {
       setError(
         "Please verify your email first."
@@ -287,7 +291,15 @@ export default function LabVerification({
 
     setError("");
 
-    onSubmit?.();
+    try {
+      await onSubmit?.();
+      setSubmitted(true);
+    } catch (err) {
+      setError(
+        err?.message ||
+          "Unable to submit lab registration."
+      );
+    }
   };
 
   return (
@@ -792,6 +804,15 @@ export default function LabVerification({
         >
           {error}
         </Typography>
+      )}
+
+      {submitted && (
+        <Alert
+          severity="success"
+          sx={{ mt: 1, fontSize: "11px" }}
+        >
+          Lab registration submitted successfully.
+        </Alert>
       )}
 
       <Divider

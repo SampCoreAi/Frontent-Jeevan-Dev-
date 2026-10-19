@@ -113,56 +113,42 @@ const CalendarHeader = ({
   // GET SLOTS
   // ============================================================
 
-  const getSlots = async () => {
-    if (
-      !form.hospital ||
-      !form.appointmentDate
-    ) {
-      setSlots([]);
-      return;
-    }
+ const getSlots = async () => {
+  const selectedHospital = hospitals.find(
+    (item) => item.hospitalName === form.hospital
+  );
 
-    try {
-      setSlotsLoading(true);
+  if (!selectedHospital?.clinicId || !form.appointmentDate) {
+    setSlots([]);
+    return;
+  }
 
-      const token =
-        localStorage.getItem("token");
+  try {
+    setSlotsLoading(true);
 
-      const res = await axios.get(
-        `${API_URL}/api/appointments/doctor-slots`,
-        {
-          params: {
-            hospitalName:
-              form.hospital,
+    const token = localStorage.getItem("token");
 
-            date:
-              form.appointmentDate,
-          },
-
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (res.data.success) {
-        setSlots(
-          res.data.slots || []
-        );
-      } else {
-        setSlots([]);
+    const res = await axios.get(
+      `${API_URL}/api/appointments/doctor-slots`,
+      {
+        params: {
+          hospitalName: selectedHospital.hospitalName,
+          clinicId: selectedHospital.clinicId,
+          date: form.appointmentDate,
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
-    } catch (error) {
-      console.log(
-        "Slot API Error:",
-        error
-      );
-
-      setSlots([]);
-    } finally {
-      setSlotsLoading(false);
-    }
-  };
+    );
+setSlots(res.data.data?.slots || []);
+  } catch (error) {
+    console.log("Slot API Error:", error);
+    setSlots([]);
+  } finally {
+    setSlotsLoading(false);
+  }
+};
 
   // ============================================================
   // GET HOSPITALS
@@ -228,17 +214,9 @@ const CalendarHeader = ({
     }
   }, [hospitals]);
 
-  useEffect(() => {
-    if (
-      form.hospital &&
-      form.appointmentDate
-    ) {
-      getSlots();
-    }
-  }, [
-    form.hospital,
-    form.appointmentDate,
-  ]);
+ useEffect(() => {
+  getSlots();
+}, [form.hospital, form.appointmentDate, hospitals]);
 
   // ============================================================
   // USER
@@ -290,39 +268,22 @@ const CalendarHeader = ({
     try {
       const token =
         localStorage.getItem("token");
+const payload = {
+  appointment_date: form.appointmentDate,
+  hospital_name: form.hospital,
+  mode: "offline",
+  booking_type: "someone_else",
+  reason_for_visit: form.reason,
+  patient: {
+    name: form.patientName,
+    email: form.email,
+    age: Number(form.age),
+    gender: form.gender,
+    phone: form.phone,
+  },
 
-      const payload = {
-        appointment_date:
-          form.appointmentDate,
-
-        hospital_name:
-          form.hospital,
-
-        mode: "offline",
-
-        booking_type:
-          "someone_else",
-
-        reason_for_visit:
-          form.reason,
-
-        patient: {
-          name:
-            form.patientName,
-
-          email:
-            form.email,
-
-          age:
-            Number(form.age),
-
-          gender:
-            form.gender,
-
-          phone:
-            form.phone,
-        },
-      };
+  ...(form.slotId ? { slot_id: Number(form.slotId) } : {}),
+};
 
       const res =
         await axios.post(
@@ -1054,10 +1015,7 @@ const CalendarHeader = ({
                         value={
                           slot.slotId
                         }
-                        disabled={
-                          slot.status !==
-                          "ACTIVE"
-                        }
+                      disabled={slot.status?.toLowerCase() !== "active"}
                         sx={{
                           fontSize:
                             "12.5px",

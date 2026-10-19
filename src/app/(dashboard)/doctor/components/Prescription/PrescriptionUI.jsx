@@ -14,22 +14,37 @@ import {
   DialogTitle,
   TextField,
 } from "@mui/material";
+
 import Snackbar from "@mui/material/Snackbar";
+
 import Alert from "@mui/material/Alert";
+
 import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
+
+import MicNoneOutlined from "@mui/icons-material/MicNoneOutlined";
+
 import api from "../../../../../utils/axiosInstance";
+
 import { useRouter } from "next/navigation";
+
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+
 import { useReactToPrint } from "react-to-print";
 
 import PrescriptionHeader from "./PrescriptionHeader";
+
 import PrescriptionFooter from "./PrescriptionFooter";
+
 import { PatientInfo, DiagnosisSection } from "./PatientInfo";
+
 import MedicineTable from "./MedicineTable";
+
 import LabTestRequestForm from "./LabTestRequestForm";
+
 import MedicalStoreRequestForm from "./MedicalStoreRequestForm";
 
 import PrescriptionPdfView from "./PrescriptionPdfView";
+
 import { waitForPrescriptionImages } from "./imageUtils";
 
 import {
@@ -41,26 +56,33 @@ import {
   datePickerPopupStyle,
 } from "./prescriptionStyles";
 
-/* =========================================================
-   OPTIONS
-========================================================= */
-
 const unitOptions = [
   "Tablet",
+
   "Capsule",
+
   "Syrup",
+
   "Injection",
+
   "Drops",
+
   "Cream",
+
   "Ointment",
 ];
 
 const frequencyOptions = [
   "Once Daily",
+
   "Twice Daily",
+
   "Three Times Daily",
+
   "Four Times Daily",
+
   "At Bedtime",
+
   "Immediately",
 ];
 
@@ -68,147 +90,397 @@ const doseOptions = ["1", "1/2", "2", "5 ml", "10 ml", "15 ml"];
 
 const instructionOptions = [
   "After Food",
+
   "Before Food",
+
   "With Water",
+
   "At Bedtime",
+
   "Empty Stomach",
+
   "After Breakfast",
+
   "After Lunch",
+
   "After Dinner",
 ];
 
-/* =========================================================
-   SHARED BUTTON STYLE
-========================================================= */
-
 const actionButtonSx = (minSm) => ({
   minWidth: { xs: 64, sm: minSm },
+
   px: { xs: 1.4, sm: 2 },
+
   py: { xs: 0.65, sm: 0.75 },
+
   borderRadius: 1.5,
+
   fontSize: "12px",
+
   fontWeight: 600,
+
   textTransform: "none",
+
   whiteSpace: "nowrap",
+
   bgcolor: "primary.main",
+
   color: WHITE,
+
   "&:hover": { bgcolor: "primary.dark" },
 });
 
-/* =========================================================
-   PRINT PAGE STYLE (A4, no browser margins, colors kept)
-========================================================= */
-
 const PRINT_PAGE_STYLE = `
-  @page {
-    size: A4;
-    margin: 0;
-  }
 
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: #ffffff;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+ @page {
 
-  * {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+  size: A4;
+
+  margin: 0;
+
+ }
+
+ html, body {
+
+  margin: 0;
+
+  padding: 0;
+
+  background: #ffffff;
+
+  -webkit-print-color-adjust: exact;
+
+  print-color-adjust: exact;
+
+ }
+
+ * {
+
+  -webkit-print-color-adjust: exact;
+
+  print-color-adjust: exact;
+
+ }
+
 `;
-
-/* =========================================================
-   COMPONENT
-========================================================= */
 
 export default function PrescriptionUI(props) {
   const router = useRouter();
 
+  const recognitionRef = useRef(null);
+
+  const activeVoiceInputRef = useRef(null);
+  const speechBaseRef = useRef({ field: null, text: "", resultStart: 0 });
+  const speechResultCountRef = useRef(0);
+
+  const [isListening, setIsListening] = useState(false);
+
+  const [speechError, setSpeechError] = useState("");
+
   const [labTestSummary, setLabTestSummary] = useState({
     labName: "",
+
     tests: [],
   });
+
   const [labTestResetKey, setLabTestResetKey] = useState(0);
+
   const [currentPatientReports, setCurrentPatientReports] = useState([]);
+
   const [oldPatientReports, setOldPatientReports] = useState([]);
+
   const [currentPatientLabRequests, setCurrentPatientLabRequests] = useState(
     [],
   );
+
   const [oldPatientLabRequests, setOldPatientLabRequests] = useState([]);
+
   const [patientReports, setPatientReports] = useState([]);
+
   const [patientLabRequests, setPatientLabRequests] = useState([]);
+
   const [reportsLoading, setReportsLoading] = useState(false);
+
   const [reportsOpen, setReportsOpen] = useState(false);
+
   const [labReportView, setLabReportView] = useState("current");
+
   const [cancellingRequestId, setCancellingRequestId] = useState(null);
+
   const [cancelRequest, setCancelRequest] = useState(null);
+
   const [cancelReason, setCancelReason] = useState("");
+
   const [repeatRequest, setRepeatRequest] = useState(null);
+
   const [repeatingRequestId, setRepeatingRequestId] = useState(null);
 
   const {
     isPatient,
+
     editable,
+
     apiData,
+
     isTodayAppointment,
+
     isDownloading,
 
     snackbar,
+
     setSnackbar,
 
     handleSavePrescription,
+
     isSavingPrescription,
+
     downloadPdf,
+
     pdfRef,
 
     doctor,
+
     patient,
+
     patientId,
+
     appointmentId,
+
     dateNow,
 
     diagnosis,
+
     setDiagnosis,
 
     rows,
+
     setRows,
+
     addRow,
+
     removeRow,
 
     remark,
+
     setRemark,
 
     followUpDate,
+
     setFollowUpDate,
 
     qrImage,
   } = props;
 
+  const voiceFieldSelector =
+    'textarea[placeholder="Enter diagnosis..."], input[placeholder="Enter diagnosis..."], input[placeholder="Enter medicine name"], textarea[placeholder="Add remark for patient"], input[placeholder="Add remark for patient"]';
+
+  const handleVoiceFieldFocus = (event) => {
+    const target = event.target;
+
+    if (
+      target?.closest?.(
+        '[aria-label="Start voice typing"], [aria-label="Stop voice typing"]',
+      )
+    )
+      return;
+
+    const nextField = target?.matches?.(voiceFieldSelector) ? target : null;
+    if (nextField !== activeVoiceInputRef.current) {
+      activeVoiceInputRef.current = nextField;
+      speechBaseRef.current = {
+        field: nextField,
+        text: nextField?.value || "",
+        resultStart: speechResultCountRef.current,
+      };
+    }
+  };
+
+const handlePrescriptionKeyDown = (event) => {
+  if (event.defaultPrevented || event.key !== "Enter" || event.shiftKey) {
+    return;
+  }
+
+  const current = event.target;
+  const diagnosisField = current.matches?.(
+    'textarea[placeholder="Enter diagnosis..."], input[placeholder="Enter diagnosis..."]',
+  );
+  if (diagnosisField) {
+    event.preventDefault();
+
+    const addButton = [...document.querySelectorAll("button")].find(
+      (button) => button.textContent?.includes("Add Medicine"),
+    );
+
+    if (!addButton || addButton.disabled) return;
+
+    addButton.click();
+
+    let attempts = 0;
+    const focusMedicine = () => {
+      const input = [...document.querySelectorAll(
+        'input[placeholder="Enter medicine name"]:not(:disabled)',
+      )].find((field) => field.getClientRects().length > 0);
+
+      if (input) {
+        input.focus();
+      } else if (attempts++ < 10) {
+        requestAnimationFrame(focusMedicine);
+      }
+    };
+
+    requestAnimationFrame(focusMedicine);
+  }
+};
+  const startDiagnosisDictation = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setSpeechError(
+        "Voice typing is not supported in this browser. Try Chrome.",
+      );
+
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = "en-IN";
+
+    recognition.continuous = true;
+
+    recognition.interimResults = true;
+
+const diagnosisField = document.querySelector(
+  'textarea[placeholder="Enter diagnosis..."], input[placeholder="Enter diagnosis..."]',
+);
+
+if (!diagnosisField) {
+  setSpeechError("Diagnosis field nahi mila.");
+  return;
+}
+
+activeVoiceInputRef.current = diagnosisField;
+speechBaseRef.current = {
+  field: diagnosisField,
+  text: diagnosisField.value || "",
+  resultStart: 0,
+};
+speechResultCountRef.current = 0;
+diagnosisField.focus();
+
+    setSpeechError("");
+
+    recognition.onresult = (event) => {
+      const field = activeVoiceInputRef.current;
+      if (!field?.isConnected) {
+        speechResultCountRef.current = event.results.length;
+        setSpeechError("Select Diagnosis, Medicine Name or Remark first.");
+        return;
+      }
+
+      if (speechBaseRef.current.field !== field) {
+        speechBaseRef.current = {
+          field,
+          text: field.value || "",
+          resultStart: speechResultCountRef.current,
+        };
+      }
+
+      const spokenText = Array.from(event.results)
+        .slice(speechBaseRef.current.resultStart)
+        .map((result) => result[0]?.transcript?.trim() || "")
+        .filter(Boolean)
+        .join(" ");
+      speechResultCountRef.current = event.results.length;
+      const value = [speechBaseRef.current.text, spokenText]
+        .filter(Boolean)
+        .join(" ");
+      const prototype =
+        field instanceof HTMLTextAreaElement
+          ? HTMLTextAreaElement.prototype
+          : HTMLInputElement.prototype;
+
+      Object.getOwnPropertyDescriptor(prototype, "value")?.set?.call(
+        field,
+        value,
+      );
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+
+    recognition.onerror = (event) => {
+      setSpeechError(
+        `Mic error: ${event.error || "Could not recognize speech"}`,
+      );
+
+      setIsListening(false);
+    };
+
+    recognition.onend = () => setIsListening(false);
+
+    recognitionRef.current = recognition;
+
+    setIsListening(true);
+
+    try {
+      recognition.start();
+    } catch {
+      setIsListening(false);
+
+      setSpeechError(
+        "Could not start the microphone. Check mic permission and try again.",
+      );
+    }
+  };
+
+  const stopDiagnosisDictation = () => {
+    recognitionRef.current?.stop();
+
+    setIsListening(false);
+  };
+
+  useEffect(
+    () => () => recognitionRef.current?.stop(),
+
+    [],
+  );
+
   const normalizeNumericId = (value) => {
     if (value === null || value === undefined || value === "") return null;
+
     const numeric = Number(value);
+
     return Number.isNaN(numeric) ? null : numeric;
   };
 
   const getRecordAppointmentId = (record = {}) => {
     const candidates = [
       record.appointmentId,
+
       record.appointment_id,
+
       record.appointment?.id,
+
       record.appointment?.appointment_id,
+
       record.appointment?.appointmentId,
+
       record.appointment_id ?? record.appointmentId,
+
       apiData?.appointment_id,
+
       apiData?.appointmentId,
+
       apiData?.appointment?.id,
+
       apiData?.appointment?.appointment_id,
+
       apiData?.appointment?.appointmentId,
     ];
 
     for (const candidate of candidates) {
       const normalized = normalizeNumericId(candidate);
+
       if (normalized !== null) return normalized;
     }
 
@@ -231,26 +503,40 @@ export default function PrescriptionUI(props) {
 
     if (typeof sectionFlag === "string") {
       const value = sectionFlag.toLowerCase();
+
       if (
         [
           "current",
+
           "current_appointment",
+
           "active",
+
           "true",
+
           "1",
+
           "yes",
         ].includes(value)
       )
         return "current";
+
       if (
         [
           "old",
+
           "previous",
+
           "past",
+
           "historic",
+
           "history",
+
           "false",
+
           "0",
+
           "no",
         ].includes(value)
       )
@@ -303,6 +589,7 @@ export default function PrescriptionUI(props) {
             params: { appointment_id: activeAppointmentId },
           })
         : api.get("/api/lab-requests/doctor");
+
       const oldRequestPromise = activeAppointmentId
         ? api.get("/api/lab-requests/doctor", {
             params: { exclude_appointment_id: activeAppointmentId },
@@ -314,6 +601,7 @@ export default function PrescriptionUI(props) {
             params: { appointment_id: activeAppointmentId },
           })
         : api.get("/api/lab-reports");
+
       const oldReportsPromise = activeAppointmentId
         ? api.get("/api/lab-reports", {
             params: { exclude_appointment_id: activeAppointmentId },
@@ -322,19 +610,28 @@ export default function PrescriptionUI(props) {
 
       const [
         currentRequestsResponse,
+
         oldRequestsResponse,
+
         currentReportsResponse,
+
         oldReportsResponse,
       ] = await Promise.all([
         currentRequestPromise,
+
         oldRequestPromise,
+
         currentReportsPromise,
+
         oldReportsPromise,
       ]);
 
       const currentRequests = currentRequestsResponse?.data?.data || [];
+
       const oldRequests = oldRequestsResponse?.data?.data || [];
+
       const currentReports = currentReportsResponse?.data?.data || [];
+
       const oldReports = oldReportsResponse?.data?.data || [];
 
       const normalizePatientRecords = (items) =>
@@ -349,21 +646,32 @@ export default function PrescriptionUI(props) {
         );
 
       const nextCurrentRequests = normalizePatientRecords(currentRequests);
+
       const nextOldRequests = normalizePatientRecords(oldRequests);
+
       const nextCurrentReports = normalizePatientRecords(currentReports);
+
       const nextOldReports = normalizePatientRecords(oldReports);
 
       setCurrentPatientLabRequests(nextCurrentRequests);
+
       setOldPatientLabRequests(nextOldRequests);
+
       setCurrentPatientReports(nextCurrentReports);
+
       setOldPatientReports(nextOldReports);
+
       setPatientLabRequests([...nextCurrentRequests, ...nextOldRequests]);
+
       setPatientReports([...nextCurrentReports, ...nextOldReports]);
     } catch (requestError) {
       setSnackbar((current) => ({
         ...current,
+
         open: true,
+
         severity: "error",
+
         message:
           requestError?.response?.data?.message ||
           "Unable to refresh lab reports.",
@@ -385,6 +693,7 @@ export default function PrescriptionUI(props) {
               params: { appointment_id: activeAppointmentId },
             })
           : api.get("/api/lab-requests/doctor");
+
         const oldRequestPromise = activeAppointmentId
           ? api.get("/api/lab-requests/doctor", {
               params: { exclude_appointment_id: activeAppointmentId },
@@ -396,6 +705,7 @@ export default function PrescriptionUI(props) {
               params: { appointment_id: activeAppointmentId },
             })
           : api.get("/api/lab-reports");
+
         const oldReportsPromise = activeAppointmentId
           ? api.get("/api/lab-reports", {
               params: { exclude_appointment_id: activeAppointmentId },
@@ -404,19 +714,28 @@ export default function PrescriptionUI(props) {
 
         const [
           currentRequestsResponse,
+
           oldRequestsResponse,
+
           currentReportsResponse,
+
           oldReportsResponse,
         ] = await Promise.all([
           currentRequestPromise,
+
           oldRequestPromise,
+
           currentReportsPromise,
+
           oldReportsPromise,
         ]);
 
         const currentRequests = currentRequestsResponse?.data?.data || [];
+
         const oldRequests = oldRequestsResponse?.data?.data || [];
+
         const currentReports = currentReportsResponse?.data?.data || [];
+
         const oldReports = oldReportsResponse?.data?.data || [];
 
         const normalizePatientRecords = (items) =>
@@ -431,22 +750,35 @@ export default function PrescriptionUI(props) {
           );
 
         const nextCurrentRequests = normalizePatientRecords(currentRequests);
+
         const nextOldRequests = normalizePatientRecords(oldRequests);
+
         const nextCurrentReports = normalizePatientRecords(currentReports);
+
         const nextOldReports = normalizePatientRecords(oldReports);
 
         setCurrentPatientLabRequests(nextCurrentRequests);
+
         setOldPatientLabRequests(nextOldRequests);
+
         setCurrentPatientReports(nextCurrentReports);
+
         setOldPatientReports(nextOldReports);
+
         setPatientLabRequests([...nextCurrentRequests, ...nextOldRequests]);
+
         setPatientReports([...nextCurrentReports, ...nextOldReports]);
       } catch {
         setCurrentPatientLabRequests([]);
+
         setOldPatientLabRequests([]);
+
         setCurrentPatientReports([]);
+
         setOldPatientReports([]);
+
         setPatientLabRequests([]);
+
         setPatientReports([]);
       } finally {
         setReportsLoading(false);
@@ -472,6 +804,7 @@ export default function PrescriptionUI(props) {
       if (typeof tests === "string") {
         try {
           const parsed = JSON.parse(tests);
+
           tests = Array.isArray(parsed) ? parsed : [tests];
         } catch {
           tests = [tests];
@@ -489,12 +822,19 @@ export default function PrescriptionUI(props) {
 
       return tests.map((test, index) => ({
         id: `${request.id}-${index}`,
+
         labName: request.lab_name,
+
         testName: test,
+
         requestId: request.id,
+
         orderId: request.order_id || request.orderId || null,
+
         status: request.status || "PENDING",
+
         createdAt: request.created_at,
+
         reportDate:
           request.expected_report_at ||
           request.expectedReportAt ||
@@ -503,6 +843,7 @@ export default function PrescriptionUI(props) {
           matchedReport?.uploadedAt ||
           matchedReport?.uploaded_at ||
           null,
+
         report: matchedReport,
       }));
     });
@@ -510,20 +851,27 @@ export default function PrescriptionUI(props) {
   const currentLabReportRows = useMemo(() => {
     const rows = buildLabReportRows(
       currentPatientLabRequests,
+
       currentPatientReports,
     );
+
     return [...rows].sort((a, b) => {
       const firstTime = Date.parse(a.reportDate || a.createdAt || 0) || 0;
+
       const secondTime = Date.parse(b.reportDate || b.createdAt || 0) || 0;
+
       return secondTime - firstTime;
     });
   }, [currentPatientLabRequests, currentPatientReports]);
 
   const oldLabReportRows = useMemo(() => {
     const rows = buildLabReportRows(oldPatientLabRequests, oldPatientReports);
+
     return [...rows].sort((a, b) => {
       const firstTime = Date.parse(a.reportDate || a.createdAt || 0) || 0;
+
       const secondTime = Date.parse(b.reportDate || b.createdAt || 0) || 0;
+
       return secondTime - firstTime;
     });
   }, [oldPatientLabRequests, oldPatientReports]);
@@ -533,7 +881,9 @@ export default function PrescriptionUI(props) {
   const sortedLabReportRows = useMemo(() => {
     return [...labReportRows].sort((a, b) => {
       const firstTime = Date.parse(a.reportDate || a.createdAt || 0) || 0;
+
       const secondTime = Date.parse(b.reportDate || b.createdAt || 0) || 0;
+
       return secondTime - firstTime;
     });
   }, [labReportRows]);
@@ -541,9 +891,11 @@ export default function PrescriptionUI(props) {
   const cancelPendingRequest = async (requestId, reason = null) => {
     try {
       setCancellingRequestId(requestId);
+
       await api.patch(`/api/lab-requests/${requestId}/cancel`, {
         note: reason || null,
       });
+
       setPatientLabRequests((current) =>
         current.map((request) =>
           request.id === requestId
@@ -554,8 +906,11 @@ export default function PrescriptionUI(props) {
     } catch (requestError) {
       setSnackbar((current) => ({
         ...current,
+
         open: true,
+
         severity: "error",
+
         message:
           requestError?.response?.data?.message ||
           "Unable to cancel lab request.",
@@ -570,79 +925,111 @@ export default function PrescriptionUI(props) {
 
     try {
       setRepeatingRequestId(repeatRequest.requestId);
+
       await api.post(`/api/lab-requests/${repeatRequest.requestId}/repeat`, {});
+
       setSnackbar((current) => ({
         ...current,
+
         open: true,
+
         severity: "success",
+
         message: "Repeat lab test request created successfully.",
       }));
+
       setRepeatRequest(null);
+
       await refreshPatientLabData();
     } catch (requestError) {
       setSnackbar((current) => ({
         ...current,
+
         open: true,
+
         severity: "error",
-        message: requestError?.response?.data?.message || "Unable to repeat lab test request.",
+
+        message:
+          requestError?.response?.data?.message ||
+          "Unable to repeat lab test request.",
       }));
     } finally {
       setRepeatingRequestId(null);
     }
   };
-  /* ---------- PRINT ---------- */
 
   const printRef = useRef(null);
 
   const handlePrint = useReactToPrint({
-    // react-to-print v3+ :
     contentRef: printRef,
-    // Agar v2 use kar rahe ho to upar wali line hata kar ye use karo:
-    // content: () => printRef.current,
 
     documentTitle: `Prescription-${patient?.name || "patient"}`,
+
     pageStyle: PRINT_PAGE_STYLE,
-    onBeforePrint: () =>
-      waitForPrescriptionImages(printRef.current),
+
+    onBeforePrint: () => waitForPrescriptionImages(printRef.current),
   });
 
   return (
     <Box
+      onFocusCapture={handleVoiceFieldFocus}
+      onKeyDown={handlePrescriptionKeyDown}
       sx={{
         width: "100%",
+
         maxWidth: "100%",
+
         minWidth: 0,
+
         p: 2,
+
         mt: 1,
+
         bgcolor: "#F4F7F6",
+
         boxSizing: "border-box",
+
         overflowX: "hidden",
+
         overflowY: "visible",
+
         "& .MuiInputLabel-root.Mui-focused": {
           color: PRIMARY_COLOR,
         },
-        "& .MuiOutlinedInput-root.Mui-focused fieldset": {
-          borderColor: PRIMARY_COLOR,
-        },
+
+        "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+          {
+            borderColor: "#07876A",
+
+            borderWidth: "2px",
+          },
+
         "& .MuiInput-underline:after": {
           borderBottomColor: PRIMARY_COLOR,
         },
+
         "& .MuiCheckbox-root.Mui-checked": {
           color: PRIMARY_COLOR,
         },
+
         "& .MuiRadio-root.Mui-checked": {
           color: PRIMARY_COLOR,
         },
+
         "& .MuiSelect-select:focus": {
           backgroundColor: "transparent",
         },
+
         "& .MuiMenuItem-root.Mui-selected": {
           backgroundColor: "rgba(7, 135, 106, 0.10)",
+
           color: PRIMARY_COLOR,
         },
+
         "& .MuiMenuItem-root.Mui-selected:hover": {
           backgroundColor: "rgba(7, 135, 106, 0.16)",
         },
+
         "& .MuiChip-colorPrimary": {
           backgroundColor: PRIMARY_COLOR,
         },
@@ -651,12 +1038,19 @@ export default function PrescriptionUI(props) {
       <Box
         sx={{
           width: "100%",
+
           minWidth: 0,
+
           display: "flex",
+
           justifyContent: "space-between",
+
           alignItems: "center",
+
           flexWrap: "wrap",
+
           gap: { xs: 1, sm: 1.5 },
+
           mb: { xs: 1.2, sm: 1.5 },
         }}
       >
@@ -666,11 +1060,17 @@ export default function PrescriptionUI(props) {
           onClick={() => router.push("/doctor/pages/patient")}
           sx={{
             minHeight: 34,
+
             px: { xs: 1.2, sm: 1.5 },
+
             borderRadius: 1.5,
+
             fontSize: "12px",
+
             fontWeight: 600,
+
             textTransform: "none",
+
             whiteSpace: "nowrap",
           }}
         >
@@ -680,11 +1080,24 @@ export default function PrescriptionUI(props) {
         <Box
           sx={{
             display: "flex",
+
             alignItems: "center",
+
             justifyContent: { xs: "flex-start", sm: "flex-end" },
+
             flexWrap: "wrap",
+
             gap: { xs: 0.7, sm: 1 },
+
             flex: { xs: "1 1 100%", sm: 1 },
+            "& .MuiButton-root:not(.voice-mic-button)": {
+              width: 150,
+              minWidth: 150,
+              height: 35,
+              minHeight: 35,
+              boxSizing: "border-box",
+              flexShrink: 0,
+            },
           }}
         >
           {!isPatient && (
@@ -723,13 +1136,18 @@ export default function PrescriptionUI(props) {
                 startIcon={<DescriptionOutlined />}
                 onClick={() => {
                   setReportsOpen(true);
+
                   refreshPatientLabData();
                 }}
                 sx={{
                   textTransform: "none",
+
                   borderRadius: 1.5,
+
                   minHeight: 34,
+
                   fontSize: "12px",
+
                   px: 1.25,
                 }}
               >
@@ -771,12 +1189,14 @@ export default function PrescriptionUI(props) {
             </Box>
           </Button>
 
-          {!isPatient && editable && isTodayAppointment && (
+          {
             <Button
               variant="contained"
               disableElevation
               onClick={handleSavePrescription}
-              disabled={isSavingPrescription}
+              disabled={
+                !editable || !isTodayAppointment || isSavingPrescription
+              }
               startIcon={
                 isSavingPrescription ? (
                   <CircularProgress size={16} color="inherit" />
@@ -791,8 +1211,8 @@ export default function PrescriptionUI(props) {
                 {isSavingPrescription
                   ? "Saving..."
                   : apiData?.prescription
-                  ? "Update Prescription"
-                  : "Save Prescription"}
+                    ? "Update Prescription"
+                    : "Save Prescription"}
               </Box>
 
               <Box
@@ -806,6 +1226,41 @@ export default function PrescriptionUI(props) {
                     : "Save"}
               </Box>
             </Button>
+          }
+          {editable && !isDownloading && (
+           <Button
+  className="voice-mic-button"
+  type="button"
+  variant="outlined"
+  aria-label={isListening ? "Stop voice typing" : "Start voice typing"}
+  onClick={isListening ? stopDiagnosisDictation : startDiagnosisDictation}
+  startIcon={<MicNoneOutlined />}
+  sx={{
+    width: isListening ? 150 : 35,
+    minWidth: isListening ? 150 : 35,
+    height: 35,
+    minHeight: 35,
+    p: 0,
+    borderRadius: isListening ? 1.5 : "50%",
+    borderColor: isListening ? "#D32F2F" : PRIMARY_COLOR,
+    color: isListening ? "#D32F2F" : PRIMARY_COLOR,
+    bgcolor: "transparent",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    transition: "width 600ms ease, min-width 600ms ease, border-radius 600ms ease, color 300ms ease, border-color 300ms ease",
+    "&:hover": {
+      borderColor: isListening ? "#D32F2F" : PRIMARY_COLOR,
+      bgcolor: "transparent",
+    },
+    "& .MuiButton-startIcon": {
+      m: 0,
+      mr: isListening ? 0.7 : 0,
+    },
+    "& .MuiSvgIcon-root": { fontSize: 22 },
+  }}
+>
+  {isListening ? "Listening…" : ""}
+</Button>
           )}
         </Box>
       </Box>
@@ -818,6 +1273,7 @@ export default function PrescriptionUI(props) {
         aria-labelledby="lab-reports-dialog-title"
       >
         <DialogTitle id="lab-reports-dialog-title">Lab Reports</DialogTitle>
+
         <DialogContent dividers>
           {reportsLoading ? (
             <Box display="flex" justifyContent="center" py={3}>
@@ -828,16 +1284,26 @@ export default function PrescriptionUI(props) {
               <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 0.5 }}>
                 <Button
                   size="small"
-                  variant={labReportView === "current" ? "contained" : "outlined"}
+                  variant={
+                    labReportView === "current" ? "contained" : "outlined"
+                  }
                   onClick={() => setLabReportView("current")}
                   sx={{
                     textTransform: "none",
+
                     borderRadius: 1.5,
+
                     minHeight: 32,
+
                     fontWeight: 700,
+
                     fontSize: "12px",
-                    bgcolor: labReportView === "current" ? "#07876A" : "transparent",
+
+                    bgcolor:
+                      labReportView === "current" ? "#07876A" : "transparent",
+
                     color: labReportView === "current" ? "#fff" : "#0F172A",
+
                     borderColor: "#CBD5E1",
                   }}
                 >
@@ -850,12 +1316,20 @@ export default function PrescriptionUI(props) {
                   onClick={() => setLabReportView("old")}
                   sx={{
                     textTransform: "none",
+
                     borderRadius: 1.5,
+
                     minHeight: 32,
+
                     fontWeight: 700,
+
                     fontSize: "12px",
-                    bgcolor: labReportView === "old" ? "#07876A" : "transparent",
+
+                    bgcolor:
+                      labReportView === "old" ? "#07876A" : "transparent",
+
                     color: labReportView === "old" ? "#fff" : "#0F172A",
+
                     borderColor: "#CBD5E1",
                   }}
                 >
@@ -863,17 +1337,27 @@ export default function PrescriptionUI(props) {
                 </Button>
               </Box>
 
-              {(labReportView === "current" ? currentLabReportRows : oldLabReportRows).map((row) => (
+              {(labReportView === "current"
+                ? currentLabReportRows
+                : oldLabReportRows
+              ).map((row) => (
                 <Box
                   key={row.id}
                   sx={{
                     display: "flex",
+
                     alignItems: "center",
+
                     justifyContent: "space-between",
+
                     gap: 1,
+
                     minWidth: 0,
+
                     py: 0.5,
+
                     borderBottom: "1px solid",
+
                     borderColor: "divider",
                   }}
                 >
@@ -882,20 +1366,28 @@ export default function PrescriptionUI(props) {
                       variant="caption"
                       sx={{
                         fontWeight: 700,
+
                         display: "block",
+
                         overflow: "hidden",
+
                         textOverflow: "ellipsis",
                       }}
                     >
                       {row.labName || "Lab"} - {row.testName}
                     </Typography>
+
                     <Typography
                       variant="caption"
                       color="text.secondary"
                       sx={{ fontSize: "11px", display: "block" }}
                     >
-                      Created: {row.createdAt ? new Date(row.createdAt).toLocaleString() : "-"}
+                      Created:{" "}
+                      {row.createdAt
+                        ? new Date(row.createdAt).toLocaleString()
+                        : "-"}
                     </Typography>
+
                     <Typography
                       variant="caption"
                       color="text.secondary"
@@ -903,12 +1395,17 @@ export default function PrescriptionUI(props) {
                     >
                       Order ID: {row.orderId || "-"}
                     </Typography>
+
                     <Box
                       sx={{
                         mt: 0.5,
+
                         display: "flex",
+
                         alignItems: "center",
+
                         gap: 0.7,
+
                         flexWrap: "wrap",
                       }}
                     >
@@ -916,11 +1413,17 @@ export default function PrescriptionUI(props) {
                         component="span"
                         sx={{
                           px: 1,
+
                           py: 0.3,
+
                           borderRadius: "6px",
+
                           fontSize: "10.5px",
+
                           fontWeight: 700,
+
                           lineHeight: 1.4,
+
                           bgcolor:
                             row.status === "COMPLETED"
                               ? "#E8F5E9"
@@ -937,6 +1440,7 @@ export default function PrescriptionUI(props) {
                                         : row.status === "REJECTED"
                                           ? "#FFF3E0"
                                           : "#FFF8E1",
+
                           color:
                             row.status === "COMPLETED"
                               ? "#2E7D32"
@@ -959,24 +1463,51 @@ export default function PrescriptionUI(props) {
                       </Box>
 
                       {row.reportDate && (
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: "11px" }}>
-                          Report Date: {new Date(row.reportDate).toLocaleString()}
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontSize: "11px" }}
+                        >
+                          Report Date:{" "}
+                          {new Date(row.reportDate).toLocaleString()}
                         </Typography>
                       )}
                     </Box>
 
-                    {(row.status === "REJECTED" || row.status === "CANCELLED") && (
+                    {(row.status === "REJECTED" ||
+                      row.status === "CANCELLED") && (
                       <Typography
                         variant="caption"
-                        color={row.status === "CANCELLED" ? "error.main" : "warning.main"}
-                        sx={{ fontSize: "11px", display: "block", fontWeight: 600 }}
+                        color={
+                          row.status === "CANCELLED"
+                            ? "error.main"
+                            : "warning.main"
+                        }
+                        sx={{
+                          fontSize: "11px",
+                          display: "block",
+                          fontWeight: 600,
+                        }}
                       >
-                        Reason: {getRequestNote(patientLabRequests.find((request) => Number(request.id) === Number(row.requestId))) || "No reason provided."}
+                        Reason:{" "}
+                        {getRequestNote(
+                          patientLabRequests.find(
+                            (request) =>
+                              Number(request.id) === Number(row.requestId),
+                          ),
+                        ) || "No reason provided."}
                       </Typography>
                     )}
                   </Box>
 
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.75,
+                      flexShrink: 0,
+                    }}
+                  >
                     {row.report?.downloadUrl ? (
                       <Button
                         size="small"
@@ -985,16 +1516,22 @@ export default function PrescriptionUI(props) {
                         rel="noreferrer"
                         sx={{
                           textTransform: "none",
+
                           flexShrink: 0,
+
                           fontSize: "12px",
+
                           minHeight: 32,
+
                           minWidth: 0,
+
                           px: 1,
                         }}
                       >
                         Open Report
                       </Button>
                     ) : null}
+
                     {["COMPLETED", "REJECTED"].includes(row.status) ? (
                       <Button
                         size="small"
@@ -1003,16 +1540,22 @@ export default function PrescriptionUI(props) {
                         disabled={repeatingRequestId === row.requestId}
                         sx={{
                           textTransform: "none",
+
                           flexShrink: 0,
+
                           fontSize: "12px",
+
                           minHeight: 32,
+
                           minWidth: 0,
+
                           px: 1,
                         }}
                       >
                         Repeat Test
                       </Button>
                     ) : null}
+
                     {row.status === "PENDING" ? (
                       <Button
                         size="small"
@@ -1021,14 +1564,21 @@ export default function PrescriptionUI(props) {
                         disabled={cancellingRequestId === row.requestId}
                         sx={{
                           textTransform: "none",
+
                           flexShrink: 0,
+
                           fontSize: "12px",
+
                           minHeight: 32,
+
                           minWidth: 0,
+
                           px: 1,
                         }}
                       >
-                        {cancellingRequestId === row.requestId ? "Cancelling..." : "Cancel"}
+                        {cancellingRequestId === row.requestId
+                          ? "Cancelling..."
+                          : "Cancel"}
                       </Button>
                     ) : null}
                   </Box>
@@ -1041,8 +1591,12 @@ export default function PrescriptionUI(props) {
             </Typography>
           )}
         </DialogContent>
+
         <DialogActions>
-          <Button onClick={() => setReportsOpen(false)} sx={{ textTransform: "none" }}>
+          <Button
+            onClick={() => setReportsOpen(false)}
+            sx={{ textTransform: "none" }}
+          >
             Close
           </Button>
         </DialogActions>
@@ -1057,10 +1611,14 @@ export default function PrescriptionUI(props) {
         <DialogTitle sx={{ fontSize: 18, fontWeight: 700, pb: 1 }}>
           Cancel lab test request?
         </DialogTitle>
+
         <DialogContent sx={{ display: "grid", gap: 1.25, pt: 1.5, px: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            {cancelRequest?.testName} sent to {cancelRequest?.labName || "the selected lab"} will be cancelled. The lab will see the cancelled request in its history.
+            {cancelRequest?.testName} sent to{" "}
+            {cancelRequest?.labName || "the selected lab"} will be cancelled.
+            The lab will see the cancelled request in its history.
           </Typography>
+
           <TextField
             multiline
             minRows={2}
@@ -1071,17 +1629,29 @@ export default function PrescriptionUI(props) {
             placeholder="Please tell why this request is being cancelled."
           />
         </DialogContent>
+
         <DialogActions sx={{ px: 2, pb: 1.5, pt: 1 }}>
-          <Button onClick={() => setCancelRequest(null)} disabled={Boolean(cancellingRequestId)} sx={{ textTransform: "none" }}>
+          <Button
+            onClick={() => setCancelRequest(null)}
+            disabled={Boolean(cancellingRequestId)}
+            sx={{ textTransform: "none" }}
+          >
             Keep Request
           </Button>
+
           <Button
             color="error"
             variant="contained"
             onClick={async () => {
               if (!cancelRequest) return;
-              await cancelPendingRequest(cancelRequest.requestId, cancelReason.trim() || null);
+
+              await cancelPendingRequest(
+                cancelRequest.requestId,
+                cancelReason.trim() || null,
+              );
+
               setCancelReason("");
+
               setCancelRequest(null);
             }}
             disabled={Boolean(cancellingRequestId)}
@@ -1101,19 +1671,34 @@ export default function PrescriptionUI(props) {
         <DialogTitle sx={{ fontSize: 18, fontWeight: 700, pb: 1 }}>
           Repeat lab test?
         </DialogTitle>
+
         <DialogContent sx={{ pt: 1.5, px: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            A new request will be created using the previous lab, patient, sample type, and test details.
+            A new request will be created using the previous lab, patient,
+            sample type, and test details.
           </Typography>
+
           <Typography sx={{ mt: 1, fontSize: 12, fontWeight: 700 }}>
-            {repeatRequest?.testName || "Selected lab test"} · {repeatRequest?.labName || "Lab"}
+            {repeatRequest?.testName || "Selected lab test"} ·{" "}
+            {repeatRequest?.labName || "Lab"}
           </Typography>
         </DialogContent>
+
         <DialogActions sx={{ px: 2, pb: 1.5 }}>
-          <Button onClick={() => setRepeatRequest(null)} disabled={Boolean(repeatingRequestId)} sx={{ textTransform: "none" }}>
+          <Button
+            onClick={() => setRepeatRequest(null)}
+            disabled={Boolean(repeatingRequestId)}
+            sx={{ textTransform: "none" }}
+          >
             Keep Existing
           </Button>
-          <Button onClick={repeatLabRequest} variant="contained" disabled={Boolean(repeatingRequestId)} sx={{ textTransform: "none" }}>
+
+          <Button
+            onClick={repeatLabRequest}
+            variant="contained"
+            disabled={Boolean(repeatingRequestId)}
+            sx={{ textTransform: "none" }}
+          >
             {repeatingRequestId ? "Creating..." : "Create Repeat"}
           </Button>
         </DialogActions>
@@ -1124,20 +1709,35 @@ export default function PrescriptionUI(props) {
         elevation={0}
         sx={{
           width: "100%",
+
           maxWidth: 960,
+
           minWidth: 0,
+
           mx: "auto",
+
           p: { xs: isDownloading ? 2.5 : 1.5, sm: 3 },
+
           bgcolor: "#FFFFFF",
+
           borderRadius: { xs: 1, sm: 1.5 },
+
           border: isDownloading ? "none" : "1px solid",
+
           borderColor: "divider",
+
           boxShadow: isDownloading ? "none" : "0 2px 10px rgba(0,0,0,0.04)",
+
           display: "flex",
+
           flexDirection: "column",
+
           height: "auto",
+
           minHeight: "auto",
+
           boxSizing: "border-box",
+
           overflow: "visible",
         }}
       >
@@ -1165,31 +1765,50 @@ export default function PrescriptionUI(props) {
             <Box
               sx={{
                 width: "100%",
+
                 mb: 1.5,
+
                 display: "flex",
+
                 alignItems: "center",
+
                 gap: 1,
+
                 minWidth: 0,
+
                 overflowX: "auto",
+
                 whiteSpace: "nowrap",
               }}
             >
               <Typography
                 sx={{
                   fontSize: "14px",
+
                   fontWeight: 700,
+
                   color: "primary.main",
+
                   flexShrink: 0,
                 }}
               >
                 Test Name
               </Typography>
+
               {labTestSummary.labName && (
-                <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ flexShrink: 0 }}
+                >
                   Lab: {labTestSummary.labName}:-
                 </Typography>
               )}
-              <Typography variant="body2" sx={{ color: "text.primary", flexShrink: 0 }}>
+
+              <Typography
+                variant="body2"
+                sx={{ color: "text.primary", flexShrink: 0 }}
+              >
                 {labTestSummary.tests.join(", ")}
               </Typography>
             </Box>
@@ -1199,20 +1818,30 @@ export default function PrescriptionUI(props) {
         <Box
           sx={{
             width: "100%",
+
             minWidth: 0,
+
             display: "flex",
+
             flexDirection: "column",
+
             alignItems: "flex-start",
+
             breakInside: "avoid",
+
             pageBreakInside: "avoid",
           }}
         >
           <Box
             sx={{
               width: "100%",
+
               minWidth: 0,
+
               flexShrink: 0,
+
               breakInside: "avoid",
+
               pageBreakInside: "avoid",
             }}
           >
@@ -1225,8 +1854,11 @@ export default function PrescriptionUI(props) {
               setRows={setRows}
               optionsMap={{
                 unit: unitOptions,
+
                 freq: frequencyOptions,
+
                 dose: doseOptions,
+
                 instr: instructionOptions,
               }}
               inputStyle={inputStyle}
@@ -1238,9 +1870,13 @@ export default function PrescriptionUI(props) {
         <Box
           sx={{
             mt: { xs: 2, sm: 2.5 },
+
             flexShrink: 0,
+
             width: "100%",
+
             breakInside: "avoid",
+
             pageBreakInside: "avoid",
           }}
         >
@@ -1263,8 +1899,11 @@ export default function PrescriptionUI(props) {
         aria-hidden="true"
         sx={{
           position: "absolute",
+
           left: "-10000px",
+
           top: 0,
+
           pointerEvents: "none",
         }}
       >

@@ -11,53 +11,69 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 
+const Detail = ({ label, value }) => (
+  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <Typography sx={{ fontSize: "12px", color: "text.secondary" }}>
+      {label}
+    </Typography>
+    <Typography
+      sx={{
+        mt: 0.15,
+        fontSize: "12.5px",
+        fontWeight: 700,
+        color: "#07876a",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {value || "—"}
+    </Typography>
+  </Box>
+);
+
 const AppointmentTable = ({
   appointments = [],
   loading,
   onSelectAppointment,
 }) => {
   const router = useRouter();
-
   const safeAppointments = Array.isArray(appointments) ? appointments : [];
 
-  const displayValue = (value) => {
-    return value !== null && value !== undefined && value !== ""
+  const displayValue = (value) =>
+    value !== null && value !== undefined && value !== ""
       ? value
       : "Not provided";
+
+  const formatType = (value) => {
+    if (!value) return "";
+
+    const labels = {
+      myself: "Myself",
+      other: "Other",
+      online: "Online",
+      offline: "Offline",
+    };
+
+    const normalized = String(value).trim().toLowerCase();
+    return (
+      labels[normalized] ||
+      normalized.charAt(0).toUpperCase() + normalized.slice(1)
+    );
   };
 
   const getStatusStyle = (status) => {
     const value = String(status || "").toLowerCase();
 
     if (value === "complete" || value === "completed") {
-      return {
-        bgcolor: "#e7f7ef",
-        color: "#1b7f5f",
-      };
+      return { bgcolor: "#e7f7ef", color: "#1b7f5f" };
     }
-
     if (value === "pending") {
-      return {
-        bgcolor: "#fff4e5",
-        color: "#b96800",
-      };
+      return { bgcolor: "#fff4e5", color: "#b96800" };
     }
-
     if (value === "cancel" || value === "cancelled") {
-      return {
-        bgcolor: "#fdecec",
-        color: "#c33c3c",
-      };
+      return { bgcolor: "#fdecec", color: "#c33c3c" };
     }
 
-    return {
-      bgcolor: "#e8f0ff",
-      color: "#2563eb",
-    };
-  };
-
-  const handleMoreClick = () => {
-    router.push("/doctor/pages/patient");
+    return { bgcolor: "#e8f0ff", color: "#2563eb" };
   };
 
   return (
@@ -71,13 +87,7 @@ const AppointmentTable = ({
         bgcolor: "#fff",
       }}
     >
-      <Typography
-        sx={{
-          fontSize: "12.5px",
-          fontWeight: 700,
-          color: "text.primary",
-        }}
-      >
+      <Typography sx={{ fontSize: "12.5px", fontWeight: 700 }}>
         Today Appointments
       </Typography>
 
@@ -103,12 +113,7 @@ const AppointmentTable = ({
             justifyContent: "center",
           }}
         >
-          <Typography
-            sx={{
-              fontSize: "12.5px",
-              color: "#777",
-            }}
-          >
+          <Typography sx={{ fontSize: "12.5px", color: "#777" }}>
             No appointments today
           </Typography>
         </Box>
@@ -122,26 +127,24 @@ const AppointmentTable = ({
                 key={appointment?.appointment_id || index}
                 onClick={() => onSelectAppointment?.(appointment)}
                 sx={{
-                  cursor: onSelectAppointment ? "pointer" : "default",
                   px: 0.5,
                   borderRadius: 1,
+                  cursor: onSelectAppointment ? "pointer" : "default",
                   transition: "background-color 0.15s ease",
-                  "&:hover": {
-                    bgcolor: "#f8faf9",
-                  },
+                  "&:hover": { bgcolor: "#f8faf9" },
                 }}
               >
                 <Box
                   sx={{
-                    minHeight: 65,
+                    minHeight: 76,
                     py: 1.2,
                     display: "grid",
                     gridTemplateColumns: {
                       xs: "minmax(0, 1fr) auto",
-                      sm: "minmax(0, 1fr) 75px 90px",
+                      sm: "minmax(130px, 1fr) 52px 72px 65px 88px",
                     },
                     alignItems: "center",
-                    gap: { xs: 1, sm: 1.5 },
+                    gap: { xs: 1, sm: 1.25 },
                   }}
                 >
                   <Box
@@ -163,30 +166,14 @@ const AppointmentTable = ({
                         fontWeight: 700,
                       }}
                     >
-                      {appointment?.patient_name
-                        ?.trim()
-                        ?.charAt(0)
-                        ?.toUpperCase() || "?"}
+                      {appointment?.patient_name?.trim()?.charAt(0)?.toUpperCase() || "?"}
                     </Avatar>
 
                     <Box sx={{ minWidth: 0 }}>
                       <Typography
                         sx={{
-                          display: { xs: "block", sm: "none" },
-                          mb: 0.2,
-                          fontSize: "12.5px",
-                          fontWeight: 600,
-                          color: "#07876a",
-                        }}
-                      >
-                        Token {displayValue(appointment?.token_number)}
-                      </Typography>
-
-                      <Typography
-                        sx={{
                           fontSize: "12.5px",
                           fontWeight: 700,
-                          color: "text.primary",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
@@ -207,50 +194,58 @@ const AppointmentTable = ({
                       >
                         {displayValue(appointment?.reason_for_visit)}
                       </Typography>
+
+                      <Box
+                        sx={{
+                          mt: 0.8,
+                          display: { xs: "flex", sm: "none" },
+                          justifyContent: "space-between",
+                          maxWidth: 230,
+                        }}
+                      >
+                        <Detail
+                          label="Token"
+                          value={displayValue(appointment?.token_number)}
+                        />
+                        <Detail
+                          label="Booking"
+                          value={formatType(appointment?.booking_type)}
+                        />
+                        <Detail
+                          label="Mode"
+                          value={formatType(appointment?.appointment_type)}
+                        />
+                      </Box>
                     </Box>
                   </Box>
 
-                  <Box
-                    sx={{
-                      display: { xs: "none", sm: "flex" },
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontSize: "12.5px",
-                        color: "text.secondary",
-                      }}
-                    >
-                      Token
-                    </Typography>
-
-                    <Typography
-                      sx={{
-                        mt: 0.15,
-                        fontSize: "12.5px",
-                        fontWeight: 700,
-                        color: "#07876a",
-                      }}
-                    >
-                      {displayValue(appointment?.token_number)}
-                    </Typography>
+                  <Box sx={{ display: { xs: "none", sm: "block" } }}>
+                    <Detail
+                      label="Token"
+                      value={displayValue(appointment?.token_number)}
+                    />
                   </Box>
 
-                  <Box
-                    sx={{
-                      flexShrink: 0,
-                      textAlign: "right",
-                    }}
-                  >
+                  <Box sx={{ display: { xs: "none", sm: "block" } }}>
+                    <Detail
+                      label="Booking"
+                      value={formatType(appointment?.booking_type)}
+                    />
+                  </Box>
+
+                  <Box sx={{ display: { xs: "none", sm: "block" } }}>
+                    <Detail
+                      label="Mode"
+                      value={formatType(appointment?.appointment_type)}
+                    />
+                  </Box>
+
+                  <Box sx={{ flexShrink: 0, textAlign: "right" }}>
                     <Typography
                       sx={{
                         mb: 0.6,
                         fontSize: "12.5px",
                         fontWeight: 600,
-                        color: "text.primary",
                         whiteSpace: "nowrap",
                       }}
                     >
@@ -268,7 +263,7 @@ const AppointmentTable = ({
                         borderRadius: "20px",
                         bgcolor: statusStyle.bgcolor,
                         color: statusStyle.color,
-                        fontSize: "12.5px",
+                        fontSize: "12px",
                         fontWeight: 600,
                       }}
                     >
@@ -287,29 +282,20 @@ const AppointmentTable = ({
           {safeAppointments.length > 5 && (
             <>
               <Divider sx={{ mt: 1 }} />
-
               <Box
-                onClick={handleMoreClick}
+                onClick={() => router.push("/doctor/pages/patient")}
                 sx={{
                   mt: 0.5,
                   py: 0.9,
                   display: "flex",
-                  alignItems: "center",
                   justifyContent: "center",
                   cursor: "pointer",
                   borderRadius: 1,
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    bgcolor: "#f1f8f6",
-                  },
+                  "&:hover": { bgcolor: "#f1f8f6" },
                 }}
               >
                 <Typography
-                  sx={{
-                    fontSize: "12.5px",
-                    fontWeight: 600,
-                    color: "#07876a",
-                  }}
+                  sx={{ fontSize: "12.5px", fontWeight: 600, color: "#07876a" }}
                 >
                   +{safeAppointments.length - 5} More
                 </Typography>

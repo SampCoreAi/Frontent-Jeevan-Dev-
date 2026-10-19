@@ -34,6 +34,9 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 
+const getMenuItemId = (item) =>
+  `${item.route || item.label}:${item.label}`;
+
 const Sidebar = ({
   isOpen,
   isMobileOpen,
@@ -146,11 +149,15 @@ const Sidebar = ({
       const order = JSON.parse(savedOrder);
 
       const sortedItems = [...currentMenuItems].sort((a, b) => {
-        const aId = a.route || a.label;
-        const bId = b.route || b.label;
-
-        const aIndex = order.indexOf(aId);
-        const bIndex = order.indexOf(bId);
+        const getOrderIndex = (item) => {
+          const itemId = getMenuItemId(item);
+          const itemIndex = order.indexOf(itemId);
+          return itemIndex === -1
+            ? order.indexOf(item.route || item.label)
+            : itemIndex;
+        };
+        const aIndex = getOrderIndex(a);
+        const bIndex = getOrderIndex(b);
 
         if (aIndex === -1 && bIndex === -1) return 0;
         if (aIndex === -1) return 1;
@@ -183,10 +190,10 @@ const Sidebar = ({
 
     setOrderedMenuItems((items) => {
       const oldIndex = items.findIndex(
-        (item) => (item.route || item.label) === active.id
+        (item) => getMenuItemId(item) === active.id
       );
       const newIndex = items.findIndex(
-        (item) => (item.route || item.label) === over.id
+        (item) => getMenuItemId(item) === over.id
       );
 
       if (oldIndex === -1 || newIndex === -1) {
@@ -197,7 +204,7 @@ const Sidebar = ({
 
       localStorage.setItem(
         `sidebar-order-${roleId}`,
-        JSON.stringify(newItems.map((item) => item.route || item.label))
+        JSON.stringify(newItems.map(getMenuItemId))
       );
 
       return newItems;
@@ -378,12 +385,13 @@ const Sidebar = ({
           onDragCancel={handleDragCancel}
         >
           <SortableContext
-            items={orderedMenuItems.map((item) => item.route || item.label)}
+            items={orderedMenuItems.map(getMenuItemId)}
             strategy={verticalListSortingStrategy}
           >
-            {orderedMenuItems.map((item, index) => (
+            {orderedMenuItems.map((item) => (
               <SidebarMenuItem
-                key={item?.route || `${item?.label}-${index}`}
+                key={getMenuItemId(item)}
+                itemId={getMenuItemId(item)}
                 item={item}
                 isActive={activeButton === item.label}
                 showLabel={showContent}

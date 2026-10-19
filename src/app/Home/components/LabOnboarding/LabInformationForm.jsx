@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import {
   Box,
   Button,
+  CircularProgress,
   Grid,
   MenuItem,
   Stack,
@@ -100,9 +101,13 @@ export default function LabInformationForm({
   data,
   onChange,
   onNext,
+  loading = false,
 }) {
   const [errors, setErrors] =
     useState({});
+
+  const [submitError, setSubmitError] =
+    useState("");
 
   const setField = (field, value) => {
     onChange({
@@ -200,9 +205,18 @@ export default function LabInformationForm({
     return Object.keys(e).length === 0;
   };
 
-  const handleNext = () => {
-    if (validate()) {
-      onNext();
+  const handleNext = async () => {
+    if (!validate()) return;
+
+    setSubmitError("");
+
+    try {
+      await onNext();
+    } catch (error) {
+      setSubmitError(
+        error?.message ||
+          "Unable to save lab information."
+      );
     }
   };
 
@@ -445,6 +459,27 @@ export default function LabInformationForm({
         </Grid>
 
         <Grid size={{ xs: 6, md: 3 }}>
+          <Label>Age</Label>
+
+          <TextField
+            fullWidth
+            type="number"
+            inputProps={{ min: 18, max: 100 }}
+            placeholder="Age"
+            value={data.ownerAge || ""}
+            onChange={(e) =>
+              setField(
+                "ownerAge",
+                e.target.value
+              )
+            }
+            error={!!errors.ownerAge}
+            helperText={errors.ownerAge}
+            sx={fieldSx}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 6, md: 3 }}>
           <Label>Gender</Label>
 
           <TextField
@@ -476,6 +511,19 @@ export default function LabInformationForm({
         </Grid>
       </Grid>
 
+      {submitError && (
+        <Typography
+          role="alert"
+          sx={{
+            mt: 1,
+            color: C.error,
+            fontSize: "11px",
+          }}
+        >
+          {submitError}
+        </Typography>
+      )}
+
       <Stack
         direction="row"
         justifyContent="flex-end"
@@ -484,8 +532,13 @@ export default function LabInformationForm({
         <Button
           variant="contained"
           onClick={handleNext}
+          disabled={loading}
           endIcon={
-            <ArrowForwardRoundedIcon />
+            loading ? (
+              <CircularProgress size={15} color="inherit" />
+            ) : (
+              <ArrowForwardRoundedIcon />
+            )
           }
           sx={{
             height: 42,
@@ -503,7 +556,7 @@ export default function LabInformationForm({
             },
           }}
         >
-          Next: Lab Address
+          {loading ? "Saving..." : "Next: Lab Address"}
         </Button>
       </Stack>
     </Box>

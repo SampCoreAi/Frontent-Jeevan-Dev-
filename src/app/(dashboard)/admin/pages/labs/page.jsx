@@ -619,7 +619,7 @@ export default function LabsPage() {
           md: 8,
         },
         bgcolor: "white",
-        minHeight: "100vh",
+        minHeight: "90vh",
         overflowX: "hidden",
 
         "& .MuiTypography-root": {
@@ -652,6 +652,7 @@ export default function LabsPage() {
           borderRadius: 2,
           overflow: "hidden",
           border: "1px solid",
+          height:"77vh",
           borderColor: "divider",
           bgcolor: "background.paper",
         }}

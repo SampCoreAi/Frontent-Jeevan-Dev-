@@ -183,11 +183,9 @@ export default function AppointmentHeader({
               },
             }}
           >
-            <MenuItem value="all">All</MenuItem>
             <MenuItem value="pending">Pending</MenuItem>
             <MenuItem value="in_progress">In Progress</MenuItem>
             <MenuItem value="completed">Completed</MenuItem>
-            <MenuItem value="cancelled">Cancelled</MenuItem>
           </Select>
         </FormControl>
 

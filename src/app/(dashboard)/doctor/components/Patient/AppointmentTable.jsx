@@ -177,7 +177,7 @@ export default function AppointmentTable({
       },
     ];
 
-    if (roleId === 2) {
+
       data.push({
         field: "action",
         headerName: "Action",
@@ -221,7 +221,7 @@ export default function AppointmentTable({
           );
         },
       });
-    }
+    
 
     data.push({
       field: "details",
@@ -364,23 +364,26 @@ export default function AppointmentTable({
           View Details
         </MenuItem>
 
-        <MenuItem
-          onClick={handleMedical}
-          disabled={medicalDetailsLoading}
-          sx={{
-            minHeight: 36,
-            gap: 1,
-            fontSize: "12.5px",
-          }}
-        >
-          <LocalPharmacyOutlinedIcon
-            sx={{
-              fontSize: 17,
-              color: theme.palette.success.main,
-            }}
-          />
-          Medical Details
-        </MenuItem>
+       <MenuItem
+  onClick={handleMedical}
+  disabled={
+    medicalDetailsLoading ||
+    String(selectedRow?.status || "").toLowerCase() !== "completed"
+  }
+  sx={{
+    minHeight: 36,
+    gap: 1,
+    fontSize: "12.5px",
+  }}
+>
+  <LocalPharmacyOutlinedIcon
+    sx={{
+      fontSize: 17,
+      color: theme.palette.success.main,
+    }}
+  />
+  Medical Details
+</MenuItem>
 
         <MenuItem
           onClick={handleHistory}
