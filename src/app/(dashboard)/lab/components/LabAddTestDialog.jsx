@@ -14,6 +14,7 @@ import {
   MenuItem,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 
@@ -45,6 +46,8 @@ export default function LabAddTestDialog({
   successMessage,
 
   requestOnlyPatient = false,
+
+  walkInEnabled = false,
 }) {
   const [open, setOpen] = useState(false);
 
@@ -359,54 +362,69 @@ export default function LabAddTestDialog({
     <>
       {/* ADD TEST BUTTON */}
 
-      <Button
-        variant="contained"
-        startIcon={
-          <AddCircleOutlineIcon
-            sx={{
-              fontSize: "17px !important",
-            }}
-          />
+      <Tooltip
+        title={
+          walkInEnabled
+            ? ""
+            : "Enable Walk-in service in your profile to add a test."
         }
-        onClick={() => {
-          setError("");
-
-          setOpen(true);
-        }}
-        sx={{
-          height: 38,
-
-          minHeight: 38,
-
-          width: {
-            xs: "100%",
-
-            sm: "auto",
-          },
-
-          px: 1.8,
-
-          borderRadius: "7px",
-
-          bgcolor: "#07876A",
-
-          fontSize: "11.5px",
-
-          fontWeight: 700,
-
-          textTransform: "none",
-
-          boxShadow: "none",
-
-          "&:hover": {
-            bgcolor: "#066F58",
-
-            boxShadow: "none",
-          },
-        }}
+        arrow
       >
-        Add Test
-      </Button>
+        <Box
+          component="span"
+          sx={{ display: "inline-flex", width: { xs: "100%", sm: "auto" } }}
+        >
+          <Button
+            variant="contained"
+            disabled={!walkInEnabled}
+            startIcon={
+              <AddCircleOutlineIcon
+                sx={{
+                  fontSize: "17px !important",
+                }}
+              />
+            }
+            onClick={() => {
+              setError("");
+
+              setOpen(true);
+            }}
+            sx={{
+              height: 38,
+
+              minHeight: 38,
+
+              width: {
+                xs: "100%",
+
+                sm: "auto",
+              },
+
+              px: 1.8,
+
+              borderRadius: "7px",
+
+              bgcolor: "#07876A",
+
+              fontSize: "11.5px",
+
+              fontWeight: 700,
+
+              textTransform: "none",
+
+              boxShadow: "none",
+
+              "&:hover": {
+                bgcolor: "#066F58",
+
+                boxShadow: "none",
+              },
+            }}
+          >
+            Add Test
+          </Button>
+        </Box>
+      </Tooltip>
 
       {/* =========================
 

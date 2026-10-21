@@ -1,15 +1,22 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   Avatar,
   Box,
   Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Pagination,
   Stack,
   TableCell,
   TableRow,
+  TextField,
   Typography,
   useMediaQuery,
 } from "@mui/material";
@@ -32,6 +39,12 @@ export default function LabConnections({
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [rejectDialog, setRejectDialog] = useState({
+    open: false,
+    connectionId: null,
+    note: "",
+    error: "",
+  });
 
   const safeConnections = Array.isArray(connections) ? connections : [];
   const safePageSize = Number(pageSize) > 0 ? Number(pageSize) : 10;
@@ -105,11 +118,36 @@ export default function LabConnections({
     }
   };
 
-  const handleStatusUpdate = (connectionId, status) => {
+  const handleStatusUpdate = async (connectionId, status, note = null) => {
     if (!connectionId || typeof onStatusUpdate !== "function") return;
     if (!["APPROVED", "REJECTED"].includes(status)) return;
 
-    onStatusUpdate(connectionId, status);
+    return onStatusUpdate(connectionId, status, note);
+  };
+
+  const openRejectDialog = (connectionId) => {
+    setRejectDialog({ open: true, connectionId, note: "", error: "" });
+  };
+
+  const submitRejection = async () => {
+    const note = rejectDialog.note.trim();
+    if (!note) {
+      setRejectDialog((current) => ({
+        ...current,
+        error: "Enter a reason before rejecting this connection.",
+      }));
+      return;
+    }
+
+    const succeeded = await handleStatusUpdate(
+      rejectDialog.connectionId,
+      "REJECTED",
+      note,
+    );
+
+    if (succeeded) {
+      setRejectDialog({ open: false, connectionId: null, note: "", error: "" });
+    }
   };
 
   const handlePageChange = (_, value) => {
@@ -224,6 +262,7 @@ export default function LabConnections({
           ).toUpperCase();
 
           const isPending = status === "PENDING";
+          const canReject = isPending || status === "APPROVED";
           const isUpdating = actionId === connectionId;
           const statusStyle = getStatusStyle(status);
 
@@ -349,92 +388,85 @@ export default function LabConnections({
                   minWidth: 175,
                 }}
               >
-                {isPending ? (
+                {canReject ? (
                   <Stack
                     direction="row"
                     spacing={0.75}
                     alignItems="center"
                   >
-                    <Button
-                      size="small"
-                      variant="contained"
-                      disabled={isUpdating || !connectionId}
-                      startIcon={
-                        isUpdating ? (
-                          <CircularProgress
-                            size={12}
-                            color="inherit"
-                          />
-                        ) : (
-                          <CheckRoundedIcon />
-                        )
-                      }
-                      onClick={() =>
-                        handleStatusUpdate(
-                          connectionId,
-                          "APPROVED"
-                        )
-                      }
-                      sx={{
-                        minWidth: 82,
-                        height: 30,
-                        px: 1.2,
-                        bgcolor: "#15803D",
-                        borderRadius: "6px",
-                        fontSize: "10.5px",
-                        fontWeight: 600,
-                        textTransform: "none",
-                        boxShadow: "none",
-                        "& .MuiButton-startIcon": {
-                          mr: 0.45,
-                          "& svg": {
-                            fontSize: 15,
-                          },
-                        },
-                        "&:hover": {
-                          bgcolor: "#166534",
+                    {isPending && (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        disabled={isUpdating || !connectionId}
+                        startIcon={
+                          isUpdating ? (
+                            <CircularProgress size={12} color="inherit" />
+                          ) : (
+                            <CheckRoundedIcon />
+                          )
+                        }
+                        onClick={() =>
+                          handleStatusUpdate(connectionId, "APPROVED")
+                        }
+                        sx={{
+                          minWidth: 82,
+                          height: 30,
+                          px: 1.2,
+                          bgcolor: "#15803D",
+                          borderRadius: "6px",
+                          fontSize: "10.5px",
+                          fontWeight: 600,
+                          textTransform: "none",
                           boxShadow: "none",
-                        },
-                      }}
-                    >
-                      {isUpdating ? "Saving" : "Approve"}
-                    </Button>
-
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      disabled={isUpdating || !connectionId}
-                      startIcon={<CloseRoundedIcon />}
-                      onClick={() =>
-                        handleStatusUpdate(
-                          connectionId,
-                          "REJECTED"
-                        )
-                      }
-                      sx={{
-                        minWidth: 75,
-                        height: 30,
-                        px: 1.1,
-                        color: "#DC2626",
-                        borderColor: "#FCA5A5",
-                        borderRadius: "6px",
-                        fontSize: "10.5px",
-                        fontWeight: 600,
-                        textTransform: "none",
-                        "& .MuiButton-startIcon": {
-                          mr: 0.35,
-                          "& svg": {
-                            fontSize: 15,
+                          "& .MuiButton-startIcon": {
+                            mr: 0.45,
+                            "& svg": {
+                              fontSize: 15,
+                            },
                           },
-                        },
-                        "&:hover": {
-                          bgcolor: "#FEF2F2",
-                          borderColor: "#EF4444",
-                        },
-                      }}
-                    >
-                      Reject
-                    </Button>
+                          "&:hover": {
+                            bgcolor: "#166534",
+                            boxShadow: "none",
+                          },
+                        }}
+                      >
+                        {isUpdating ? "Saving" : "Approve"}
+                      </Button>
+                    )}
+
+                    {canReject && (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        disabled={isUpdating || !connectionId}
+                        startIcon={<CloseRoundedIcon />}
+                        onClick={() => openRejectDialog(connectionId)}
+                        sx={{
+                          minWidth: 75,
+                          height: 30,
+                          px: 1.1,
+                          color: "#DC2626",
+                          borderColor: "#FCA5A5",
+                          borderRadius: "6px",
+                          fontSize: "10.5px",
+                          fontWeight: 600,
+                          textTransform: "none",
+                          "& .MuiButton-startIcon": {
+                            mr: 0.35,
+                            "& svg": {
+                              fontSize: 15,
+                            },
+                          },
+                          "&:hover": {
+                            bgcolor: "#FEF2F2",
+                            borderColor: "#EF4444",
+                          },
+                        }}
+                      >
+                        Reject
+                      </Button>
+                    )}
                   </Stack>
                 ) : (
                   <Typography
@@ -451,6 +483,60 @@ export default function LabConnections({
           );
         })}
       </DataTable>
+
+      <Dialog
+        open={rejectDialog.open}
+        onClose={() => {
+          if (actionId === rejectDialog.connectionId) return;
+          setRejectDialog({ open: false, connectionId: null, note: "", error: "" });
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Reject doctor connection</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 1.5, fontSize: 13, color: "#64748B" }}>
+            Add a reason before rejecting this connection.
+          </Typography>
+          <TextField
+            autoFocus
+            required
+            multiline
+            minRows={3}
+            fullWidth
+            size="small"
+            label="Rejection reason"
+            value={rejectDialog.note}
+            error={Boolean(rejectDialog.error)}
+            helperText={rejectDialog.error}
+            onChange={(event) =>
+              setRejectDialog((current) => ({
+                ...current,
+                note: event.target.value,
+                error: "",
+              }))
+            }
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            disabled={actionId === rejectDialog.connectionId}
+            onClick={() =>
+              setRejectDialog({ open: false, connectionId: null, note: "", error: "" })
+            }
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={actionId === rejectDialog.connectionId}
+            onClick={submitRejection}
+          >
+            {actionId === rejectDialog.connectionId ? "Rejecting..." : "Reject"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

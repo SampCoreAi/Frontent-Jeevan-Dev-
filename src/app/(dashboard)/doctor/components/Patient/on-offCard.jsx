@@ -99,7 +99,8 @@ const [pastPatient, setPastPatient] = useState(null);
       : {};
 
   const roleId = user?.role_id;
-
+const isRole3 = Number(roleId) === 3;
+const effectiveStatus = isRole3 ? "completed" : status;
   useEffect(() => {
     const loadApprovedMedicalStores = async () => {
       try {
@@ -185,14 +186,13 @@ const [pastPatient, setPastPatient] = useState(null);
             pagination.pageSize,
         };
 
-        const res =
-          await scheduleService.getDoctorAppointments(
-            selectedHospital,
-            selectedMode,
-            status,
-            date,
-            paginationParams
-          );
+       const res = await scheduleService.getDoctorAppointments(
+  selectedHospital,
+  selectedMode,
+  effectiveStatus,
+  date,
+  paginationParams
+);
 
         const appointments = Array.isArray(
           res?.appointments
@@ -264,13 +264,13 @@ const [pastPatient, setPastPatient] = useState(null);
 
     fetchAppointments();
   }, [
-    selectedHospital,
-    selectedMode,
-    status,
-    date,
-    pagination.page,
-    pagination.pageSize,
-  ]);
+  selectedHospital,
+  selectedMode,
+  effectiveStatus,
+  date,
+  pagination.page,
+  pagination.pageSize,
+]);
 
   const handleOpen = (patient) => {
     const appointmentStatus =
@@ -643,9 +643,9 @@ setMedicalDetailsOpen(true);
     }));
   };
 
- const handleClearFilters = () => {
+const handleClearFilters = () => {
   onDateChange("");
-  setStatus("pending");
+  setStatus(isRole3 ? "completed" : "pending");
   setPagination((prev) => ({ ...prev, page: 0 }));
 };
 

@@ -26,6 +26,13 @@ export default function AppointmentHeader({
 }) {
   const theme = useTheme();
 
+  const user =
+    typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem("user") || "{}")
+      : {};
+
+  const isRole3 = Number(user.role_id) === 3;
+
   const fieldStyle = {
     "& .MuiInputLabel-root": {
       fontSize: "13px",
@@ -170,22 +177,34 @@ export default function AppointmentHeader({
           <InputLabel>Status</InputLabel>
 
           <Select
-            value={status}
+            value={isRole3 ? "completed" : status}
             label="Status"
-            onChange={(e) => onStatusChange(e.target.value)}
-            MenuProps={{
-              PaperProps: {
-                sx: {
-                  "& .MuiMenuItem-root": {
-                    fontSize: "13px",
-                  },
-                },
-              },
+            onChange={(e) => {
+              if (!isRole3) {
+                onStatusChange(e.target.value);
+              }
             }}
+            open={isRole3 ? false : undefined}
+            sx={
+              isRole3
+                ? {
+                    pointerEvents: "none",
+                    "& .MuiSelect-icon": {
+                      display: "none",
+                    },
+                  }
+                : {}
+            }
           >
-            <MenuItem value="pending">Pending</MenuItem>
-            <MenuItem value="in_progress">In Progress</MenuItem>
-            <MenuItem value="completed">Completed</MenuItem>
+            {isRole3 ? (
+              <MenuItem value="completed">Completed</MenuItem>
+            ) : (
+              <>
+                <MenuItem value="pending">Pending</MenuItem>
+                <MenuItem value="in_progress">In Progress</MenuItem>
+                <MenuItem value="completed">Completed</MenuItem>
+              </>
+            )}
           </Select>
         </FormControl>
 

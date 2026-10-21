@@ -39,7 +39,6 @@ export function SectionTitle({ title, description, action }) {
   return (
     <Box
       sx={{
-        width: "100%",
         display: "flex",
         alignItems: { xs: "stretch", sm: "center" },
         justifyContent: "space-between",
@@ -591,48 +590,36 @@ export function TableFilters({
   statusOptions = [],
   leftAction = null,
   onReset,
+  hasExtraFilter = false,
 }) {
-  const hasFilters = Boolean(search || status || date);
+  const hasFilters = Boolean(search || status || date || hasExtraFilter);
 
   const fieldSx = {
     width: "100%",
-
     "& .MuiOutlinedInput-root": {
       height: 38,
       bgcolor: "#FFFFFF",
       borderRadius: "8px",
       fontSize: "12px",
-      transition: "all 0.16s ease",
-
-      "& fieldset": {
-        borderColor: "#E2E8F0",
-      },
-
-      "&:hover fieldset": {
-        borderColor: "#B7C3CF",
-      },
-
+      "& fieldset": { borderColor: "#E2E8F0" },
+      "&:hover fieldset": { borderColor: "#B7C3CF" },
       "&.Mui-focused fieldset": {
         borderWidth: "1px",
         borderColor: "#07876A",
       },
-
       "&.Mui-focused": {
         boxShadow: "0 0 0 3px rgba(7, 135, 106, 0.07)",
       },
     },
-
     "& .MuiOutlinedInput-input": {
+      py: 0,
       fontSize: "12px",
       color: "#172033",
-      py: 0,
     },
-
     "& .MuiOutlinedInput-input::placeholder": {
       color: "#94A3B8",
       opacity: 1,
     },
-
     "& .MuiSelect-select": {
       display: "flex",
       alignItems: "center",
@@ -662,14 +649,16 @@ export function TableFilters({
     >
       <Box
         sx={{
-          width: "100%",
-          display: "flex",
-          alignItems: { xs: "stretch", lg: "center" },
-          flexDirection: { xs: "column", lg: "row" },
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "minmax(0, 1fr)",
+            sm: "repeat(2, minmax(0, 1fr))",
+            lg: "minmax(240px, 1.5fr) minmax(150px, 0.8fr) minmax(150px, 0.7fr) auto",
+          },
           gap: 1,
+          alignItems: "center",
         }}
       >
-        {/* SEARCH */}
         <TextField
           size="small"
           placeholder="Search patient, order ID, test..."
@@ -677,49 +666,28 @@ export function TableFilters({
           onChange={(event) => onSearch?.(event.target.value)}
           sx={{
             ...fieldSx,
-            width: {
-              xs: "100%",
-              lg: 330,
-            },
-            flexShrink: 0,
+            gridColumn: { xs: "1 / -1", sm: "1 / -1", lg: "auto" },
           }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon
-                  sx={{
-                    fontSize: 17,
-                    color: search ? "#07876A" : "#94A3B8",
-                  }}
-                />
+                <SearchIcon sx={{ fontSize: 17, color: search ? "#07876A" : "#94A3B8" }} />
               </InputAdornment>
             ),
           }}
         />
 
-        {/* STATUS */}
         {statusOptions.length > 0 && (
           <TextField
             select
             size="small"
             value={status}
             onChange={(event) => onStatus?.(event.target.value)}
-            sx={{
-              ...fieldSx,
-              width: {
-                xs: "100%",
-                sm: 190,
-              },
-              flexShrink: 0,
-            }}
+            sx={fieldSx}
             SelectProps={{
               displayEmpty: true,
-
-              renderValue: (selected) =>
-                selected
-                  ? String(selected).replaceAll("_", " ")
-                  : "All statuses",
-
+              renderValue: (value) =>
+                value ? String(value).replaceAll("_", " ") : "All statuses",
               MenuProps: {
                 PaperProps: {
                   sx: {
@@ -729,18 +697,13 @@ export function TableFilters({
                     border: "1px solid #E2E8F0",
                     borderRadius: "9px",
                     boxShadow: "0 12px 30px rgba(15, 23, 42, 0.10)",
-
                     "& .MuiMenuItem-root": {
                       minHeight: 34,
                       px: 1.2,
                       fontSize: "12px",
                       borderRadius: "6px",
                       color: "#334155",
-
-                      "&:hover": {
-                        bgcolor: "#F0F9F6",
-                      },
-
+                      "&:hover": { bgcolor: "#F0F9F6" },
                       "&.Mui-selected": {
                         bgcolor: "#E8F6F2 !important",
                         color: "#07876A",
@@ -753,7 +716,6 @@ export function TableFilters({
             }}
           >
             <MenuItem value="">All statuses</MenuItem>
-
             {statusOptions.map((option) => (
               <MenuItem key={option} value={option}>
                 {String(option).replaceAll("_", " ")}
@@ -762,123 +724,53 @@ export function TableFilters({
           </TextField>
         )}
 
-        {/* DATE */}
         <TextField
           size="small"
           type="date"
           value={date}
           onChange={(event) => onDate?.(event.target.value)}
-          sx={{
-            ...fieldSx,
-            width: {
-              xs: "100%",
-              sm: 170,
-            },
-            flexShrink: 0,
-          }}
-          inputProps={{
-            max: "9999-12-31",
-          }}
+          sx={fieldSx}
+          inputProps={{ max: "9999-12-31" }}
         />
 
-        {/* RIGHT ACTIONS */}
         <Box
           sx={{
-            ml: { lg: "auto" },
-
             display: "flex",
-            alignItems: "center",
-            flexDirection: {
-              xs: "column",
-              sm: "row",
-            },
-
-            width: {
-              xs: "100%",
-              lg: "auto",
-            },
-
+            flexDirection: { xs: "column", sm: "row" },
             gap: 0.8,
-
-            pl: {
-              lg: 1.25,
+            gridColumn: { xs: "1 / -1", sm: "1 / -1", lg: "auto" },
+            justifyContent: "flex-end",
+            "& .MuiButton-root": {
+              height: 38,
+              borderRadius: "8px",
+              fontSize: "11.5px",
+              fontWeight: 650,
+              whiteSpace: "nowrap",
+              textTransform: "none",
             },
-
-            borderLeft: {
-              xs: "none",
-              lg: "1px solid #E2E8F0",
-            },
-
-            flexShrink: 0,
           }}
         >
           {leftAction && (
-            <Box
-              sx={{
-                width: {
-                  xs: "100%",
-                  sm: "auto",
-                },
-
-                display: "flex",
-
-                "& .MuiButton-root": {
-                  width: {
-                    xs: "100%",
-                    sm: "auto",
-                  },
-
-                  height: "38px !important",
-                  minHeight: "38px !important",
-                  borderRadius: "8px !important",
-                  fontSize: "11.5px !important",
-                  fontWeight: "650 !important",
-                  whiteSpace: "nowrap",
-                },
-              }}
-            >
+            <Box sx={{ "& .MuiButton-root": { width: { xs: "100%", sm: "auto" } } }}>
               {leftAction}
             </Box>
           )}
 
-          {/* RESET */}
           <Button
             disabled={!hasFilters}
             onClick={handleReset}
-            startIcon={
-              <RestartAltRoundedIcon
-                sx={{
-                  fontSize: "16px !important",
-                }}
-              />
-            }
+            startIcon={<RestartAltRoundedIcon sx={{ fontSize: "16px !important" }} />}
             sx={{
-              height: 38,
-
-              width: {
-                xs: "100%",
-                sm: "auto",
-              },
-
               minWidth: 82,
               px: 1.35,
-
-              borderRadius: "8px",
               border: "1px solid #DCE6E2",
-
               bgcolor: "#FFFFFF",
               color: "#52646B",
-
-              fontSize: "11.5px",
-              fontWeight: 650,
-              textTransform: "none",
-
               "&:hover": {
                 bgcolor: "#F0F9F6",
                 borderColor: "#A9D8CC",
                 color: "#07876A",
               },
-
               "&.Mui-disabled": {
                 bgcolor: "#F8FAFC",
                 color: "#B5BEC8",
@@ -891,33 +783,19 @@ export function TableFilters({
         </Box>
       </Box>
 
-      {/* ACTIVE FILTER INDICATOR */}
       {hasFilters && (
         <Box
           sx={{
             mt: 0.8,
             pt: 0.8,
             borderTop: "1px solid #EDF1F4",
-
             display: "flex",
             alignItems: "center",
             gap: 0.7,
           }}
         >
-          <FilterAltOutlinedIcon
-            sx={{
-              fontSize: 14,
-              color: "#07876A",
-            }}
-          />
-
-          <Typography
-            sx={{
-              fontSize: "10.5px",
-              fontWeight: 600,
-              color: "#718087",
-            }}
-          >
+          <FilterAltOutlinedIcon sx={{ fontSize: 14, color: "#07876A" }} />
+          <Typography sx={{ fontSize: "10.5px", fontWeight: 600, color: "#718087" }}>
             Filters applied
           </Typography>
         </Box>

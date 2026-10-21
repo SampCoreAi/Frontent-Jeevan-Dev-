@@ -7,7 +7,7 @@ import { Alert, Box, CircularProgress, Snackbar } from "@mui/material";
 import LabDashboard from "../components/Dashbaord/LabDashboard";
 import LabProfile from "./LabProfile";
 import LabConnections from "./LabConnections";
-import LabRequests from "./LabRequests";
+import LabRequests from "../components/Request/LabRequests";
 import LabReports from "./LabReports";
 import LabTechnicians from "./LabTechnicians";
 import { createLabWalkInTestRequest } from "../services/labRequestApi";
@@ -311,15 +311,20 @@ useEffect(() => {
     setTableFilters((current) => ({ ...current, [field]: value }));
   };
 
-  const updateConnection = async (connectionId, status) => {
+  const updateConnection = async (connectionId, status, note = null) => {
     try {
       setActionId(connectionId);
       setActionField("status");
-      await api.patch(`/api/labs/connections/${connectionId}/status`, { status });
+      await api.patch(`/api/labs/connections/${connectionId}/status`, {
+        status,
+        note,
+      });
       setConnections((items) => items.map((item) => item.connection_id === connectionId ? { ...item, status } : item));
       setNotice(`Connection ${status.toLowerCase()}.`);
+      return true;
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to update connection."));
+      return false;
     } finally {
       setActionId(null);
       setActionField(null);
