@@ -1,182 +1,124 @@
 "use client";
 
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { keyframes } from "@mui/system";
 
-const fadeUp = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-`;
-
-const pulse = keyframes`
-  0% {
-    box-shadow: 0 0 0 0 rgba(18, 184, 145, 0.28);
-  }
-  70% {
-    box-shadow: 0 0 0 6px rgba(18, 184, 145, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(18, 184, 145, 0);
-  }
-`;
-
-const morphIn = keyframes`
-  from {
-    opacity: 0;
-    filter: blur(10px);
-    transform: translateX(-50%) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    filter: blur(0);
-    transform: translateX(-50%) scale(1);
-  }
-`;
-
-const morphOut = keyframes`
-  from {
-    opacity: 1;
-    filter: blur(0);
-    transform: translateX(-50%) scale(1);
-  }
-  to {
-    opacity: 0;
-    filter: blur(10px);
-    transform: translateX(-50%) scale(1.08);
-  }
-`;
-
-const MEDICAL_WORDS = [
+const words = [
   "doctor",
   "specialist",
   "dentist",
   "cardiologist",
   "pediatrician",
   "dermatologist",
-  "physician",
-  "therapist",
 ];
 
-/**
- * Text morph: ek word se dusre word me blur-fade hota hai,
- * aur width smoothly change hoti hai (center preserve rehta hai).
- */
-function MorphWord({ words = MEDICAL_WORDS, interval = 2600 }) {
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const wordIn = keyframes`
+  from { opacity: 0; filter: blur(8px); transform: translate(-50%, 8px); }
+  to { opacity: 1; filter: blur(0); transform: translate(-50%, 0); }
+`;
+
+const wordOut = keyframes`
+  from { opacity: 1; filter: blur(0); transform: translate(-50%, 0); }
+  to { opacity: 0; filter: blur(8px); transform: translate(-50%, -8px); }
+`;
+
+function MorphWord() {
   const [index, setIndex] = useState(0);
-  const [prevIndex, setPrevIndex] = useState(null);
+  const [previous, setPrevious] = useState(null);
   const [width, setWidth] = useState(0);
   const measureRefs = useRef([]);
 
-  // Word cycle
   useEffect(() => {
     const timer = setInterval(() => {
       setIndex((current) => {
-        setPrevIndex(current);
+        setPrevious(current);
         return (current + 1) % words.length;
       });
-    }, interval);
+    }, 2600);
 
     return () => clearInterval(timer);
-  }, [words.length, interval]);
+  }, []);
 
-  // Purana word hatao animation ke baad
   useEffect(() => {
-    if (prevIndex === null) return;
-    const t = setTimeout(() => setPrevIndex(null), 600);
-    return () => clearTimeout(t);
-  }, [prevIndex]);
+    if (previous === null) return;
 
-  // Width measure (current word ke hisaab se)
+    const timer = setTimeout(() => setPrevious(null), 500);
+    return () => clearTimeout(timer);
+  }, [previous]);
+
   useLayoutEffect(() => {
     const measure = () => {
-      const el = measureRefs.current[index];
-      if (el) setWidth(el.offsetWidth);
+      const element = measureRefs.current[index];
+      if (element) setWidth(element.offsetWidth);
     };
 
     measure();
     window.addEventListener("resize", measure);
-
-    if (document.fonts?.ready) {
-      document.fonts.ready.then(measure);
-    }
+    document.fonts?.ready?.then(measure);
 
     return () => window.removeEventListener("resize", measure);
-  }, [index, words]);
+  }, [index]);
 
- const layerSx = {
-  position: "absolute",
-  top: 0,
-  left: "50%",
-  whiteSpace: "nowrap",
-  lineHeight: "inherit",   // ← ye add karo
-  willChange: "transform, opacity, filter",
-};
+  const layerSx = {
+    position: "absolute",
+    top: 0,
+    left: "50%",
+    whiteSpace: "nowrap",
+    lineHeight: "inherit",
+  };
 
   return (
     <Box
-  component="span"
-  aria-live="polite"
-  sx={{
-    position: "relative",
-    display: "inline-block",
-    verticalAlign: "top",          // bottom → top
-    height: "1.03em",              // h1 ke lineHeight ke barabar
-    lineHeight: "inherit",         // h1 ka lineHeight inherit ho
-    width: width ? `${width}px` : "auto",
-    transition: "width 0.55s cubic-bezier(0.22, 1, 0.36, 1)",
-    whiteSpace: "nowrap",
-  }}
->
-      {/* Hidden spans: width measure karne ke liye */}
+      component="span"
+      aria-live="polite"
+      sx={{
+        position: "relative",
+        display: "inline-block",
+        width: width ? `${width}px` : "auto",
+        height: "1em",
+        verticalAlign: "top",
+        transition: "width 0.45s ease",
+        whiteSpace: "nowrap",
+      }}
+    >
       {words.map((word, i) => (
         <Box
           key={word}
+          ref={(element) => (measureRefs.current[i] = element)}
           component="span"
-          ref={(el) => (measureRefs.current[i] = el)}
           aria-hidden="true"
-        sx={{
-  position: "absolute",
-  visibility: "hidden",
-  pointerEvents: "none",
-  whiteSpace: "nowrap",
-  lineHeight: "inherit",
-}}
+          sx={{
+            position: "absolute",
+            visibility: "hidden",
+            whiteSpace: "nowrap",
+          }}
         >
           {word}
         </Box>
       ))}
 
-      {/* Purana word (bahar jaata hua) */}
-      {prevIndex !== null && (
+      {previous !== null && (
         <Box
-          key={`out-${prevIndex}-${index}`}
+          key={`out-${previous}-${index}`}
           component="span"
           aria-hidden="true"
-          sx={{
-            ...layerSx,
-            animation: `${morphOut} 0.5s ease forwards`,
-          }}
+          sx={{ ...layerSx, animation: `${wordOut} 0.45s ease forwards` }}
         >
-          {words[prevIndex]}
+          {words[previous]}
         </Box>
       )}
 
-      {/* Naya word (andar aata hua) */}
       <Box
         key={`in-${index}`}
         component="span"
-        sx={{
-          ...layerSx,
-          animation: `${morphIn} 0.55s ease forwards`,
-        }}
+        sx={{ ...layerSx, animation: `${wordIn} 0.45s ease forwards` }}
       >
         {words[index]}
       </Box>
@@ -184,304 +126,174 @@ function MorphWord({ words = MEDICAL_WORDS, interval = 2600 }) {
   );
 }
 
+function HeroImage({ src, alt, sx = {} }) {
+  return (
+    <Box
+      component="img"
+      src={src}
+      alt={alt}
+      aria-hidden="true"
+      sx={{
+        position: "absolute",
+        objectFit: "contain",
+        pointerEvents: "none",
+        ...sx,
+      }}
+    />
+  );
+}
+
 export default function HeroContent() {
   return (
     <Box
       sx={{
+        position: "relative",
         width: "100%",
         mx: "auto",
+        px: { xs: 2, sm: 3, md: 4 },
+        pt: { xs: 5, md: 5 },
+        pb: { xs: 3, md: 4 },
         textAlign: "center",
-        fontFamily: "var(--font-inter), Arial, sans-serif",
-        px: {
-          xs: 2,
-          sm: 3,
-          md: 4,
-        },
-        pt: {
-          xs: 2,
-          sm: 2.5,
-          md: 2,
-        },
+        fontFamily: "Inter, Arial, sans-serif",
       }}
     >
-      <Box
+      <HeroImage
+        src="/img/LandingYoung.png"
+        alt=""
         sx={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px",
-
-          height: {
-            xs: "38px",
-            md: "40px",
-          },
-
-          px: "13px",
-
-          mb: {
-            xs: "28px",
-            sm: "30px",
-            md: "20px",
-          },
-
-          bgcolor: "white",
-          border: "1px solid #BCE8DE",
-          borderRadius: "999px",
-
-          boxShadow: "0 8px 24px rgba(7, 135, 106, 0.04)",
-
-          animation: `${fadeUp} 0.45s ease-out`,
+          width: { md: 150, lg: 160 },
+          height: { md: 250, lg: 285 },
+          left: { md: 0, lg: 0 },
+          top: { md: 95, lg: 90 },
+          display: { xs: "none", md: "block" },
         }}
-      >
-        <Box
-          sx={{
-            width: "8px",
-            height: "8px",
-            flexShrink: 0,
-            borderRadius: "50%",
-            bgcolor: "#2DBF98",
-            animation: `${pulse} 2s infinite`,
-          }}
-        />
+      />
 
-        <Typography
-          component="span"
-          sx={{
-            fontFamily: "inherit",
-            fontSize: {
-              xs: "11.5px",
-              sm: "12px",
-              md: "12.5px",
-            },
-            lineHeight: 1,
-            fontWeight: 700,
-            color: "#007D68",
-            letterSpacing: "-0.01em",
-            whiteSpace: "nowrap",
-          }}
-        >
-          500+ doctors available now
-        </Typography>
+      <HeroImage
+        src="/img/LandingFriendly.png"
+        alt=""
+        sx={{
+          width: { md: 150, lg: 160 },
+          height: { md: 250, lg: 285 },
+          right: { md: 0, lg: 0 },
+          top: { md: 95, lg: 90 },
+          display: { xs: "none", md: "block" },
+        }}
+      />
 
-        <Box
-          sx={{
-            ml: "2px",
+        
 
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+      <Box
+  sx={{
+    position: "relative",
+    zIndex: 1,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 1.25,
+    height: 42,
+    px: 1.75,
+    mb: { xs: 3, md: 3.5 },
+    bgcolor: "#FFFFFF",
+    border: "1px solid #D7EEE8",
+    borderRadius: "999px",
+    boxShadow: "0 4px 14px rgba(7, 135, 106, 0.08)",
+    animation: `${fadeUp} 0.45s ease both`,
+  }}
+>
+  <Box
+    sx={{
+      width: 8,
+      height: 8,
+      flexShrink: 0,
+      borderRadius: "50%",
+      bgcolor: "#26B992",
+      boxShadow: "0 0 0 4px #E8F8F3",
+    }}
+  />
 
-            flexShrink: 0,
+  <Typography
+    component="span"
+    sx={{
+      fontSize: { xs: 11, sm: 12 },
+      fontWeight: 600,
+      color: "#53645F",
+      whiteSpace: "nowrap",
+    }}
+  >
+    <Box component="span" sx={{ color: "#07876A", fontWeight: 800 }}>
+      500+
+    </Box>{" "}
+    doctors available now
+  </Typography>
 
-            color: "#078F73",
-          }}
-        >
-          <ArrowForwardIcon
-            sx={{
-              fontSize: "15px",
-            }}
-          />
-        </Box>
-      </Box>
+  <Box
+    sx={{
+      display: "grid",
+      placeItems: "center",
+      width: 25,
+      height: 25,
+      ml: 0.25,
+      borderRadius: "50%",
+      bgcolor: "#EFF9F6",
+      color: "#07876A",
+    }}
+  >
+    <ArrowForwardIcon sx={{ fontSize: 15 }} />
+  </Box>
+</Box>
 
       <Typography
         component="h1"
         sx={{
-          maxWidth: "900px",
-          margin: "5px auto 0",
+          position: "relative",
+          zIndex: 1,
+          m: 0,
           color: "#172033",
-          userSelect: "none",
-          WebkitUserSelect: "none",
-          fontFamily: "Inter, Arial, sans-serif",
-          fontSize: "clamp(46px, 5vw, 78px)",
-          fontWeight: 400,
-          lineHeight: 1.03,
-          letterSpacing: "-3.3px",
-
-          "@media (max-width: 900px)": {
-            fontSize: "47px",
-          },
-
-          "@media (max-width: 650px)": {
-            fontSize: "38px",
-            letterSpacing: "-2px",
-          },
+          fontWeight: 700,
+          fontSize: "clamp(38px, 4.5vw, 68px)",
+          lineHeight: 1.1,
+          letterSpacing: { xs: "-1.5px", md: "-2.5px" },
         }}
       >
-        <Box
-          component="span"
-          sx={{
-            display: "block",
-            fontWeight: 700,
-            letterSpacing: "-2.8px",
-          }}
-        >
+        <Box component="span" sx={{ display: "block" }}>
           Better care starts with the
         </Box>
 
         <Box
           component="span"
           sx={{
-            display: "block",
-            mt: "5px",
-            fontFamily: "inherit",
-            fontSize: "inherit",
-            fontWeight: "inherit",
-            lineHeight: "inherit",
-            letterSpacing: "inherit",
+            position: "relative",
+            display: "inline-block",
+            mt: 0.5,
+            color: "#07876A",
+            fontWeight: 400,
+            whiteSpace: "nowrap",
           }}
         >
-          <Box
-            component="span"
-            sx={{
-              position: "relative",
-              display: "inline-block",
-              color: "#07876A",
-              px: "12px",
-              py: "1px",
-              zIndex: 1,
-              userSelect: "none",
-              WebkitUserSelect: "none",
-              whiteSpace: "nowrap",
-            }}
-          >
-            right <MorphWord />.
-          </Box>
+          right <MorphWord />.
+        
         </Box>
       </Typography>
 
       <Typography
         component="p"
         sx={{
-          m: 0,
-
-          mt: {
-            xs: "24px",
-            sm: "27px",
-            md: "28px",
-          },
-
+          position: "relative",
+          zIndex: 1,
+          maxWidth: 720,
           mx: "auto",
-          userSelect: "none",
-          WebkitUserSelect: "none",
-          maxWidth: {
-            xs: "500px",
-            sm: "650px",
-            md: "720px",
-          },
-
-          px: {
-            xs: 1,
-            sm: 0,
-          },
-
-          fontFamily: "inherit",
-
-          fontSize: {
-            xs: "13px",
-            sm: "14px",
-            md: "15px",
-          },
-
-          lineHeight: {
-            xs: 1.6,
-            md: 1.65,
-          },
-
-          fontWeight: 400,
-
-          letterSpacing: "-0.01em",
-
+          mt: { xs: 2.5, md: 3.5 },
+          mb: 0,
+          px: 1,
           color: "#66748A",
-
-          animation: `${fadeUp} 0.65s ease-out 0.05s both`,
+          fontSize: { xs: 13, sm: 14, md: 15 },
+          lineHeight: 1.7,
+          animation: `${fadeUp} 0.6s ease 0.1s both`,
         }}
       >
         Discover verified doctors and specialists near you. Search, compare and
-        book the right care in{" "}
-        <Box
-          component="span"
-          sx={{
-            display: {
-              xs: "inline",
-              md: "block",
-            },
-          }}
-        >
-          just a few clicks.
-        </Box>
+        book the right care in just 
       </Typography>
     </Box>
-  );
-}
-
-function Feature({ text }) {
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: "7px",
-      }}
-    >
-      <Box
-        sx={{
-          width: "18px",
-          height: "18px",
-
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-
-          flexShrink: 0,
-
-          borderRadius: "50%",
-
-          bgcolor: "#E8F8F4",
-
-          color: "#079276",
-
-          fontSize: "11px",
-          fontWeight: 800,
-        }}
-      >
-        ✓
-      </Box>
-
-      <Typography
-        component="span"
-        sx={{
-          fontFamily: "inherit",
-          fontSize: {
-            xs: "11px",
-            sm: "11.5px",
-          },
-          fontWeight: 600,
-          lineHeight: 1,
-          color: "#6A7789",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {text}
-      </Typography>
-    </Box>
-  );
-}
-
-function Dot() {
-  return (
-    <Box
-      sx={{
-        width: "3px",
-        height: "3px",
-        borderRadius: "50%",
-        bgcolor: "#D2D9DF",
-
-        display: {
-          xs: "none",
-          sm: "block",
-        },
-      }}
-    />
   );
 }

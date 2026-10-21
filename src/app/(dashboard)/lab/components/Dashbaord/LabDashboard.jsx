@@ -4,26 +4,48 @@ import Image from "next/image";
 import { Box, Button, Typography } from "@mui/material";
 import {
   Building2,
-  ClipboardList,
   Hourglass,
-  FileCheck2,
+  House,
+  Clock3,
+  Siren,
   Plus,
-  UsersRound,
 } from "lucide-react";
-import RecentTest from "./RecentTestOrders"
-import TodayWork from "./TodayWorkQuickActions"
+import TodayWork from "./TodayWorkQuickActions";
 
 const cards = [
-  ["Pending Requests", "0", "New requests to review", ClipboardList],
-  ["In Progress", "0", "Tests currently being processed", Hourglass],
-  ["Reports Ready", "0", "Completed reports ready to share", FileCheck2],
-  ["Connected Doctors", "0", "Doctors connected to your lab", UsersRound],
+  ["Processing", "processing", "Tests currently being processed", Hourglass],
+  ["Home Collection", "homeCollection", "Requests requiring home collection", House],
+  ["Overdue", "overdue", "Requests past their expected time", Clock3],
+  ["Urgent", "urgent", "Urgent test requests", Siren],
 ];
 
-export default function LabDashboard() {
+export default function LabDashboard({ profile, dashboardCounts = {} }) {
+  const registration = profile?.registration || {};
+  const registrationData = registration?.registration_data || {};
+  const labInfo = registrationData?.labInformation || {};
+
+  const labName =
+    labInfo.labName ||
+    labInfo.lab_name ||
+    labInfo.name ||
+    profile?.labName ||
+    profile?.lab_name ||
+    "Your Lab";
+
+  const labCode =
+    labInfo.labCode ||
+    labInfo.lab_code ||
+    registrationData.labCode ||
+    registrationData.lab_code ||
+    registration.labCode ||
+    registration.lab_code ||
+    profile?.labCode ||
+    profile?.lab_code ||
+    "—";
+
   return (
-    <Box sx={{ width: "100%",bgcolor: "white" }}>
-       <Box
+    <Box sx={{ width: "100%", bgcolor: "white" }}>
+      <Box
         sx={{
           minHeight: 110,
           p: { xs: 2, sm: 2.5 },
@@ -37,14 +59,7 @@ export default function LabDashboard() {
           overflow: "hidden",
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-            minWidth: 0,
-          }}
-        >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 0 }}>
           <Box
             sx={{
               width: 68,
@@ -74,7 +89,7 @@ export default function LabDashboard() {
                 fontWeight: 800,
               }}
             >
-              jeev labs
+              {labName}
             </Typography>
 
             <Box
@@ -87,7 +102,7 @@ export default function LabDashboard() {
               }}
             >
               <Typography sx={{ color: "#526176", fontSize: 12.5 }}>
-                Lab code: JDV-LJAXBT
+                Lab code: {labCode}
               </Typography>
 
               <Box
@@ -112,7 +127,7 @@ export default function LabDashboard() {
                     bgcolor: "#159879",
                   }}
                 />
-                Active
+                {profile?.status || registration?.status || "Active"}
               </Box>
 
               <Button
@@ -176,9 +191,9 @@ export default function LabDashboard() {
           gap: 1.5,
         }}
       >
-        {cards.map(([title, value, description, Icon]) => (
+        {cards.map(([title, key, description, Icon]) => (
           <Box
-            key={title}
+            key={key}
             sx={{
               minHeight: 108,
               p: 1.8,
@@ -206,7 +221,9 @@ export default function LabDashboard() {
             </Box>
 
             <Box>
-              <Typography sx={{ color: "#40516A", fontSize: 12.5, fontWeight: 700 }}>
+              <Typography
+                sx={{ color: "#40516A", fontSize: 12.5, fontWeight: 700 }}
+              >
                 {title}
               </Typography>
 
@@ -218,7 +235,7 @@ export default function LabDashboard() {
                   lineHeight: 1.2,
                 }}
               >
-                {value}
+                {Number(dashboardCounts[key]) || 0}
               </Typography>
 
               <Typography sx={{ color: "#64748B", fontSize: 12.5 }}>
@@ -229,7 +246,7 @@ export default function LabDashboard() {
         ))}
       </Box>
 
-  <TodayWork />
+      <TodayWork />
     </Box>
   );
 }

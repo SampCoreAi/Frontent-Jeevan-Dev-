@@ -53,7 +53,7 @@ const inputSx = {
     },
   },
   "& .MuiInputBase-input": {
-    fontSize: "12px",
+    fontSize: "13px",
     py: 1.2,
   },
   "& .MuiFormHelperText-root": {
@@ -370,41 +370,54 @@ export default function StoreInformationForm({
         sx={{
           p: { xs: 1.5, sm: 2.25, md: 3 },
           border: `1px solid ${C.border}`,
-          borderRadius: { xs: "10px", sm: "14px" },
+          borderRadius: { xs: "12px", sm: "16px" },
           bgcolor: C.white,
-          boxShadow: "0 8px 28px rgba(23, 32, 51, 0.06)",
+          boxShadow: "0 12px 36px rgba(23, 32, 51, 0.07)",
         }}
       >
-        {/* HEADING + NEXT BUTTON */}
         <Stack
           direction={{ xs: "column", sm: "row" }}
           alignItems={{ xs: "stretch", sm: "center" }}
           justifyContent="space-between"
           spacing={1.5}
           sx={{
-            position: "sticky",
-            top: 0,
-            zIndex: 3,
-            py: 1,
-            mb: 1.5,
-            bgcolor: C.white,
+            pb: 2,
+            mb: 2,
             borderBottom: `1px solid ${C.border}`,
           }}
         >
           <Stack direction="row" alignItems="center" spacing={1}>
-            <StorefrontOutlinedIcon
-              sx={{ color: C.primary, fontSize: 22 }}
-            />
-
-            <Typography
+            <Box
               sx={{
-                fontSize: { xs: "14px", sm: "15px" },
-                fontWeight: 750,
-                color: C.text,
+                width: 40,
+                height: 40,
+                display: "grid",
+                placeItems: "center",
+                flexShrink: 0,
+                borderRadius: "12px",
+                bgcolor: "#EAF7F3",
               }}
             >
-              A. Pharmacy Identity & C. Premises
-            </Typography>
+              <StorefrontOutlinedIcon
+                sx={{ color: C.primary, fontSize: 22 }}
+              />
+            </Box>
+
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: { xs: "15px", sm: "17px" },
+                  fontWeight: 750,
+                  color: C.text,
+                  lineHeight: 1.3,
+                }}
+              >
+                Store identity & premises
+              </Typography>
+              <Typography sx={{ mt: 0.3, color: C.muted, fontSize: "11px" }}>
+                Add your pharmacy, contact and registered address details.
+              </Typography>
+            </Box>
           </Stack>
 
           <Button
@@ -440,7 +453,6 @@ export default function StoreInformationForm({
           </Button>
         </Stack>
 
-        {/* MANDATORY NOTE */}
         <Alert
           severity="info"
           icon={false}
@@ -453,6 +465,7 @@ export default function StoreInformationForm({
             border: "1px solid #DBEAFE",
             borderRadius: "8px",
             fontSize: "12px",
+            lineHeight: 1.6,
           }}
         >
           <strong>Mandatory:</strong> Ensure the names and
@@ -608,7 +621,7 @@ export default function StoreInformationForm({
               fontSize: "15px",
               fontWeight: 750,
               color: C.text,
-              mb: 1,
+              mb: 1.1,
             }}
           >
             Authorized Signatory Details
@@ -669,7 +682,7 @@ export default function StoreInformationForm({
               fontSize: "15px",
               fontWeight: 750,
               color: C.text,
-              mb: 1,
+              mb: 1.1,
             }}
           >
             Premises Details

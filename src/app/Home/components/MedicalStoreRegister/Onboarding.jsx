@@ -1,7 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { Alert, Box, Grid, Snackbar } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Chip,
+  Grid,
+  Snackbar,
+  Stack,
+  Typography,
+} from "@mui/material";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 
 import Sidebar from "./Sidebar";
 import StoreInformationForm from "./StoreInformationForm";
@@ -586,68 +595,85 @@ export default function MedicalStoreOnboarding() {
 
       <Box
         sx={{
-          backgroundColor: "#FFFFFF",
-
-          backgroundImage: `
-    linear-gradient(
-      90deg,
-      rgba(7, 135, 106, 0.13) 0%,
-      rgba(7, 135, 106, 0.05) 25%,
-      rgba(255, 255, 255, 0.35) 45%,
-      rgba(255, 255, 255, 0.35) 55%,
-      rgba(7, 135, 106, 0.05) 75%,
-      rgba(7, 135, 106, 0.13) 100%
-    ),
-    linear-gradient(
-      135deg,
-      rgba(7, 135, 106, 0.09) 0%,
-      rgba(52, 211, 153, 0.035) 45%,
-      rgba(255, 255, 255, 0.08) 100%
-    ),
-    linear-gradient(
-      135deg,
-      rgba(7, 135, 106, 0.18) 0%,
-      rgba(52, 211, 153, 0.08) 50%,
-      rgba(255, 255, 255, 0.45) 100%
-    ),
-    linear-gradient(rgba(7, 135, 106, 0.16) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(7, 135, 106, 0.16) 1px, transparent 1px)
-  `,
-
-          backgroundSize: `
-    100% 100%,
-    100% 100%,
-    40px 40px,
-    40px 40px,
-    40px 40px
-  `,
-
-          backgroundPosition: `
-    center,
-    center,
-    0 0,
-    0 0,
-    0 0
-  `,
-
-          pt: { xs: 3, md: 2 },
-          pb: { xs: 4, md: 5 },
-          px: { xs: 1.25, sm: 2, md: 3 },
-          textAlign: "left",
-          position: "relative",
-          overflow: "visible",
-          minHeight: "calc(100vh - 110px)",
+          minHeight: "calc(100vh - 76px)",
+          px: { xs: 1.5, sm: 2.5, lg: 4 },
+          pt: { xs: 3, md: 4 },
+          pb: { xs: 4, md: 6 },
+          backgroundColor: "#F5F9F7",
+          backgroundImage:
+            "radial-gradient(ellipse at 8% 0%, rgba(7,135,106,0.10), transparent 34%), radial-gradient(ellipse at 100% 22%, rgba(52,211,153,0.08), transparent 30%)",
         }}
       >
         <Box
           sx={{
             width: "100%",
-            maxWidth: "1500px",
+            maxWidth: "1360px",
             mx: "auto",
           }}
         >
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            alignItems={{ xs: "flex-start", sm: "center" }}
+            justifyContent="space-between"
+            spacing={1.5}
+            sx={{ mb: { xs: 2.5, md: 3 } }}
+          >
+            <Box>
+              <Typography
+                sx={{
+                  mb: 0.5,
+                  color: "#07876A",
+                  fontSize: "11px",
+                  fontWeight: 800,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Pharmacy partner onboarding
+              </Typography>
+              <Typography
+                component="h1"
+                sx={{
+                  color: "#172033",
+                  fontSize: { xs: "22px", sm: "26px" },
+                  fontWeight: 800,
+                  lineHeight: 1.2,
+                  letterSpacing: "-0.025em",
+                }}
+              >
+                Register your medical store
+              </Typography>
+              <Typography
+                sx={{
+                  mt: 0.7,
+                  color: "#66736E",
+                  fontSize: { xs: "12px", sm: "13px" },
+                }}
+              >
+                Complete the steps below to submit your pharmacy profile.
+              </Typography>
+            </Box>
+
+            <Chip
+              icon={<LockOutlinedIcon sx={{ fontSize: "16px !important" }} />}
+              label="Secure registration"
+              size="small"
+              sx={{
+                height: 32,
+                px: 0.5,
+                border: "1px solid #D7E9E1",
+                bgcolor: "rgba(255,255,255,0.82)",
+                color: "#08765D",
+                fontSize: "11px",
+                fontWeight: 700,
+                "& .MuiChip-icon": { color: "#07876A" },
+              }}
+            />
+          </Stack>
+
           <Grid
             container
+            spacing={{ xs: 2, md: 2.5 }}
             sx={{
               alignItems: "stretch",
             }}
@@ -658,7 +684,7 @@ export default function MedicalStoreOnboarding() {
               sx={{
                 alignSelf: "flex-start",
                 position: { md: "sticky" },
-                top: { md: 16 },
+                top: { md: 88 },
               }}
             >
               <Sidebar

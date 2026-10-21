@@ -4,7 +4,13 @@ import { useState } from "react";
 import { Alert, Box, Button, CircularProgress, Paper, Stack, TextField, Typography } from "@mui/material";
 import { SectionTitle } from "./LabUi";
 
-export default function LabTechnicians({ technicians = [], loading = false, onCreate }) {
+export default function LabTechnicians({
+  technicians = [],
+  loading = false,
+  onCreate,
+  onStatusChange,
+  actionId,
+}) {
   const [form, setForm] = useState({ fullName: "", email: "", phoneNumber: "" });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -471,24 +477,39 @@ export default function LabTechnicians({ technicians = [], loading = false, onCr
               </Typography>
             </Box>
 
-            {/* STATUS */}
-            <Box
-              sx={{
-                px: 0.8,
-                py: 0.35,
+           <Box sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}>
+  {["ACTIVE", "INACTIVE"].map((status) => {
+    const currentStatus = String(
+      technician.status || (technician.is_active === false ? "INACTIVE" : "ACTIVE")
+    ).toUpperCase();
+    const selected = currentStatus === status;
 
-                flexShrink: 0,
-
-                bgcolor: "#EDF7F2",
-                borderRadius: "5px",
-
-                fontSize: "8.5px",
-                fontWeight: 700,
-                color: "#07876A",
-              }}
-            >
-              Assigned
-            </Box>
+    return (
+      <Button
+        key={status}
+        size="small"
+       disabled={!technician.user_id || actionId === technician.user_id}
+onClick={() => onStatusChange(technician.user_id, status)}
+        sx={{
+          minWidth: 68,
+          px: 1,
+          py: 0.4,
+          borderRadius: "6px",
+          fontSize: "9px",
+          fontWeight: 700,
+          textTransform: "none",
+          color: selected ? "#fff" : status === "ACTIVE" ? "#07876A" : "#64748B",
+          bgcolor: selected ? (status === "ACTIVE" ? "#07876A" : "#64748B") : "#F1F5F9",
+          "&:hover": {
+            bgcolor: selected ? (status === "ACTIVE" ? "#066F58" : "#475569") : "#E2E8F0",
+          },
+        }}
+      >
+       {actionId === technician.user_id && selected ? "Saving..." : status}
+      </Button>
+    );
+  })}
+</Box>
           </Box>
         ))}
       </Box>

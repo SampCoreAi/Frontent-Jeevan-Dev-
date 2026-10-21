@@ -28,6 +28,16 @@ export default function LabPanel({ section = "dashboard" }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [dashboardCounts, setDashboardCounts] = useState({
+  processing: 0,
+  homeCollection: 0,
+  overdue: 0,
+  urgent: 0,
+});
+const loadDashboardCounts = async () => {
+  const response = await api.get("/api/lab-requests/dashboard-counts");
+  setDashboardCounts(response.data?.data || {});
+};
   const [requestUpdateFeedback, setRequestUpdateFeedback] = useState({ type: "", message: "" });
   const [tableFilters, setTableFilters] = useState({ search: "", status: "", date: "" });
   const [showDelayedOnly, setShowDelayedOnly] = useState(false);
@@ -88,11 +98,30 @@ export default function LabPanel({ section = "dashboard" }) {
     setReportPagination(response.data?.pagination || null);
   };
 
-  const loadTechnicians = async () => {
-    const response = await api.get("/api/lab-technicians");
-    setTechnicians(getRows(response));
-  };
+ const loadTechnicians = async () => {
+  const response = await api.get("/api/lab-technicians");
 
+  console.log("Technician API response:", JSON.stringify(response.data, null, 2));
+
+  setTechnicians(getRows(response));
+};
+const setTechnicianStatus = async (id, status) => {
+  try {
+    setActionId(id);
+    await api.patch(`/api/doctors/doctors/${id}/status`, { status });
+
+   setTechnicians((items) =>
+  items.map((item) =>
+    String(item.user_id) === String(id) ? { ...item, status } : item
+  )
+);
+    setNotice(`Technician ${status.toLowerCase()}.`);
+  } catch (error) {
+    setError(getErrorMessage(error, "Unable to update technician status."));
+  } finally {
+    setActionId(null);
+  }
+};
   const handleProfileUpdate = (updatedProfile) => {
     setProfile((current) => ({
       ...(current || {}),
@@ -142,13 +171,13 @@ useEffect(() => {
       }
 
       else {
-        // Dashboard
-        await Promise.all([
-          loadProfile(),
-          loadConnections(),
-          loadRequests(),
-          loadReports(),
-        ]);
+       await Promise.all([
+  loadProfile(),
+  loadConnections(),
+  loadRequests(),
+  loadReports(),
+  loadDashboardCounts(),
+]);
       }
 
     } catch (requestError) {
@@ -316,8 +345,9 @@ useEffect(() => {
       setActionId(connectionId);
       setActionField("status");
       await api.patch(`/api/labs/connections/${connectionId}/status`, {
-        status,
-        note,
+         status,
+  ...(status === "REJECTED" && {
+  }),
       });
       setConnections((items) => items.map((item) => item.connection_id === connectionId ? { ...item, status } : item));
       setNotice(`Connection ${status.toLowerCase()}.`);
@@ -538,9 +568,19 @@ useEffect(() => {
   ) : section === "profile" ? (
     <LabProfile profile={profile} onProfileUpdate={handleProfileUpdate} />
   ) : section === "technicians" ? (
-    <LabTechnicians technicians={technicians} loading={loading} onCreate={createTechnician} />
+   <LabTechnicians
+  technicians={technicians}
+  loading={loading}
+  onCreate={createTechnician}
+  onStatusChange={setTechnicianStatus}
+  actionId={actionId}
+/>
   ) : (
-    <LabDashboard profile={profile} stats={stats} onNavigate={(path) => router.push(path)} />
+   <LabDashboard
+  profile={profile}
+  dashboardCounts={dashboardCounts}
+  onNavigate={(path) => router.push(path)}
+/>
   );
 
   return (
