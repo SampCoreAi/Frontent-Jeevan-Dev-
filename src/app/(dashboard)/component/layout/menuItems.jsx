@@ -232,7 +232,7 @@ export const menuItems = {
     {
       label: "Pharmacy Registration",
       icon: <ManageAccountsOutlined />,
-      route: "/admin/pages/Registration",
+      route: "/admin/pages/PharmaRegistration",
     },
     {
       label: "Doctor Assistants",

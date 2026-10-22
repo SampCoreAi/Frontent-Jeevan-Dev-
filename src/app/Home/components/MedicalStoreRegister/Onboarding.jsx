@@ -25,6 +25,7 @@ const INITIAL_DATA = {
   legalEntityName: "",
   entityType: "",
   storeEmail: "",
+  storeEmailVerified: false,
   storePhone: "",
   signatoryFullName: "",
   signatoryDesignation: "",
@@ -93,7 +94,31 @@ export default function MedicalStoreOnboarding() {
       severity,
     });
   };
+const postEmailOtp = async (path, body) => {
+  const baseURL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+  if (!baseURL) throw new Error("NEXT_PUBLIC_API_URL set karo.");
 
+  const response = await fetch(
+    `${baseURL}/api/pharmacy-registration/${path}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  );
+
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.success === false) {
+    throw new Error(result.message || "Email OTP request failed.");
+  }
+  return result;
+};
+
+const sendStoreEmailOtp = ({ email }) =>
+  postEmailOtp("send-email-otp", { registrationId, email });
+
+const verifyStoreEmailOtp = ({ email, otp }) =>
+  postEmailOtp("verify-email-otp", { registrationId,  otp });
   const updateData = (newData) => {
     setData((prev) => ({
       ...prev,
@@ -150,6 +175,8 @@ export default function MedicalStoreOnboarding() {
             registrationData.licensedTradeName ?? previous.licensedTradeName,
           legalEntityName:
             registrationData.legalEntityName ?? previous.legalEntityName,
+            storeEmailVerified:
+  registration.storeEmailVerified ?? previous.storeEmailVerified ?? false,
           entityType: registrationData.entityType ?? previous.entityType,
           storeEmail: registrationData.storeEmail ?? previous.storeEmail,
           storePhone: registrationData.storePhone ?? previous.storePhone,
@@ -456,138 +483,42 @@ export default function MedicalStoreOnboarding() {
     }));
   };
 
-  const handleFinalSubmit = async ({ declarationAccepted } = {}) => {
-    try {
-      setLoading(true);
-      const baseURL = (process.env.NEXT_PUBLIC_API_URL || "").replace(
-        /\/+$/,
-        "",
-      );
+ const handleFinalSubmit = async ({ declarationAccepted } = {}) => {
+  try {
+    setLoading(true);
 
-      if (!baseURL) {
-        throw new Error("Please configure NEXT_PUBLIC_API_URL in .env.local");
+    const baseURL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+    if (!baseURL) throw new Error("NEXT_PUBLIC_API_URL set karo.");
+    if (!registrationId) throw new Error("Registration ID nahi mila.");
+    if (!declarationAccepted) throw new Error("Sab declarations accept karo.");
+
+    const token = localStorage.getItem("token");
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const response = await fetch(
+      `${baseURL}/api/pharmacy-registration/submit`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ registrationId: Number(registrationId) }),
       }
+    );
 
-      if (!registrationId) {
-        throw new Error(
-          "Registration ID not found. Please complete Step 1 first.",
-        );
-      }
+    const result = await response.json().catch(() => ({}));
 
-      if (!declarationAccepted) {
-        throw new Error("Please accept all declarations before submitting.");
-      }
-
-      const token = localStorage.getItem("token");
-      const headers = {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      };
-      const payload = {
-        registrationId: String(registrationId),
-        declarationAccepted: true,
-      };
-
-      const registrationResponse = await fetch(
-        `${baseURL}/api/pharmacy-registration/create`,
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify(payload),
-        },
-      );
-
-      if (!registrationResponse.ok) {
-        const body = await registrationResponse.text();
-        let message = body;
-        try {
-          const errorResult = JSON.parse(body);
-          message = errorResult.message || errorResult.error || body;
-        } catch {
-          // Non-JSON error bodies are displayed as returned by the API.
-        }
-        throw new Error(
-          message || `Unable to save registration (${registrationResponse.status})`,
-        );
-      }
-
-      const registrationResult = await registrationResponse.json();
-      if (registrationResult?.success === false) {
-        throw new Error(
-          registrationResult.message || "Unable to save registration.",
-        );
-      }
-
-      if (Object.values(data).some((value) => value instanceof File)) {
-      const formData = new FormData();
-      formData.append("registrationId", String(registrationId));
-
-      [
-        "retentionFeeReceipt",
-        "pharmacistRegistrationCertificate",
-        "entityProof",
-        "panCard",
-        "pharmacistAppointmentLetter",
-      ].forEach((field) => {
-        const file = data[field];
-        if (file instanceof File) formData.append(field, file);
-      });
-
-      const uploadResponse = await fetch(
-        `${baseURL}/api/pharmacy-registration/upload-documents`,
-        {
-          method: "POST",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          body: formData,
-        },
-      );
-
-      if (!uploadResponse.ok) {
-        const body = await uploadResponse.text();
-        let message = body;
-        try {
-          const errorResult = JSON.parse(body);
-          message = errorResult.message || errorResult.error || body;
-        } catch {
-          // Non-JSON error bodies are displayed as returned by the API.
-        }
-        throw new Error(
-          message || `Unable to upload documents (${uploadResponse.status})`,
-        );
-      }
-
-      if (
-        uploadResponse.headers
-          .get("content-type")
-          ?.includes("application/json")
-      ) {
-        const uploadResult = await uploadResponse.json();
-        if (uploadResult?.success === false) {
-          throw new Error(
-            uploadResult.message || "Unable to upload documents.",
-          );
-        }
-      }
-      }
-
-      setData((prev) => ({
-        ...prev,
-        onboardingStatus: "SUBMITTED",
-      }));
-
-      showSnackbar(
-        "Medical store registration submitted successfully.",
-        "success",
-      );
-    } catch (error) {
-      showSnackbar(
-        error.message || "Something went wrong while submitting registration.",
-        "error",
-      );
-    } finally {
-      setLoading(false);
+    if (!response.ok || result.success === false) {
+      throw new Error(result.message || result.error || "Registration submit nahi hua.");
     }
-  };
+
+    setData((prev) => ({ ...prev, onboardingStatus: "SUBMITTED" }));
+    showSnackbar("Medical store registration submitted successfully.", "success");
+  } catch (error) {
+    showSnackbar(error.message || "Registration submit nahi hua.", "error");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <>
@@ -744,9 +675,12 @@ export default function MedicalStoreOnboarding() {
               {activeStep === 5 && (
                 <Verification
                   data={data}
+                  uploadedDocuments={uploadedDocuments}
                   onBack={() => handleNext(4)}
                   onSubmit={handleFinalSubmit}
                   loading={loading}
+                  onSendOtp={sendStoreEmailOtp}
+                  onVerifyOtp={verifyStoreEmailOtp}
                 />
               )}
             </Grid>

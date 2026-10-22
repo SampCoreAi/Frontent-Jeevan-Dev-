@@ -1,10 +1,76 @@
 "use client";
 
-import { Box, Button, Chip, CircularProgress, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
+import { useRef } from "react";
+import { Box, Button, Chip, IconButton, Tooltip, CircularProgress, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 
+import AddCardOutlinedIcon from "@mui/icons-material/AddCardOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import NoteAddOutlinedIcon from "@mui/icons-material/NoteAddOutlined";
+import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import { resolveReportDownloadUrl } from "../../utils/reportUrls";
 const REQUEST_STATUSES = ["PENDING", "REQUESTED", "APPROVED", "ACCEPTED", "REJECTED", "SAMPLE_SCHEDULED", "SAMPLE_COLLECTED", "RECOLLECTION_REQUIRED", "PROCESSING", "REPORT_READY", "REPORT_UPLOADED", "COMPLETED", "CANCELLED"];
 const getCreatorRole = (id) => ({ 1: "Patient", 2: "Doctor", 3: "Assistant", 4: "Lab", 5: "Admin", 7: "Technician" }[Number(id)] || "Unknown");
 const isCompleteDateTimeValue = (value) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(String(value || ""));
+
+function SidebarIconAction({
+  label,
+  disabled = false,
+  disabledReason,
+  icon,
+  color = "primary",
+  onClick,
+  component,
+  href,
+  target,
+  rel,
+}) {
+  return (
+    <Tooltip title={disabled ? disabledReason : label} arrow placement="top">
+      <span style={{ display: "inline-flex" }}>
+        <IconButton
+          aria-label={label}
+          size="small"
+          color={color}
+          disabled={disabled}
+          onClick={onClick}
+          component={component}
+          href={href}
+          target={target}
+          rel={rel}
+          sx={{
+            width: 38,
+            height: 38,
+            border: "1px solid #DDE7E3",
+            borderRadius: 1.25,
+            color: "#07876A",
+            "&:hover": { bgcolor: "#F0FDF8", borderColor: "#07876A" },
+            "&.Mui-disabled": {
+              borderColor: "#E5E7EB",
+              color: "#A8B0B8",
+            },
+            "& .MuiSvgIcon-root": {
+              display: "block",
+              width: 22,
+              height: 22,
+              fontSize: 22,
+              flexShrink: 0,
+            },
+            ...(color === "error" && {
+              color: "#DC2626",
+              "&:hover": { bgcolor: "#FEF2F2", borderColor: "#DC2626" },
+            }),
+          }}
+        >
+          {icon}
+        </IconButton>
+      </span>
+    </Tooltip>
+  );
+}
+
 const detailText = (value) => {
   if (Array.isArray(value)) return value.map((item) => typeof item === "string" ? item : item?.test_name || item?.test_code).filter(Boolean).join(", ") || "—";
   if (value && typeof value === "object") return value.test_name || value.test_code || "—";
@@ -39,7 +105,17 @@ function DetailSection({ title, rows }) {
 }
 
 export default function LabRequestSidebar(props) {
-  const { selectedRequest, detailReport, selectedStatus, selectedUpdating, selectedCancelled, selectedAllowedStatuses, loading, actionId, actionField, handleStatusChange, getStatusStyle, getPriorityStyle, hasInvoice, technicians, canAssignTechnician, onAssignTechnician, selectedReportDateDraft, dateDrafts, setDateDrafts, selectedReportDate, onReportDateUpdate, isCompleted, openCollectionDetails, canCreateInvoice, openInvoice, getInvoicePdfUrl, invoiceUrlsByRequest, openInvoicePdf, setInvoiceDeleteError, setInvoiceDeleteRequest, canCreateReport, onCreateReport, openUpload, openDeleteConfirmation } = props;
+  const { selectedRequest, detailReport, selectedStatus, selectedUpdating, selectedCancelled, selectedAllowedStatuses, loading, actionId, actionField, handleStatusChange, getStatusStyle, getPriorityStyle, hasInvoice, technicians, canAssignTechnician, onAssignTechnician, selectedReportDateDraft, setDateDrafts, selectedReportDate, onReportDateUpdate, isCompleted, openCollectionDetails, canCreateInvoice, openInvoice, getInvoicePdfUrl, invoiceUrlsByRequest, openInvoicePdf, setInvoiceDeleteError, setInvoiceDeleteRequest, canCreateReport, onCreateReport, openUpload, openDeleteConfirmation } = props;
+  const reportDateInputRef = useRef(null);
+  const reportDownloadUrl = resolveReportDownloadUrl(detailReport?.downloadUrl);
+  const openReportDatePicker = () => {
+    const input = reportDateInputRef.current;
+    if (!input) return;
+
+    if (typeof input.showPicker === "function") input.showPicker();
+    else input.click();
+  };
+
   return (
         <Box
           component="aside"
@@ -49,7 +125,7 @@ export default function LabRequestSidebar(props) {
             position: { lg: "sticky" },
             top: 12,
             minWidth: 0,
-            maxHeight: { lg: "calc(85vh - 12px)" },
+            maxHeight: { lg: "calc(85vh - 50px)" },
             overflowY: { lg: "auto" },
             p: 1.5,
             border: "1px solid #DDE7E3",
@@ -70,23 +146,6 @@ export default function LabRequestSidebar(props) {
 
             {selectedRequest ? (
               <>
-                <Box sx={{ p: 1.25, border: "1px solid #E6ECE9", borderRadius: 1.5 }}>
-                  <Typography sx={{ fontSize: 14, fontWeight: 750, color: "#172033" }}>
-                    {selectedRequest.order_id || selectedRequest.orderId || `Request #${selectedRequest.id}`}
-                  </Typography>
-                  <Stack direction="row" spacing={0.75} flexWrap="wrap" sx={{ mt: 1 }}>
-                    <Chip
-                      size="small"
-                      label={String(selectedRequest.status || "PENDING").replaceAll("_", " ")}
-                      sx={{ ...getStatusStyle(selectedRequest.status || "PENDING"), height: 23, fontWeight: 700, fontSize: 10 }}
-                    />
-                    <Chip
-                      size="small"
-                      label={String(selectedRequest.priority || "NORMAL")}
-                      sx={{ ...getPriorityStyle(selectedRequest.priority || "NORMAL"), height: 23, fontWeight: 700, fontSize: 10 }}
-                    />
-                  </Stack>
-                </Box>
 
                 <Box sx={{ p: 1.25, border: "1px solid #E6ECE9", borderRadius: 1.5 }}>
                   <Typography sx={{ mb: 0.8, fontSize: 12, fontWeight: 750, color: "#334155" }}>
@@ -123,7 +182,6 @@ export default function LabRequestSidebar(props) {
                 <DetailSection
                   title="Patient information"
                   rows={[
-                    ["Patient", selectedRequest.patient_name || selectedRequest.patient_id],
                     ["Age", selectedRequest.patient_age || selectedRequest.age],
                     ["Gender", selectedRequest.patient_gender || selectedRequest.gender],
                     ["Phone", selectedRequest.patient_phone || selectedRequest.phone || selectedRequest.mobile],
@@ -134,17 +192,13 @@ export default function LabRequestSidebar(props) {
                 <DetailSection
                   title="Doctor & request"
                   rows={[
-                    ["Doctor", selectedRequest.doctor_name || selectedRequest.referring_doctor_name || selectedRequest.created_by_name],
-                    ["Created by", `${getCreatorRole(selectedRequest.created_by_role_id)} · ${selectedRequest.created_by_name || "-"}`],
-                    ["Order ID", selectedRequest.order_id || selectedRequest.orderId || selectedRequest.id],
+
                     ["Created", selectedRequest.created_at || selectedRequest.createdAt],
                   ]}
                 />
                 <DetailSection
                   title="Tests & sample"
                   rows={[
-                    ["Tests", selectedRequest.requested_tests],
-                    ["Sample type", selectedRequest.sample_type || selectedRequest.sampleType],
                     ["Doctor note", selectedRequest.doctor_note || selectedRequest.doctorNote],
                   ]}
                 />
@@ -247,23 +301,40 @@ export default function LabRequestSidebar(props) {
       <Typography sx={{ mb: 0.4, fontSize: 10.5, color: "#74807B" }}>
         Report due date and time
       </Typography>
-
-      <Stack direction="row" alignItems="center" spacing={1}>
+      <Stack direction="row" alignItems="center" spacing={0.75}>
+        <SidebarIconAction
+          label="Choose report due date and time"
+          disabled={selectedUpdating || selectedCancelled}
+          disabledReason={
+            selectedCancelled
+              ? "Cancelled requests cannot be rescheduled."
+              : "The report due date is currently being updated."
+          }
+          icon={<CalendarMonthOutlinedIcon fontSize="small" />}
+          onClick={openReportDatePicker}
+        />
+        <SidebarIconAction
+          label="Edit report due date and time"
+          disabled={selectedUpdating || selectedCancelled}
+          disabledReason={
+            selectedCancelled
+              ? "Cancelled requests cannot be rescheduled."
+              : "The report due date is currently being updated."
+          }
+          icon={<EditOutlinedIcon fontSize="small" />}
+          onClick={openReportDatePicker}
+        />
         <TextField
+          inputRef={reportDateInputRef}
           size="small"
-          fullWidth
           type="datetime-local"
           value={selectedReportDateDraft}
-          onChange={(event) =>
+          onChange={(event) => {
+            const nextValue = event.target.value || "";
             setDateDrafts((current) => ({
               ...current,
-              [selectedRequest.id]: event.target.value || "",
-            }))
-          }
-          onBlur={() => {
-            const nextValue =
-              dateDrafts[selectedRequest.id] ?? selectedReportDate;
-
+              [selectedRequest.id]: nextValue,
+            }));
             if (
               isCompleteDateTimeValue(nextValue) &&
               nextValue !== selectedReportDate
@@ -272,15 +343,13 @@ export default function LabRequestSidebar(props) {
             }
           }}
           disabled={selectedUpdating || selectedCancelled}
-          InputLabelProps={{ shrink: true }}
           sx={{
-            minWidth: 0,
-            "& .MuiInputBase-root": {
-              minHeight: 42,
-            },
-            "& .MuiInputBase-input": {
-              fontSize: 12,
-            },
+            position: "absolute",
+            width: "1px",
+            height: "1px",
+            opacity: 0,
+            pointerEvents: "none",
+            overflow: "hidden",
           }}
         />
 
@@ -290,7 +359,19 @@ export default function LabRequestSidebar(props) {
       </Stack>
     </Box>
 
-    <Button
+    <Tooltip
+      title={
+        selectedCancelled
+          ? "Collection details cannot be changed for cancelled requests."
+          : isCompleted(selectedRequest)
+            ? "Collection details cannot be changed after a request is completed."
+            : ""
+      }
+      arrow
+      placement="top"
+    >
+      <span style={{ display: "flex" }}>
+        <Button
   fullWidth
   size="small"
   variant="outlined"
@@ -318,6 +399,8 @@ export default function LabRequestSidebar(props) {
 >
   Edit collection slot &amp; instructions
 </Button>
+      </span>
+    </Tooltip>
   </Stack>
 </Box>
 <Box sx={{ p: 1.25, border: "1px solid #E6ECE9", borderRadius: 1.5 }}>
@@ -337,37 +420,26 @@ export default function LabRequestSidebar(props) {
     {hasInvoice(selectedRequest) ? "Invoice available" : "No invoice created"}
   </Typography>
 
-  <Stack spacing={0.75}>
-    <Button
-      fullWidth
-      size="small"
-      variant="outlined"
+  <Stack direction="row" spacing={0.75} flexWrap="wrap">
+    <SidebarIconAction
+      label="Create invoice"
       disabled={
         !canCreateInvoice(selectedRequest) ||
         isCompleted(selectedRequest) ||
         hasInvoice(selectedRequest)
       }
+      disabledReason={
+        hasInvoice(selectedRequest)
+          ? "An invoice already exists for this request."
+          : isCompleted(selectedRequest)
+            ? "Completed requests cannot have a new invoice created."
+            : "An invoice can only be created for eligible requests."
+      }
+      icon={<AddCardOutlinedIcon fontSize="small" />}
       onClick={() => openInvoice(selectedRequest)}
-      sx={{
-        height: 36,
-        minHeight: 36,
-        maxHeight: 36,
-        px: 1.25,
-        py: 0,
-        justifyContent: "flex-start",
-        fontSize: "12px !important",
-        lineHeight: "18px",
-        whiteSpace: "nowrap",
-        textTransform: "none",
-      }}
-    >
-      Create invoice
-    </Button>
-
-    <Button
-      fullWidth
-      size="small"
-      variant="outlined"
+    />
+    <SidebarIconAction
+      label="View invoice"
       disabled={
         !getInvoicePdfUrl({
           ...selectedRequest,
@@ -377,48 +449,25 @@ export default function LabRequestSidebar(props) {
             selectedRequest.invoice_pdf_url,
         })
       }
+      disabledReason="No invoice PDF is available to view."
+      icon={<VisibilityOutlinedIcon fontSize="small" />}
       onClick={() => openInvoicePdf(selectedRequest)}
-      sx={{
-        height: 36,
-        minHeight: 36,
-        maxHeight: 36,
-        px: 1.25,
-        py: 0,
-        justifyContent: "flex-start",
-        fontSize: "12px !important",
-        lineHeight: "18px",
-        whiteSpace: "nowrap",
-        textTransform: "none",
-      }}
-    >
-      View invoice
-    </Button>
-
-    <Button
-      fullWidth
-      size="small"
+    />
+    <SidebarIconAction
+      label="Delete invoice"
       color="error"
-      variant="outlined"
       disabled={!hasInvoice(selectedRequest) || isCompleted(selectedRequest)}
+      disabledReason={
+        isCompleted(selectedRequest)
+          ? "Invoices cannot be deleted after a request is completed."
+          : "There is no invoice to delete."
+      }
+      icon={<DeleteOutlineIcon fontSize="small" />}
       onClick={() => {
         setInvoiceDeleteError("");
         setInvoiceDeleteRequest(selectedRequest);
       }}
-      sx={{
-        height: 36,
-        minHeight: 36,
-        maxHeight: 36,
-        px: 1.25,
-        py: 0,
-        justifyContent: "flex-start",
-        fontSize: "12px !important",
-        lineHeight: "18px",
-        whiteSpace: "nowrap",
-        textTransform: "none",
-      }}
-    >
-      Delete invoice
-    </Button>
+    />
   </Stack>
 </Box>
 
@@ -444,98 +493,47 @@ export default function LabRequestSidebar(props) {
       (detailReport ? "Report available" : "No report uploaded")}
   </Typography>
 
-  <Stack spacing={0.75}>
-    <Button
-      fullWidth
-      size="small"
-      variant="outlined"
+  <Stack direction="row" spacing={0.75} flexWrap="wrap">
+    <SidebarIconAction
+      label="Create report"
       disabled={!canCreateReport(selectedRequest)}
+      disabledReason="A report can only be created when the request is report-ready."
+      icon={<NoteAddOutlinedIcon fontSize="small" />}
       onClick={() => onCreateReport?.(selectedRequest)}
-      sx={{
-        height: 36,
-        minHeight: 36,
-        maxHeight: 36,
-        px: 1.25,
-        py: 0,
-        justifyContent: "flex-start",
-        fontSize: "12px !important",
-        lineHeight: "18px",
-        whiteSpace: "nowrap",
-        textTransform: "none",
-      }}
-    >
-      Create report
-    </Button>
-
-    <Button
-      fullWidth
-      size="small"
-      variant="outlined"
+    />
+    <SidebarIconAction
+      label="Upload report"
       disabled={selectedCancelled || isCompleted(selectedRequest)}
+      disabledReason={
+        selectedCancelled
+          ? "Reports cannot be uploaded for cancelled requests."
+          : "Reports cannot be uploaded after a request is completed."
+      }
+      icon={<UploadFileOutlinedIcon fontSize="small" />}
       onClick={() => openUpload(selectedRequest)}
-      sx={{
-        height: 36,
-        minHeight: 36,
-        maxHeight: 36,
-        px: 1.25,
-        py: 0,
-        justifyContent: "flex-start",
-        fontSize: "12px !important",
-        lineHeight: "18px",
-        whiteSpace: "nowrap",
-        textTransform: "none",
-      }}
-    >
-      Upload report
-    </Button>
-
-    <Button
-      fullWidth
-      size="small"
-      variant="outlined"
+    />
+    <SidebarIconAction
+      label="View uploaded report"
       component="a"
-      href={detailReport?.downloadUrl || undefined}
+      href={reportDownloadUrl || undefined}
       target="_blank"
       rel="noreferrer"
-      disabled={!detailReport?.downloadUrl}
-      sx={{
-        height: 36,
-        minHeight: 36,
-        maxHeight: 36,
-        px: 1.25,
-        py: 0,
-        justifyContent: "flex-start",
-        fontSize: "12px !important",
-        lineHeight: "18px",
-        whiteSpace: "nowrap",
-        textTransform: "none",
-      }}
-    >
-      View uploaded report
-    </Button>
-
-    <Button
-      fullWidth
-      size="small"
+      disabled={!reportDownloadUrl}
+      disabledReason="No uploaded report is available to view."
+      icon={<VisibilityOutlinedIcon fontSize="small" />}
+    />
+    <SidebarIconAction
+      label="Delete report"
       color="error"
-      variant="outlined"
       disabled={!detailReport?.canDelete || isCompleted(selectedRequest)}
+      disabledReason={
+        isCompleted(selectedRequest)
+          ? "Reports cannot be deleted after a request is completed."
+          : "There is no deletable report for this request."
+      }
+      icon={<DeleteOutlineIcon fontSize="small" />}
       onClick={() => openDeleteConfirmation(selectedRequest)}
-      sx={{
-        height: 36,
-        minHeight: 36,
-        maxHeight: 36,
-        px: 1.25,
-        py: 0,
-        justifyContent: "flex-start",
-        fontSize: "12px !important",
-        lineHeight: "18px",
-        whiteSpace: "nowrap",
-        textTransform: "none",
-      }}
-    >
-      Delete report
-    </Button>
+    />
   </Stack>
 </Box>
 

@@ -832,7 +832,7 @@ const selectedCancelled =
     <Box
       sx={{
         width: "100%",
-        height: "85vh",
+        height: "70vh",
         minWidth: 0,
 
         "& .MuiTypography-root": { overflowWrap: "anywhere" },

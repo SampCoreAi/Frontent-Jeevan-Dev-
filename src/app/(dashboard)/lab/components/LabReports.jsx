@@ -17,36 +17,7 @@ import {
   Typography,
 } from "@mui/material";
 import { DataTable, TableFilters } from "./LabUi";
-
-const resolveReportDownloadUrl = (value) => {
-  if (typeof value !== "string" || !value.trim()) return "";
-
-  const bucketUrl = process.env.NEXT_PUBLIC_S3_BUCKET_URL;
-  const isLocalHost = (hostname) =>
-    ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(
-      hostname.toLowerCase(),
-    );
-
-  try {
-    const sourceUrl = new URL(value);
-    if (!isLocalHost(sourceUrl.hostname) || !bucketUrl) {
-      return sourceUrl.toString();
-    }
-
-    return new URL(
-      `${sourceUrl.pathname}${sourceUrl.search}${sourceUrl.hash}`,
-      `${bucketUrl.replace(/\/+$/, "")}/`,
-    ).toString();
-  } catch {
-    if (!bucketUrl) return value;
-
-    try {
-      return new URL(value, `${bucketUrl.replace(/\/+$/, "")}/`).toString();
-    } catch {
-      return value;
-    }
-  }
-};
+import { resolveReportDownloadUrl } from "../utils/reportUrls";
 
 export default function LabReports({
   reports = [],

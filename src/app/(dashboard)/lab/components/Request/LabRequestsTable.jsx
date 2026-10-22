@@ -124,17 +124,16 @@ export default function LabRequestsTable({
         />
       </Box>
 
-      <Box
-        sx={{
-          border: "1px solid #DDE7E3",
-
-          borderRadius: 1.5,
-
-          minWidth: 0,
-
-          bgcolor: "#fff",
-        }}
-      >
+     <Box
+  sx={{
+    border: "1px solid #DDE7E3",
+    borderRadius: 1.5,
+    minWidth: 0,
+    bgcolor: "#fff",
+    maxHeight: "60vh",
+    overflowY: "auto",
+  }}
+>
         <Table
           size="small"
           aria-label="Test requests"
@@ -143,19 +142,17 @@ export default function LabRequestsTable({
 
             tableLayout: "fixed",
 
-            "& th": {
-              bgcolor: "#edf7f2",
-
-              fontSize: 11,
-
-              height: "40px",
-
-              fontWeight: 700,
-
-              color: "#64748B",
-
-              py: 1,
-            },
+           "& th": {
+  position: "sticky",
+  top: 0,
+  zIndex: 1,
+  bgcolor: "#edf7f2",
+  fontSize: 11,
+  height: "32px",
+  fontWeight: 700,
+  color: "#64748B",
+  py: 0.5,
+},
 
             "& td": {
               verticalAlign: "top",
@@ -419,49 +416,7 @@ export default function LabRequestsTable({
                           )}
                         </RequestField>
 
-                        {request.collection_token || request.collectionToken ? (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.75,
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <Typography
-                              sx={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                color: "#74807B",
-                              }}
-                            >
-                              Token
-                            </Typography>
-
-                            <Chip
-                              size="small"
-                              label={
-                                request.collection_token ||
-                                request.collectionToken
-                              }
-                              sx={{
-                                height: 22,
-
-                                borderRadius: "6px",
-
-                                bgcolor: "#edf7f2",
-
-                                color: "#1e6658",
-
-                                fontSize: 11,
-
-                                fontWeight: 700,
-
-                                "& .MuiChip-label": { px: 1 },
-                              }}
-                            />
-                          </Box>
-                        ) : null}
+                     
                       </Stack>
                     </TableCell>
 
@@ -508,19 +463,19 @@ export default function LabRequestsTable({
       </Box>
 
       <Box sx={{ mt: 1.5 }}>
-        {safeRequests.length > 0 ? (
+        {totalPages > 0 ? (
           <Stack
             direction={{ xs: "column", sm: "row" }}
             justifyContent="space-between"
             alignItems="center"
             gap={1.5}
-            sx={{
-              width: "100%",
-
-              px: { xs: 0.5, sm: 1 },
-
-              py: 0.5,
-            }}
+           sx={{
+  width: "100%",
+  px: { xs: 1, sm: 1.5 },
+  py: 1,
+  bgcolor: "#edf7f2",
+  borderRadius: 1,
+}}
           >
             <Typography
               sx={{
@@ -539,30 +494,25 @@ export default function LabRequestsTable({
               </Box>
             </Typography>
 
-            <Pagination
-              count={totalPages}
-              page={Math.min(currentPage, totalPages) - 1}
-              onChange={(_, value) => onPageChange?.(value + 1)}
-              size="small"
-              color="primary"
-              siblingCount={isMobile ? 0 : 1}
-              boundaryCount={1}
-              sx={{
-                "& .MuiPaginationItem-root": {
-                  minWidth: 30,
+         <Stack direction="row" spacing={1} alignItems="center">
+  <Button
+    disabled={currentPage <= 1}
+    onClick={() => onPageChange?.(currentPage - 1)}
+  >
+    Previous
+  </Button>
 
-                  height: 30,
+  <Typography>
+    {currentPage} / {totalPages}
+  </Typography>
 
-                  borderRadius: "6px",
-
-                  fontSize: "11.5px",
-                },
-
-                "& .Mui-selected": {
-                  fontWeight: 700,
-                },
-              }}
-            />
+  <Button
+    disabled={currentPage >= totalPages}
+    onClick={() => onPageChange?.(currentPage + 1)}
+  >
+    Next
+  </Button>
+</Stack>
           </Stack>
         ) : null}
       </Box>
