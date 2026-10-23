@@ -398,7 +398,12 @@ export default function MedicalPanel({ section = "dashboard" }) {
 
       case "profile":
         return (
-          <MedicalProfile profile={profile} />
+          <MedicalProfile
+            profile={profile}
+            onProfileUpdate={(updatedProfile) =>
+              setProfile((current) => ({ ...current, ...updatedProfile }))
+            }
+          />
         );
 
       default:

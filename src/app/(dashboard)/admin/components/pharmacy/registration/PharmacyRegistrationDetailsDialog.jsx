@@ -163,7 +163,40 @@ export default function PharmacyRegistrationDetailsDialog({
       value !== undefined &&
       value !== ""
   );
+const handleReject = async () => {
+  if (!registration?.id || busyAction) return;
 
+  try {
+    setBusyAction("reject");
+    setError("");
+
+    const token = localStorage.getItem("token");
+
+    const response = await axios.patch(
+      `${API_BASE_URL}/api/pharmacy-registration/admin/${registration.id}/reject`,
+      { notes: rejectNotes.trim() },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.data?.success) {
+      throw new Error(response.data?.message || "Rejection failed");
+    }
+
+    setRejectOpen(false);
+    await onActionSuccess?.("rejected");
+    onClose();
+  } catch (err) {
+    setError(
+      err.response?.data?.message || err.message || "Rejection failed"
+    );
+  } finally {
+    setBusyAction("");
+  }
+};
   const handleAssign = async () => {
     if (!registration || busyAction) return;
 
@@ -415,19 +448,19 @@ export default function PharmacyRegistrationDetailsDialog({
           >
             Close
           </Button>
-          <Button
-            variant="outlined"
-            color="error"
-            onClick={() => {
-              setError("");
-              setRejectNotes("");
-              setRejectOpen(true);
-            }}
-            disabled={!registration || Boolean(busyAction)}
-            sx={{ textTransform: "none" }}
-          >
-            Reject
-          </Button>
+         <Button
+  variant="outlined"
+  color="error"
+  onClick={() => {
+    setError("");
+    setRejectNotes("");
+    setRejectOpen(true);
+  }}
+  disabled={!registration || Boolean(busyAction)}
+  sx={{ textTransform: "none" }}
+>
+  Reject
+</Button>
           <Button
             variant="contained"
             onClick={handleAssign}
@@ -479,10 +512,7 @@ export default function PharmacyRegistrationDetailsDialog({
             color="error"
             variant="contained"
             disabled={!rejectNotes.trim()}
-            onClick={() => {
-              setRejectOpen(false);
-              onClose();
-            }}
+onClick={handleReject}
             sx={{ textTransform: "none" }}
           >
             Reject Registration

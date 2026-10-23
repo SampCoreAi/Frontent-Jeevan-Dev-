@@ -19,19 +19,20 @@ const cards = [
   ["Urgent", "urgent", "Urgent test requests", Siren],
 ];
 
-export default function LabDashboard({ profile, dashboardCounts = {} }) {
+export default function LabDashboard({ profile, dashboardCounts = {}, api, onNavigate }) {
   const registration = profile?.registration || {};
   const registrationData = registration?.registration_data || {};
   const labInfo = registrationData?.labInformation || {};
 
-  const labName =
-    labInfo.labName ||
-    labInfo.lab_name ||
-    labInfo.name ||
-    profile?.labName ||
-    profile?.lab_name ||
-    "Your Lab";
-
+const labName =
+  labInfo.diagnosticLabName ||
+  labInfo.diagnosticCenterName ||
+  labInfo.diagnosticCentreName ||
+  labInfo.labName ||
+  labInfo.lab_name ||
+  labInfo.name ||
+  "Your Lab";
+  
   const labCode =
     labInfo.labCode ||
     labInfo.lab_code ||
@@ -246,7 +247,7 @@ export default function LabDashboard({ profile, dashboardCounts = {} }) {
         ))}
       </Box>
 
-      <TodayWork />
+     <TodayWork api={api} profile={profile} onAction={() => onNavigate?.("/lab/pages/requests")} />
     </Box>
   );
 }

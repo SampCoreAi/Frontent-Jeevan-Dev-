@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import {
   Alert,
   Box,
@@ -70,6 +71,7 @@ const INITIAL_DATA = {
 };
 
 export default function MedicalStoreOnboarding() {
+  const router = useRouter();
   const [activeStep, setActiveStep] = React.useState(1);
   const [loading, setLoading] = React.useState(false);
   const [data, setData] = React.useState(INITIAL_DATA);
@@ -115,10 +117,14 @@ const postEmailOtp = async (path, body) => {
 };
 
 const sendStoreEmailOtp = ({ email }) =>
-  postEmailOtp("send-email-otp", { registrationId, email });
+  postEmailOtp("send-email-otp", {  email });
+const sendSignatoryEmailOtp = ({ email }) =>
+  postEmailOtp("send-email-otp", { email });
 
+const verifySignatoryEmailOtp = ({ email, otp }) =>
+  postEmailOtp("verify-email-otp", { email, otp });
 const verifyStoreEmailOtp = ({ email, otp }) =>
-  postEmailOtp("verify-email-otp", { registrationId,  otp });
+  postEmailOtp("verify-email-otp", {  email, otp });
   const updateData = (newData) => {
     setData((prev) => ({
       ...prev,
@@ -513,6 +519,7 @@ const verifyStoreEmailOtp = ({ email, otp }) =>
 
     setData((prev) => ({ ...prev, onboardingStatus: "SUBMITTED" }));
     showSnackbar("Medical store registration submitted successfully.", "success");
+    router.push("/");
   } catch (error) {
     showSnackbar(error.message || "Registration submit nahi hua.", "error");
   } finally {
@@ -681,6 +688,8 @@ const verifyStoreEmailOtp = ({ email, otp }) =>
                   loading={loading}
                   onSendOtp={sendStoreEmailOtp}
                   onVerifyOtp={verifyStoreEmailOtp}
+                  onSendSignatoryEmailOtp={sendSignatoryEmailOtp}
+onVerifySignatoryEmailOtp={verifySignatoryEmailOtp}
                 />
               )}
             </Grid>

@@ -35,6 +35,25 @@ const colors = {
   hover: "#F8FBFA",
 };
 
+const formatProfileValue = (value) => {
+  if (!value) return "-";
+
+  if (typeof value === "object") {
+    return [
+      value.shopUnit,
+      value.street,
+      value.area,
+      value.cityDistrict,
+      value.state,
+      value.pinCode,
+    ]
+      .filter(Boolean)
+      .join(", ") || "-";
+  }
+
+  return value;
+};
+
 export function SectionTitle({ title, description, action }) {
   return (
     <Box
@@ -526,7 +545,7 @@ export function WorkspaceDashboard({
                     mt: 0.35,
                   }}
                 >
-                  {value || "-"}
+                {formatProfileValue(value)}
                 </Typography>
               </Box>
             ))}

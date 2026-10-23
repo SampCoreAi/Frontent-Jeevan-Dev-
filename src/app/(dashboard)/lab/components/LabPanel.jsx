@@ -13,7 +13,8 @@ import LabTechnicians from "./LabTechnicians";
 import { createLabWalkInTestRequest } from "../services/labRequestApi";
 
 const getRows = (response) => response.data?.data || [];
-const getErrorMessage = (error, fallback) => error.response?.data?.message || error.message || fallback;
+const getErrorMessage = (error, fallback) =>
+  error.response?.data?.message || error.message || fallback;
 
 export default function LabPanel({ section = "dashboard" }) {
   const router = useRouter();
@@ -29,17 +30,24 @@ export default function LabPanel({ section = "dashboard" }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [dashboardCounts, setDashboardCounts] = useState({
-  processing: 0,
-  homeCollection: 0,
-  overdue: 0,
-  urgent: 0,
-});
-const loadDashboardCounts = async () => {
-  const response = await api.get("/api/lab-requests/dashboard-counts");
-  setDashboardCounts(response.data?.data || {});
-};
-  const [requestUpdateFeedback, setRequestUpdateFeedback] = useState({ type: "", message: "" });
-  const [tableFilters, setTableFilters] = useState({ search: "", status: "", date: "" });
+    processing: 0,
+    homeCollection: 0,
+    overdue: 0,
+    urgent: 0,
+  });
+  const loadDashboardCounts = async () => {
+    const response = await api.get("/api/lab-requests/dashboard-counts");
+    setDashboardCounts(response.data?.data || {});
+  };
+  const [requestUpdateFeedback, setRequestUpdateFeedback] = useState({
+    type: "",
+    message: "",
+  });
+  const [tableFilters, setTableFilters] = useState({
+    search: "",
+    status: "",
+    date: "",
+  });
   const [showDelayedOnly, setShowDelayedOnly] = useState(false);
   const [tablePage, setTablePage] = useState(1);
   const [requestPagination, setRequestPagination] = useState(null);
@@ -49,22 +57,27 @@ const loadDashboardCounts = async () => {
   const loadProfile = async () => {
     const response = await api.get("/api/labs/getLabProfile");
     let loggedInUser = {};
+console.log("Lab information:", response.data?.data?.registration?.registration_data?.labInformation.diagnosticLabName);
     try {
       loggedInUser = JSON.parse(localStorage.getItem("user") || "{}");
     } catch {
       loggedInUser = {};
     }
-   setProfile({
-  ...(response.data?.data || {}),
-  id: response.data?.data?.registration?.id,
-  full_name: loggedInUser.full_name,
-  email: loggedInUser.email,
-});
+    setProfile({
+      ...(response.data?.data || {}),
+      id: response.data?.data?.registration?.id,
+      full_name: loggedInUser.full_name,
+      email: loggedInUser.email,
+    });
   };
 
   const loadConnections = async () => {
     const response = await api.get("/api/labs/connections", {
-      params: { search: tableFilters.search || undefined, status: tableFilters.status || undefined, date: tableFilters.date || undefined },
+      params: {
+        search: tableFilters.search || undefined,
+        status: tableFilters.status || undefined,
+        date: tableFilters.date || undefined,
+      },
     });
     setConnections(getRows(response));
   };
@@ -98,222 +111,186 @@ const loadDashboardCounts = async () => {
     setReportPagination(response.data?.pagination || null);
   };
 
- const loadTechnicians = async () => {
-  const response = await api.get("/api/lab-technicians");
+  const loadTechnicians = async () => {
+    const response = await api.get("/api/lab-technicians");
 
-  console.log("Technician API response:", JSON.stringify(response.data, null, 2));
+    console.log(
+      "Technician API response:",
+      JSON.stringify(response.data, null, 2),
+    );
 
-  setTechnicians(getRows(response));
-};
-const setTechnicianStatus = async (id, status) => {
-  try {
-    setActionId(id);
-    await api.patch(`/api/doctors/doctors/${id}/status`, { status });
+    setTechnicians(getRows(response));
+  };
+  const setTechnicianStatus = async (id, status) => {
+    try {
+      setActionId(id);
+      await api.patch(`/api/doctors/doctors/${id}/status`, { status });
 
-   setTechnicians((items) =>
-  items.map((item) =>
-    String(item.user_id) === String(id) ? { ...item, status } : item
-  )
-);
-    setNotice(`Technician ${status.toLowerCase()}.`);
-  } catch (error) {
-    setError(getErrorMessage(error, "Unable to update technician status."));
-  } finally {
-    setActionId(null);
-  }
-};
+      setTechnicians((items) =>
+        items.map((item) =>
+          String(item.user_id) === String(id) ? { ...item, status } : item,
+        ),
+      );
+      setNotice(`Technician ${status.toLowerCase()}.`);
+    } catch (error) {
+      setError(getErrorMessage(error, "Unable to update technician status."));
+    } finally {
+      setActionId(null);
+    }
+  };
   const handleProfileUpdate = (updatedProfile) => {
     setProfile((current) => ({
       ...(current || {}),
       ...(updatedProfile || {}),
-      weekly_hours: updatedProfile?.weekly_hours ?? updatedProfile?.weeklyHours ?? current?.weekly_hours ?? {},
-      slot_duration_minutes: updatedProfile?.slot_duration_minutes ?? updatedProfile?.slotDurationMinutes ?? current?.slot_duration_minutes ?? 30,
+      weekly_hours:
+        updatedProfile?.weekly_hours ??
+        updatedProfile?.weeklyHours ??
+        current?.weekly_hours ??
+        {},
+      slot_duration_minutes:
+        updatedProfile?.slot_duration_minutes ??
+        updatedProfile?.slotDurationMinutes ??
+        current?.slot_duration_minutes ??
+        30,
     }));
   };
-// ==========================================
-// LOAD STATIC SECTION DATA
-// ==========================================
+  // ==========================================
+  // LOAD STATIC SECTION DATA
+  // ==========================================
 
-useEffect(() => {
-  const loadInitialData = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-      if (section === "connections") {
-        await Promise.all([
-          loadProfile(),
-          loadConnections(),
-        ]);
+        if (section === "connections") {
+          await Promise.all([loadProfile(), loadConnections()]);
+        } else if (section === "technicians") {
+          await Promise.all([loadProfile(), loadTechnicians()]);
+        } else if (section === "requests") {
+          await Promise.all([loadProfile(), loadTechnicians(), loadReports()]);
+        } else if (section === "reports") {
+          await loadProfile();
+        } else if (section === "profile") {
+          await loadProfile();
+        } else {
+          await Promise.all([
+            loadProfile(),
+            loadConnections(),
+            loadRequests(),
+            loadReports(),
+            loadDashboardCounts(),
+          ]);
+        }
+      } catch (requestError) {
+        setError(getErrorMessage(requestError, "Unable to load lab data."));
+      } finally {
+        setLoading(false);
       }
+    };
 
-      else if (section === "technicians") {
-        await Promise.all([
-          loadProfile(),
-          loadTechnicians(),
-        ]);
+    loadInitialData();
+  }, [section]);
+
+  // ==========================================
+  // REQUESTS FILTER / PAGINATION
+  // ==========================================
+
+  useEffect(() => {
+    if (section !== "requests") return;
+
+    const fetchRequests = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        await loadRequests();
+      } catch (requestError) {
+        setError(
+          getErrorMessage(requestError, "Unable to load test requests."),
+        );
+      } finally {
+        setLoading(false);
       }
+    };
 
-      else if (section === "requests") {
-        await Promise.all([
-          loadProfile(),
-          loadTechnicians(),
-          loadReports(),
-        ]);
+    fetchRequests();
+  }, [
+    section,
+    tableFilters.search,
+    tableFilters.status,
+    tableFilters.date,
+    showDelayedOnly,
+    tablePage,
+  ]);
+
+  // ==========================================
+  // REPORTS FILTER / PAGINATION
+  // ==========================================
+
+  useEffect(() => {
+    if (section !== "reports") return;
+
+    const fetchReports = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        await loadReports();
+      } catch (requestError) {
+        setError(getErrorMessage(requestError, "Unable to load lab reports."));
+      } finally {
+        setLoading(false);
       }
+    };
 
-      else if (section === "reports") {
-        await loadProfile();
+    fetchReports();
+  }, [section, tableFilters.search, tableFilters.date, tablePage]);
+
+  // ==========================================
+  // CONNECTIONS FILTER
+  // ==========================================
+
+  useEffect(() => {
+    if (section !== "connections") return;
+
+    const fetchConnections = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        await loadConnections();
+      } catch (requestError) {
+        setError(getErrorMessage(requestError, "Unable to load connections."));
+      } finally {
+        setLoading(false);
       }
+    };
 
-      else if (section === "profile") {
-        await loadProfile();
-      }
-
-      else {
-       await Promise.all([
-  loadProfile(),
-  loadConnections(),
-  loadRequests(),
-  loadReports(),
-  loadDashboardCounts(),
-]);
-      }
-
-    } catch (requestError) {
-      setError(
-        getErrorMessage(
-          requestError,
-          "Unable to load lab data."
-        )
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  loadInitialData();
-}, [section]);
-
-
-// ==========================================
-// REQUESTS FILTER / PAGINATION
-// ==========================================
-
-useEffect(() => {
-  if (section !== "requests") return;
-
-  const fetchRequests = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      await loadRequests();
-
-    } catch (requestError) {
-      setError(
-        getErrorMessage(
-          requestError,
-          "Unable to load test requests."
-        )
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchRequests();
-
-}, [
-  section,
-  tableFilters.search,
-  tableFilters.status,
-  tableFilters.date,
-  showDelayedOnly,
-  tablePage,
-]);
-
-
-// ==========================================
-// REPORTS FILTER / PAGINATION
-// ==========================================
-
-useEffect(() => {
-  if (section !== "reports") return;
-
-  const fetchReports = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      await loadReports();
-
-    } catch (requestError) {
-      setError(
-        getErrorMessage(
-          requestError,
-          "Unable to load lab reports."
-        )
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchReports();
-
-}, [
-  section,
-  tableFilters.search,
-  tableFilters.date,
-  tablePage,
-]);
-
-
-// ==========================================
-// CONNECTIONS FILTER
-// ==========================================
-
-useEffect(() => {
-  if (section !== "connections") return;
-
-  const fetchConnections = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      await loadConnections();
-
-    } catch (requestError) {
-      setError(
-        getErrorMessage(
-          requestError,
-          "Unable to load connections."
-        )
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchConnections();
-
-}, [
-  section,
-  tableFilters.search,
-  tableFilters.status,
-  tableFilters.date,
-  tablePage,
-]);
- 
+    fetchConnections();
+  }, [
+    section,
+    tableFilters.search,
+    tableFilters.status,
+    tableFilters.date,
+    tablePage,
+  ]);
 
   useEffect(() => {
     setTablePage(1);
-  }, [section, tableFilters.date, tableFilters.search, tableFilters.status, showDelayedOnly]);
+  }, [
+    section,
+    tableFilters.date,
+    tableFilters.search,
+    tableFilters.status,
+    showDelayedOnly,
+  ]);
 
   const isDelayedUploadPending = (request) => {
     const status = String(request?.status || "").toUpperCase();
-    if (["REPORT_READY", "REPORT_UPLOADED", "COMPLETED"].includes(status)) return false;
+    if (["REPORT_READY", "REPORT_UPLOADED", "COMPLETED"].includes(status))
+      return false;
 
     const rawDate = request?.expected_report_at || request?.expectedReportAt;
     if (!rawDate) return false;
@@ -326,15 +303,19 @@ useEffect(() => {
 
   const delayedUploadCount = useMemo(
     () => requests.filter(isDelayedUploadPending).length,
-    [requests]
+    [requests],
   );
 
-  const stats = useMemo(() => ({
-    connections: connections.length,
-    requests: requests.length,
-    pending: requests.filter((request) => request.status === "PENDING").length,
-    reports: reports.length,
-  }), [connections, requests, reports]);
+  const stats = useMemo(
+    () => ({
+      connections: connections.length,
+      requests: requests.length,
+      pending: requests.filter((request) => request.status === "PENDING")
+        .length,
+      reports: reports.length,
+    }),
+    [connections, requests, reports],
+  );
 
   const handleFilter = (field) => (value) => {
     setTableFilters((current) => ({ ...current, [field]: value }));
@@ -345,11 +326,14 @@ useEffect(() => {
       setActionId(connectionId);
       setActionField("status");
       await api.patch(`/api/labs/connections/${connectionId}/status`, {
-         status,
-  ...(status === "REJECTED" && {
-  }),
+        status,
+        ...(status === "REJECTED" && {}),
       });
-      setConnections((items) => items.map((item) => item.connection_id === connectionId ? { ...item, status } : item));
+      setConnections((items) =>
+        items.map((item) =>
+          item.connection_id === connectionId ? { ...item, status } : item,
+        ),
+      );
       setNotice(`Connection ${status.toLowerCase()}.`);
       return true;
     } catch (requestError) {
@@ -361,18 +345,45 @@ useEffect(() => {
     }
   };
 
-  const updateRequest = async (requestId, status, expectedReportAt = null, note = null) => {
+  const updateRequest = async (
+    requestId,
+    status,
+    expectedReportAt = null,
+    note = null,
+  ) => {
     try {
       setActionId(requestId);
       setActionField("status");
-      setRequestUpdateFeedback({ type: "info", message: status === "REJECTED" || status === "CANCELLED" ? "Submitting rejection reason..." : "Updating report delivery time..." });
-      await api.patch(`/api/lab-requests/${requestId}/status`, { status, expectedReportAt: expectedReportAt || null, note: note || null });
+      setRequestUpdateFeedback({
+        type: "info",
+        message:
+          status === "REJECTED" || status === "CANCELLED"
+            ? "Submitting rejection reason..."
+            : "Updating report delivery time...",
+      });
+      await api.patch(`/api/lab-requests/${requestId}/status`, {
+        status,
+        expectedReportAt: expectedReportAt || null,
+        note: note || null,
+      });
       await loadRequests();
-      setRequestUpdateFeedback({ type: "success", message: status === "REJECTED" || status === "CANCELLED" ? "Reason submitted successfully." : "Report delivery time updated successfully." });
+      setRequestUpdateFeedback({
+        type: "success",
+        message:
+          status === "REJECTED" || status === "CANCELLED"
+            ? "Reason submitted successfully."
+            : "Report delivery time updated successfully.",
+      });
       setNotice("Test request status updated.");
     } catch (requestError) {
-      const message = getErrorMessage(requestError, "Unable to update request.");
-      setRequestUpdateFeedback({ type: "error", message: `Update failed: ${message}` });
+      const message = getErrorMessage(
+        requestError,
+        "Unable to update request.",
+      );
+      setRequestUpdateFeedback({
+        type: "error",
+        message: `Update failed: ${message}`,
+      });
       setError(message);
     } finally {
       setActionId(null);
@@ -384,14 +395,29 @@ useEffect(() => {
     try {
       setActionId(requestId);
       setActionField("reportDate");
-      await api.patch(`/api/lab-requests/${requestId}/report-date`, { expectedReportAt });
-      setRequests((items) => items.map((item) => (
-        item.id === requestId ? { ...item, expected_report_at: expectedReportAt } : item
-      )));
-      setRequestUpdateFeedback({ type: "success", message: "Report delivery time updated successfully." });
+      await api.patch(`/api/lab-requests/${requestId}/report-date`, {
+        expectedReportAt,
+      });
+      setRequests((items) =>
+        items.map((item) =>
+          item.id === requestId
+            ? { ...item, expected_report_at: expectedReportAt }
+            : item,
+        ),
+      );
+      setRequestUpdateFeedback({
+        type: "success",
+        message: "Report delivery time updated successfully.",
+      });
     } catch (requestError) {
-      const message = getErrorMessage(requestError, "Unable to update report delivery time.");
-      setRequestUpdateFeedback({ type: "error", message: `Update failed: ${message}` });
+      const message = getErrorMessage(
+        requestError,
+        "Unable to update report delivery time.",
+      );
+      setRequestUpdateFeedback({
+        type: "error",
+        message: `Update failed: ${message}`,
+      });
       setError(message);
     } finally {
       setActionId(null);
@@ -399,30 +425,50 @@ useEffect(() => {
     }
   };
 
-  const updateCollectionDetails = async (requestId, collectionDate, collectionInstructions) => {
+  const updateCollectionDetails = async (
+    requestId,
+    collectionDate,
+    collectionInstructions,
+  ) => {
     try {
       setActionId(requestId);
       setActionField("collection");
-      const response = await api.patch(`/api/lab-requests/${requestId}/collection-details`, {
-        collectionDate,
-        collectionInstructions: collectionInstructions?.trim() || null,
-      });
+      const response = await api.patch(
+        `/api/lab-requests/${requestId}/collection-details`,
+        {
+          collectionDate,
+          collectionInstructions: collectionInstructions?.trim() || null,
+        },
+      );
       const saved = response.data?.data || {};
-      setRequests((items) => items.map((item) => (
-        item.id === requestId
-          ? {
-              ...item,
-              collection_slot: saved.collectionSlot || item.collection_slot,
-              collection_instructions: saved.collectionInstructions || item.collection_instructions,
-              collection_token: saved.collectionToken || item.collection_token,
-            }
-          : item
-      )));
-      setRequestUpdateFeedback({ type: "success", message: `Collection details saved. Token ${saved.collectionToken}, time ${saved.collectionSlot}.` });
+      setRequests((items) =>
+        items.map((item) =>
+          item.id === requestId
+            ? {
+                ...item,
+                collection_slot: saved.collectionSlot || item.collection_slot,
+                collection_instructions:
+                  saved.collectionInstructions || item.collection_instructions,
+                collection_token:
+                  saved.collectionToken || item.collection_token,
+              }
+            : item,
+        ),
+      );
+      setRequestUpdateFeedback({
+        type: "success",
+        message: `Collection details saved. Token ${saved.collectionToken}, time ${saved.collectionSlot}.`,
+      });
       return true;
     } catch (requestError) {
-      const message = getErrorMessage(requestError, "Unable to update collection details.");
-      setRequestUpdateFeedback({ type: "error", message: `Update failed: ${message}` });
+      const message = getErrorMessage(
+        requestError,
+        "Unable to update collection details.",
+      );
+      setRequestUpdateFeedback({
+        type: "error",
+        message: `Update failed: ${message}`,
+      });
       setError(message);
       return false;
     } finally {
@@ -435,7 +481,9 @@ useEffect(() => {
     try {
       setActionId(requestId);
       setActionField("technician");
-      await api.patch(`/api/lab-technicians/${requestId}/assign`, { technicianEmail });
+      await api.patch(`/api/lab-technicians/${requestId}/assign`, {
+        technicianEmail,
+      });
       await loadRequests();
       setNotice("Technician assigned and task email sent.");
     } catch (requestError) {
@@ -455,12 +503,14 @@ useEffect(() => {
   const createLabRequest = async (requestDetails) => {
     try {
       if (!profile?.id) throw new Error("Lab profile is not loaded yet.");
-     const created = await createLabWalkInTestRequest({
-  ...requestDetails,
-  labId: Number(profile.id),
-});
+      const created = await createLabWalkInTestRequest({
+        ...requestDetails,
+        labId: Number(profile.id),
+      });
       await loadRequests();
-      setNotice(`${requestDetails.requestType === "INDEPENDENT" ? "Independent" : "Walk-in"} test request created. Request ID: ${created.orderId || created.order_id || created.requestId}.`);
+      setNotice(
+        `${requestDetails.requestType === "INDEPENDENT" ? "Independent" : "Walk-in"} test request created. Request ID: ${created.orderId || created.order_id || created.requestId}.`,
+      );
       return {
         success: true,
         patientId: created.patientId,
@@ -471,7 +521,13 @@ useEffect(() => {
       };
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to create test request."));
-      return { success: false, message: getErrorMessage(requestError, "Unable to create test request.") };
+      return {
+        success: false,
+        message: getErrorMessage(
+          requestError,
+          "Unable to create test request.",
+        ),
+      };
     }
   };
 
@@ -531,64 +587,105 @@ useEffect(() => {
     onDate: handleFilter("date"),
   };
 
-  const content = section === "connections" ? (
-    <LabConnections connections={connections} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} actionId={actionId} onStatusUpdate={updateConnection} />
-  ) : section === "requests" ? (
-    <LabRequests
-      reports={reports}
-      requests={requests}
-      loading={loading}
-      filters={filterProps}
-      page={tablePage}
-      pageSize={pageSize}
-      onPageChange={setTablePage}
-      pagination={requestPagination}
-      actionId={actionId}
-      actionField={actionField}
-      onStatusUpdate={updateRequest}
-      onReportDateUpdate={updateReportDate}
-      onCollectionDetailsUpdate={updateCollectionDetails}
-      uploading={uploading}
-      onUploadReport={uploadReport}
-      onDeleteReport={deleteReport}
-      updateFeedback={requestUpdateFeedback}
-      pendingUploadCount={delayedUploadCount}
-      showDelayedOnly={showDelayedOnly}
-      onToggleDelayedUpload={() => setShowDelayedOnly((value) => !value)}
-      technicians={technicians}
-      onAssignTechnician={assignTechnician}
-      onCreateRequest={createLabRequest}
-      lab={profile}
-      requestOnlyPatient
-      onCreateReport={(request) => router.push(`/lab/pages/requests/${request.id}/report`)}
-      onDeleteInvoice={deleteInvoice}
-    />
-  ) : section === "reports" ? (
-    <LabReports reports={reports} loading={loading} filters={filterProps} page={tablePage} pageSize={pageSize} onPageChange={setTablePage} pagination={reportPagination} />
-  ) : section === "profile" ? (
-    <LabProfile profile={profile} onProfileUpdate={handleProfileUpdate} />
-  ) : section === "technicians" ? (
-   <LabTechnicians
-  technicians={technicians}
-  loading={loading}
-  onCreate={createTechnician}
-  onStatusChange={setTechnicianStatus}
-  actionId={actionId}
-/>
-  ) : (
-   <LabDashboard
+  const content =
+    section === "connections" ? (
+      <LabConnections
+        connections={connections}
+        loading={loading}
+        filters={filterProps}
+        page={tablePage}
+        pageSize={pageSize}
+        onPageChange={setTablePage}
+        actionId={actionId}
+        onStatusUpdate={updateConnection}
+      />
+    ) : section === "requests" ? (
+      <LabRequests
+        reports={reports}
+        requests={requests}
+        loading={loading}
+        filters={filterProps}
+        page={tablePage}
+        pageSize={pageSize}
+        onPageChange={setTablePage}
+        pagination={requestPagination}
+        actionId={actionId}
+        actionField={actionField}
+        onStatusUpdate={updateRequest}
+        onReportDateUpdate={updateReportDate}
+        onCollectionDetailsUpdate={updateCollectionDetails}
+        uploading={uploading}
+        onUploadReport={uploadReport}
+        onDeleteReport={deleteReport}
+        updateFeedback={requestUpdateFeedback}
+        pendingUploadCount={delayedUploadCount}
+        showDelayedOnly={showDelayedOnly}
+        onToggleDelayedUpload={() => setShowDelayedOnly((value) => !value)}
+        technicians={technicians}
+        onAssignTechnician={assignTechnician}
+        onCreateRequest={createLabRequest}
+        lab={profile}
+        requestOnlyPatient
+        onCreateReport={(request) =>
+          router.push(`/lab/pages/requests/${request.id}/report`)
+        }
+        onDeleteInvoice={deleteInvoice}
+      />
+    ) : section === "reports" ? (
+      <LabReports
+        reports={reports}
+        loading={loading}
+        filters={filterProps}
+        page={tablePage}
+        pageSize={pageSize}
+        onPageChange={setTablePage}
+        pagination={reportPagination}
+      />
+    ) : section === "profile" ? (
+      <LabProfile profile={profile} onProfileUpdate={handleProfileUpdate} />
+    ) : section === "technicians" ? (
+      <LabTechnicians
+        technicians={technicians}
+        loading={loading}
+        onCreate={createTechnician}
+        onStatusChange={setTechnicianStatus}
+        actionId={actionId}
+      />
+    ) : (
+     <LabDashboard
+  api={api}
   profile={profile}
   dashboardCounts={dashboardCounts}
   onNavigate={(path) => router.push(path)}
 />
-  );
+    );
 
   return (
-    <Box  sx={{ pt:12,px:3, backgroundColor:"white"  }}>
-      {loading && section === "dashboard" ? <Box display="flex" justifyContent="center" py={8}><CircularProgress sx={{ color: "#0b5c8e" }} /></Box> : null}
+    <Box sx={{ pt: 12, px: 3, backgroundColor: "white" }}>
+      {loading && section === "dashboard" ? (
+        <Box display="flex" justifyContent="center" py={8}>
+          <CircularProgress sx={{ color: "#0b5c8e" }} />
+        </Box>
+      ) : null}
       {!loading || section !== "dashboard" ? content : null}
-      <Snackbar open={Boolean(error)} autoHideDuration={6000} onClose={() => setError("")}><Alert severity="error" onClose={() => setError("")}>{error}</Alert></Snackbar>
-      <Snackbar open={Boolean(notice)} autoHideDuration={3500} onClose={() => setNotice("")}><Alert severity="success" onClose={() => setNotice("")}>{notice}</Alert></Snackbar>
+      <Snackbar
+        open={Boolean(error)}
+        autoHideDuration={6000}
+        onClose={() => setError("")}
+      >
+        <Alert severity="error" onClose={() => setError("")}>
+          {error}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={Boolean(notice)}
+        autoHideDuration={3500}
+        onClose={() => setNotice("")}
+      >
+        <Alert severity="success" onClose={() => setNotice("")}>
+          {notice}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

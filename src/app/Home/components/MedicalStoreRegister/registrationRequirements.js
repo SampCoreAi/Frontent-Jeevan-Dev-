@@ -1,39 +1,24 @@
 export const PHARMACY_DOCUMENTS = [
-  { field: "retentionFeeReceipt", label: "Drug retention fee receipt" },
+  { field: "form20Certificate", label: "Form 20 drug licence certificate" },
+  { field: "form21Certificate", label: "Form 21 certificate" },
+  {
+    field: "entityProof",
+    label: "Shop proof (rent agreement or ownership paper)",
+  },
   {
     field: "pharmacistRegistrationCertificate",
     label: "Pharmacist registration certificate",
   },
-  { field: "entityProof", label: "Business/entity proof" },
-  { field: "panCard", label: "PAN document" },
   {
-    field: "pharmacistAppointmentLetter",
-    label: "Pharmacist appointment letter",
+    field: "pharmacistQualificationCertificate",
+    label: "Pharmacist D.Pharm/B.Pharm certificate",
   },
 ];
 
 export function isPharmacyDocumentRequired(field, data = {}) {
-  if (
-    field === "pharmacistRegistrationCertificate" ||
-    field === "entityProof"
-  ) {
-    return true;
+  if (field === "form21Certificate") {
+    return Boolean(data.dispenseScheduleC1);
   }
 
-  if (field === "retentionFeeReceipt") {
-    return Boolean(data.retentionFeeRequired);
-  }
-
-  if (field === "panCard") {
-    return Boolean(data.entityPan || data.personalPan);
-  }
-
-  if (field === "pharmacistAppointmentLetter") {
-    return (
-      Boolean(data.appointmentLetterRequired) &&
-      data.employmentType !== "Owner"
-    );
-  }
-
-  return false;
+  return PHARMACY_DOCUMENTS.some((document) => document.field === field);
 }
