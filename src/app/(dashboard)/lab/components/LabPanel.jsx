@@ -505,7 +505,6 @@ console.log("Lab information:", response.data?.data?.registration?.registration_
       if (!profile?.id) throw new Error("Lab profile is not loaded yet.");
       const created = await createLabWalkInTestRequest({
         ...requestDetails,
-        labId: Number(profile.id),
       });
       await loadRequests();
       setNotice(

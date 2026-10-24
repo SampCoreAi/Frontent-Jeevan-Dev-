@@ -36,6 +36,29 @@ import LabReportPage, {
 } from "./LabReportPage";
 
 const ACTIVE_TEMPLATE_PREFIX = "lab-active-report-template-v1";
+const resolveLabName = (data = {}, fallback = "") => {
+  const candidates = [
+    data?.labInformation?.diagnosticLabName,
+    data?.registration?.registration_data?.labInformation?.diagnosticLabName,
+    data?.registration?.labInformation?.diagnosticLabName,
+    data?.lab_name,
+    data?.labName,
+    data?.diagnosticLabName,
+    data?.diagnosticCenterName,
+    data?.diagnosticCentreName,
+    data?.profile?.lab_name,
+    data?.profile?.labName,
+    data?.name,
+    data?.profile?.name,
+  ];
+
+  return (
+    candidates.find(
+      (value) => typeof value === "string" && value.trim().length > 0,
+    ) || fallback
+  );
+};
+
 const normalizeLabProfile = (data = {}) => {
   const registration = data.registration?.registration_data || {};
   const info = registration.labInformation || {};
@@ -59,7 +82,15 @@ const normalizeLabProfile = (data = {}) => {
   return {
     ...data,
     ...profile,
-    lab_name: info.diagnosticLabName || profile.lab_name || "",
+    lab_name: resolveLabName(
+      {
+        ...data,
+        ...profile,
+        registration,
+        labInformation: info,
+      },
+      info.diagnosticLabName || "",
+    ),
     registration_number:
       license.registrationLicenseNumber || profile.registration_number || "",
     phone_number: info.labContactPhone || profile.phone_number || "",
@@ -82,7 +113,7 @@ const resolveS3Url = (path) => {
   return `${S3_BUCKET_URL}/${path.replace(/^\/+/, "")}`;
 };
 const DEFAULT_COMMON_LAYOUT = {
-  labName: "YOUR LAB NAME",
+  labName: "Your Lab",
   brandMark: "LAB",
   tagline: "ACCURATE & AFFORDABLE ALWAYS",
   reportTitle: "TEST REPORT",
@@ -94,59 +125,74 @@ const DEFAULT_COMMON_LAYOUT = {
   address: "",
 };
 
-const normalizeTemplate = (template) => ({
-  id: template.id,
-  templateKey: template.templateKey || template.id,
-  name: template.name,
-  isPublic: template.isPublic ?? true,
-  isOwner: template.isOwner ?? true,
-  commonLayout: template.commonLayout || null,
-  outOfRangeColor: template.outOfRangeColor || "#c62828",
-  pages: (template.pages?.length
-    ? template.pages
-    : [
-        {
-          id: `${template.id}-page-1`,
-          panelTitle: template.panelTitle,
-          sampleType: template.sampleType,
-          instructions: template.instructions,
-          textBlocks: template.textBlocks,
-          columnLabels: template.columnLabels,
-          fields: template.fields,
-        },
-      ]
-  ).map((page, index) => ({
-    ...page,
-    id: page.id || `${template.id}-page-${index + 1}`,
-    textBlocks: (page.textBlocks || []).map((block) => ({
-      ...block,
-      type: block.type || "text",
-    })),
-    tableBlocks: (page.tableBlocks || []).map((table) => ({
-      ...table,
-      title: table.title || "New table",
-      rows: table.rows || [],
-    })),
-    columns:
-      page.columns ||
-      (
-        page.columnLabels ||
-        DEFAULT_RESULT_COLUMNS.map((column) => column.label)
-      ).map((label, columnIndex) => ({
-        ...(DEFAULT_RESULT_COLUMNS[columnIndex] || {
-          id: `custom-${columnIndex}`,
-          key: "custom",
-        }),
-        label: typeof label === "string" ? label : label.label,
+const normalizeTemplate = (template) => {
+  const source = { ...(template.layout || {}), ...template };
+
+  return {
+    id: source.id,
+    templateKey: source.templateKey || source.id,
+    name: source.name,
+    isPublic: source.isPublic ?? true,
+    isOwner: source.isOwner ?? true,
+    commonLayout: source.commonLayout || null,
+    outOfRangeColor: source.outOfRangeColor || "#c62828",
+    pages: (source.pages?.length
+      ? source.pages
+      : [
+          {
+            id: `${source.id}-page-1`,
+            panelTitle: source.panelTitle,
+            sampleType: source.sampleType,
+            instructions: source.instructions,
+            textBlocks: source.textBlocks,
+            columnLabels: source.columnLabels,
+            fields: source.fields,
+          },
+        ]
+    ).map((page, index) => ({
+      ...page,
+      id: page.id || `${source.id}-page-${index + 1}`,
+      textBlocks: (page.textBlocks || []).map((block) => ({
+        ...block,
+        type: block.type || "text",
       })),
-    fields: (page.fields || []).map((field) => ({
-      ...field,
-      result: field.result ?? field.referenceInterval ?? "",
-      highlightOutsideRange: field.highlightOutsideRange ?? true,
-      boldOutsideRange: field.boldOutsideRange ?? true,
-      cells: field.cells || {},
+      tableBlocks: (page.tableBlocks || []).map((table) => ({
+        ...table,
+        title: table.title || "New table",
+        rows: table.rows || [],
+      })),
+      columns:
+        page.columns ||
+        (
+          page.columnLabels ||
+          DEFAULT_RESULT_COLUMNS.map((column) => column.label)
+        ).map((label, columnIndex) => ({
+          ...(DEFAULT_RESULT_COLUMNS[columnIndex] || {
+            id: `custom-${columnIndex}`,
+            key: "custom",
+          }),
+          label: typeof label === "string" ? label : label.label,
+        })),
+      fields: (page.fields || []).map((field) => ({
+        ...field,
+        result: field.result ?? field.referenceInterval ?? "",
+        highlightOutsideRange: field.highlightOutsideRange ?? true,
+        boldOutsideRange: field.boldOutsideRange ?? true,
+        cells: field.cells || {},
+      })),
     })),
-  })),
+  };
+};
+
+const commonLayoutForLab = (layout = {}, lab = {}) => ({
+  ...DEFAULT_COMMON_LAYOUT,
+  ...layout,
+  labName: lab.lab_name || layout.labName || DEFAULT_COMMON_LAYOUT.labName,
+  registrationNumber:
+    lab.registration_number || layout.registrationNumber || "",
+  phoneNumber: lab.phone_number || layout.phoneNumber || "",
+  address: lab.address || layout.address || "",
+  bio: lab.bio || layout.bio || "",
 });
 
 function InlineInput({
@@ -230,7 +276,12 @@ if (!profileId) {
 setLabDetails(lab);
 setCommonLayout((current) => ({
   ...current,
-  labName: lab.lab_name || current.labName,
+  labName:
+    lab.lab_name ||
+    lab.labName ||
+    lab.name ||
+    current.labName ||
+    "Your Lab",
   registrationNumber: lab.registration_number || current.registrationNumber,
   phoneNumber: lab.phone_number || current.phoneNumber,
   address: lab.address || current.address,
@@ -281,22 +332,7 @@ setLabId(String(profileId));
         const loaded = summaries.map((template) =>
           template.id === selected.id ? selected : template,
         );
-        const sharedLayout = selected.commonLayout;
-     setCommonLayout({
-  ...DEFAULT_COMMON_LAYOUT,
-  ...(sharedLayout || {}),
-  labName:
-    labDetails?.lab_name ||
-    sharedLayout?.labName ||
-    DEFAULT_COMMON_LAYOUT.labName,
-  registrationNumber:
-    labDetails?.registration_number ||
-    sharedLayout?.registrationNumber ||
-    "",
-  phoneNumber: labDetails?.phone_number || sharedLayout?.phoneNumber || "",
-  address: labDetails?.address || sharedLayout?.address || "",
-  bio: labDetails?.bio || sharedLayout?.bio || "",
-});
+        setCommonLayout(commonLayoutForLab(selected.commonLayout || {}, labDetails));
         setTemplates(loaded);
         setActiveId(selected.id);
       } catch (requestError) {
@@ -346,11 +382,9 @@ setLabId(String(profileId));
         ),
       );
       setActiveId(selected.id);
-      if (selected.commonLayout)
-        setCommonLayout((current) => ({
-          ...current,
-          ...selected.commonLayout,
-        }));
+      setCommonLayout(
+        commonLayoutForLab(selected.commonLayout || {}, labDetails),
+      );
     } catch (requestError) {
       setError(
         requestError.response?.data?.message ||

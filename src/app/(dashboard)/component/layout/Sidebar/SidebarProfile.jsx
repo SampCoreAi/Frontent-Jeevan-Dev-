@@ -1,28 +1,31 @@
 "use client";
+
 import React from "react";
 import { Avatar, Box, Button, Typography } from "@mui/material";
 import { Share } from "@mui/icons-material";
 import { alpha, useTheme } from "@mui/material/styles";
+
+const ROLE_NAMES = {
+  1: "User",
+  2: "Doctor",
+  3: "Doctor Assistant",
+  4: "Lab",
+  5: "Admin",
+  6: "Technician",
+  7: "Medical Store",
+};
 
 const SidebarProfile = ({
   isOpen,
   isMobile,
   roleId,
   userName,
-  qualification,
-  specialization,
   avatarSrc,
 }) => {
   const theme = useTheme();
   const showContent = isOpen || isMobile;
   const canShareProfile = Number(roleId) === 2;
-
-  const getProfileSubtitle = () => {
-    if (Number(roleId) === 1) return "Patient Account";
-    if (specialization) return specialization;
-    if (qualification) return qualification;
-    return "Account";
-  };
+  const roleName = ROLE_NAMES[Number(roleId)] || "Account";
 
   return (
     <>
@@ -66,6 +69,7 @@ const SidebarProfile = ({
             transition: "transform 0.25s ease",
           }}
         />
+
         {showContent && (
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography
@@ -81,6 +85,7 @@ const SidebarProfile = ({
             >
               {userName}
             </Typography>
+
             <Typography
               sx={{
                 mt: "3px",
@@ -92,37 +97,14 @@ const SidebarProfile = ({
                 textOverflow: "ellipsis",
               }}
             >
-              {getProfileSubtitle()}
+              {roleName}
             </Typography>
-            <Box
-              sx={{
-                mt: "5px",
-                display: "flex",
-                alignItems: "center",
-                gap: "5px",
-              }}
-            >
-              <Box
-                sx={{
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "50%",
-                  bgcolor: "success.main",
-                }}
-              />
-              <Typography
-                sx={{
-                  fontSize: "9.5px",
-                  fontWeight: 600,
-                  color: "success.dark",
-                }}
-              >
-                Active
-              </Typography>
-            </Box>
+
+           
           </Box>
         )}
       </Box>
+
       {canShareProfile && showContent && (
         <Button
           variant="contained"
@@ -134,7 +116,7 @@ const SidebarProfile = ({
             mt: "9px",
             fontSize: "11.5px",
             fontWeight: 600,
-            borderRadius: "8px",
+            borderRadFius: "8px",
             "&:hover": {
               transform: "translateY(-1px)",
             },

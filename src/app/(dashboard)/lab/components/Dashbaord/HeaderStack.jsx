@@ -38,7 +38,7 @@ const stats = [
   },
 ];
 
-export default function LabDashboardOverview() {
+export default function LabDashboardOverview({ labName = "Your Lab" }) {
   return (
     <Box
       sx={{
@@ -108,7 +108,7 @@ export default function LabDashboardOverview() {
                 mb: 1,
               }}
             >
-              jeev labs
+              {labName}
             </Typography>
 
             <Box

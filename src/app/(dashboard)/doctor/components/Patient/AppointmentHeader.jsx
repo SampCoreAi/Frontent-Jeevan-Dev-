@@ -176,36 +176,27 @@ export default function AppointmentHeader({
         >
           <InputLabel>Status</InputLabel>
 
-          <Select
-            value={isRole3 ? "completed" : status}
-            label="Status"
-            onChange={(e) => {
-              if (!isRole3) {
-                onStatusChange(e.target.value);
-              }
-            }}
-            open={isRole3 ? false : undefined}
-            sx={
-              isRole3
-                ? {
-                    pointerEvents: "none",
-                    "& .MuiSelect-icon": {
-                      display: "none",
-                    },
-                  }
-                : {}
-            }
-          >
-            {isRole3 ? (
-              <MenuItem value="completed">Completed</MenuItem>
-            ) : (
-              <>
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="in_progress">In Progress</MenuItem>
-                <MenuItem value="completed">Completed</MenuItem>
-              </>
-            )}
-          </Select>
+       <Select
+  value={isRole3 ? "completed" : status}
+  label="Status"
+  onChange={(e) => {
+    if (!isRole3) onStatusChange(e.target.value);
+  }}
+  open={isRole3 ? false : undefined}
+  sx={
+    isRole3
+      ? {
+          pointerEvents: "none",
+          "& .MuiSelect-icon": { display: "none" },
+        }
+      : {}
+  }
+>
+  {isRole3 && <MenuItem value="completed">Completed</MenuItem>}
+  {!isRole3 && <MenuItem value="pending">Pending</MenuItem>}
+  {!isRole3 && <MenuItem value="in_progress">In Progress</MenuItem>}
+  {!isRole3 && <MenuItem value="completed">Completed</MenuItem>}
+</Select>
         </FormControl>
 
         <Button

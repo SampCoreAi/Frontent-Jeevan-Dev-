@@ -274,6 +274,16 @@ export const menuItems = {
       route: "/medical/pages/connections",
     },
     {
+      label: "Medical Master",
+      icon: <AssignmentOutlined />,
+      route: "/medical/pages/requests",
+    },
+    {
+      label: "Batch and Stock",
+      icon: <AssignmentOutlined />,
+      route: "/medical/pages/requests",
+    },
+    {
       label: "Pharmacy Requests",
       icon: <AssignmentOutlined />,
       route: "/medical/pages/requests",

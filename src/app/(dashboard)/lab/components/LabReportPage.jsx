@@ -576,7 +576,7 @@ export default function LabReportPage({
               />
             ) : (
               <Typography className="lab-template-brand-name">
-                {commonLayout.labName || "YOUR LAB NAME"}
+                {commonLayout.labName || "Your Lab"}
               </Typography>
             )}
            {commonLayout.bio ? (

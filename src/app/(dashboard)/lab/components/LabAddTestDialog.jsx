@@ -185,38 +185,18 @@ export default function LabAddTestDialog({
 
       setError("");
 
-      const result = await onCreateRequest?.({
-        fullName: patientName.trim(),
-
-        ...(patientEmail.trim()
-          ? { email: patientEmail.trim().toLowerCase() }
-          : {}),
-
-        ...(patientPhone.trim() ? { phoneNumber: patientPhone.trim() } : {}),
-
-        ...(requestOnlyPatient
-          ? {
-              age: Number(patientAge),
-
-              gender: patientGender,
-
-              address: patientAddress.trim(),
-            }
-          : {}),
-
-        referringDoctorName: doctorName.trim(),
-
-        referringDoctorPhone: doctorPhone.trim(),
-
-        tests,
-
-        sampleType,
-
-        priority,
-
-        requestType: "WALK_IN",
-      });
-
+  const result = await onCreateRequest?.({
+  fullName: patientName.trim(),
+  email: patientEmail.trim().toLowerCase(),
+  phoneNumber: patientPhone.trim(),
+  age: Number(patientAge),
+  gender: patientGender,
+  address: patientAddress.trim(),
+  requestType: "WALK_IN",
+  tests,
+  sampleType,
+  priority,
+});
       if (!result?.success) {
         setError(
           result?.message ||

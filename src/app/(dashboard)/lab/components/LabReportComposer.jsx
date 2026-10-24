@@ -40,6 +40,29 @@ import LabReportPage, {
 
 const ACTIVE_TEMPLATE_PREFIX = "lab-active-report-template-v1";
 
+const resolveLabName = (data = {}, fallback = "") => {
+  const candidates = [
+    data?.registration?.registration_data?.labInformation?.diagnosticLabName,
+    data?.registration?.labInformation?.diagnosticLabName,
+    data?.labInformation?.diagnosticLabName,
+    data?.lab_name,
+    data?.labName,
+    data?.diagnosticLabName,
+    data?.diagnosticCenterName,
+    data?.diagnosticCentreName,
+    data?.profile?.lab_name,
+    data?.profile?.labName,
+    data?.name,
+    data?.profile?.name,
+  ];
+
+  return (
+    candidates.find(
+      (value) => typeof value === "string" && value.trim().length > 0,
+    ) || fallback
+  );
+};
+
 const normalizeLabProfile = (data = {}) => {
   const registrationData = data.registration?.registration_data || {};
   const info = registrationData.labInformation || {};
@@ -63,7 +86,15 @@ const normalizeLabProfile = (data = {}) => {
   return {
     ...profile,
     ...data,
-    lab_name: info.diagnosticLabName || profile.lab_name || "",
+    lab_name: resolveLabName(
+      {
+        ...profile,
+        ...data,
+        registration: data.registration,
+        labInformation: info,
+      },
+      info.diagnosticLabName || "",
+    ),
     registration_number:
       license.registrationLicenseNumber || profile.registration_number || "",
     phone_number: info.labContactPhone || profile.phone_number || "",
@@ -82,7 +113,10 @@ const normalizeTemplateDetail = (detail, labProfile) => {
     ...layout,
     commonLayout: {
       ...commonLayout,
-      labName: labProfile?.lab_name || commonLayout.labName,
+      labName:
+        labProfile?.lab_name ||
+        commonLayout.labName ||
+        "Your Lab",
       registrationNumber:
         labProfile?.registration_number || commonLayout.registrationNumber,
       phoneNumber: labProfile?.phone_number || commonLayout.phoneNumber,
