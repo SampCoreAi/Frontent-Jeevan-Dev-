@@ -1,74 +1,323 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Box,
   Button,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
+  InputAdornment,
   MenuItem,
   Paper,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
+import FilterListRoundedIcon from "@mui/icons-material/FilterListRounded";
+import AccessibilityNewOutlinedIcon from "@mui/icons-material/AccessibilityNewOutlined";
+import BloodtypeOutlinedIcon from "@mui/icons-material/BloodtypeOutlined";
+import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
+import LocalHospitalOutlinedIcon from "@mui/icons-material/LocalHospitalOutlined";
+import MonitorHeartOutlinedIcon from "@mui/icons-material/MonitorHeartOutlined";
 import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
+import LocalPhoneOutlinedIcon from "@mui/icons-material/LocalPhoneOutlined";
 import api from "../../../../../utils/axiosInstance";
 
-const SAMPLE_TYPES = ["BLOOD", "URINE", "SERUM", "PLASMA", "SWAB", "STOOL", "SPUTUM", "OTHER"];
+const SAMPLE_TYPES = [
+  "BLOOD",
+  "URINE",
+  "SERUM",
+  "PLASMA",
+  "SWAB",
+  "STOOL",
+  "SPUTUM",
+  "OTHER",
+];
 
-export default function PatientLabSearchTab() {
+const categories = [
+  { name: "Full Body Checkup", icon: <AccessibilityNewOutlinedIcon />, color: "#E87542" },
+  { name: "Diabetes", icon: <MonitorHeartOutlinedIcon />, color: "#D79B22" },
+  { name: "Heart", icon: <FavoriteBorderOutlinedIcon />, color: "#D96C5F" },
+  { name: "Blood Tests", icon: <BloodtypeOutlinedIcon />, color: "#D96C5F" },
+  { name: "Kidney", icon: <ScienceOutlinedIcon />, color: "#5598BD" },
+  { name: "Thyroid", icon: <LocalHospitalOutlinedIcon />, color: "#8C76B7" },
+];
+
+const popularTests = [
+  {
+    name: "CBC Test (Complete Blood Count)",
+    search: "CBC",
+    description: "Measures different types of blood cells.",
+    icon: <BloodtypeOutlinedIcon />,
+    color: "#D96C5F",
+  },
+  {
+    name: "HbA1c Test",
+    search: "HbA1c",
+    description: "Shows average blood sugar over recent months.",
+    icon: <MonitorHeartOutlinedIcon />,
+    color: "#D79B22",
+  },
+  {
+    name: "Fasting Blood Sugar (FBS)",
+    search: "Fasting Blood Sugar",
+    description: "Measures blood sugar after fasting.",
+    icon: <ScienceOutlinedIcon />,
+    color: "#5598BD",
+  },
+  {
+    name: "Lipid Profile Test",
+    search: "Lipid Profile",
+    description: "Measures cholesterol and triglyceride levels.",
+    icon: <FavoriteBorderOutlinedIcon />,
+    color: "#D96C5F",
+  },
+];
+
+const formatAddress = (value) => {
+  let address = value;
+
+  if (typeof address === "string") {
+    try {
+      address = JSON.parse(address);
+    } catch {
+      // Keep plain-text addresses.
+    }
+  }
+
+  if (address && typeof address === "object") {
+    return [
+      address.building || address.buildingComplexName || address.shopUnitNumber,
+      address.street || address.streetRoadName,
+      address.locality || address.areaLocality || address.area,
+      address.landmark,
+      address.city || address.cityTown || address.cityDistrict,
+      address.district,
+      address.state,
+      address.pinCode,
+    ]
+      .filter(Boolean)
+      .join(", ") || "Address not provided";
+  }
+
+  return !address || address === "[object Object]"
+    ? "Address not provided"
+    : address;
+};
+
+function LabCard({ lab, onRequest }) {
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2,
+        bgcolor: "#fff",
+        borderColor: "#DDE9E5",
+        borderRadius: 2,
+      }}
+    >
+      <Stack spacing={1.25}>
+        <Stack direction="row" spacing={1.25} alignItems="center">
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              flexShrink: 0,
+              display: "grid",
+              placeItems: "center",
+              borderRadius: 1.5,
+              bgcolor: "#EAF7F3",
+              color: "#07876A",
+              "& svg": { width: 23, height: 23, display: "block" },
+            }}
+          >
+            <ScienceOutlinedIcon />
+          </Box>
+
+          <Typography sx={{ flex: 1, fontSize: 14, fontWeight: 700, color: "#172033" }}>
+            {lab.lab_name || "Laboratory"}
+          </Typography>
+
+          {lab.status && (
+            <Chip
+              size="small"
+              label={lab.status}
+              sx={{
+                height: 23,
+                fontSize: 10,
+                fontWeight: 700,
+                color: "#08785E",
+                bgcolor: "#E7F6F0",
+              }}
+            />
+          )}
+        </Stack>
+
+        <Typography sx={{ fontSize: 12, color: "#64748B" }}>
+          Lab code: {lab.lab_code || "-"} · Registration: {lab.registration_number || "-"}
+        </Typography>
+
+        <Stack direction="row" spacing={0.75} alignItems="flex-start">
+          <PlaceOutlinedIcon sx={{ fontSize: 17, color: "#07876A", mt: "1px" }} />
+          <Typography sx={{ fontSize: 12, color: "#52646B", overflowWrap: "anywhere" }}>
+            {formatAddress(lab.address)}
+          </Typography>
+        </Stack>
+
+        {lab.phone_number && (
+          <Stack direction="row" spacing={0.75} alignItems="center">
+            <LocalPhoneOutlinedIcon sx={{ fontSize: 16, color: "#07876A" }} />
+            <Typography sx={{ fontSize: 12, color: "#52646B" }}>
+              {lab.phone_number}
+            </Typography>
+          </Stack>
+        )}
+
+        <Button
+          fullWidth
+          variant="outlined"
+          onClick={() => onRequest(lab)}
+          sx={{
+            borderRadius: 1.5,
+            borderColor: "#07876A",
+            color: "#07876A",
+            textTransform: "none",
+            "&:hover": { bgcolor: "#F2FAF7", borderColor: "#066F57" },
+          }}
+        >
+          Request tests
+        </Button>
+      </Stack>
+    </Paper>
+  );
+}
+
+export default function PatientLabSearchTab({ location = "Bhandup, Mumbai" }) {
   const [query, setQuery] = useState("");
   const [labs, setLabs] = useState([]);
-  const [searched, setSearched] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState("");
+
+  const [nearbyLabs, setNearbyLabs] = useState([]);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+
   const [selectedLab, setSelectedLab] = useState(null);
   const [testsInput, setTestsInput] = useState("");
   const [sampleType, setSampleType] = useState("BLOOD");
   const [priority, setPriority] = useState("NORMAL");
   const [submitting, setSubmitting] = useState(false);
+  const [requestError, setRequestError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const searchLabs = async (event) => {
-    event.preventDefault();
+  const searching = Boolean(query.trim());
+
+  // Load nearby labs for the normal discovery screen.
+  useEffect(() => {
+    let active = true;
+    const area = location.split(",")[0].trim();
+
+    if (!area) return undefined;
+
+    setNearbyLoading(true);
+
+    api
+      .get("/api/labs/search", { params: { search: area } })
+      .then((response) => {
+        if (active) {
+          setNearbyLabs(
+            Array.isArray(response.data?.data) ? response.data.data : []
+          );
+        }
+      })
+      .catch(() => {
+        if (active) setNearbyLabs([]);
+      })
+      .finally(() => {
+        if (active) setNearbyLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [location]);
+
+  // Search after the user pauses typing. Clearing the input restores discovery.
+  useEffect(() => {
     const search = query.trim();
+
     if (!search) {
-      setError("Enter a lab name or lab code to search.");
-      return;
+      setLabs([]);
+      setSearchError("");
+      setSearchLoading(false);
+      return undefined;
     }
 
-    try {
-      setLoading(true);
-      setError("");
-      setSuccess("");
-      setSearched(true);
-      const response = await api.get("/api/labs/search", { params: { search } });
-      const results = response.data?.data;
-      setLabs(Array.isArray(results) ? results : []);
-    } catch (requestError) {
-      setLabs([]);
-      setError(requestError?.response?.data?.message || "Unable to search labs right now.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    let active = true;
+    setLabs([]);
+    setSearchError("");
+    setSearchLoading(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const response = await api.get("/api/labs/search", {
+          params: { search },
+        });
+
+        if (active) {
+          setLabs(Array.isArray(response.data?.data) ? response.data.data : []);
+        }
+      } catch (error) {
+        if (active) {
+          setLabs([]);
+          setSearchError(
+            error?.response?.data?.message || "Unable to search labs right now."
+          );
+        }
+      } finally {
+        if (active) setSearchLoading(false);
+      }
+    }, 450);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [query]);
 
   const submitRequest = async (event) => {
     event.preventDefault();
-    const tests = [...new Set(testsInput.split(/[\n,]+/).map((test) => test.trim()).filter(Boolean))];
-    if (!tests.length || tests.length > 20 || tests.some((test) => test.length < 2 || test.length > 150)) {
-      setError("Enter 1 to 20 test names, each between 2 and 150 characters.");
+
+    const tests = [
+      ...new Set(
+        testsInput
+          .split(/[\n,]+/)
+          .map((test) => test.trim())
+          .filter(Boolean)
+      ),
+    ];
+
+    if (
+      !tests.length ||
+      tests.length > 20 ||
+      tests.some((test) => test.length < 2 || test.length > 150)
+    ) {
+      setRequestError("Enter 1 to 20 test names, each between 2 and 150 characters.");
       return;
     }
 
     try {
       setSubmitting(true);
-      setError("");
+      setRequestError("");
+
       const response = await api.post("/api/lab-requests/create", {
         labId: Number(selectedLab.id),
         tests,
@@ -76,91 +325,419 @@ export default function PatientLabSearchTab() {
         priority,
         doctorNote: "Requested by patient from lab search.",
       });
+
       const request = response.data?.data || {};
       const requestCode = request.order_id || request.id;
-      setSuccess(`Request sent to ${selectedLab.lab_name}${requestCode ? `. Request ID: ${requestCode}` : ""}.`);
+
+      setSuccess(
+        `Request sent to ${selectedLab.lab_name}${
+          requestCode ? `. Request ID: ${requestCode}` : ""
+        }.`
+      );
       setSelectedLab(null);
       setTestsInput("");
       setSampleType("BLOOD");
       setPriority("NORMAL");
-    } catch (requestError) {
-      setError(requestError?.response?.data?.message || "Unable to send your lab request.");
+    } catch (error) {
+      setRequestError(
+        error?.response?.data?.message || "Unable to send your lab request."
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
+  const startSearch = (value) => setQuery(value);
+
   return (
-    <Box sx={{ width: "100%", pt: 2 }}>
-      <Typography sx={{ mb: 0.5, fontSize: "18px", fontWeight: 700, color: "#172033" }}>
-        Find a laboratory
+    <Box
+      sx={{
+        width: "100%",
+        px: { xs: 1.5, sm: 2.5, md: 3 },
+        py: 2.5,
+        mt:8.5,
+        bgcolor: "white",
+      }}
+    >
+      <Typography sx={{ mb: 0.5, fontSize: 22, fontWeight: 700, color: "#172033" }}>
+        Find labs & tests
       </Typography>
-      <Typography sx={{ mb: 2, fontSize: "13px", color: "#64748B" }}>
-        Search by lab name or code, then request the tests you need.
+      <Typography sx={{ mb: 2.5, fontSize: 13, color: "#64748B" }}>
+        Search for a test or find a laboratory near you.
       </Typography>
 
-      <Box component="form" onSubmit={searchLabs} sx={{ display: "flex", gap: 1, mb: 2.5, maxWidth: 680 }}>
-        <TextField
-          fullWidth
-          size="small"
-          label="Lab name or lab code"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        <Button type="submit" variant="contained" disabled={loading} sx={{ minWidth: 104, textTransform: "none", bgcolor: "#07876A" }}>
-          {loading ? <CircularProgress size={18} color="inherit" /> : "Search"}
-        </Button>
-      </Box>
+     <Paper
+  variant="outlined"
+  sx={{
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+    px: 1,
+    mb: 3,
+    bgcolor: "#fff",
+    borderColor: "#DDE9E5",
+    borderRadius: 2,
+  }}
+>
+  <TextField
+    fullWidth
+    size="small"
+    placeholder="Search test, lab, or area"
+    value={query}
+    onChange={(event) => setQuery(event.target.value)}
+    InputProps={{
+      startAdornment: (
+        <InputAdornment position="start">
+          <SearchRoundedIcon sx={{ color: "#64748B" }} />
+        </InputAdornment>
+      ),
+      endAdornment: query && (
+        <InputAdornment position="end">
+          <IconButton
+            size="small"
+            aria-label="Clear search"
+            onClick={() => setQuery("")}
+          >
+            <CloseRoundedIcon fontSize="small" />
+          </IconButton>
+        </InputAdornment>
+      ),
+    }}
+    sx={{
+      flex: 1,
+      minWidth: 0,
+      "& .MuiOutlinedInput-root": {
+        minHeight: 48,
+        borderRadius: 1.5,
+        "& fieldset": { border: 0 },
+      },
+    }}
+  />
 
-      {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
-      {success ? <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess("")}>{success}</Alert> : null}
+  <Button
+    variant="outlined"
+    startIcon={<FilterListRoundedIcon />}
+    sx={{
+      minWidth: 105,
+      minHeight: 42,
+      bgcolor:"#07876a",
+      borderRadius: 1.5,
+      borderColor: "#DDE9E5",
+      color: "white",
+      textTransform: "none",
+      whiteSpace: "nowrap",
+      "&:hover": {
+        borderColor: "#07876A",
+        bgcolor: "#066e57",
+      },
+    }}
+  >
+    Filter
+  </Button>
+</Paper>
+   
 
-      {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}><CircularProgress size={26} /></Box>
-      ) : searched && labs.length === 0 && !error ? (
-        <Typography sx={{ py: 4, color: "#64748B", fontSize: "14px" }}>No active labs matched this search.</Typography>
-      ) : (
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" }, gap: 1.5 }}>
-          {labs.map((lab) => (
-            <Paper key={lab.id} variant="outlined" sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, p: 2, borderRadius: "8px", borderColor: "#DFE7EB" }}>
-              <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ minWidth: 0 }}>
-                <Box sx={{ width: 38, height: 38, flexShrink: 0, borderRadius: "8px", bgcolor: "#E8F4F0", color: "#07876A", display: "grid", placeItems: "center" }}>
-                  <ScienceOutlinedIcon fontSize="small" />
-                </Box>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography sx={{ fontSize: "14px", fontWeight: 700, color: "#172033", overflowWrap: "anywhere" }}>{lab.lab_name}</Typography>
-                  <Typography sx={{ mt: 0.3, fontSize: "11px", color: "#64748B" }}>Lab code: {lab.lab_code || "-"}</Typography>
-                  <Typography sx={{ mt: 0.5, fontSize: "12px", color: "#52646B" }}>{lab.address || "Address not provided"}</Typography>
-                  {lab.phone_number ? <Typography sx={{ mt: 0.25, fontSize: "12px", color: "#52646B" }}>{lab.phone_number}</Typography> : null}
-                </Box>
-              </Stack>
-              <Button variant="outlined" onClick={() => { setError(""); setSelectedLab(lab); }} sx={{ flexShrink: 0, textTransform: "none", borderColor: "#07876A", color: "#07876A" }}>
-                Request tests
-              </Button>
-            </Paper>
-          ))}
+      {searching ? (
+        <Box>
+         
+
+          {searchLoading ? (
+            <Box sx={{ display: "grid", placeItems: "center", py: 6 }}>
+              <CircularProgress size={28} sx={{ color: "#07876A" }} />
+            </Box>
+          ) : labs.length ? (
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+                gap: 1.5,
+              }}
+            >
+              {labs.map((lab) => (
+                <LabCard
+                  key={lab.id}
+                  lab={lab}
+                  onRequest={(item) => {
+                    setRequestError("");
+                    setSelectedLab(item);
+                  }}
+                />
+              ))}
+            </Box>
+          ) : (
+            !searchError && (
+              <Paper
+                variant="outlined"
+                sx={{
+                  py: 4,
+                  textAlign: "center",
+                  bgcolor: "#fff",
+                  borderColor: "#DDE9E5",
+                  borderRadius: 2,
+                }}
+              >
+                <Typography sx={{ fontWeight: 600, color: "#172033" }}>
+                  No matching labs found
+                </Typography>
+                <Typography sx={{ mt: 0.5, fontSize: 13, color: "#64748B" }}>
+                  Try another test, lab name, code, or area.
+                </Typography>
+              </Paper>
+            )
+          )}
         </Box>
+      ) : (
+        <Stack spacing={3}>
+          <Box>
+            <Typography sx={{ mb: 1.5, fontSize: 18, fontWeight: 700, color: "#172033" }}>
+              Browse by health check
+            </Typography>
+
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "repeat(2, minmax(0, 1fr))",
+                  sm: "repeat(3, minmax(0, 1fr))",
+                  lg: "repeat(6, minmax(0, 1fr))",
+                },
+                gap: 1.25,
+              }}
+            >
+              {categories.map((category) => (
+                <Paper
+                  key={category.name}
+                  component="button"
+                  type="button"
+                  variant="outlined"
+                  onClick={() => startSearch(category.name)}
+                  sx={{
+                    minHeight: 76,
+                    px: 1.25,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    textAlign: "left",
+                    cursor: "pointer",
+                    bgcolor: "#fff",
+                    borderColor: "#DDE9E5",
+                    borderRadius: 2,
+                    "&:hover": { borderColor: "#A8D5C7" },
+                    "& svg": {
+                      width: 25,
+                      height: 25,
+                      display: "block",
+                      flexShrink: 0,
+                      color: category.color,
+                    },
+                  }}
+                >
+                  {category.icon}
+                  <Typography sx={{ fontSize: 13, color: "#172033" }}>
+                    {category.name}
+                  </Typography>
+                </Paper>
+              ))}
+            </Box>
+          </Box>
+
+          <Box>
+            <Typography sx={{ mb: 1.5, fontSize: 18, fontWeight: 700, color: "#172033" }}>
+              Popular tests
+            </Typography>
+
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, minmax(0, 1fr))",
+                  xl: "repeat(4, minmax(0, 1fr))",
+                },
+                gap: 1.5,
+              }}
+            >
+              {popularTests.map((test) => (
+                <Paper
+                  key={test.name}
+                  variant="outlined"
+                  sx={{
+                    p: 1.5,
+                    display: "flex",
+                    flexDirection: "column",
+                    bgcolor: "#fff",
+                    borderColor: "#DDE9E5",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Stack direction="row" spacing={1.25} sx={{ flex: 1 }}>
+                    <Box
+                      sx={{
+                        width: 52,
+                        height: 52,
+                        flexShrink: 0,
+                        display: "grid",
+                        placeItems: "center",
+                        border: "1px solid #DDE9E5",
+                        borderRadius: 1.5,
+                        "& svg": {
+                          width: 26,
+                          height: 26,
+                          display: "block",
+                          color: test.color,
+                        },
+                      }}
+                    >
+                      {test.icon}
+                    </Box>
+
+                    <Box>
+                      <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#172033" }}>
+                        {test.name}
+                      </Typography>
+                      <Typography sx={{ mt: 0.5, fontSize: 12, color: "#64748B" }}>
+                        {test.description}
+                      </Typography>
+                    </Box>
+                  </Stack>
+
+                  <Button
+                    variant="outlined"
+                    onClick={() => startSearch(test.search)}
+                    sx={{
+                      mt: 1.5,
+                      borderRadius: 1.5,
+                      borderColor: "#07876A",
+                      color: "#07876A",
+                      textTransform: "none",
+                    }}
+                  >
+                    Find labs
+                  </Button>
+                </Paper>
+              ))}
+            </Box>
+          </Box>
+
+          <Box>
+            <Typography sx={{ mb: 1.5, fontSize: 18, fontWeight: 700, color: "#172033" }}>
+              Labs near {location}
+            </Typography>
+
+            {nearbyLoading ? (
+              <Box sx={{ display: "grid", placeItems: "center", py: 3 }}>
+                <CircularProgress size={24} sx={{ color: "#07876A" }} />
+              </Box>
+            ) : nearbyLabs.length ? (
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+                  gap: 1.5,
+                }}
+              >
+                {nearbyLabs.slice(0, 4).map((lab) => (
+                  <LabCard
+                    key={lab.id}
+                    lab={lab}
+                    onRequest={(item) => {
+                      setRequestError("");
+                      setSelectedLab(item);
+                    }}
+                  />
+                ))}
+              </Box>
+            ) : (
+              <Paper
+                variant="outlined"
+                sx={{
+                  py: 3,
+                  textAlign: "center",
+                  bgcolor: "#fff",
+                  borderColor: "#DDE9E5",
+                  borderRadius: 2,
+                }}
+              >
+                <Typography sx={{ fontSize: 13, color: "#64748B" }}>
+                  Nearby labs will appear here.
+                </Typography>
+              </Paper>
+            )}
+          </Box>
+        </Stack>
       )}
 
-      <Dialog open={Boolean(selectedLab)} onClose={() => !submitting && setSelectedLab(null)} fullWidth maxWidth="sm">
+      <Dialog
+        open={Boolean(selectedLab)}
+        onClose={() => !submitting && setSelectedLab(null)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{ sx: { borderRadius: 2 } }}
+      >
         <Box component="form" onSubmit={submitRequest}>
-          <DialogTitle sx={{ fontSize: "16px", fontWeight: 700, color: "#172033" }}>Request tests from {selectedLab?.lab_name}</DialogTitle>
+          <DialogTitle sx={{ fontSize: 17, fontWeight: 700, color: "#172033" }}>
+            Request tests from {selectedLab?.lab_name}
+          </DialogTitle>
+
           <DialogContent sx={{ display: "grid", gap: 1.75, pt: "8px !important" }}>
-            <TextField required multiline minRows={3} label="Tests" placeholder="Example: CBC, Blood sugar" value={testsInput} onChange={(event) => setTestsInput(event.target.value)} helperText="Separate test names with commas or new lines." />
+            <TextField
+              required
+              multiline
+              minRows={3}
+              label="Tests"
+              placeholder="Example: CBC, Blood sugar"
+              value={testsInput}
+              onChange={(event) => setTestsInput(event.target.value)}
+              helperText="Separate test names with commas or new lines."
+            />
+
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-              <TextField select fullWidth label="Sample type" value={sampleType} onChange={(event) => setSampleType(event.target.value)}>
-                {SAMPLE_TYPES.map((item) => <MenuItem key={item} value={item}>{item}</MenuItem>)}
+              <TextField
+                select
+                fullWidth
+                label="Sample type"
+                value={sampleType}
+                onChange={(event) => setSampleType(event.target.value)}
+              >
+                {SAMPLE_TYPES.map((item) => (
+                  <MenuItem key={item} value={item}>{item}</MenuItem>
+                ))}
               </TextField>
-              <TextField select fullWidth label="Priority" value={priority} onChange={(event) => setPriority(event.target.value)}>
+
+              <TextField
+                select
+                fullWidth
+                label="Priority"
+                value={priority}
+                onChange={(event) => setPriority(event.target.value)}
+              >
                 <MenuItem value="NORMAL">Normal</MenuItem>
                 <MenuItem value="URGENT">Urgent</MenuItem>
               </TextField>
             </Stack>
-            {error ? <Alert severity="error">{error}</Alert> : null}
+
+            {requestError && <Alert severity="error">{requestError}</Alert>}
           </DialogContent>
+
           <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => setSelectedLab(null)} disabled={submitting} sx={{ textTransform: "none" }}>Cancel</Button>
-            <Button type="submit" variant="contained" disabled={submitting} sx={{ textTransform: "none", bgcolor: "#07876A" }}>
+            <Button
+              onClick={() => setSelectedLab(null)}
+              disabled={submitting}
+              sx={{ textTransform: "none", color: "#64748B" }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={submitting}
+              sx={{
+                borderRadius: 1.5,
+                textTransform: "none",
+                bgcolor: "#07876A",
+                "&:hover": { bgcolor: "#066F57" },
+              }}
+            >
               {submitting ? "Sending..." : "Send request"}
             </Button>
           </DialogActions>

@@ -204,6 +204,7 @@ export default function PopularSearches({
               xs: 3,
               md: "27px",
             },
+            
             fontFamily:
               "var(--font-inter), Arial, sans-serif",
           }}
@@ -263,6 +264,7 @@ export default function PopularSearches({
                 fontWeight: 700,
                 textTransform: "none",
                 borderRadius: "8px",
+                
 
                 "& .MuiButton-endIcon": {
                   ml: "4px",
@@ -335,11 +337,8 @@ export default function PopularSearches({
                       alignItems: "center",
 
                       gap: "9px",
-
-                      border: "1px solid",
-                      borderColor: isActive
-                        ? "#07876A"
-                        : "#E4EBE9",
+ border:
+              "1px solid #d2d2d2",
 
                       borderRadius: "14px",
 

@@ -51,6 +51,11 @@ export const menuItems = {
     {
       label: "Pharmacy",
       icon: <LocalPharmacyOutlined />,
+      route: "/users/pages/pharmacySearch",
+    },
+    {
+      label: "My Medicine",
+      icon: <LocalPharmacyOutlined />,
       route: "/users/pages/medical",
     },
     {
@@ -273,15 +278,11 @@ export const menuItems = {
       icon: <GroupOutlined />,
       route: "/medical/pages/connections",
     },
+   
     {
-      label: "Medical Master",
+      label: "Entry & Stock",
       icon: <AssignmentOutlined />,
-      route: "/medical/pages/requests",
-    },
-    {
-      label: "Batch and Stock",
-      icon: <AssignmentOutlined />,
-      route: "/medical/pages/requests",
+      route: "/medical/pages/stock-management",
     },
     {
       label: "Pharmacy Requests",

@@ -317,7 +317,6 @@ export default function MedicalConnections({
     <Box
       sx={{
         width: "100%",
-        p: 3,
         bgcolor: "white",
         height:"90vh",
       }}
@@ -325,12 +324,13 @@ export default function MedicalConnections({
       <Box
         sx={{
           width: "100%",
-          maxWidth: "1250px",
+          bgcolor: "white",
+          
           mx: "auto",
         }}
       >
         <SectionTitle
-          title="Doctor Connections"
+          title="Doctor and Supplier Connections"
           description="Review and manage doctor connection requests for your medical store."
         />
 

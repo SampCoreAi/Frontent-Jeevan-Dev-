@@ -489,6 +489,7 @@ export default function MedicalPanel({ section = "dashboard" }) {
             sx={{
               width: "100%",
               minWidth: 0,
+              bgcolor:"white"
             }}
           >
             {renderContent()}

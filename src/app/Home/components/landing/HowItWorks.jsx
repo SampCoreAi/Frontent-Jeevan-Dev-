@@ -165,8 +165,6 @@ export default function HowItWorks() {
       component="section"
       ref={ref}
       sx={{
-      
-
         px: {
           xs: 1.5,
           md: 2,
@@ -175,10 +173,10 @@ export default function HowItWorks() {
         position: "relative",
         overflow: "hidden",
 
-       py: {
-  xs: 5,
-  md: 6,
-},
+        py: {
+          xs: 5,
+          md: 6,
+        },
       }}
     >
       {/* ========================================
@@ -194,7 +192,7 @@ export default function HowItWorks() {
 
           backgroundColor: "#FFFFFF",
 
-        backgroundImage: `
+          backgroundImage: `
   linear-gradient(
     90deg,
     rgba(7, 135, 106, 0.13) 0%,
@@ -223,7 +221,6 @@ export default function HowItWorks() {
     transparent 1px
   )
 `,
-
 
           backgroundSize: `
             100% 100%,
@@ -318,63 +315,32 @@ export default function HowItWorks() {
           />
 
           {/* TITLE */}
-
           <Box
             sx={{
-              display: "inline-block",
-
-              mb: {
-                xs: 0.5,
-                md: 1,
-              },
+              mb: { xs: 1, md: 1.5 },
+              textAlign: "center",
             }}
           >
             <Typography
               component="h2"
               sx={{
-                fontSize: {
-                  xs: "32px",
-                  sm: "38px",
-                  md: "48px",
-                },
-
-                fontWeight: 900,
-
-                letterSpacing: "-0.025em",
-
-                lineHeight: 0.95,
-
                 display: "flex",
-
                 flexWrap: "wrap",
-
                 justifyContent: "center",
-
-                gap: {
-                  xs: 0.5,
-                  md: 1,
-                },
+                gap: { xs: 0.75, md: 1.25 },
+                fontSize: { xs: "32px", sm: "40px", md: "48px" },
+                fontWeight: 800,
+                letterSpacing: "-0.04em",
+                lineHeight: 1.1,
               }}
             >
-              <span
-                style={{
-                  color: "#1e6658",
-                }}
-              >
+              <Box component="span" sx={{ color: "#172033" }}>
                 HOW IT
-              </span>
+              </Box>
 
-              <span
-                style={{
-                  color: "transparent",
-
-                  WebkitTextStroke: "2px #1e6658",
-
-                  MozTextStroke: "2px #1e6658",
-                }}
-              >
+              <Box component="span" sx={{ color: "#1e6658" }}>
                 WORKS
-              </span>
+              </Box>
             </Typography>
           </Box>
 
@@ -412,10 +378,7 @@ export default function HowItWorks() {
 
               lineHeight: 1.7,
 
-              px: {
-                xs: 2,
-                md: 0,
-              },
+             
             }}
           >
             Four steps between you and the right doctor — search, schedule,
@@ -432,11 +395,6 @@ export default function HowItWorks() {
             position: "relative",
           }}
         >
-          {/* ========================================
-              CONNECTING LINE
-              Desktop only
-          ======================================== */}
-
           <Box
             sx={{
               display: {

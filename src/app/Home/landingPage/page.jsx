@@ -32,6 +32,7 @@ import { RadialOrbitalTimelineDemo } from "../components/feature/demo";
 import Footer from "../components/Footer";
 import HowItWorks from "../components/landing/HowItWorks";
 import Main from "../components/DoctorRegister/EntryDoctor";
+import HealthcareSplitRegister from "../components/feature/HealthcareSplitRegister"
 import ElasticLine from "../components/ElasticLine";
 import HealthcareEcosystem from "../components/landing/HealthcareEcosystem";
 import FeedbackCTA from "../components/landing/FeedbackCTA";
@@ -282,6 +283,7 @@ export default function Landing() {
       </div>
 
       <ElasticLine />
+      {/* <HealthcareSplitRegister /> */}
       <HowItWorks />
       <JeevanShowcase />
       <ElasticLine />

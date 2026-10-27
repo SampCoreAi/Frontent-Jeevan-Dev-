@@ -412,7 +412,7 @@ export default function SearchBar() {
               "rgba(255,255,255,0.97)",
 
             border:
-              "1px solid #96f795",
+              "1px solid #c6c6c6",
 
             borderRadius: {
               xs: "17px",
