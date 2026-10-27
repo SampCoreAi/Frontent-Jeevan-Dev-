@@ -56,12 +56,27 @@ export default function MedicalStoreRequestForm({
         setApprovedMedicalStores(
           connections
             .filter((connection) => String(connection?.status || "").toUpperCase() === "APPROVED")
-            .map((connection) => ({
-              id: connection.medical_store_id || connection.store_id || connection.id,
-              name: connection.store_name || connection.medical_store_name || "Medical Store",
-              city: connection.city || connection.address || "",
-              phone: connection.phone || connection.phone_number || "",
-            }))
+          
+.map((connection) => ({
+  id:
+    connection.medical_store_id ||
+    connection.store_id ||
+    connection.id,
+
+  name:
+    connection.store_name ||
+    connection.medical_store_name ||
+    "Medical Store",
+
+  city: connection.city || connection.address || "",
+
+  phone:
+    connection.phone ||
+    connection.phone_number ||
+    "",
+}))
+.filter((store) => store.id)
+
             .filter((store) => store.id)
         );
       } catch (requestError) {
@@ -183,12 +198,44 @@ export default function MedicalStoreRequestForm({
                   background: medicalStoreDraft === store.id ? "#f0fdf4" : "#fff",
                 }}
               >
-                <Box>
-                  <Typography sx={{ fontSize: "12.5px", fontWeight: 700, color: "#0f172a" }}>{store.name}</Typography>
-                  <Typography sx={{ fontSize: "10.5px", color: "#64748b" }}>
-                    {store.city} • {store.phone}
-                  </Typography>
-                </Box>
+               
+<Box>
+  <Typography
+    sx={{
+      fontSize: "12.5px",
+      fontWeight: 700,
+      color: "#0f172a",
+    }}
+  >
+    {store.name}
+  </Typography>
+
+  <Typography
+    sx={{
+      fontSize: "10.5px",
+      color: "#64748b",
+    }}
+  >
+    {[
+      typeof store.city === "string"
+        ? store.city
+        : [
+            store.city?.shopUnit,
+            store.city?.street,
+            store.city?.area,
+            store.city?.cityDistrict,
+            store.city?.state,
+            store.city?.pinCode,
+          ]
+            .filter(Boolean)
+            .join(", "),
+      store.phone,
+    ]
+      .filter(Boolean)
+      .join(" • ") || "Address not available"}
+  </Typography>
+</Box>
+
                 <Button
                   size="small"
                   variant={medicalStoreDraft === store.id ? "contained" : "outlined"}

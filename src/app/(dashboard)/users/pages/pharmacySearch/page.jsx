@@ -182,14 +182,9 @@ function MedicineCard({ item, onSelect }) {
   );
 }
 
-export default function PatientMedicineSearchTab({
-  searchEndpoint = "/api/medicines/search",
-  popularMedicines = [],
-  nearbyPharmacies = [],
-  onMedicineSelect,
-  onConditionSelect,
-  onPopularSearchSelect,
-}) {
+export default function PatientMedicineSearchTab() {
+  const searchEndpoint = "/api/medicines/search";
+  const nearbyPharmacies = [];
   const [query, setQuery] = useState("");
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -266,7 +261,6 @@ export default function PatientMedicineSearchTab({
     Number(sort !== "relevance");
   const selectSearch = (term) => {
     setQuery(term);
-    onPopularSearchSelect?.(term);
   };
   const sectionTitle = { fontSize: 18, fontWeight: 750, color: C.ink };
   const grid = {
@@ -423,7 +417,6 @@ export default function PatientMedicineSearchTab({
                 <MedicineCard
                   key={item.id || item.medicine_id || i}
                   item={item}
-                  onSelect={onMedicineSelect}
                 />
               ))}
             </Box>
@@ -442,7 +435,6 @@ export default function PatientMedicineSearchTab({
                 Browse by health condition
               </Typography>
               <Button
-                onClick={() => onConditionSelect?.("all")}
                 sx={{ color: C.teal, textTransform: "none", fontSize: 13 }}
               >
                 View all
@@ -456,7 +448,6 @@ export default function PatientMedicineSearchTab({
                   type="button"
                   onClick={() => {
                     setQuery(label);
-                    onConditionSelect?.(label);
                   }}
                   variant="outlined"
                   sx={{
