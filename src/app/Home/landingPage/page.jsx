@@ -36,7 +36,6 @@ import HealthcareSplitRegister from "../components/feature/HealthcareSplitRegist
 import ElasticLine from "../components/ElasticLine";
 import HealthcareEcosystem from "../components/landing/HealthcareEcosystem";
 import FeedbackCTA from "../components/landing/FeedbackCTA";
-
 const slideUpFade = keyframes`
   0% {
     opacity: 0;
@@ -48,6 +47,10 @@ const slideUpFade = keyframes`
     transform: translateY(0);
   }
 `;
+const revealSx = {
+  animation: `${slideUpFade} 700ms ease-out both`,
+};
+
 
 const rotateContinuous = keyframes`
   0% {
@@ -254,41 +257,78 @@ export default function Landing() {
         )}
 
      
-        <StyledContainer
-          maxWidth="lg"
-          sx={{ mt: { xs: -2, md: -3 } }}
-        >
-          <HeroContent />
+       <StyledContainer
+  maxWidth="lg"
+  sx={{
+    mt: { xs: -2, md: -3 },
+    opacity: isVisible ? 1 : 0,
+    animation: isVisible
+      ? `${slideUpFade} 700ms ease-out both`
+      : "none",
+  }}
+>
+  <HeroContent />
 
-          <SearchBar />
+  <Box
+    sx={{
+      opacity: isVisible ? 1 : 0,
+      animation: isVisible
+        ? `${slideUpFade} 700ms ease-out 150ms both`
+        : "none",
+    }}
+  >
+    <SearchBar />
+  </Box>
 
-          <PopularSearches
-            popularSearches={popularSearches}
-            activeSearch={activeSearch}
-            setActiveSearch={setActiveSearch}
-            setSearchQuery={setSearchQuery}
-            setCity={setCity}
-            isVisible={isVisible}
-            slideUpFade={slideUpFade}
-          />
-        </StyledContainer>
+  <Box
+    sx={{
+      opacity: isVisible ? 1 : 0,
+      animation: isVisible
+        ? `${slideUpFade} 700ms ease-out 300ms both`
+        : "none",
+    }}
+  >
+    <PopularSearches
+      popularSearches={popularSearches}
+      activeSearch={activeSearch}
+      setActiveSearch={setActiveSearch}
+      setSearchQuery={setSearchQuery}
+      setCity={setCity}
+      isVisible={isVisible}
+      slideUpFade={slideUpFade}
+    />
+  </Box>
+</StyledContainer>
       </Box>
 
       <ElasticLine />
-      <HealthcareEcosystem />
+      <Box sx={revealSx}>
+  <HealthcareEcosystem />
+</Box>
       <ElasticLine />
 
-      <div>
-        <RadialOrbitalTimelineDemo />
-      </div>
+     <Box sx={{ ...revealSx, animationDelay: "100ms" }}>
+  <RadialOrbitalTimelineDemo />
+</Box>
+
 
       <ElasticLine />
       {/* <HealthcareSplitRegister /> */}
-      <HowItWorks />
-      <JeevanShowcase />
+     
+<Box sx={{ ...revealSx, animationDelay: "150ms" }}>
+  <HowItWorks />
+</Box>
+    <Box sx={{ ...revealSx, animationDelay: "200ms" }}>
+  <JeevanShowcase />
+</Box>
       <ElasticLine />
-      <Main />
-      <FeedbackCTA />
+      <Box sx={{ ...revealSx, animationDelay: "250ms" }}>
+  <Main />
+</Box>
+
+<Box sx={{ ...revealSx, animationDelay: "300ms" }}>
+  <FeedbackCTA />
+</Box>
       <JeevanDevLogo />
       <Footer />
     </Box>
