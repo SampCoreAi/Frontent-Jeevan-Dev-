@@ -152,31 +152,20 @@ export default function PurchaseSettingsPage() {
 
   return (
     <Box sx={{  mx: "auto", pb: 3 }}>
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems={{ sm: "center" }}
-        gap={1.5}
-        sx={{ mb: 2.5 }}
-      >
+        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1.5} sx={{ mb: 2.5 }}>
         <Box>
-          
+          <Typography sx={{ fontSize: 21, fontWeight: 800, color: "#1D2B26" }}>
+            Purchase Settings
+          </Typography>
+          <Typography sx={{ mt: 0.5, fontSize: 13, color: muted }}>
+            Configure defaults for your purchase entries.
+          </Typography>
         </Box>
-
         <Button
           variant="contained"
           startIcon={<SaveOutlined />}
           onClick={saveSettings}
-          sx={{
-            bgcolor: green,
-            px: 2,
-            py: 1,
-            borderRadius: 1.5,
-            textTransform: "none",
-            fontWeight: 700,
-            boxShadow: "none",
-            "&:hover": { bgcolor: "#06765D", boxShadow: "none" },
-          }}
+          sx={{ bgcolor: green, px: 2, py: 1, borderRadius: 1.5, textTransform: "none", fontWeight: 700, whiteSpace: "nowrap", boxShadow: "none", "&:hover": { bgcolor: "#06765D", boxShadow: "none" } }}
         >
           Save Settings
         </Button>
@@ -258,7 +247,7 @@ export default function PurchaseSettingsPage() {
               <Chip
                 size="small"
                 label={settings.noteTemplates.length}
-                sx={{ bgcolor: "#F1F6F3", color: "#52645D", fontWeight: 700 }}
+                sx={{ bgcolor: "#F1F6F3", color: "#52645D", fontWeight: 700, fontSize:12}}
               />
             }
           />
