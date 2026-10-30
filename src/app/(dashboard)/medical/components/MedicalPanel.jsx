@@ -47,7 +47,7 @@ export default function MedicalPanel({ section = "dashboard" }) {
   const pageSize = 10;
 
   const loadProfile = async () => {
-    const response = await api.get("/api/medical-stores/profile");
+    const response = await api.get("/api/pharmacy/getProfile");
 
     let loggedInUser = {};
 

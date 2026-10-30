@@ -473,9 +473,10 @@ export default function DoctorMedicalPanel() {
           columns={[
             "SNO",
             "PATIENT",
-            "MEDICINE",
+            
             "STORE",
             "AMOUNT",
+            "CREATE",
             "STATUS",
             "ACTION",
           ]}
@@ -544,17 +545,7 @@ export default function DoctorMedicalPanel() {
                     </Box>
                   </TableCell>
 
-                  <TableCell
-                    sx={{
-                      color: "#1f2937 !important",
-                      maxWidth: 210,
-                      whiteSpace: "normal",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {row.medicineName}
-                  </TableCell>
-
+                 
                   <TableCell
                     sx={{
                       color: "#475569 !important",
@@ -574,7 +565,24 @@ export default function DoctorMedicalPanel() {
                   >
                     {formatCurrency(row.amount)}
                   </TableCell>
-
+                 <TableCell
+  sx={{
+    color: "#0f172a !important",
+    fontWeight: 600,
+    whiteSpace: "nowrap",
+  }}
+>
+  {row.invoiceDate
+    ? new Date(row.invoiceDate.replace(" ", "T")).toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
+    : "-"}
+</TableCell>
                   <TableCell>
                     <Chip
                       size="small"

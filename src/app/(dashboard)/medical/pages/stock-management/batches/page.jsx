@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -5,6 +6,7 @@ import {
   DeleteOutline,
   EditOutlined,
   VisibilityOutlined,
+  ArrowBack,
 } from "@mui/icons-material";
 import {
   Box,
@@ -33,6 +35,7 @@ const STORAGE_KEY = "medical-stock-batches";
 const border = "#DDE9E5";
 const green = "#07876A";
 const muted = "#71827B";
+
 const headCell = {
   bgcolor: "#F1F6F3",
   color: "#52645D",
@@ -40,6 +43,7 @@ const headCell = {
   fontWeight: 700,
   whiteSpace: "nowrap",
 };
+
 const sampleRows = [
   {
     slotNo: "SLOT-001",
@@ -111,17 +115,21 @@ const formatDate = (value) => {
 
 function getStatus(items) {
   const today = new Date().toISOString().slice(0, 10);
+
   const expired = items.filter(
-    (item) => item.expiry && item.expiry < today,
+    (item) => item.expiry && item.expiry < today
   ).length;
+
   const quantity = items.reduce(
-    (sum, item) => sum + Number(item.qty || 0) + Number(item.free || 0),
-    0,
+    (sum, item) =>
+      sum + Number(item.qty || 0) + Number(item.free || 0),
+    0
   );
 
   if (quantity === 0) return "Completed";
   if (expired === items.length) return "Expired";
   if (expired > 0) return "Partial";
+
   return "Available";
 }
 
@@ -151,7 +159,10 @@ export default function BatchesPage() {
   const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const saved = JSON.parse(
+      localStorage.getItem(STORAGE_KEY) || "[]"
+    );
+
     setRows(saved.length ? saved : sampleRows);
   }, []);
 
@@ -165,26 +176,33 @@ export default function BatchesPage() {
 
     rows.forEach((row) => {
       const key = getKey(row);
+
       if (!groups.has(key)) groups.set(key, []);
+
       groups.get(key).push(row);
     });
 
     return Array.from(groups, ([key, items], index) => {
       const totalQuantity = items.reduce(
-        (sum, item) => sum + Number(item.qty || 0) + Number(item.free || 0),
-        0,
+        (sum, item) =>
+          sum + Number(item.qty || 0) + Number(item.free || 0),
+        0
       );
 
       return {
         key,
         items,
-        slotNo: items[0].slotNo || `SLOT-${String(index + 1).padStart(3, "0")}`,
+        slotNo:
+          items[0].slotNo ||
+          `SLOT-${String(index + 1).padStart(3, "0")}`,
         supplier: items[0].supplier || "—",
         billNo: items[0].billNo || "—",
         billDate: items[0].billDate || "",
         totalQuantity,
         itemCount: new Set(
-          items.map((item) => item.medicine?.toLowerCase().trim()),
+          items.map((item) =>
+            item.medicine?.toLowerCase().trim()
+          )
         ).size,
         status: getStatus(items),
       };
@@ -192,16 +210,21 @@ export default function BatchesPage() {
   }, [rows]);
 
   const filteredSlots = slots.filter((slot) => {
-    const text = `${slot.slotNo} ${slot.supplier} ${slot.billNo}`.toLowerCase();
+    const text =
+      `${slot.slotNo} ${slot.supplier} ${slot.billNo}`.toLowerCase();
+
     const matchesSearch = text.includes(search.toLowerCase());
+
     const matchesStatus =
-      statusFilter === "All statuses" || slot.status === statusFilter;
+      statusFilter === "All statuses" ||
+      slot.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
   const openEdit = (slot) => {
     setEditSlot(slot);
+
     setEditForm({
       supplier: slot.supplier === "—" ? "" : slot.supplier,
       billNo: slot.billNo === "—" ? "" : slot.billNo,
@@ -219,7 +242,7 @@ export default function BatchesPage() {
             billNo: editForm.billNo,
             billDate: editForm.billDate,
           }
-        : row,
+        : row
     );
 
     saveRows(updated);
@@ -228,312 +251,380 @@ export default function BatchesPage() {
 
   const deleteSlot = (slot) => {
     if (!window.confirm(`${slot.slotNo} delete karna hai?`)) return;
+
     saveRows(rows.filter((row) => getKey(row) !== slot.key));
+
+    if (selectedSlot?.key === slot.key) {
+      setSelectedSlot(null);
+    }
   };
 
   return (
     <Box>
-     
+      {/* SLOTS LIST */}
 
-      <Paper
-        variant="outlined"
-        sx={{ p: 1.5, mb: 2, borderColor: border, borderRadius: 2.5 }}
-      >
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-          <TextField
-            size="small"
-            fullWidth
-            placeholder="Search slot, supplier or bill no."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          <TextField
-            select
-            size="small"
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-            sx={{ minWidth: { sm: 190 } }}
+      {!selectedSlot && (
+        <>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 1.5,
+              mb: 2,
+              borderColor: border,
+              borderRadius: 2.5,
+            }}
           >
-            {[
-              "All statuses",
-              "Available",
-              "Partial",
-              "Expired",
-              "Completed",
-            ].map((status) => (
-              <MenuItem key={status} value={status}>
-                {status}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Stack>
-      </Paper>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1.5}
+            >
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="Search slot, supplier or bill no."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
 
-      <Paper
-        variant="outlined"
-        sx={{ borderColor: border, borderRadius: 2.5, overflow: "hidden" }}
-      >
-        <TableContainer sx={{ overflowX: "auto" }}>
-          <Table size="small" sx={{ minWidth: 950 }}>
-            <TableHead>
-              <TableRow>
+              <TextField
+                select
+                size="small"
+                value={statusFilter}
+                onChange={(event) =>
+                  setStatusFilter(event.target.value)
+                }
+                sx={{ minWidth: { sm: 190 } }}
+              >
                 {[
-                  "Slot No.",
-                  "Supplier Name",
-                  "Purchase Date",
-                  "Total Quantity",
-                  "No. of Items",
-                  "Status",
-                  "Action",
-                ].map((label) => (
-                  <TableCell
-                    key={label}
-                    sx={{
-                      bgcolor: "#F1F6F3",
-                      color: "#52645D",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      whiteSpace: "nowrap",
-                      py: 1.5,
-                    }}
-                  >
-                    {label}
-                  </TableCell>
+                  "All statuses",
+                  "Available",
+                  "Partial",
+                  "Expired",
+                  "Completed",
+                ].map((status) => (
+                  <MenuItem key={status} value={status}>
+                    {status}
+                  </MenuItem>
                 ))}
-              </TableRow>
-            </TableHead>
+              </TextField>
+            </Stack>
+          </Paper>
 
-            <TableBody>
-              {filteredSlots.length ? (
-                filteredSlots.map((slot) => (
-                  <TableRow
-                    key={slot.key}
-                    hover
-                    sx={{
-                      "& td": { py: 1.5 },
-                      "&:last-child td": { borderBottom: 0 },
-                    }}
-                  >
-                    <TableCell sx={{ color: green, fontWeight: 700 }}>
-                      {slot.slotNo}
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>
-                      {slot.supplier}
-                    </TableCell>
-                    <TableCell>{formatDate(slot.billDate)}</TableCell>
-                    <TableCell>{slot.totalQuantity}</TableCell>
-                    <TableCell>{slot.itemCount}</TableCell>
-                    <TableCell>
-                      <StatusChip status={slot.status} />
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={0.5}>
-                        <Tooltip title="View details">
-                          <IconButton
-                            size="small"
-                            onClick={() => setSelectedSlot(slot)}
-                            sx={{
-                              color: green,
-                              bgcolor: "#EAF8F4",
-                              "&:hover": { bgcolor: "#DDF2EA" },
-                            }}
-                          >
-                            <VisibilityOutlined sx={{ color: "#52645D", fontSize: 19 }}  />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Edit slot">
-                          <IconButton
-                            size="small"
-                            onClick={() => openEdit(slot)}
-                            sx={{
-                              color: "#52645D",
-                              bgcolor: "#F3F7F5",
-                              "&:hover": { bgcolor: "#E8F1ED" },
-                            }}
-                          >
-                            <EditOutlined sx={{ color: "#52645D", fontSize: 19 }}  />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete slot">
-                          <IconButton
-                            size="small"
-                            onClick={() => deleteSlot(slot)}
-                            sx={{
-                              color: "#C43D3D",
-                              bgcolor: "#FFF3F2",
-                              "&:hover": { bgcolor: "#FCE5E3" },
-                            }}
-                          >
-                            <DeleteOutline sx={{ color: "#52645D", fontSize: 19 }}  />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
+          <Paper
+            variant="outlined"
+            sx={{
+              borderColor: border,
+              borderRadius: 2.5,
+              overflow: "hidden",
+            }}
+          >
+            <TableContainer sx={{ overflowX: "auto" }}>
+              <Table size="small" sx={{ minWidth: 950 }}>
+                <TableHead>
+                  <TableRow>
+                    {[
+                      "Slot No.",
+                      "Supplier Name",
+                      "Purchase Date",
+                      "Total Quantity",
+                      "No. of Items",
+                      "Status",
+                      "Action",
+                    ].map((label) => (
+                      <TableCell
+                        key={label}
+                        sx={{ ...headCell, py: 1.5 }}
+                      >
+                        {label}
+                      </TableCell>
+                    ))}
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    align="center"
-                    sx={{ py: 5, color: muted }}
-                  >
-                    Koi purchase slot nahi mila.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+                </TableHead>
 
-      <Dialog
-        open={Boolean(selectedSlot)}
-        onClose={() => setSelectedSlot(null)}
-        maxWidth="xl"
-        fullWidth
-      >
-        <DialogTitle sx={{ fontWeight: 700 }}>
-          {selectedSlot?.slotNo} — Purchase Details
-        </DialogTitle>
-        <DialogContent>
-          {selectedSlot && (
-            <>
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                gap={2}
-                sx={{ mb: 2 }}
-              >
-                <Typography>
-                  Supplier: <b>{selectedSlot.supplier}</b>
-                </Typography>
-                <Typography>
-                  Bill No.: <b>{selectedSlot.billNo}</b>
-                </Typography>
-                <Typography>
-                  Purchase Date: <b>{formatDate(selectedSlot.billDate)}</b>
-                </Typography>
-                <Typography>
-                  Total Quantity: <b>{selectedSlot.totalQuantity}</b>
-                </Typography>
-              </Stack>
-
-              <TableContainer
-                sx={{
-                  border: `1px solid ${border}`,
-                  borderRadius: 2,
-                  overflowX: "auto",
-                }}
-              >
-                <Table size="small" sx={{ minWidth: 1200 }}>
-                  <TableHead>
-                    <TableRow>
-                      {[
-                        "#",
-                        "Medicine",
-                        "Batch No.",
-                        "MFG",
-                        "Expiry",
-                        "Qty",
-                        "Free",
-                        "Purchase ₹",
-                        "MRP ₹",
-                        "Selling ₹",
-                        "GST %",
-                        "Discount %",
-                        "Amount ₹",
-                      ].map((label) => (
-                        <TableCell key={label} sx={{ ...headCell, py: 1.4 }}>
-                          {label}
+                <TableBody>
+                  {filteredSlots.length ? (
+                    filteredSlots.map((slot) => (
+                      <TableRow
+                        key={slot.key}
+                        hover
+                        sx={{
+                          "& td": { py: 1.5 },
+                          "&:last-child td": { borderBottom: 0 },
+                        }}
+                      >
+                        <TableCell
+                          sx={{ color: green, fontWeight: 700 }}
+                        >
+                          {slot.slotNo}
                         </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {selectedSlot.items.map((item, index) => (
-                      <TableRow key={`${item.batch}-${index}`} hover>
-                        <TableCell>{index + 1}</TableCell>
+
                         <TableCell sx={{ fontWeight: 600 }}>
-                          {item.medicine || "—"}
+                          {slot.supplier}
                         </TableCell>
-                        <TableCell>{item.batch || "—"}</TableCell>
-                        <TableCell>{formatDate(item.mfg)}</TableCell>
-                        <TableCell>{formatDate(item.expiry)}</TableCell>
-                        <TableCell>{item.qty || 0}</TableCell>
-                        <TableCell>{item.free || 0}</TableCell>
+
                         <TableCell>
-                          ₹{Number(item.purchase || 0).toFixed(2)}
+                          {formatDate(slot.billDate)}
                         </TableCell>
-                        <TableCell>₹{Number(item.mrp || 0).toFixed(2)}</TableCell>
+
                         <TableCell>
-                          ₹{Number(item.selling || 0).toFixed(2)}
+                          {slot.totalQuantity}
                         </TableCell>
-                        <TableCell>{item.gst || 0}%</TableCell>
-                        <TableCell>{item.discount || 0}%</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>
-                          ₹{getAmount(item).toFixed(2)}
+
+                        <TableCell>{slot.itemCount}</TableCell>
+
+                        <TableCell>
+                          <StatusChip status={slot.status} />
+                        </TableCell>
+
+                        <TableCell>
+                          <Stack direction="row" spacing={0.5}>
+                            <Tooltip title="View medicines">
+                              <IconButton
+                                size="small"
+                                onClick={() => setSelectedSlot(slot)}
+                                sx={{
+                                  color: green,
+                                  bgcolor: "#EAF8F4",
+                                  "&:hover": {
+                                    bgcolor: "#DDF2EA",
+                                  },
+                                }}
+                              >
+                                <VisibilityOutlined
+                                  sx={{
+                                    color: "#52645D",
+                                    fontSize: 19,
+                                  }}
+                                />
+                              </IconButton>
+                            </Tooltip>
+
+                            <Tooltip title="Edit slot">
+                              <IconButton
+                                size="small"
+                                onClick={() => openEdit(slot)}
+                                sx={{
+                                  color: "#52645D",
+                                  bgcolor: "#F3F7F5",
+                                  "&:hover": {
+                                    bgcolor: "#E8F1ED",
+                                  },
+                                }}
+                              >
+                                <EditOutlined
+                                  sx={{
+                                    color: "#52645D",
+                                    fontSize: 19,
+                                  }}
+                                />
+                              </IconButton>
+                            </Tooltip>
+
+                            <Tooltip title="Delete slot">
+                              <IconButton
+                                size="small"
+                                onClick={() => deleteSlot(slot)}
+                                sx={{
+                                  color: "#C43D3D",
+                                  bgcolor: "#FFF3F2",
+                                  "&:hover": {
+                                    bgcolor: "#FCE5E3",
+                                  },
+                                }}
+                              >
+                                <DeleteOutline
+                                  sx={{
+                                    color: "#52645D",
+                                    fontSize: 19,
+                                  }}
+                                />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedSlot(null)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        align="center"
+                        sx={{ py: 5, color: muted }}
+                      >
+                        Koi purchase slot nahi mila.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        </>
+      )}
 
-      <Dialog
-        open={Boolean(editSlot)}
-        onClose={() => setEditSlot(null)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle sx={{ fontWeight: 700 }}>Edit Purchase Slot</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField
-              label="Supplier Name"
-              size="small"
-              value={editForm.supplier || ""}
-              onChange={(event) =>
-                setEditForm({ ...editForm, supplier: event.target.value })
-              }
-            />
-            <TextField
-              label="Supplier bill no."
-              size="small"
-              value={editForm.billNo || ""}
-              onChange={(event) =>
-                setEditForm({ ...editForm, billNo: event.target.value })
-              }
-            />
-            <TextField
-              label="Purchase Date"
-              type="date"
-              size="small"
-              value={editForm.billDate || ""}
-              onChange={(event) =>
-                setEditForm({ ...editForm, billDate: event.target.value })
-              }
-              InputLabelProps={{ shrink: true }}
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditSlot(null)}>Cancel</Button>
-          <Button
-            onClick={saveEdit}
-            variant="contained"
-            sx={{ bgcolor: green, "&:hover": { bgcolor: "#06765D" } }}
+      {/* SELECTED SLOT MEDICINES */}
+
+      {selectedSlot && (
+        <Box>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            alignItems={{ xs: "flex-start", sm: "center" }}
+            justifyContent="space-between"
+            spacing={2}
+            sx={{ mb: 2 }}
           >
-            Save changes
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <Box>
+              <Typography variant="h6" fontWeight={700}>
+                {selectedSlot.slotNo} — Purchase Details
+              </Typography>
+
+              <Typography variant="body2" color="text.secondary">
+                {selectedSlot.supplier} · {selectedSlot.billNo} ·{" "}
+                {formatDate(selectedSlot.billDate)}
+              </Typography>
+            </Box>
+
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBack />}
+              onClick={() => setSelectedSlot(null)}
+              sx={{
+                color: green,
+                borderColor: green,
+                "&:hover": {
+                  borderColor: green,
+                  bgcolor: "#EAF8F4",
+                },
+              }}
+            >
+              Back to Slots
+            </Button>
+          </Stack>
+
+          <Stack
+            direction="row"
+            flexWrap="wrap"
+            gap={1}
+            sx={{ mb: 2 }}
+          >
+            <Chip
+              label={`Total Quantity: ${selectedSlot.totalQuantity}`}
+              sx={{ bgcolor: "#EAF8F4", color: green , fontSize:12 , }}
+              />
+
+            <Chip
+              label={`Total Medicines: ${selectedSlot.itemCount}`}
+              sx={{ bgcolor: "#EAF8F4", color: green , fontSize:12 , }}
+              />
+
+            <StatusChip status={selectedSlot.status}
+               sx={{ bgcolor: "#EAF8F4", color: green , fontSize:12 , }} />
+           
+          </Stack>
+
+          <Paper
+            variant="outlined"
+            sx={{
+              borderColor: border,
+              borderRadius: 2.5,
+              overflow: "hidden",
+            }}
+          >
+            <TableContainer sx={{ overflowX: "auto" }}>
+              <Table size="small" sx={{ minWidth: 1200 }}>
+                <TableHead>
+                  <TableRow>
+                    {[
+                      "#",
+                      "Medicine",
+                      "Batch No.",
+                      "MFG",
+                      "Expiry",
+                      "Qty",
+                      "Free",
+                      "Purchase ₹",
+                      "MRP ₹",
+                      "Selling ₹",
+                      "GST %",
+                      "Discount %",
+                      "Amount ₹",
+                    ].map((label) => (
+                      <TableCell
+                        key={label}
+                        sx={{ ...headCell, py: 1.4 }}
+                      >
+                        {label}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {selectedSlot.items.map((item, index) => (
+                    <TableRow
+                      key={`${item.batch}-${index}`}
+                      hover
+                      sx={{
+                        "& td": { py: 1.5 },
+                      }}
+                    >
+                      <TableCell>{index + 1}</TableCell>
+
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        {item.medicine || "—"}
+                      </TableCell>
+
+                      <TableCell>{item.batch || "—"}</TableCell>
+
+                      <TableCell>{formatDate(item.mfg)}</TableCell>
+
+                      <TableCell>{formatDate(item.expiry)}</TableCell>
+
+                      <TableCell>{item.qty || 0}</TableCell>
+
+                      <TableCell>{item.free || 0}</TableCell>
+
+                      <TableCell>
+                        ₹{Number(item.purchase || 0).toFixed(2)}
+                      </TableCell>
+
+                      <TableCell>
+                        ₹{Number(item.mrp || 0).toFixed(2)}
+                      </TableCell>
+
+                      <TableCell>
+                        ₹{Number(item.selling || 0).toFixed(2)}
+                      </TableCell>
+
+                      <TableCell>{item.gst || 0}%</TableCell>
+
+                      <TableCell>{item.discount || 0}%</TableCell>
+
+                      <TableCell sx={{ fontWeight: 700 }}>
+                        ₹{getAmount(item).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                  {!selectedSlot.items.length && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={13}
+                        align="center"
+                        sx={{ py: 4, color: muted }}
+                      >
+                        No medicines found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        </Box>
+      )}
+
+      
     </Box>
   );
 }

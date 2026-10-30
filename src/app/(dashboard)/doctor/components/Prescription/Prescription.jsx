@@ -231,16 +231,56 @@ const qrImage = doctor?.qr_url || null;
 
 
 
-      if (apiData?.prescription) {
-        await appointmentService.editPrescription(
-          appointmentId,
-          payload
-        );
-      } else {
-        await prescriptionService.createPrescription(
-          payload
-        );
-      }
+    let saveResponse;
+
+if (apiData?.prescription) {
+  saveResponse = await appointmentService.editPrescription(
+    appointmentId,
+    payload
+  );
+} else {
+  saveResponse = await prescriptionService.createPrescription(payload);
+}
+
+// Immediately update frontend state
+const savedPrescription = {
+  ...(apiData?.prescription || {}),
+  diagnosis: payload.diagnosis,
+  remark: payload.remark,
+  follow_up_date: payload.follow_up_date,
+  medicines: payload.medicines,
+  created_at:
+    apiData?.prescription?.created_at || new Date().toISOString(),
+};
+
+setApiData((prev) => ({
+  ...prev,
+  prescription: savedPrescription,
+}));
+
+setSnackbar({
+  open: true,
+  severity: "success",
+  message: apiData?.prescription
+    ? "Prescription Updated Successfully"
+    : "Prescription Created Successfully",
+});
+
+// Fetch latest data from API
+try {
+  const res =
+    await appointmentService.getPrescriptionByAppointmentId(
+      appointmentId
+    );
+
+  const responseData = res?.data?.data ?? res?.data;
+
+  if (responseData?.prescription) {
+    setApiData(responseData);
+  }
+} catch (refreshError) {
+  console.log("Prescription refresh error:", refreshError.message);
+}
 
         setSnackbar({
           open: true,

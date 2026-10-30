@@ -1,366 +1,208 @@
 "use client";
 
-import { useMemo } from "react";
 import {
   Box,
-  Chip,
   IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
 } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
-
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 
-/* =========================================================
-   INPUT STYLES
-========================================================= */
+const headerCellSx = {
+  py: 1,
+  px: 1,
+  color: "#52627A",
+  bgcolor: "#F7FAF9",
+  borderBottom: "1px solid #DCE7E3",
+  fontSize: 9.5,
+  fontWeight: 800,
+  whiteSpace: "nowrap",
+};
 
-const baseInputStyle = {
-  width: "100%",
-
+const inputSx = {
   "& .MuiInputBase-root": {
-    width: "100%",
-    height: 36,
-    px: 0.7,
-    borderRadius: "5px",
-    fontSize: "11.5px",
-    transition: "0.15s",
-    bgcolor: "transparent",
+    height: 28,
+    fontSize: 11,
   },
-
-  "& .MuiInputBase-root:hover": {
-    bgcolor: "#F8FAFC",
-  },
-
-  "& .MuiInputBase-root.Mui-focused": {
-    bgcolor: "#FFFFFF",
-    boxShadow: "0 0 0 1px #07876A",
-  },
-
-  "& .MuiInputBase-root.Mui-disabled": {
-    bgcolor: "transparent",
-  },
-
-  "& input": {
-    p: 0,
-    color: "#172033",
-    fontWeight: 500,
-  },
-
-  "& input::placeholder": {
-    color: "#94A3B8",
-    opacity: 1,
+  "& .MuiInputBase-input": {
+    px: 0.5,
+    py: 0.3,
   },
 };
-
-const numberInputStyle = {
-  ...baseInputStyle,
-
-  "& input": {
-    p: 0,
-    textAlign: "right",
-    fontWeight: 600,
-    color: "#172033",
-  },
-
-  "& input::-webkit-inner-spin-button": {
-    display: "none",
-  },
-
-  "& input::-webkit-outer-spin-button": {
-    display: "none",
-  },
-};
-
-/* =========================================================
-   MAIN COMPONENT
-========================================================= */
 
 export default function MedicineBillingTable({
   invoiceLines = [],
   onUpdateLine = () => {},
   onRemoveLine = () => {},
 }) {
-  const columns = useMemo(() => {
-    const editableColumn = (field, headerName, width, type = "text", inputProps = {}) => ({
-      field,
-      headerName,
-      width,
-      minWidth: 75,
-      sortable: false,
-      renderCell: ({ row }) => (
-        <TextField
-          type={type}
-          value={row[field] ?? ""}
-          onChange={(event) =>
-            onUpdateLine(row._lineIndex, field, event.target.value)
-          }
-          placeholder={field === "medicine_name" ? "Medicine name" : ""}
-          variant="standard"
-          fullWidth
-          InputProps={{ disableUnderline: true }}
-          inputProps={inputProps}
-          sx={type === "number" ? numberInputStyle : baseInputStyle}
-        />
-      ),
-    });
-
-    return [
-      editableColumn("medicine_name", "MEDICINE", 120),
-      editableColumn("dose", "DOSE", 60),
-      editableColumn("batch_number", "BATCH", 100),
-      editableColumn("expiry_date", "EXPIRY", 135, "date"),
-      editableColumn("quantity", "QTY", 10, "number", { min: 1 }),
-      editableColumn("unit_price", "UNIT PRICE", 80, "number", {
-        min: 0,
-        step: "0.01",
-      }),
-      editableColumn("gst_rate", "GST %", 50, "number", {
-        min: 0,
-        max: 100,
-      }),
-      {
-        field: "amount",
-        headerName: "AMOUNT",
-        width: 100,
-        minWidth: 100,
-        sortable: false,
-        renderCell: ({ value }) => (
-          <Typography
-            sx={{
-              width: "100%",
-              textAlign: "right",
-              pr: 1,
-              color: value > 0 ? "#07876A" : "#94A3B8",
-              fontSize: "12px",
-              fontWeight: 800,
-            }}
-          >
-            ₹{value.toFixed(2)}
-          </Typography>
-        ),
-      },
-      {
-        field: "actions",
-        headerName: "",
-        width: 14,
-        sortable: false,
-        filterable: false,
-        disableColumnMenu: true,
-        renderCell: ({ row }) => (
-          <IconButton
-            size="small"
-            onClick={() => onRemoveLine(row._lineIndex)}
-            aria-label="Remove medicine"
-            title="Remove medicine"
-            sx={{
-              width: 30,
-              height: 30,
-              color: "#DC2626",
-              "&:hover": { bgcolor: "#FEF2F2" },
-            }}
-          >
-            <DeleteOutlineRoundedIcon sx={{ fontSize: 18 }} />
-          </IconButton>
-        ),
-      },
-    ];
-  }, [onRemoveLine, onUpdateLine]);
-
-  const rows = invoiceLines.map((line, index) => {
-    const quantity = Number(line.quantity || 0);
-    const price = Number(line.unit_price || 0);
-    const gst = Number(line.gst_rate || 0);
-    const subtotal = quantity * price;
-
-    return {
-      ...line,
-      id: line._rowId || index,
-      _lineIndex: index,
-      amount: subtotal + (subtotal * gst) / 100,
-    };
-  });
-
-  /* ---------- GRAND TOTAL ---------- */
-
-  const calculatedAmount = invoiceLines.reduce((total, line) => {
-    const quantity = Number(line.quantity || 0);
-    const price = Number(line.unit_price || 0);
-    const gst = Number(line.gst_rate || 0);
-
-    const subtotal = quantity * price;
-    const gstAmount = (subtotal * gst) / 100;
-
-    return total + subtotal + gstAmount;
-  }, 0);
-
   return (
     <Box
       sx={{
-        bgcolor: "#FFFFFF",
-        border: "1px solid #CBD5E1",
-        borderRadius: "9px",
-        overflow: "hidden",
+        width: "100%",
+        overflowX: "auto",
+        border: "1px solid #D6E6E0",
+        borderRadius: "8px",
       }}
     >
-      {/* ================= TITLE BAR ================= */}
+      <Table size="small" sx={{ minWidth: 690, tableLayout: "fixed" }}>
+        <TableHead>
+          <TableRow>
+            <TableCell sx={{ ...headerCellSx, width: 38 }}>#</TableCell>
+            <TableCell sx={{ ...headerCellSx, width: 190 }}>MEDICINE</TableCell>
+            <TableCell sx={{ ...headerCellSx, width: 78 }}>BATCH</TableCell>
+            <TableCell sx={{ ...headerCellSx, width: 108 }}>EXPIRY</TableCell>
+            <TableCell sx={{ ...headerCellSx, width: 50 }}>QTY</TableCell>
+            <TableCell sx={{ ...headerCellSx, width: 94 }}>UNIT PRICE</TableCell>
+            <TableCell sx={{ ...headerCellSx, width: 76 }}>DISCOUNT</TableCell>
+            <TableCell sx={{ ...headerCellSx, width: 90, textAlign: "right" }}>
+              AMOUNT
+            </TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {invoiceLines.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={8} sx={{ py: 3, textAlign: "center", color: "#64748B", fontSize: 12 }}>
+                No medicines added yet
+              </TableCell>
+            </TableRow>
+          ) : (
+            invoiceLines.map((line, index) => {
+              const quantity = Number(line.quantity || 0);
+              const price = Number(line.unit_price || 0);
+              const gst = Number(line.gst_rate || 0);
+              const subtotal = quantity * price;
+              const amount = subtotal + (subtotal * gst) / 100;
+              const discount = line.discount_amount ?? line.discount;
 
-      <Box
-        sx={{
-          px: 1.5,
-          py: 1.1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid #E2E8F0",
-        }}
-      >
-        <Box>
-          <Typography
-            sx={{
-              color: "#172033",
-              fontSize: "13px",
-              fontWeight: 700,
-            }}
-          >
-            Medicine &amp; Billing Details
-          </Typography>
-
-          <Typography
-            sx={{
-              mt: 0.15,
-              color: "#64748B",
-              fontSize: "10.5px",
-            }}
-          >
-            "Edit fields directly; drag column edges to resize"
-          </Typography>
-        </Box>
-
-        <Chip
-          size="small"
-          label={`${invoiceLines.length} item(s)`}
-          sx={{
-            height: 24,
-            bgcolor: "#F1F5F9",
-            color: "#475569",
-            borderRadius: "5px",
-            fontSize: "10px",
-            fontWeight: 700,
-          }}
-        />
-      </Box>
-
-      {/* ================= TABLE ================= */}
-
-      <Box sx={{ width: "100%", overflowX: "auto" }}>
-     <DataGrid
-  rows={rows}
-  columns={columns}
-  autoHeight
-  rowHeight={46}
-  columnHeaderHeight={38}
-  disableColumnResize={false}
-  disableRowSelectionOnClick
-  disableColumnMenu
-  hideFooter
-
-sx={{
-  width: "100%",
-  border: 0,
-  borderRadius: 0,
-
-    "& .MuiDataGrid-columnHeaders": {
-      bgcolor: "#F1F5F9",
-      borderBottom: "1px solid #CBD5E1",
-    },
-
-    "& .MuiDataGrid-columnHeaderTitle": {
-      color: "#475569",
-      fontSize: "9.5px",
-      fontWeight: 800,
-      letterSpacing: ".3px",
-    },
-
-    /* CELL */
-    "& .MuiDataGrid-cell": {
-      px: 0.8,
-      py: 0,
-      borderColor: "#E2E8F0",
-      display: "flex",
-      alignItems: "center",
-    },
-
-    /* INPUT */
-    "& .MuiDataGrid-cell .MuiInputBase-root": {
-      height: 34,
-      margin: 0,
-    },
-
-    /* AMOUNT */
-    "& .MuiDataGrid-cell .MuiTypography-root": {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "flex-end",
-      height: "100%",
-    },
-
-    /* DELETE */
-    "& .MuiDataGrid-cell .MuiIconButton-root": {
-      margin: 0,
-      alignSelf: "center",
-    },
-
-    "& .MuiDataGrid-row:hover": {
-      bgcolor: "#F8FFFC",
-    },
-
-    "& .MuiDataGrid-overlay": {
-      color: "#94A3B8",
-      fontSize: "12px",
-    },
-  }}
-  localeText={{
-    noRowsLabel: "No medicines added yet",
-  }}
-/>
-      </Box>
-
-      {/* ================= TOTAL ================= */}
-
-      <Box
-        sx={{
-          px: 2,
-          py: 1.2,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "flex-end",
-          gap: 3,
-          bgcolor: "#F8FAFC",
-          borderTop: "1px solid #CBD5E1",
-        }}
-      >
-        <Typography
-          sx={{
-            color: "#64748B",
-            fontSize: "10.5px",
-            fontWeight: 700,
-          }}
-        >
-          TOTAL
-        </Typography>
-
-        <Typography
-          sx={{
-            color: "#07876A",
-            fontSize: "15px",
-            fontWeight: 800,
-          }}
-        >
-          ₹{calculatedAmount.toFixed(2)}
-        </Typography>
-      </Box>
+              return (
+                <TableRow key={line._rowId || index}>
+                  <TableCell sx={{ px: 1, py: 1, color: "#172033", fontSize: 11 }}>
+                    {String(index + 1).padStart(2, "0")}
+                  </TableCell>
+                  <TableCell sx={{ px: 0.7, py: 0.7 }}>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.2 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => onRemoveLine(index)}
+                        aria-label={`Remove ${line.medicine_name || "medicine"}`}
+                        sx={{
+                          width: 21,
+                          height: 24,
+                          mt: 0.1,
+                          color: "#94A3B8",
+                          "&:hover": { color: "#DC2626", bgcolor: "#FEF2F2" },
+                        }}
+                      >
+                        <DeleteOutlineRoundedIcon sx={{ fontSize: 15 }} />
+                      </IconButton>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <TextField
+                          value={line.medicine_name ?? ""}
+                          onChange={(event) => onUpdateLine(index, "medicine_name", event.target.value)}
+                          placeholder="Medicine name"
+                          variant="standard"
+                          fullWidth
+                          InputProps={{ disableUnderline: true }}
+                          sx={{
+                            "& .MuiInputBase-root": { fontSize: 11, fontWeight: 650 },
+                            "& .MuiInputBase-input": { p: 0 },
+                          }}
+                        />
+                        <TextField
+                          value={line.dose ?? ""}
+                          onChange={(event) => onUpdateLine(index, "dose", event.target.value)}
+                          placeholder="Dosage instructions"
+                          variant="standard"
+                          fullWidth
+                          InputProps={{ disableUnderline: true }}
+                          sx={{
+                            mt: 0.2,
+                            "& .MuiInputBase-root": { fontSize: 9.5, color: "#64748B" },
+                            "& .MuiInputBase-input": { p: 0 },
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  </TableCell>
+                  <TableCell sx={{ px: 0.5, py: 0.7 }}>
+                    <TextField
+                      value={line.batch_number ?? ""}
+                      onChange={(event) => onUpdateLine(index, "batch_number", event.target.value)}
+                      variant="standard"
+                      fullWidth
+                      InputProps={{ disableUnderline: true }}
+                      sx={inputSx}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ px: 0.5, py: 0.7 }}>
+                    <TextField
+                      type="date"
+                      value={line.expiry_date ?? ""}
+                      onChange={(event) => onUpdateLine(index, "expiry_date", event.target.value)}
+                      variant="standard"
+                      fullWidth
+                      InputProps={{ disableUnderline: true }}
+                      sx={{
+                        ...inputSx,
+                        "& input": { fontSize: 10, p: 0 },
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ px: 0.5, py: 0.7 }}>
+                    <TextField
+                      type="number"
+                      value={line.quantity ?? ""}
+                      onChange={(event) => onUpdateLine(index, "quantity", event.target.value)}
+                      variant="standard"
+                      fullWidth
+                      inputProps={{ min: 1 }}
+                      InputProps={{ disableUnderline: true }}
+                      sx={{ ...inputSx, "& input": { textAlign: "center", p: 0 } }}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ px: 0.6, py: 0.6 }}>
+                    <TextField
+                      type="number"
+                      value={line.unit_price ?? ""}
+                      onChange={(event) => onUpdateLine(index, "unit_price", event.target.value)}
+                      variant="standard"
+                      fullWidth
+                      inputProps={{ min: 0, step: "0.01", "aria-label": "Unit price" }}
+                      InputProps={{ disableUnderline: true }}
+                      sx={{ ...inputSx, "& input": { textAlign: "right", p: 0 } }}
+                    />
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 0.4, mt: 0.25 }}>
+                      <Typography sx={{ color: "#64748B", fontSize: 9 }}>GST</Typography>
+                      <TextField
+                        type="number"
+                        value={line.gst_rate ?? ""}
+                        onChange={(event) => onUpdateLine(index, "gst_rate", event.target.value)}
+                        variant="standard"
+                        inputProps={{ min: 0, max: 100, "aria-label": "GST rate" }}
+                        InputProps={{ disableUnderline: true }}
+                        sx={{ width: 37, "& .MuiInputBase-root": { height: 18, fontSize: 9 }, "& input": { textAlign: "right", p: 0 } }}
+                      />
+                      <Typography sx={{ color: "#64748B", fontSize: 9 }}>%</Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell sx={{ px: 1, py: 1, color: "#475569", fontSize: 10.5, whiteSpace: "nowrap" }}>
+                    {discount == null || discount === "" ? "—" : `₹${Number(discount).toFixed(2)}`}
+                  </TableCell>
+                  <TableCell sx={{ px: 1, py: 1, color: "#172033", fontSize: 10.5, textAlign: "right", whiteSpace: "nowrap" }}>
+                    ₹{amount.toFixed(2)}
+                  </TableCell>
+                </TableRow>
+              );
+            })
+          )}
+        </TableBody>
+      </Table>
     </Box>
   );
 }

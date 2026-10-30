@@ -32,7 +32,8 @@ import { RadialOrbitalTimelineDemo } from "../components/feature/demo";
 import Footer from "../components/Footer";
 import HowItWorks from "../components/landing/HowItWorks";
 import Main from "../components/DoctorRegister/EntryDoctor";
-import HealthcareSplitRegister from "../components/feature/HealthcareSplitRegister"
+import HealthcareSplitRegister from "../components/feature/HealthcareSplitRegister";
+import MedicalInvoice from "../../(dashboard)/medical/components/History/MedicalInvoice";
 import ElasticLine from "../components/ElasticLine";
 import HealthcareEcosystem from "../components/landing/HealthcareEcosystem";
 import FeedbackCTA from "../components/landing/FeedbackCTA";
@@ -50,7 +51,6 @@ const slideUpFade = keyframes`
 const revealSx = {
   animation: `${slideUpFade} 700ms ease-out both`,
 };
-
 
 const rotateContinuous = keyframes`
   0% {
@@ -247,8 +247,7 @@ export default function Landing() {
               border: "1px solid rgba(7,135,106,0.12)",
               boxShadow: "0 8px 25px rgba(7,135,106,0.10)",
               "&:hover": {
-                background:
-                  "linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)",
+                background: "linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)",
               },
             }}
           >
@@ -256,79 +255,78 @@ export default function Landing() {
           </IconButton>
         )}
 
-     
-       <StyledContainer
-  maxWidth="lg"
-  sx={{
-    mt: { xs: -2, md: -3 },
-    opacity: isVisible ? 1 : 0,
-    animation: isVisible
-      ? `${slideUpFade} 700ms ease-out both`
-      : "none",
-  }}
->
-  <HeroContent />
+        <StyledContainer
+          maxWidth="lg"
+          sx={{
+            mt: { xs: -2, md: -3 },
+            opacity: isVisible ? 1 : 0,
+            animation: isVisible
+              ? `${slideUpFade} 700ms ease-out both`
+              : "none",
+          }}
+        >
+          <HeroContent />
 
-  <Box
-    sx={{
-      opacity: isVisible ? 1 : 0,
-      animation: isVisible
-        ? `${slideUpFade} 700ms ease-out 150ms both`
-        : "none",
-    }}
-  >
-    <SearchBar />
-  </Box>
+          <Box
+            sx={{
+              opacity: isVisible ? 1 : 0,
+              animation: isVisible
+                ? `${slideUpFade} 700ms ease-out 150ms both`
+                : "none",
+            }}
+          >
+            <SearchBar />
+          </Box>
 
-  <Box
-    sx={{
-      opacity: isVisible ? 1 : 0,
-      animation: isVisible
-        ? `${slideUpFade} 700ms ease-out 300ms both`
-        : "none",
-    }}
-  >
-    <PopularSearches
-      popularSearches={popularSearches}
-      activeSearch={activeSearch}
-      setActiveSearch={setActiveSearch}
-      setSearchQuery={setSearchQuery}
-      setCity={setCity}
-      isVisible={isVisible}
-      slideUpFade={slideUpFade}
-    />
-  </Box>
-</StyledContainer>
+          <Box
+            sx={{
+              opacity: isVisible ? 1 : 0,
+              animation: isVisible
+                ? `${slideUpFade} 700ms ease-out 300ms both`
+                : "none",
+            }}
+          >
+            <PopularSearches
+              popularSearches={popularSearches}
+              activeSearch={activeSearch}
+              setActiveSearch={setActiveSearch}
+              setSearchQuery={setSearchQuery}
+              setCity={setCity}
+              isVisible={isVisible}
+              slideUpFade={slideUpFade}
+            />
+          </Box>
+        </StyledContainer>
+      </Box>
+
+        <MedicalInvoice />
+      <ElasticLine />
+      <Box sx={revealSx}>
+        <HealthcareEcosystem />
+      </Box>
+      <ElasticLine />
+
+      <Box sx={{ ...revealSx, animationDelay: "100ms" }}>
+        <RadialOrbitalTimelineDemo />
       </Box>
 
       <ElasticLine />
-      <Box sx={revealSx}>
-  <HealthcareEcosystem />
-</Box>
-      <ElasticLine />
-
-     <Box sx={{ ...revealSx, animationDelay: "100ms" }}>
-  <RadialOrbitalTimelineDemo />
-</Box>
-
-
-      <ElasticLine />
       {/* <HealthcareSplitRegister /> */}
-     
-<Box sx={{ ...revealSx, animationDelay: "150ms" }}>
-  <HowItWorks />
-</Box>
-    <Box sx={{ ...revealSx, animationDelay: "200ms" }}>
-  <JeevanShowcase />
-</Box>
+
+      <Box sx={{ ...revealSx, animationDelay: "150ms" }}>
+        <HowItWorks />
+      </Box>
+      <Box sx={{ ...revealSx, animationDelay: "200ms" }}>
+        <JeevanShowcase />
+      </Box>
       <ElasticLine />
       <Box sx={{ ...revealSx, animationDelay: "250ms" }}>
-  <Main />
-</Box>
+        <Main />
+      </Box>
 
-<Box sx={{ ...revealSx, animationDelay: "300ms" }}>
-  <FeedbackCTA />
-</Box>
+      <Box sx={{ ...revealSx, animationDelay: "300ms" }}>
+        <FeedbackCTA />
+      </Box>
       <JeevanDevLogo />
       <Footer />
     </Box>
