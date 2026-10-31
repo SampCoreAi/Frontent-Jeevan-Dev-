@@ -299,7 +299,7 @@ export default function Landing() {
         </StyledContainer>
       </Box>
 
-        <MedicalInvoice />
+        {/* <MedicalInvoice /> */}
       <ElasticLine />
       <Box sx={revealSx}>
         <HealthcareEcosystem />

@@ -100,10 +100,10 @@ const SectionLabel = ({ children }) => (
   <Typography
     sx={{
       fontSize: 11,
-      fontWeight: 800,
-      color: "#81909b",
-      letterSpacing: 1,
-      mb: 1.2,
+      fontWeight: 700,
+      color: "#647b86",
+      letterSpacing: 0.45,
+      mb: 1,
     }}
   >
     {children}
@@ -115,8 +115,8 @@ const InfoItem1 = ({ label, value }) => (
     <SectionLabel>{label}</SectionLabel>
     <Typography
       sx={{
-        fontSize: 14,
-        fontWeight: 700,
+        fontSize: 13,
+        fontWeight: 600,
         color: DARK,
         wordBreak: "break-word",
       }}
@@ -133,11 +133,11 @@ const SummaryRow = ({ label, value }) => (
     alignItems="center"
     spacing={2}
   >
-    <Typography fontSize={13} color={MUTED}>
+    <Typography fontSize={12.5} color={MUTED}>
       {label}
     </Typography>
 
-    <Typography fontSize={13} fontWeight={700} color={DARK} textAlign="right">
+    <Typography fontSize={12.5} fontWeight={600} color={DARK} textAlign="right">
       {value}
     </Typography>
   </Stack>
@@ -163,6 +163,8 @@ export default function MedicalInvoice() {
       <Box
         id="medical-invoice"
         sx={{
+          fontFamily: '"Inter", "Segoe UI", Arial, sans-serif',
+          "& *": { fontFamily: '"Inter", "Segoe UI", Arial, sans-serif' },
           width: "100%",
           maxWidth: 950,
           mx: "auto",
@@ -201,8 +203,8 @@ export default function MedicalInvoice() {
             <Box>
               <Typography
                 sx={{
-                  fontSize: { xs: 21, sm: 25 },
-                  fontWeight: 800,
+                  fontSize: { xs: 21, sm: 23 },
+                  fontWeight: 700,
                   color: DARK,
                   lineHeight: 1.3,
                 }}
@@ -210,7 +212,7 @@ export default function MedicalInvoice() {
                 {invoice.storeName}
               </Typography>
 
-              <Typography fontSize={13} color={MUTED} mt={0.4}>
+              <Typography fontSize={12} color={MUTED} mt={0.4}>
                 Medical Invoice
               </Typography>
             </Box>
@@ -219,8 +221,8 @@ export default function MedicalInvoice() {
           <Box textAlign={{ xs: "left", sm: "right" }}>
             <Typography
               sx={{
-                fontSize: { xs: 15, sm: 19 },
-                fontWeight: 800,
+                fontSize: { xs: 14, sm: 16 },
+                fontWeight: 700,
                 color: DARK,
                 wordBreak: "break-word",
               }}
@@ -228,7 +230,7 @@ export default function MedicalInvoice() {
               {invoice.invoiceNumber}
             </Typography>
 
-            <Typography fontSize={13} color={MUTED} mt={0.5}>
+            <Typography fontSize={12} color={MUTED} mt={0.5}>
               {invoice.invoiceDate}
             </Typography>
           </Box>
@@ -259,8 +261,8 @@ export default function MedicalInvoice() {
 
     <Typography
       sx={{
-        fontSize: 16,
-        fontWeight: 800,
+        fontSize: 14,
+        fontWeight: 700,
         color: DARK,
         mb: 1.5,
       }}
@@ -299,8 +301,8 @@ export default function MedicalInvoice() {
 
     <Typography
       sx={{
-        fontSize: 16,
-        fontWeight: 800,
+        fontSize: 14,
+        fontWeight: 700,
         color: DARK,
         mb: 1.5,
       }}
@@ -358,7 +360,7 @@ export default function MedicalInvoice() {
 </Grid>
         {/* MEDICINE DETAILS */}
         <Box sx={{ mt: 3.5 }}>
-          <Typography fontSize={17} fontWeight={800} color={DARK} mb={2}>
+          <Typography fontSize={15} fontWeight={700} color={DARK} mb={1.5}>
             Medicine Details
           </Typography>
 
@@ -380,15 +382,15 @@ export default function MedicalInvoice() {
                   bgcolor: "#f2f8f5",
                   color: "#647b86",
                   fontSize: 11,
-                  fontWeight: 800,
+                  fontWeight: 700,
                   textAlign: "left",
-                  p: 1.8,
+                  p: 1.5,
                   whiteSpace: "nowrap",
                 },
 
                 "& td": {
-                  p: 1.8,
-                  fontSize: 13,
+                  p: 1.5,
+                  fontSize: 12.5,
                   color: DARK,
                   borderTop: `1px solid ${BORDER}`,
                   whiteSpace: "nowrap",
@@ -418,11 +420,11 @@ export default function MedicalInvoice() {
                     <td>{String(index + 1).padStart(2, "0")}</td>
 
                     <td>
-                      <Typography fontSize={14} fontWeight={800}>
+                      <Typography fontSize={12.5} fontWeight={600}>
                         {medicine.name}
                       </Typography>
 
-                      <Typography fontSize={11} color={MUTED} mt={0.4}>
+                      <Typography fontSize={11} color={MUTED} mt={0.35}>
                         {[
                           medicine.dose,
                           medicine.duration,
@@ -440,7 +442,7 @@ export default function MedicalInvoice() {
                     <td>{currency(medicine.price)}</td>
                     <td>{currency(medicine.discount)}</td>
                     <td>
-                      <Typography fontSize={13} fontWeight={700}>
+                      <Typography fontSize={12.5} fontWeight={600}>
                         {currency(medicine.amount)}
                       </Typography>
                     </td>
@@ -505,14 +507,14 @@ export default function MedicalInvoice() {
           alignItems="center"
           spacing={1}
         >
-          <Typography fontSize={17} fontWeight={800} color={DARK}>
+          <Typography fontSize={15} fontWeight={700} color={DARK}>
             Grand Total
           </Typography>
 
           <Typography
             sx={{
-              fontSize: { xs: 23, sm: 28 },
-              fontWeight: 900,
+              fontSize: { xs: 21, sm: 23 },
+              fontWeight: 700,
               color: GREEN,
               whiteSpace: "nowrap",
             }}
@@ -525,81 +527,61 @@ export default function MedicalInvoice() {
   </Grid>
 </Grid>
 
-    {/* STORE INFORMATION */}
+
+
+
+{/* STORE INFORMATION */}
 <Grid
   container
   columns={12}
-  spacing={2}
+  columnSpacing={3}
+  rowSpacing={2}
   sx={{
     mt: 3,
     p: 2.5,
     bgcolor: "#f5f9f7",
     border: `1px solid ${BORDER}`,
-    borderRadius: 2.5,
+    borderRadius: 2,
     width: "100%",
     boxSizing: "border-box",
   }}
 >
-  <Grid size={{ xs: 12, sm: 4 }}>
-    <InfoItem label="STORE ADDRESS" value={invoice.storeAddress} />
+  <Grid size={{ xs: 12, sm: 4 }} sx={{ minWidth: 0 }}>
+    <InfoItem1
+      label="STORE ADDRESS"
+      value={invoice.storeAddress}
+    />
   </Grid>
 
-  <Grid size={{ xs: 12, sm: 4 }}>
-    <InfoItem
+  <Grid size={{ xs: 12, sm: 4 }} sx={{ minWidth: 0 }}>
+    <InfoItem1
       label="CONTACT DETAILS"
-      value={`${invoice.contact} | ${invoice.storeEmail}`}
+      value={
+        <>
+          {invoice.contact}
+          <br />
+          {invoice.storeEmail}
+        </>
+      }
     />
   </Grid>
 
-  <Grid size={{ xs: 12, sm: 4 }}>
-    <InfoItem
-      label="STORE TIMINGS"
-      value={`${invoice.storeDays} | ${invoice.storeTimings}`}
-    />
-    <InfoItem1
-      value={`${invoice.storeDays1} | ${invoice.storeTimings1}`}
-    />
-    <InfoItem1
-      value={`${invoice.storeDays2} | ${invoice.storeTimings2}`}
-    />
+  <Grid size={{ xs: 12, sm: 4 }} sx={{ minWidth: 0 }}>
+    <SectionLabel>STORE TIMINGS</SectionLabel>
+
+    <Stack spacing={0.7}>
+      <Typography fontSize={12.5} color={DARK}>
+        <strong>Mon-Fri:</strong> 9:00 AM - 10:00 PM
+      </Typography>
+      <Typography fontSize={12.5} color={DARK}>
+        <strong>Sat:</strong> 10:00 AM - 5:00 PM | <strong>Sun:</strong> Close
+      </Typography>
+    </Stack>
   </Grid>
 </Grid>
-        {/* FOOTER */}
-        <Box textAlign="center" mt={3}>
-          <Typography fontSize={12} color={MUTED}>
-            Thank you for choosing{" "}
-            <Box component="span" fontWeight={800} color={DARK}>
-              {invoice.storeName}
-            </Box>
-          </Typography>
 
-          <Stack
-            direction="row"
-            justifyContent="center"
-            mt={2.5}
-            className="no-print"
-          >
-            <Button
-              variant="contained"
-              startIcon={<PrintOutlinedIcon />}
-              onClick={handlePrint}
-              sx={{
-                bgcolor: GREEN,
-                px: 4,
-                py: 1.2,
-                borderRadius: 2,
-                textTransform: "none",
-                fontWeight: 800,
-                fontSize: 13,
-                "&:hover": {
-                  bgcolor: "#056b55",
-                },
-              }}
-            >
-              Print Invoice
-            </Button>
-          </Stack>
-        </Box>
+ 
+    
       </Box>
 
       <style jsx global>{`
